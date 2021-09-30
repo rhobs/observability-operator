@@ -1,2 +1,2 @@
 # monitoring-stack-operator
-Repo for the operator of the monitoring stack
+Operator of the monitoring stack
