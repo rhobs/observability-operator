@@ -1,0 +1,1 @@
+# monitoring-stack-operator
