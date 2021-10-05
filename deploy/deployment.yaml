@@ -24,7 +24,7 @@ spec:
         runAsNonRoot: true
       containers:
         - name: manager
-          image: monitoring-stack-operator:latest
+          image: monitoring-stack-operator:v0.0.1
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false

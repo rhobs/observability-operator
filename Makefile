@@ -1,5 +1,8 @@
 SHELL=/usr/bin/env bash -o pipefail
 
+IMAGE = monitoring-stack-operator
+VERSION?=$(shell cat VERSION)
+
 .PHONY: tools
 tools:
 	go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.7.0
@@ -18,3 +21,7 @@ generate-deepcopy:
 
 .PHONY: generate
 generate: generate-crds generate-deepcopy
+
+.PHONY: image
+image:
+	docker build -f build/Dockerfile . -t $(IMAGE):$(VERSION)
