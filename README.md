@@ -21,3 +21,4 @@ For detailed information on the available code generation markers, please refer 
 * Set the `KUBECONFIG` environment variable to your local cluster and run the with `go run cmd/operator/main.go`. 
   * Alternatively, you can also set the kubeconfig on the command line: `go run cmd/operator/main.go --kubeconfig <path-to-kubeconfig>`
 
+test-change
