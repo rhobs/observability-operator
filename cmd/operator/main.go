@@ -20,6 +20,9 @@ import (
 	"flag"
 	"os"
 	"rhobs/monitoring-stack-operator/pkg/apis/v1alpha1"
+	poctrl "rhobs/monitoring-stack-operator/pkg/controllers/prometheus-operator"
+
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -39,11 +42,19 @@ func init() {
 		setupLog.Error(err, "unable to register scheme")
 		os.Exit(1)
 	}
+	utilruntime.Must(apiextensionsv1.AddToScheme(scheme))
 }
 
+var (
+	namespace                    string
+	metricsAddr                  string
+	deployPrometheusOperatorCRDs bool
+)
+
 func main() {
-	var metricsAddr string
+	flag.StringVar(&namespace, "namespace", "default", "The namespace in which the operator runs")
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
+	flag.BoolVar(&deployPrometheusOperatorCRDs, "deploy-prometheus-operator-crds", true, "Whether the prometheus operator CRDs should be deployed")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -58,6 +69,16 @@ func main() {
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
+		os.Exit(1)
+	}
+
+	poOpts := poctrl.Options{
+		Namespace:  namespace,
+		AssetsPath: "./assets/prometheus-operator/",
+		DeployCRDs: deployPrometheusOperatorCRDs,
+	}
+	if err := poctrl.RegisterWithManager(mgr, poOpts); err != nil {
+		setupLog.Error(err, "unable to start prometheus-operator controller")
 		os.Exit(1)
 	}
 

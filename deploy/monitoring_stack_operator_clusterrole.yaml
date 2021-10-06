@@ -1,0 +1,57 @@
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: monitoring-stack-operator
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - serviceaccounts
+  verbs:
+  - create
+  - patch
+  - update
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - create
+  - patch
+  - update
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - patch
+  - update
+- apiGroups:
+  - monitoring.rhobs
+  resources:
+  - monitoringstacks
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - monitoring.rhobs
+  resources:
+  - monitoringstacks/finalizers
+  - monitoringstacks/status
+  verbs:
+  - get
+  - update
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterrolebindings
+  - clusterroles
+  verbs:
+  - create
+  - patch
+  - update

@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus-operator
+      app.kubernetes.io/component: controller
+      app.kubernetes.io/part-of: monitoring-stack-operator
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: prometheus-operator
+        target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
+      labels:
+        app.kubernetes.io/name: prometheus-operator
+        app.kubernetes.io/component: controller
+        app.kubernetes.io/part-of: monitoring-stack-operator
+        app.kubernetes.io/version: 0.50.0
+    spec:
+      serviceAccountName: prometheus-operator
+      containers:
+        - args:
+            - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.50.0
+            - --prometheus-instance-selector=app.kubernetes.io/managed-by=monitoring-stack-operator
+          image: quay.io/prometheus-operator/prometheus-operator:v0.50.0
+          name: prometheus-operator
+          ports:
+            - containerPort: 8080
+              name: http
+          resources:
+            requests:
+              cpu: 5m
+              memory: 150Mi
+          terminationMessagePolicy: FallbackToLogsOnError
