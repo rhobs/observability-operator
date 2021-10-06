@@ -1,6 +1,7 @@
 # monitoring-stack-operator
 The monitoring stack operator is a Kubernetes operator which enables the management of independent and self-contained, Prometheus-based monitoring stacks through Kubernetes CRDs.
 
+
 The project is based on the [controller-runtime](https://github.com/kubernetes-sigs/controller-runtime) library. 
 
 ## Development
