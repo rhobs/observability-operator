@@ -23,9 +23,11 @@ spec:
       securityContext:
         runAsNonRoot: true
       containers:
-        - name: manager
-          image: monitoring-stack-operator:v0.0.1
+        - name: operator
+          image: monitoring-stack-operator:0.0.1
           imagePullPolicy: IfNotPresent
+          args:
+            - --deploy-prometheus-operator-crds=false
           securityContext:
             allowPrivilegeEscalation: false
           resources:
@@ -35,5 +37,5 @@ spec:
             requests:
               cpu: 100m
               memory: 20Mi
-      serviceAccountName: monitoring-stack-operator
+      serviceAccountName: monitoring-stack-operator-sa
       terminationGracePeriodSeconds: 30
