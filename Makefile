@@ -43,9 +43,10 @@ lint: $(GOLANGCI_LINT)
 generate-crds: $(CONTROLLER_GEN)
 	$(CONTROLLER_GEN) crd \
 		paths=./pkg/apis/... \
-		rbac:roleName=monitoring \
+		rbac:roleName=monitoring-stack-operator \
 		output:dir=./deploy \
 		output:crd:dir=./deploy/crds
+	mv deploy/role.yaml deploy/monitoring_stack_operator_clusterrole.yaml
 
 .PHONY: generate-deepcopy
 generate-deepcopy: $(CONTROLLER_GEN)
