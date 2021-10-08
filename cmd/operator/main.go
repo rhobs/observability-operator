@@ -19,31 +19,16 @@ package main
 import (
 	"flag"
 	"os"
-	"rhobs/monitoring-stack-operator/pkg/apis/v1alpha1"
 	poctrl "rhobs/monitoring-stack-operator/pkg/controllers/prometheus-operator"
+	"rhobs/monitoring-stack-operator/pkg/operator"
 
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-
-	"k8s.io/apimachinery/pkg/runtime"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 var (
-	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
 )
-
-func init() {
-	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-	if err := v1alpha1.AddToScheme(scheme); err != nil {
-		setupLog.Error(err, "unable to register scheme")
-		os.Exit(1)
-	}
-	utilruntime.Must(apiextensionsv1.AddToScheme(scheme))
-}
 
 var (
 	namespace                    string
@@ -63,28 +48,21 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:             scheme,
-		MetricsBindAddress: metricsAddr,
-	})
-	if err != nil {
-		setupLog.Error(err, "unable to start manager")
-		os.Exit(1)
-	}
-
 	poOpts := poctrl.Options{
 		Namespace:  namespace,
 		AssetsPath: "./assets/prometheus-operator/",
 		DeployCRDs: deployPrometheusOperatorCRDs,
 	}
-	if err := poctrl.RegisterWithManager(mgr, poOpts); err != nil {
-		setupLog.Error(err, "unable to start prometheus-operator controller")
+	op, err := operator.New(metricsAddr, poOpts)
+	if err != nil {
+		setupLog.Error(err, "cannot create a new operator")
 		os.Exit(1)
 	}
 
+	ctx := ctrl.SetupSignalHandler()
 	setupLog.Info("starting manager")
-	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-		setupLog.Error(err, "problem running manager")
+	if err := op.Start(ctx); err != nil {
+		setupLog.Error(err, "terminating")
 		os.Exit(1)
 	}
 }

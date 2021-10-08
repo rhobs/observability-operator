@@ -25,6 +25,8 @@ spec:
         - args:
             - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.50.0
             - --prometheus-instance-selector=app.kubernetes.io/managed-by=monitoring-stack-operator
+            - --alertmanager-instance-selector=app.kubernetes.io/managed-by=monitoring-stack-operator
+            - --thanos-ruler-instance-selector=app.kubernetes.io/managed-by=monitoring-stack-operator
           image: quay.io/prometheus-operator/prometheus-operator:v0.50.0
           name: prometheus-operator
           ports:

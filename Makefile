@@ -96,6 +96,10 @@ operator-image: generate
 operator-push:
 	docker push ${OPERATOR_IMAGE}
 
+.PHONY: test-e2e
+test-e2e:
+	go test ./test/e2e/...
+
 ## OLM - Bundle
 
 # BUNDLE_IMG defines the image:tag used for the bundle.
