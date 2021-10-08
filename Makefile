@@ -179,3 +179,6 @@ catalog-image: $(OPM) ## Build a catalog image.
 .PHONY: catalog-push
 catalog-push: ## Push a catalog image.
 	docker push $(CATALOG_IMG)
+
+.PHONY: release
+release: operator-image operator-push bundle-image bundle-push catalog-image catalog-push
