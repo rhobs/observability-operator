@@ -3,10 +3,10 @@ name: OLM
 
 on:
   push:
-    branches: [auto-release, main]
+    branches: [main]
     tags: ["v*"]
   pull_request:
-    branches: [auto-release]
+    branches: [main]
 
 jobs:
   build:
@@ -27,7 +27,7 @@ jobs:
           SOURCE_BRANCH=${GITHUB_REF#refs/heads/}
           SOURCE_TAG=${GITHUB_REF#refs/tags/}
 
-          if [[ $SOURCE_NAME == auto-release ]]; then
+          if [[ $SOURCE_NAME == main ]]; then
             VERSION="0.0.1-$(date +%y%m%d%H%M%S)"
             CHANNELS=candidate
           else
