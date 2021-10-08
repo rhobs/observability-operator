@@ -9,8 +9,7 @@ roleRef:
   name: monitoring-stack-operator
 subjects:
 - kind: ServiceAccount
-  name: monitoring-stack-operator
-  namespace: default
+  name: monitoring-stack-operator-sa
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -22,5 +21,5 @@ roleRef:
   name: monitoring-stack-operator-prometheus-operator
 subjects:
   - kind: ServiceAccount
-    name: monitoring-stack-operator
-    namespace: default
+    name: monitoring-stack-operator-sa
+

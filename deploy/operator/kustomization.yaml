@@ -1,0 +1,16 @@
+resources:
+- clusterrolebindings.yaml
+- deployment.yaml
+- prometheus_operator_clusterrole.yaml
+- role.yaml
+- serviceaccount.yaml
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+images:
+- name: monitoring-stack-operator
+  newName: quay.io/sthaha/monitoring-stack-operator
+  newTag: 0.0.1
+
+commonLabels:
+  app.kubernetes.io/version: 0.0.1

@@ -1,0 +1,3 @@
+---
+resources:
+  - monitoring.rhobs_monitoringstacks.yaml

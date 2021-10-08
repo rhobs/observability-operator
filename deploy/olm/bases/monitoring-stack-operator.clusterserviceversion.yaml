@@ -1,0 +1,43 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[]'
+    capabilities: Basic Install
+  name: monitoring-operator-stack.v0.0.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  description: Monitoring operator to manage Prometheus and Thanos for easier observability.
+  displayName: OpenShift Monitoring Operator
+  icon:
+  - base64data: "foobar"
+    mediatype: ""
+  install:
+    spec:
+      deployments: null
+    strategy: ""
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - monitoring
+  - prometheus
+  - thanos
+  - observability
+  links:
+  - name: Monitoring Operator Stack
+    url: https://monitoring-operator-stack.domain
+  maintainers:
+  - email: sthaha@redhat.com
+    name: Sunil Thaha
+  maturity: alpha
+  provider:
+    name: Red Hat
+  version: 0.0.0
