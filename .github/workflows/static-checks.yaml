@@ -3,14 +3,18 @@ on:
   pull_request:
   push:
     branches:
-      - 'release-*'
-      - 'master'
-      - 'main'
-    tags:
-      - 'v*'
+    - 'main'
+
 env:
   golang-version: '1.16'
 jobs:
+  commit-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - uses: wagoid/commitlint-github-action@v4
   golang-lint:
     runs-on: ubuntu-latest
     name: Golang linter
