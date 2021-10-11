@@ -26,8 +26,6 @@ spec:
         - name: operator
           image: monitoring-stack-operator:0.0.1
           imagePullPolicy: IfNotPresent
-          args:
-            - --deploy-prometheus-operator-crds=false
           securityContext:
             allowPrivilegeEscalation: false
           resources:

@@ -87,6 +87,10 @@ func (r *reconciler) loadStaticResources() ([]client.Object, error) {
 			Object: &v1.ServiceAccount{},
 		},
 		{
+			File:   "cluster-role.yaml",
+			Object: &authorizationv1.ClusterRole{},
+		},
+		{
 			File:   "cluster-role-binding.yaml",
 			Object: &authorizationv1.ClusterRoleBinding{},
 		},

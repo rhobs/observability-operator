@@ -10,16 +10,17 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: monitoring-stack-operator-sa
+  namespace: default
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: monitoring-stack-operator-delegate-prometheus-operator
+  name: monitoring-stack-operator-prometheus-operator-delegated
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: monitoring-stack-operator-prometheus-operator
+  name: monitoring-stack-operator-prometheus-operator-delegated
 subjects:
   - kind: ServiceAccount
     name: monitoring-stack-operator-sa
-
+    namespace: default
