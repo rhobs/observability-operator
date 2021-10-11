@@ -1,0 +1,64 @@
+---
+name: operator-build
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  local:
+    runs-on: ubuntu-latest
+    environment: quay
+
+    steps:
+      # setup
+      - uses: actions/checkout@v2
+
+      - name: Setup Go environment
+        uses: actions/setup-go@v2.1.4
+        with:
+          go-version: 1.16
+
+      - name: Build Operator
+        run: make operator
+
+      - name: Build Bundle
+        run: make bundle
+
+  images:
+    runs-on: ubuntu-latest
+    environment: quay
+
+    steps:
+      # setup
+      - uses: actions/checkout@v2
+      - name: Setup Go environment
+        uses: actions/setup-go@v2.1.4
+        with:
+          go-version: 1.16
+
+      - name: Initialize ENV vars
+        run: |
+          cat $GITHUB_ENV
+
+          echo "GITHUB_REF: $GITHUB_REF"
+
+          VERSION="$(cat VERSION)-$(date +%y%m%d%H%M%S)"
+          CHANNELS=test
+
+          IMG_BASE=$(grep '^IMAGE_TAG_BASE' -- Makefile | cut -f3 -d ' ')
+
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "CHANNELS=$CHANNELS" >> $GITHUB_ENV
+          echo "IMG=${IMG_BASE}:$VERSION" >> $GITHUB_ENV
+          echo "BUNDLE_IMG=${IMG_BASE}-bundle:$VERSION" >> $GITHUB_ENV
+          echo "CATALOG_IMG=${IMG_BASE}-catalog:latest" >> $GITHUB_ENV
+          echo ---------------------------
+          cat $GITHUB_ENV
+          echo ---------------------------
+
+      - name: Build Operator Image
+        run: make operator-image
+
+      - name: Build Bundle Image
+        run: make bundle-image
