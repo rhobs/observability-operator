@@ -37,7 +37,7 @@ $(GOLANGCI_LINT): $(TOOLS_DIR)
 $(KUSTOMIZE): $(TOOLS_DIR)
 	@{ \
 		set -e ;\
-		GOBIN=$(TOOLS_DIR) go install sigs.k8s.io/kustomize/kustomize/v3 ;\
+		GOBIN=$(TOOLS_DIR) go install sigs.k8s.io/kustomize/kustomize/v3@v3.2.3 ;\
 	}
 
 $(OPERATOR_SDK): $(TOOLS_DIR)
@@ -141,7 +141,7 @@ bundle: generate $(KUSTOMIZE) $(OPERATOR_SDK)
 		 	$(BUNDLE_METADATA_OPTS)
 	$(OPERATOR_SDK) bundle validate ./bundle
 
-.PHONY: bundle-build
+.PHONY: bundle-image
 bundle-image: bundle ## Build the bundle image.
 	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
 
