@@ -186,3 +186,17 @@ catalog-push: ## Push a catalog image.
 
 .PHONY: release
 release: operator-image operator-push bundle-image bundle-push catalog-image catalog-push
+
+STANDARD_VERSION=$(TOOLS_DIR)/standard-version
+$(STANDARD_VERSION):
+	npm install -g --prefix tmp standard-version
+
+.PHONY: initiate-release
+initiate-release: $(STANDARD_VERSION)
+	git fetch git@github.com:rhobs/monitoring-stack-operator.git --tags
+	$(STANDARD_VERSION) --skip.tag # The tag will be created in the pipeline
+
+.PHONY: initiate-release-as
+initiate-release-as: $(STANDARD_VERSION)
+	git fetch git@github.com:rhobs/monitoring-stack-operator.git --tags
+	$(STANDARD_VERSION) --skip.tag --release-as $(RELEASE_VERSION)
