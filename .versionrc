@@ -1,7 +1,7 @@
 {
-  "commitUrlFormat": "{{host}}/rhobs/monitoring-stack-operator/commit/{{hash}}",
-  "compareUrlFormat": "{{host}}/rhobs/monitoring-stack-operator/commit/{{hash}}",
-  "issueUrlFormat": "{{host}}/rhobs/monitoring-stack-operator/issues/{{id}}",
+  "commitUrlFormat": "https://github.com/rhobs/monitoring-stack-operator/commit/{{hash}}",
+  "compareUrlFormat": "https://github.com/rhobs/monitoring-stack-operator/commit/{{hash}}",
+  "issueUrlFormat": "https://github.com/rhobs/monitoring-stack-operator/issues/{{id}}",
   "bumpFiles": [
     {
       "filename": "VERSION",
