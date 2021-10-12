@@ -1,0 +1,44 @@
+---
+name: Github Release
+
+on:
+  push:
+    branches:
+    - main
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    if: "startsWith(github.event.head_commit.message, 'chore(release):')"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Extract release version
+        id: release_version
+        run: |
+          commit_message='${{ github.event.head_commit.message }}'
+          version=$(echo $commit_message | sed 's/chore(release)\: \(.*\)/\1/g')
+          echo "::set-output name=release_as::$version"
+      - name: Generate release notes
+        run: |
+          # Create the release notes for the Github release
+          git config user.name rhobs-release-bot
+          git config user.email release-bot@monitoring.rhobs.io
+          npx standard-version -i RELEASE_BODY.md --release-as ${{ steps.release_version.outputs.release_as }} --skip.commit
+      - name: Publish tag
+        id: publish_tag
+        run: |
+          git push --follow-tags
+          echo ::set-output name=tag_name::$(git describe HEAD --abbrev=0)
+      - name: Create Github release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          release_name: ${{ steps.publish_tag.outputs.tag_name }}
+          tag_name: ${{ steps.publish_tag.outputs.tag_name }}
+          body_path: RELEASE_BODY.md
+          # We always generate pre-releases and mark them as releases manually
+          prerelease: true
