@@ -3,7 +3,7 @@ name: OLM Development Channel
 
 on:
   push:
-    branches: [main, composite-actions]
+    branches: [main]
 
 jobs:
   release:
