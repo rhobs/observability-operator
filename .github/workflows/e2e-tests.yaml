@@ -23,7 +23,7 @@ jobs:
           go-version: ${{ env.golang-version }}
       - name: Build images
         run: |
-          make operator-image IMAGE_TAG_BASE=monitoring-stack-operator
+          make operator-image
       - name: Start KinD
         uses: engineerd/setup-kind@v0.5.0
         with:

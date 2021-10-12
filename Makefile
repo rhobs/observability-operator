@@ -1,13 +1,12 @@
 SHELL=/usr/bin/env bash -o pipefail
 
-# IMAGE_TAG_BASE defines the registry/namespace and part of the image name
+# IMAGE_BASE defines the registry/namespace and part of the image name
 # This variable is used to construct full image tags for bundle and catalog images.
-#
-IMAGE_TAG_BASE ?= quay.io/sthaha/monitoring-stack-operator
+IMAGE_BASE ?= monitoring-stack-operator
 
 
 VERSION ?= $(shell cat VERSION)
-OPERATOR_IMAGE = $(IMAGE_TAG_BASE):$(VERSION)
+OPERATOR_IMG = $(IMAGE_BASE):$(VERSION)
 
 # running `make` builds the operator (default target)
 all: operator
@@ -18,49 +17,64 @@ CONTROLLER_GEN=$(TOOLS_DIR)/controller-gen
 GOLANGCI_LINT=$(TOOLS_DIR)/golangci-lint
 KUSTOMIZE=$(TOOLS_DIR)/kustomize
 OPERATOR_SDK = $(TOOLS_DIR)/operator-sdk
+OPM = $(TOOLS_DIR)/opm
 
 $(TOOLS_DIR):
 	@mkdir -p $(TOOLS_DIR)
 
-$(CONTROLLER_GEN): $(TOOLS_DIR)
+.PHONY: controller-gen
+$(CONTROLLER_GEN) controller-gen: $(TOOLS_DIR)
 	@{ \
-		set -e ;\
+		set -ex ;\
 		GOBIN=$(TOOLS_DIR) go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.7.0 ;\
 	}
 
-$(GOLANGCI_LINT): $(TOOLS_DIR)
+.PHONY: golangci-lint
+$(GOLANGCI_LINT) golangci-lint: $(TOOLS_DIR)
 	@{ \
-		set -e ;\
+		set -ex ;\
 		GOBIN=$(TOOLS_DIR) go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.42.1 ;\
 	}
 
-$(KUSTOMIZE): $(TOOLS_DIR)
-	@{ \
-		set -e ;\
-		GOBIN=$(TOOLS_DIR) go install sigs.k8s.io/kustomize/kustomize/v3@v3.2.3 ;\
-	}
-
-$(OPERATOR_SDK): $(TOOLS_DIR)
+# NOTE: kustomize does not support `go install` hence this workaround to install
+# it by creating an tmp module and using go get to download the precise version
+# needed for the project
+# see: https://github.com/kubernetes-sigs/kustomize/issues/3618
+.PHONY: kustomize
+$(KUSTOMIZE) kustomize: $(TOOLS_DIR)
 	@{ \
 		set -ex ;\
+		[[ -f $(KUSTOMIZE) ]] && exit 0 ;\
+		TMP_DIR=$$(mktemp -d) ;\
+		cd $$TMP_DIR ;\
+		go mod init tmp ;\
+		echo "Downloading kustomize" ;\
+		GOBIN=$(TOOLS_DIR) go get sigs.k8s.io/kustomize/kustomize/v3@v3.9.4 ;\
+		rm -rf $$TMP_DIR ;\
+	}
+
+.PHONY: operator-sdk
+$(OPERATOR_SDK) operator-sdk: $(TOOLS_DIR)
+	@{ \
+		set -ex ;\
+		[[ -f $(OPERATOR_SDK) ]] && exit 0 ;\
 		OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) && \
 		curl -sSLo $(OPERATOR_SDK) https://github.com/operator-framework/operator-sdk/releases/download/v1.13.0/operator-sdk_$${OS}_$${ARCH} ;\
 		chmod +x $(OPERATOR_SDK) ;\
 	}
 
 .PHONY: opm
-OPM = $(TOOLS_DIR)/opm
-$(OPM): $(TOOLS_DIR)
+($OPM) opm: $(TOOLS_DIR)
 	@{ \
-		set -e ;\
+		set -ex ;\
 		OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) && \
 		curl -sSLo $(OPM) https://github.com/operator-framework/operator-registry/releases/download/v1.15.1/$${OS}-$${ARCH}-opm ;\
 		chmod +x $(OPM) ;\
 	}
 
 # Install all required tools
-tools: $(CONTROLLER_GEN) $(GOLANGCI_LINT) $(KUSTOMIZE) \
-			 $(OPERATOR_SDK) $(OPM)
+.PHONY: tools
+tools: $(CONTROLLER_GEN) $(KUSTOMIZE) $(OPERATOR_SDK) $(OPM)
 
 ## Development
 
@@ -90,11 +104,11 @@ operator: generate
 
 .PHONY: operator-image
 operator-image: generate
-	docker build -f build/Dockerfile . -t $(OPERATOR_IMAGE)
+	docker build -f build/Dockerfile . -t $(OPERATOR_IMG)
 
 .PHONY: operator-push
 operator-push:
-	docker push ${OPERATOR_IMAGE}
+	docker push ${OPERATOR_IMG}
 
 .PHONY: test-e2e
 test-e2e:
@@ -104,7 +118,7 @@ test-e2e:
 
 # BUNDLE_IMG defines the image:tag used for the bundle.
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
-BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:$(VERSION)
+BUNDLE_IMG ?= $(IMAGE_BASE)-bundle:$(VERSION)
 
 # CHANNELS define the bundle channels used in the bundle.
 # To re-generate a bundle for other specific channels without changing the standard setup, you can:
@@ -128,9 +142,9 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
 
 .PHONY: bundle
-bundle: generate $(KUSTOMIZE) $(OPERATOR_SDK)
+bundle: $(KUSTOMIZE) $(OPERATOR_SDK) generate
 	cd deploy/operator && \
-		$(KUSTOMIZE) edit set image monitoring-stack-operator=$(OPERATOR_IMAGE) && \
+		$(KUSTOMIZE) edit set image monitoring-stack-operator=$(OPERATOR_IMG) && \
 		$(KUSTOMIZE) edit set label app.kubernetes.io/version:$(VERSION)
 	$(KUSTOMIZE) build deploy/olm | tee tmp/pre-bundle.yaml |  \
 	 	$(OPERATOR_SDK) generate bundle \
@@ -158,10 +172,16 @@ BUNDLE_IMGS ?= $(BUNDLE_IMG)
 # The image tag given to the resulting catalog image
 # The tag is used as latest since it allows a CatalogSubscription to point to
 # a single image which keeps updating
-CATALOG_IMG ?= $(IMAGE_TAG_BASE)-catalog:latest
+CATALOG_IMG ?= $(IMAGE_BASE)-catalog:latest
+# enable continuous release by referring to the same catalog image for `--from-index`
+CATALOG_BASE_IMG ?= $(CATALOG_IMG)
 
-# Set CATALOG_BASE_IMG to an existing catalog image tag to add $BUNDLE_IMGS to that image.
-ifneq ($(origin CATALOG_BASE_IMG), undefined)
+# mark release as first by default for easier/quicker development
+FIRST_OLM_RELEASE ?= true
+
+# Set CATALOG_BASE_IMG to an existing catalog image tag to add $BUNDLE_IMGS to
+# that image except for FIRST_OLM_RELEASE
+ifeq ($(FIRST_OLM_RELEASE), false)
 FROM_INDEX_OPT := --from-index $(CATALOG_BASE_IMG)
 endif
 
@@ -172,7 +192,7 @@ endif
 # on add modes, see:
 # https://github.com/operator-framework/community-operators/blob/7f1438c/docs/packaging-operator.md#updating-your-existing-operator
 .PHONY: catalog-image
-catalog-image: $(OPM) ## Build a catalog image.
+catalog-image: $(OPM)
 	$(OPM) index add \
 	 	--container-tool docker \
 		--mode semver \

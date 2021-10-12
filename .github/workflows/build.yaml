@@ -44,15 +44,8 @@ jobs:
           echo "GITHUB_REF: $GITHUB_REF"
 
           VERSION="$(cat VERSION)-$(date +%y%m%d%H%M%S)"
-          CHANNELS=test
-
-          IMG_BASE=$(grep '^IMAGE_TAG_BASE' -- Makefile | cut -f3 -d ' ')
-
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "CHANNELS=$CHANNELS" >> $GITHUB_ENV
-          echo "IMG=${IMG_BASE}:$VERSION" >> $GITHUB_ENV
-          echo "BUNDLE_IMG=${IMG_BASE}-bundle:$VERSION" >> $GITHUB_ENV
-          echo "CATALOG_IMG=${IMG_BASE}-catalog:latest" >> $GITHUB_ENV
+          echo "CHANNELS=test" >> $GITHUB_ENV
           echo ---------------------------
           cat $GITHUB_ENV
           echo ---------------------------
