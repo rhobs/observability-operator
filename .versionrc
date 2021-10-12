@@ -1,4 +1,7 @@
 {
+  "commitUrlFormat": "{{host}}/rhobs/monitoring-stack-operator/commit/{{hash}}",
+  "compareUrlFormat": "{{host}}/rhobs/monitoring-stack-operator/commit/{{hash}}",
+  "issueUrlFormat": "{{host}}/rhobs/monitoring-stack-operator/issues/{{id}}",
   "bumpFiles": [
     {
       "filename": "VERSION",
