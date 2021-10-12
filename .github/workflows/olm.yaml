@@ -32,8 +32,6 @@ jobs:
             CHANNELS=development,stable
           fi
 
-          IMAGE_BASE=quay.io/rhobs/monitoring-stack-operator
-
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "CHANNELS=$CHANNELS" >> $GITHUB_ENV
           echo "IMAGE_BASE=$IMAGE_BASE" >> $GITHUB_ENV
