@@ -1,0 +1,23 @@
+---
+name: OLM Stable Channel
+
+on:
+  release:
+    types:
+      - released
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    environment: quay
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: publish
+        uses: ./.github/olm-publish
+        env:
+          IMAGE_BASE: ${{ secrets.IMAGE_BASE }}
+          CHANNELS: stable
+        with:
+          quay_login: ${{ secrets.QUAY_LOGIN }}
+          quay_token: ${{ secrets.QUAY_TOKEN }}

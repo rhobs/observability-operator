@@ -1,0 +1,49 @@
+name: 'Publish to OLM'
+description: 'Publishes the operator to OLM'
+inputs:
+  quay_login:
+    description: "Quay login"
+    required: true
+  quay_token:
+    description: "Quay token"
+    required: true
+runs:
+  using: composite
+  steps:
+  - uses: actions/checkout@v2
+
+  - name: Setup Go environment
+    uses: actions/setup-go@v2.1.4
+    with:
+      go-version: 1.16
+
+  - name: Registry Login
+    uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+    with:
+      registry: quay.io
+      username: ${{ inputs.quay_login }}
+      password: ${{ inputs.quay_token }}
+
+  - name: Build Operator Image
+    shell: bash
+    run: make operator-image
+
+  - name: Publish Operator
+    shell: bash
+    run: make operator-push
+
+  - name: Build Bundle Image
+    shell: bash
+    run: make bundle-image
+
+  - name: Publish Bundle
+    shell: bash
+    run: make bundle-push
+
+  - name: Build Catalog Image
+    shell: bash
+    run: FIRST_OLM_RELEASE=false make catalog-image
+
+  - name: Publish catalog image
+    shell: bash
+    run: make catalog-push

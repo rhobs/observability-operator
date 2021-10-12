@@ -1,0 +1,29 @@
+---
+name: OLM Development Channel
+
+on:
+  push:
+    branches: [main, composite-actions]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    environment: quay
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set version
+        id: version
+        run: |
+          version="$(cat VERSION)-$(date +%y%m%d%H%M%S)"
+          echo "::set-output name=version::$version"
+
+      - name: Publish
+        uses: ./.github/olm-publish
+        env:
+          IMAGE_BASE: ${{ secrets.IMAGE_BASE }}
+          VERSION: ${{ steps.version.outputs.version }}
+          CHANNELS: development
+        with:
+          quay_login: ${{ secrets.QUAY_LOGIN }}
+          quay_token: ${{ secrets.QUAY_TOKEN }}
