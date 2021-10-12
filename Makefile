@@ -64,7 +64,7 @@ $(OPERATOR_SDK) operator-sdk: $(TOOLS_DIR)
 	}
 
 .PHONY: opm
-($OPM) opm: $(TOOLS_DIR)
+$(OPM) opm: $(TOOLS_DIR)
 	@{ \
 		set -ex ;\
 		OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) && \
