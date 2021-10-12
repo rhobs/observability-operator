@@ -22,7 +22,6 @@ jobs:
           echo "GITHUB_REF: $GITHUB_REF"
 
           SOURCE_NAME=${GITHUB_REF#refs/*/}
-          SOURCE_BRANCH=${GITHUB_REF#refs/heads/}
           SOURCE_TAG=${GITHUB_REF#refs/tags/}
 
           if [[ $SOURCE_NAME == main ]]; then
@@ -33,13 +32,14 @@ jobs:
             CHANNELS=development,stable
           fi
 
-          IMG_BASE=$(grep '^IMAGE_TAG_BASE' -- Makefile | cut -f3 -d ' ')
+          IMAGE_BASE=quay.io/rhobs/monitoring-stack-operator
 
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "CHANNELS=$CHANNELS" >> $GITHUB_ENV
-          echo "IMG=${IMG_BASE}:$VERSION" >> $GITHUB_ENV
-          echo "BUNDLE_IMG=${IMG_BASE}-bundle:$VERSION" >> $GITHUB_ENV
-          echo "CATALOG_IMG=${IMG_BASE}-catalog:latest" >> $GITHUB_ENV
+          echo "IMAGE_BASE=$IMAGE_BASE" >> $GITHUB_ENV
+
+          # TODO(sthaha): uncomment after the first catalog image is released
+          # echo "FIRST_OLM_RELEASE=false" >> $GITHUB_ENV
           echo ---------------------------
           cat $GITHUB_ENV
           echo ---------------------------
@@ -67,7 +67,6 @@ jobs:
 
       - name: Publish Bundle
         run: make bundle-push
-
 
       - name: Build Catalog Image
         run: |

@@ -9,7 +9,7 @@ metadata:
 spec:
   apiservicedefinitions: {}
   description: Monitoring operator to manage Prometheus and Thanos for easier observability.
-  displayName: OpenShift Monitoring Operator
+  displayName: Monitoring Stack Operator
   icon:
   - base64data: "foobar"
     mediatype: ""
@@ -33,10 +33,12 @@ spec:
   - observability
   links:
   - name: Monitoring Operator Stack
-    url: https://monitoring-operator-stack.domain
+    url: https://monitoring-operator-stack.rhobs.io
   maintainers:
-  - email: sthaha@redhat.com
-    name: Sunil Thaha
+  - name: Filip Petkovski
+    email: fpetkovs@redhat.com
+  - name: Sunil Thaha
+    email: sthaha@redhat.com
   maturity: alpha
   provider:
     name: Red Hat
