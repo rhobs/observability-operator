@@ -1,9 +1,8 @@
----
 resources:
-  - ../crds
-  - ../operator
-  - ../scorecard
-  - ../samples
+- ../crds
+- ../operator
+- ../scorecard
+- ../samples
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
@@ -12,10 +11,10 @@ images:
     newName: quay.io/sthaha/monitoring-stack-operator
     newTag: 0.0.1
 patches:
-  - patch: |-
-      - op: add
-        path: /spec/template/spec/containers/0/args
-        value: [--deploy-prometheus-operator-crds=false]
-    target:
-      kind: Deployment
-      name: monitoring-stack-operator
+- patch: |-
+    - op: add
+      path: /spec/template/spec/containers/0/args
+      value: [--deploy-prometheus-operator-crds=false]
+  target:
+    kind: Deployment
+    name: monitoring-stack-operator
