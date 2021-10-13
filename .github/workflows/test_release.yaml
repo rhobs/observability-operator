@@ -126,19 +126,12 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.REPOSITORY_PUSH_TOKEN }}
 
-      - name: Extract release version
-        id: release_version
-        run: |
-          commit_message='${{ github.event.head_commit.message }}'
-          version=$(echo $commit_message | sed 's/chore(release)\: \(.*\)/\1/g')
-          echo "::set-output name=release_as::$version"
-
       - name: Generate release notes
         run: |
           # Create the release notes for the Github release
           git config user.name rhobs-release-bot
           git config user.email release-bot@monitoring.rhobs.io
-          npx standard-version -i RELEASE_BODY.md --release-as ${{ steps.release_version.outputs.release_as }} --skip.commit
+          npx standard-version -i RELEASE_BODY.md --release-as $(cat VERSION) --skip.commit
 
       - name: Publish tag
         id: publish_tag
