@@ -48,6 +48,10 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
+	setupLog.Info("running with arguments",
+		"namespace", namespace,
+		"metrics-bind-address", metricsAddr)
+
 	poOpts := poctrl.Options{
 		Namespace:  namespace,
 		AssetsPath: "./assets/prometheus-operator/",

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"rhobs/monitoring-stack-operator/pkg/assets"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	v1 "k8s.io/api/core/v1"
 
 	"github.com/go-logr/logr"
@@ -71,6 +73,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request ctrlruntime.Request)
 		resource.SetNamespace(r.opts.Namespace)
 		r.logger.Info("Reconciling resource",
 			"Kind", resource.GetObjectKind().GroupVersionKind().Kind,
+			"Namespace", resource.GetNamespace(),
 			"Name", resource.GetName())
 		if err := r.k8sClient.Patch(ctx, resource, client.Apply, fieldOwner); err != nil {
 			return reconcile.Result{}, err
@@ -81,7 +84,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request ctrlruntime.Request)
 }
 
 func (r *reconciler) loadStaticResources() ([]client.Object, error) {
-	resources := []assets.Asset{
+	staticAssets := []assets.Asset{
 		{
 			File:   "service-account.yaml",
 			Object: &v1.ServiceAccount{},
@@ -89,10 +92,6 @@ func (r *reconciler) loadStaticResources() ([]client.Object, error) {
 		{
 			File:   "cluster-role.yaml",
 			Object: &authorizationv1.ClusterRole{},
-		},
-		{
-			File:   "cluster-role-binding.yaml",
-			Object: &authorizationv1.ClusterRoleBinding{},
 		},
 		{
 			File:   "deployment.yaml",
@@ -111,8 +110,36 @@ func (r *reconciler) loadStaticResources() ([]client.Object, error) {
 			assets.NewCRDAsset("crds/servicemonitors.yaml"),
 			assets.NewCRDAsset("crds/thanosrulers.yaml"),
 		}
-		resources = append(crds, resources...)
+		staticAssets = append(crds, staticAssets...)
 	}
 
-	return r.assetLoader.Load(resources)
+	resources, err := r.assetLoader.Load(staticAssets)
+	if err != nil {
+		return nil, err
+	}
+
+	crb := &authorizationv1.ClusterRoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "rbac.authorization.k8s.io/v1",
+			Kind:       "ClusterRoleBinding",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "monitoring-stack-operator-prometheus-operator",
+		},
+		Subjects: []authorizationv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      "monitoring-stack-operator-prometheus-operator",
+				Namespace: r.opts.Namespace,
+			},
+		},
+		RoleRef: authorizationv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "ClusterRole",
+			Name:     "monitoring-stack-operator-prometheus-operator",
+		},
+	}
+	resources = append(resources, crb)
+
+	return resources, nil
 }
