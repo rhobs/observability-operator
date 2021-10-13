@@ -49,9 +49,9 @@ func TestPrometheusOperatorForNonOwnedResources(t *testing.T) {
 		{
 			name: "Operator should not reconcile resources which it does not own",
 			scenario: func(t *testing.T) {
-				f.AssertResourceNeverExists(prometheusStsName, "default", &appsv1.StatefulSet{})(t)
-				f.AssertResourceNeverExists(alertmanagerStsName, "default", &appsv1.StatefulSet{})(t)
-				f.AssertResourceNeverExists(thanosRulerStsName, "default", &appsv1.StatefulSet{})(t)
+				f.AssertResourceNeverExists(prometheusStsName, e2eTestNamespace, &appsv1.StatefulSet{})(t)
+				f.AssertResourceNeverExists(alertmanagerStsName, e2eTestNamespace, &appsv1.StatefulSet{})(t)
+				f.AssertResourceNeverExists(thanosRulerStsName, e2eTestNamespace, &appsv1.StatefulSet{})(t)
 			},
 		},
 	}
@@ -77,9 +77,9 @@ func TestPrometheusOperatorForOwnedResources(t *testing.T) {
 		{
 			name: "Operator should reconcile resources which it does owns",
 			scenario: func(t *testing.T) {
-				f.AssertResourceEventuallyExists(prometheusStsName, "default", &appsv1.StatefulSet{})(t)
-				f.AssertResourceEventuallyExists(alertmanagerStsName, "default", &appsv1.StatefulSet{})(t)
-				f.AssertResourceEventuallyExists(thanosRulerStsName, "default", &appsv1.StatefulSet{})(t)
+				f.AssertResourceEventuallyExists(prometheusStsName, e2eTestNamespace, &appsv1.StatefulSet{})(t)
+				f.AssertResourceEventuallyExists(alertmanagerStsName, e2eTestNamespace, &appsv1.StatefulSet{})(t)
+				f.AssertResourceEventuallyExists(thanosRulerStsName, e2eTestNamespace, &appsv1.StatefulSet{})(t)
 			},
 		},
 	}

@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: prometheus-operator
+  name: monitoring-stack-operator-prometheus-operator
 spec:
   replicas: 1
   selector:
@@ -20,7 +20,7 @@ spec:
         app.kubernetes.io/part-of: monitoring-stack-operator
         app.kubernetes.io/version: 0.50.0
     spec:
-      serviceAccountName: prometheus-operator
+      serviceAccountName: monitoring-stack-operator-prometheus-operator
       containers:
         - args:
             - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.50.0
