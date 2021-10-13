@@ -143,9 +143,9 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
 .PHONY: bundle
 bundle: $(KUSTOMIZE) $(OPERATOR_SDK) generate
-	cd deploy/operator && \
-		$(KUSTOMIZE) edit set image monitoring-stack-operator=$(OPERATOR_IMG) && \
-		$(KUSTOMIZE) edit set label app.kubernetes.io/version:$(VERSION)
+	cd deploy/olm && \
+		$(KUSTOMIZE) edit set image monitoring-stack-operator=$(OPERATOR_IMG)
+
 	$(KUSTOMIZE) build deploy/olm | tee tmp/pre-bundle.yaml |  \
 	 	$(OPERATOR_SDK) generate bundle \
 			--overwrite \
