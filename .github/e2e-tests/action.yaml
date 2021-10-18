@@ -14,10 +14,16 @@ inputs:
     required: false
     default: 'kindest/node:v1.22.0'
 
-runs-on:
 runs:
   using: composite
   steps:
+    - name: Start KinD
+      uses: engineerd/setup-kind@v0.5.0
+      with:
+        version: ${{ inputs.kind-version }}
+        image: ${{ inputs.kind-image }}
+        wait: 0s
+
     - uses: actions/setup-go@v2.1.4
       with:
         go-version: 1.16
@@ -25,13 +31,6 @@ runs:
     - name: Build images
       run: make operator-image
       shell: bash
-
-    - name: Start KinD
-      uses: engineerd/setup-kind@v0.5.0
-      with:
-        version: ${{ inputs.kind-version }}
-        image: ${{ inputs.kind-image }}
-        wait: 300s
 
     - name: Wait for cluster to finish bootstraping
       shell: bash
