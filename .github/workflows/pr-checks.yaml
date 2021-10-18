@@ -1,0 +1,63 @@
+name: checks
+on:
+  pull_request:
+
+env:
+  go-version: '1.16'
+
+jobs:
+  commit-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - uses: wagoid/commitlint-github-action@v4
+
+  golang-lint:
+    runs-on: ubuntu-latest
+    name: Golang linter
+    steps:
+      - uses: actions/checkout@v2
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: v1.42.1
+          args: --timeout 10m0s
+
+  generate:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - macos-latest
+          - ubuntu-latest
+    name: Generate and format
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: ${{ env.go-version }}
+      - run: make --always-make generate && git diff --exit-code
+
+  build-bundle-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Go environment
+        uses: actions/setup-go@v2.1.4
+        with:
+          go-version: ${{ env.go-version }}
+
+      - name: Build Bundle Image
+        run: make bundle-image
+
+  e2e-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: e2e tests
+        uses: ./.github/e2e-tests
+        with:
+          go-version: ${{ env.go-version }}
