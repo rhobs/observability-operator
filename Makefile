@@ -91,12 +91,17 @@ generate-crds: $(CONTROLLER_GEN)
 		output:rbac:dir=./deploy/operator \
 		output:crd:dir=./deploy/crds
 
+.PHONY: generate-kustomize
+generate-kustomize: $(KUSTOMIZE)
+	cd deploy/operator && \
+		$(KUSTOMIZE) edit set image monitoring-stack-operator=*:$(VERSION)
+
 .PHONY: generate-deepcopy
 generate-deepcopy: $(CONTROLLER_GEN)
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./pkg/apis/..."
 
 .PHONY: generate
-generate: generate-crds generate-deepcopy
+generate: generate-crds generate-deepcopy generate-kustomize
 
 operator: generate
 	go build -o ./tmp/operator ./cmd/operator/...
