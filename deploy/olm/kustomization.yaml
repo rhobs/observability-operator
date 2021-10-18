@@ -9,7 +9,6 @@ kind: Kustomization
 images:
   - name: monitoring-stack-operator
     newName: quay.io/sthaha/monitoring-stack-operator
-    newTag: 0.0.1
 
 patches:
 - patch: |-
