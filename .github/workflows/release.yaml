@@ -24,10 +24,13 @@ jobs:
       - e2e-tests
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
 
       - name: Set version
         id: version
         run: |
+          npx standard-version --skip.commit --skip.tag --skip.changelog
           version="$(cat VERSION)-$(date +%y%m%d%H%M%S)"
           echo "::set-output name=version::$version"
 
