@@ -27,6 +27,10 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Bumping the version in the next step will also run code generation scripts
+      # that depend on controller-gen.
+      # Therefore, we first need to setup Go so that we can install the
+      # controller-gen binary.
       - name: Setup Go environment
         uses: actions/setup-go@v2.1.4
         with:
