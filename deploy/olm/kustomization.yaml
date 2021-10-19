@@ -11,11 +11,3 @@ images:
 - name: monitoring-stack-operator
   newName: monitoring-stack-operator
   newTag: 0.0.2
-patches:
-- patch: |-
-    - op: add
-      path: /spec/template/spec/containers/0/args/-
-      value: --deploy-prometheus-operator-crds=false
-  target:
-    kind: Deployment
-    name: monitoring-stack-operator

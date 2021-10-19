@@ -31,7 +31,6 @@ func TestMain(m *testing.M) {
 }
 
 func main(m *testing.M) int {
-	// setLogger()
 	if err := setupFramework(); err != nil {
 		log.Println(err)
 		return 1

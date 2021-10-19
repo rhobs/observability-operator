@@ -49,3 +49,20 @@ func (f *Framework) AssertResourceEventuallyExists(name string, namespace string
 		}
 	}
 }
+
+func (f *Framework) GetResourceWithRetry(t *testing.T, name, namespace string, obj client.Object) {
+	err := wait.Poll(5*time.Second, wait.ForeverTestTimeout, func() (bool, error) {
+		key := types.NamespacedName{Name: name, Namespace: namespace}
+
+		if err := f.K8sClient.Get(context.Background(), key, obj); errors.IsNotFound(err) {
+			// retry
+			return false, nil
+		}
+
+		return true, nil
+	})
+
+	if err == wait.ErrWaitTimeout {
+		t.Fatal(fmt.Errorf("resource %s/%s was never created", namespace, name))
+	}
+}
