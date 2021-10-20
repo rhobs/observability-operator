@@ -2,12 +2,16 @@ package e2e
 
 import (
 	"context"
+	"flag"
 	"log"
 	"os"
 	prometheus_operator "rhobs/monitoring-stack-operator/pkg/controllers/prometheus-operator"
 	"rhobs/monitoring-stack-operator/pkg/operator"
 	"rhobs/monitoring-stack-operator/test/e2e/framework"
 	"testing"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,11 +22,15 @@ import (
 
 var (
 	f *framework.Framework
+
+	withOperator = flag.Bool("with-operator", true, "Runs the operator together with the e2e tests. Disable this flag when running the tests against a cluster where the operator is already deployed.")
 )
 
 const e2eTestNamespace = "e2e-tests"
 
 func TestMain(m *testing.M) {
+	flag.Parse()
+
 	// Deferred calls are not executed on os.Exit from TestMain.
 	// As a workaround, we call another function in which we can add deferred calls.
 	// http://blog.englund.nu/golang,/testing/2017/03/12/using-defer-in-testmain.html
@@ -32,12 +40,10 @@ func TestMain(m *testing.M) {
 
 func main(m *testing.M) int {
 	setLogger()
-	op, err := createOperator()
-	if err != nil {
+	if err := setupFramework(); err != nil {
 		log.Println(err)
 		return 1
 	}
-	setupFramework(op)
 
 	cleanup, err := createTestNamespace()
 	if err != nil {
@@ -45,8 +51,6 @@ func main(m *testing.M) int {
 		return 1
 	}
 	defer cleanup()
-
-	go runOperator(op, ctrl.SetupSignalHandler())
 	return m.Run()
 }
 
@@ -57,10 +61,30 @@ func runOperator(op *operator.Operator, ctx context.Context) {
 	}
 }
 
-func setupFramework(op *operator.Operator) {
-	f = &framework.Framework{
-		K8sClient: op.GetClient(),
+func setupFramework() error {
+	var frameworkClient client.Client
+	if *withOperator {
+		op, err := createOperator()
+		if err != nil {
+			return err
+		}
+		frameworkClient = op.GetClient()
+		go runOperator(op, ctrl.SetupSignalHandler())
+	} else {
+		k8sClient, err := client.New(config.GetConfigOrDie(), client.Options{
+			Scheme: operator.NewScheme(),
+		})
+		if err != nil {
+			return err
+		}
+		frameworkClient = k8sClient
 	}
+
+	f = &framework.Framework{
+		K8sClient: frameworkClient,
+	}
+
+	return nil
 }
 
 func setLogger() {
