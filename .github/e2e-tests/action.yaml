@@ -45,6 +45,17 @@ runs:
       run: |
         kind load docker-image monitoring-stack-operator:$(cat VERSION)
 
+    - name: Deploy the operator
+      shell: bash
+      run: |
+        kubectl apply -k deploy/crds
+        kubectl apply -k deploy/operator
+
+    - name: Wait for CRDs to become ready
+      shell: bash
+      run: |
+        kubectl wait --for=condition=Established crds --all --timeout=300s
+
     - name: Run tests
       shell: bash
-      run: go test ./test/e2e/...
+      run: go test ./test/e2e/... --with-operator=false
