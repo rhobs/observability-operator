@@ -26,6 +26,7 @@ var (
 	withOperator = flag.Bool("with-operator", true, "Runs the operator together with the e2e tests. Disable this flag when running the tests against a cluster where the operator is already deployed.")
 )
 
+const operatorNamespace = "operators"
 const e2eTestNamespace = "e2e-tests"
 
 func TestMain(m *testing.M) {
@@ -45,7 +46,16 @@ func main(m *testing.M) int {
 		return 1
 	}
 
-	cleanup, err := createTestNamespace()
+	if *withOperator {
+		cleanup, err := createNamespace(operatorNamespace)
+		if err != nil {
+			log.Println(err)
+			return 1
+		}
+		defer cleanup()
+	}
+
+	cleanup, err := createNamespace(e2eTestNamespace)
 	if err != nil {
 		log.Println(err)
 		return 1
@@ -63,6 +73,7 @@ func runOperator(op *operator.Operator, ctx context.Context) {
 
 func setupFramework() error {
 	var frameworkClient client.Client
+
 	if *withOperator {
 		op, err := createOperator()
 		if err != nil {
@@ -95,11 +106,13 @@ func setLogger() {
 }
 
 func createOperator() (*operator.Operator, error) {
-	op, err := operator.New("", prometheus_operator.Options{
-		Namespace:  e2eTestNamespace,
-		AssetsPath: "../../assets/prometheus-operator/",
-		DeployCRDs: true,
-	})
+	op, err := operator.New("",
+		prometheus_operator.Options{
+			Namespace:  operatorNamespace,
+			AssetsPath: "../../assets/prometheus-operator/",
+			DeployCRDs: true,
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -107,14 +120,14 @@ func createOperator() (*operator.Operator, error) {
 	return op, nil
 }
 
-func createTestNamespace() (func(), error) {
+func createNamespace(name string) (func(), error) {
 	ns := &v1.Namespace{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Namespace",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: e2eTestNamespace,
+			Name: name,
 		},
 	}
 	if err := f.K8sClient.Create(context.Background(), ns); err != nil {
