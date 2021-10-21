@@ -1,7 +1,8 @@
 resources:
 - clusterrolebindings.yaml
 - deployment.yaml
-- prometheus_operator_clusterrole.yaml
+- prometheus-operator-cluster-role.yaml
+- grafana-operator-cluster-role.yaml
 - role.yaml
 - serviceaccount.yaml
 
