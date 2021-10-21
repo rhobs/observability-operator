@@ -1,4 +1,4 @@
-package prometheus_operator
+package eventsource
 
 import (
 	"time"
@@ -11,19 +11,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-// tickerSource is a source.Source that sends stub events every 30 seconds.
-// tickerSource can be used as a source which controllers can watch
+// TickerSource is a source.Source that sends stub events every 30 seconds.
+// TickerSource can be used as a source which controllers can watch
 // to trigger periodic reconciliation loops.
-type tickerSource struct {
+type TickerSource struct {
 	source.Channel
 	ticker  *time.Ticker
 	channel chan event.GenericEvent
 }
 
-// newTickerSource creates a new tickerSource
-func newTickerSource() *tickerSource {
+// NewTickerSource creates a new TickerSource
+func NewTickerSource() *TickerSource {
 	channel := make(chan event.GenericEvent, 1)
-	return &tickerSource{
+	return &TickerSource{
 		Channel: source.Channel{
 			Source: channel,
 		},
@@ -32,16 +32,16 @@ func newTickerSource() *tickerSource {
 	}
 }
 
-// tickerSource starts sending events to the source.
-func (t *tickerSource) run() {
+// Run starts sending events to the source.
+func (t *TickerSource) Run() {
 	t.tick()
 	for range t.ticker.C {
 		t.tick()
 	}
 }
 
-// tickerSource sends a single event to the source.
-func (t *tickerSource) tick() {
+// tick sends a single event to the source.
+func (t *TickerSource) tick() {
 	t.channel <- event.GenericEvent{
 		Object: newObjectStub(),
 	}
