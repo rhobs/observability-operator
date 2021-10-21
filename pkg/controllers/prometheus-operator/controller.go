@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"rhobs/monitoring-stack-operator/pkg/assets"
+	"rhobs/monitoring-stack-operator/pkg/eventsource"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -50,12 +51,12 @@ func RegisterWithManager(mgr manager.Manager, opts Options) error {
 		return err
 	}
 
-	ticker := newTickerSource()
+	ticker := eventsource.NewTickerSource()
 	if err := ctrl.Watch(ticker, &handler.EnqueueRequestForObject{}); err != nil {
 		return nil
 	}
 
-	go ticker.run()
+	go ticker.Run()
 
 	return nil
 }
