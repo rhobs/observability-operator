@@ -37,11 +37,14 @@ to the controller-gen CLI page in the Kubebuilder documentation: https://book.ku
 * Install [kind](https://github.com/kubernetes-sigs/kind)
 * Create a local kubernetes cluster with `kind create cluster`.
 * Apply the CRDs by running `kubectl apply -k deploy/crds/kubernetes`
+  * Install OLM locally by running
+    ```
+    make $(pwd)/tmp/bin/operator-sdk 
+    ./tmp/bin/operator-sdk olm install 
+    ```
 * Apply the dependecies; i.e - Prometheus Operator and Grafana Operator by running
     ```
-    kubectl create namespace operators
     kubectl apply -k deploy/dependencies
-
     ```
 * Set the `KUBECONFIG` environment variable to your local cluster and run the
   operator with `go run cmd/operator/main.go`.
