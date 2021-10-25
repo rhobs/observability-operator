@@ -61,3 +61,12 @@ jobs:
         uses: ./.github/e2e-tests
         with:
           go-version: ${{ env.go-version }}
+
+  e2e-tests-olm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: e2e tests through OLM
+        uses: ./.github/e2e-tests-olm
+        with:
+          go-version: ${{ env.go-version }}
