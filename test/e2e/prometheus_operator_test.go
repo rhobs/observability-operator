@@ -49,9 +49,18 @@ func TestPrometheusOperatorForNonOwnedResources(t *testing.T) {
 		{
 			name: "Operator should not reconcile resources which it does not own",
 			scenario: func(t *testing.T) {
-				f.AssertResourceNeverExists(prometheusStsName, e2eTestNamespace, &appsv1.StatefulSet{})(t)
-				f.AssertResourceNeverExists(alertmanagerStsName, e2eTestNamespace, &appsv1.StatefulSet{})(t)
-				f.AssertResourceNeverExists(thanosRulerStsName, e2eTestNamespace, &appsv1.StatefulSet{})(t)
+				t.Run("Prometheus never exists", func(t *testing.T) {
+					t.Parallel()
+					f.AssertResourceNeverExists(prometheusStsName, e2eTestNamespace, &appsv1.StatefulSet{})(t)
+				})
+				t.Run("Alertmanager never exists", func(t *testing.T) {
+					t.Parallel()
+					f.AssertResourceNeverExists(alertmanagerStsName, e2eTestNamespace, &appsv1.StatefulSet{})(t)
+				})
+				t.Run("Thanos Ruler never exists", func(t *testing.T) {
+					t.Parallel()
+					f.AssertResourceNeverExists(thanosRulerStsName, e2eTestNamespace, &appsv1.StatefulSet{})(t)
+				})
 			},
 		},
 	}
@@ -77,9 +86,18 @@ func TestPrometheusOperatorForOwnedResources(t *testing.T) {
 		{
 			name: "Operator should reconcile resources which it does owns",
 			scenario: func(t *testing.T) {
-				f.AssertResourceEventuallyExists(prometheusStsName, e2eTestNamespace, &appsv1.StatefulSet{})(t)
-				f.AssertResourceEventuallyExists(alertmanagerStsName, e2eTestNamespace, &appsv1.StatefulSet{})(t)
-				f.AssertResourceEventuallyExists(thanosRulerStsName, e2eTestNamespace, &appsv1.StatefulSet{})(t)
+				t.Run("Prometheus eventually exists", func(t *testing.T) {
+					t.Parallel()
+					f.AssertResourceEventuallyExists(prometheusStsName, e2eTestNamespace, &appsv1.StatefulSet{})(t)
+				})
+				t.Run("Alertmanager eventually exists", func(t *testing.T) {
+					t.Parallel()
+					f.AssertResourceEventuallyExists(alertmanagerStsName, e2eTestNamespace, &appsv1.StatefulSet{})(t)
+				})
+				t.Run("Thanos Ruler eventually exists", func(t *testing.T) {
+					t.Parallel()
+					f.AssertResourceEventuallyExists(thanosRulerStsName, e2eTestNamespace, &appsv1.StatefulSet{})(t)
+				})
 			},
 		},
 	}
