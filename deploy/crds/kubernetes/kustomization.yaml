@@ -1,0 +1,11 @@
+---
+resources:
+  - ../common
+  - alertmanagerconfigs.yaml
+  - alertmanagers.yaml
+  - podmonitors.yaml
+  - probes.yaml
+  - prometheuses.yaml
+  - prometheusrules.yaml
+  - servicemonitors.yaml
+  - thanosrulers.yaml

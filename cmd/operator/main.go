@@ -19,7 +19,6 @@ package main
 import (
 	"flag"
 	"os"
-	poctrl "rhobs/monitoring-stack-operator/pkg/controllers/prometheus-operator"
 	"rhobs/monitoring-stack-operator/pkg/operator"
 
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -52,12 +51,7 @@ func main() {
 		"namespace", namespace,
 		"metrics-bind-address", metricsAddr)
 
-	poOpts := poctrl.Options{
-		Namespace:  namespace,
-		AssetsPath: "./assets/prometheus-operator/",
-		DeployCRDs: deployPrometheusOperatorCRDs,
-	}
-	op, err := operator.New(metricsAddr, poOpts)
+	op, err := operator.New(metricsAddr)
 	if err != nil {
 		setupLog.Error(err, "cannot create a new operator")
 		os.Exit(1)
