@@ -3,6 +3,10 @@ resources:
 - prometheus-operator-service-account.yaml
 - prometheus-operator-cluster-role.yaml
 - prometheus-operator-cluster-role-binding.yaml
+- grafana-operator-deployment.yaml
+- grafana-operator-service-account.yaml
+- grafana-operator-cluster-role.yaml
+- grafana-operator-cluster-role-binding.yaml
 - monitoring-stack-operator-deployment.yaml
 - monitoring-stack-operator-service-account.yaml
 - monitoring-stack-operator-cluster-role.yaml

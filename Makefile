@@ -159,6 +159,10 @@ bundle: $(KUSTOMIZE) $(OPERATOR_SDK) generate
 			--kustomize-dir=deploy/olm \
 			--package=monitoring-stack-operator \
 		 	$(BUNDLE_METADATA_OPTS)
+	cat bundle/manifests/monitoring-stack-operator.clusterserviceversion.yaml \
+		| sed "s/metadata\.annotations\['olm\.targetNamespaces'\]/metadata.namespace/g" > tmp/csv.yaml
+	mv tmp/csv.yaml bundle/manifests/monitoring-stack-operator.clusterserviceversion.yaml
+
 	$(OPERATOR_SDK) bundle validate ./bundle
 
 .PHONY: bundle-image

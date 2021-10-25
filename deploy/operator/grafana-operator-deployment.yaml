@@ -13,7 +13,7 @@ spec:
       labels:
         control-plane: controller-manager
     spec:
-      serviceAccountName: monitoring-stack-operator-grafana-operator
+      serviceAccountName: monitoring-stack-operator-grafana-operator-sa
       containers:
         - name: grafana-operator
           args:

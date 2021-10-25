@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/go-logr/logr v0.4.0
+	github.com/grafana-operator/grafana-operator/v4 v4.0.1 // indirect
 	github.com/prometheus-operator/prometheus-operator v0.49.0
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.49.0
 	k8s.io/api v0.21.2

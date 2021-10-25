@@ -1,3 +1,7 @@
 ---
 resources:
   - monitoring.rhobs_monitoringstacks.yaml
+  - grafanadashboards.yaml
+  - grafanadatasources.yaml
+  - grafananotificationchannels.yaml
+  - grafanas.yaml
