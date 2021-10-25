@@ -89,7 +89,8 @@ generate-crds: $(CONTROLLER_GEN)
 		rbac:roleName=monitoring-stack-operator \
 		output:dir=. \
 		output:rbac:dir=./deploy/operator \
-		output:crd:dir=./deploy/crds
+		output:crd:dir=./deploy/crds/common
+	mv deploy/operator/role.yaml deploy/operator/monitoring-stack-operator-cluster-role.yaml
 
 .PHONY: generate-kustomize
 generate-kustomize: $(KUSTOMIZE)

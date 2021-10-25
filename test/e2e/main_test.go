@@ -5,7 +5,6 @@ import (
 	"flag"
 	"log"
 	"os"
-	prometheus_operator "rhobs/monitoring-stack-operator/pkg/controllers/prometheus-operator"
 	"rhobs/monitoring-stack-operator/pkg/operator"
 	"rhobs/monitoring-stack-operator/test/e2e/framework"
 	"testing"
@@ -106,13 +105,7 @@ func setLogger() {
 }
 
 func createOperator() (*operator.Operator, error) {
-	op, err := operator.New("",
-		prometheus_operator.Options{
-			Namespace:  operatorNamespace,
-			AssetsPath: "../../assets/prometheus-operator/",
-			DeployCRDs: true,
-		},
-	)
+	op, err := operator.New("")
 	if err != nil {
 		return nil, err
 	}

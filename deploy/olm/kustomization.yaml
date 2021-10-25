@@ -1,5 +1,5 @@
 resources:
-- ../crds
+- ../crds/common
 - ../operator
 - ../scorecard
 - ../samples
@@ -9,7 +9,6 @@ kind: Kustomization
 images:
   - name: monitoring-stack-operator
     newName: quay.io/sthaha/monitoring-stack-operator
-
 patches:
 - patch: |-
     - op: add

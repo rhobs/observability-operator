@@ -20,7 +20,7 @@ spec:
         app.kubernetes.io/part-of: monitoring-stack-operator
         app.kubernetes.io/version: 0.50.0
     spec:
-      serviceAccountName: monitoring-stack-operator-prometheus-operator
+      serviceAccountName: monitoring-stack-operator-prometheus-operator-sa
       containers:
         - args:
             - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.50.0

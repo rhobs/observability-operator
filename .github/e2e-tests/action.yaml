@@ -48,7 +48,7 @@ runs:
     - name: Deploy the operator
       shell: bash
       run: |
-        kubectl apply -k deploy/crds
+        kubectl apply -k deploy/crds/kubernetes
         cd deploy/operator
         kustomize edit set namespace operators
         kubectl create ns operators

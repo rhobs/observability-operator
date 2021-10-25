@@ -1,13 +1,16 @@
 resources:
-- clusterrolebindings.yaml
-- deployment.yaml
+- prometheus-operator-deployment.yaml
+- prometheus-operator-service-account.yaml
 - prometheus-operator-cluster-role.yaml
-- grafana-operator-cluster-role.yaml
-- role.yaml
-- serviceaccount.yaml
+- prometheus-operator-cluster-role-binding.yaml
+- monitoring-stack-operator-deployment.yaml
+- monitoring-stack-operator-service-account.yaml
+- monitoring-stack-operator-cluster-role.yaml
+- monitoring-stack-operator-cluster-role-binding.yaml
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
 - name: monitoring-stack-operator
   newTag: 0.0.2
+namespace: operators

@@ -3,7 +3,6 @@ package operator
 import (
 	"context"
 	"fmt"
-	poctrl "rhobs/monitoring-stack-operator/pkg/controllers/prometheus-operator"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -15,7 +14,7 @@ type Operator struct {
 	manager manager.Manager
 }
 
-func New(metricsAddr string, poOpts poctrl.Options) (*Operator, error) {
+func New(metricsAddr string) (*Operator, error) {
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             NewScheme(),
 		MetricsBindAddress: metricsAddr,
@@ -23,11 +22,6 @@ func New(metricsAddr string, poOpts poctrl.Options) (*Operator, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to create manager: %w", err)
 	}
-
-	if err := poctrl.RegisterWithManager(mgr, poOpts); err != nil {
-		return nil, fmt.Errorf("unable to register prometheus-operator controller: %w", err)
-	}
-
 	return &Operator{
 		manager: mgr,
 	}, nil

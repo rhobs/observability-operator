@@ -1,10 +1,6 @@
 // +groupName=monitoring.rhobs
 // +kubebuilder:rbac:groups=monitoring.rhobs,resources=monitoringstacks,verbs=list;get;watch
 // +kubebuilder:rbac:groups=monitoring.rhobs,resources=monitoringstacks/status;monitoringstacks/finalizers,verbs=get;update
-// +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=create;update;patch
-// +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=create;update;patch
-// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles;clusterrolebindings,verbs=create;update;patch
-// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=create;update;patch
 
 package v1alpha1
 
