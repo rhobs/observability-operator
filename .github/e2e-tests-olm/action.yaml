@@ -1,0 +1,75 @@
+name: e2e-tests-olm
+description: Runs E2E tests against the OLM bundle
+inputs:
+  go-version:
+    description: "go version"
+    required: false
+    default: 1.16
+  kind-version:
+    description: "kind version"
+    required: false
+    default: 'v0.11.1'
+  kind-image:
+    description: "kind version"
+    required: false
+    default: 'kindest/node:v1.22.0'
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-go@v2.1.4
+      with:
+        go-version: 1.16
+
+    - uses: azure/setup-kubectl@v1
+
+    - name: Start KinD
+      uses: engineerd/setup-kind@v0.5.0
+      with:
+        version: ${{ inputs.kind-version }}
+        image: ${{ inputs.kind-image }}
+        wait: 300s
+        config: ./hack/kind/config.yaml
+
+    - name: Install OLM
+      shell: bash
+      run: |
+        make operator-sdk
+        ./tmp/bin/operator-sdk olm install
+
+    - name: Create a local docker registry in the Kind cluster
+      shell: bash
+      run: |
+        kubectl apply -f hack/kind/registry.yaml
+        kubectl rollout status deployment local-registry
+        # Expose the registry to the host so that we can build and push the image
+        kubectl port-forward svc/local-registry 5000:5000 &
+        echo "127.0.0.1 local-registry" | sudo tee -a /etc/hosts
+
+    - name: Build images
+      run: make operator-image bundle bundle-image IMAGE_BASE="local-registry:5000/monitoring-stack-operator" VERSION=0.0.0-ci
+      shell: bash
+
+    - name: Wait for cluster to finish bootstraping
+      shell: bash
+      run: |
+        kubectl wait --for=condition=Ready pods --all --all-namespaces --timeout=300s
+        kubectl cluster-info
+        kubectl get pods -A
+
+    - name: Publish images
+      run: make operator-push bundle-push IMAGE_BASE="local-registry:5000/monitoring-stack-operator" VERSION=0.0.0-ci
+      shell: bash
+
+    - name: Deploy the operator
+      shell: bash
+      run: |
+        # TODO: build a kubernetes-specific bundle to avoid doing this
+        kubectl apply -k deploy/crds/kubernetes
+        kubectl wait --for=condition=Established crds --all --timeout=300s
+
+        ./tmp/bin/operator-sdk run bundle local-registry:5000/monitoring-stack-operator-bundle:0.0.0-ci --install-mode AllNamespaces --skip-tls
+
+    - name: Run tests
+      shell: bash
+      run: go test ./test/e2e/... --with-operator=false

@@ -1,0 +1,38 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: local-registry
+  name: local-registry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: local-registry
+  template:
+    metadata:
+      labels:
+        app: local-registry
+    spec:
+      containers:
+        - image: registry:2
+          name: registry
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: local-registry
+  name: local-registry
+spec:
+  # Use a fixed IP address so that we can use it in config.yaml to
+  # patch the registry address and force an http protocol
+  clusterIP: 10.96.223.192
+  ports:
+    - port: 5000
+      protocol: TCP
+      targetPort: 5000
+  selector:
+    app: local-registry
