@@ -75,3 +75,52 @@ type MonitoringStackStatus struct {
 	// TODO(sthaha): INSERT ADDITIONAL STATUS FIELDS -- observed state of prometheus
 	// ??
 }
+
+// NamespaceSelector is a selector for selecting either all namespaces or a
+// list of namespaces.
+// +k8s:openapi-gen=true
+type NamespaceSelector struct {
+	// Boolean describing whether all namespaces are selected in contrast to a
+	// list restricting them.
+	Any bool `json:"any,omitempty"`
+	// List of namespace names.
+	MatchNames []string `json:"matchNames,omitempty"`
+}
+
+// ThanosQuerier outlines the Thanos querier components, managed by this stack
+// +k8s:openapi-gen=true
+// +kubebuilder:resource
+// +kubebuilder:subresource:status
+type ThanosQuerier struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   ThanosQuerierSpec   `json:"spec,omitempty"`
+	Status ThanosQuerierStatus `json:"status,omitempty"`
+}
+
+// ThanosQuerierList contains a list of ThanosQuerier
+// +kubebuilder:resource
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type ThanosQuerierList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []ThanosQuerier `json:"items"`
+}
+
+// ThanosQuerierSpec defines a single Thanos Querier instance. This means a
+// label selector by which Monitoring Stack instances to query are selected, and
+// an optional namespace selector and a list of replica labels by which to
+// deduplicate.
+type ThanosQuerierSpec struct {
+	// Selector to select Monitoring stacks to unify
+	Selector metav1.LabelSelector `json:"selector"`
+	// Selector to select which namespaces the Monitoring Stack objects are discovered from.
+	NamespaceSelector NamespaceSelector `json:"namespaceSelector,omitempty"`
+	ReplicaLabels     []string          `json:"replicaLabels,omitempty"`
+}
+
+// ThanosQuerierStatus defines the observed state of ThanosQuerier.
+// It should always be reconstructable from the state of the cluster and/or outside world.
+type ThanosQuerierStatus struct {
+}
