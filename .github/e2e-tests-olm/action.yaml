@@ -72,4 +72,4 @@ runs:
 
     - name: Run tests
       shell: bash
-      run: go test ./test/e2e/... --with-operator=false
+      run: go test -v ./test/e2e/...
