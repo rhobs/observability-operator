@@ -1,8 +1,4 @@
 resources:
-- prometheus-operator-deployment.yaml
-- prometheus-operator-service-account.yaml
-- prometheus-operator-cluster-role.yaml
-- prometheus-operator-cluster-role-binding.yaml
 - monitoring-stack-operator-deployment.yaml
 - monitoring-stack-operator-service-account.yaml
 - monitoring-stack-operator-cluster-role.yaml

@@ -1,5 +1,6 @@
 resources:
 - ../crds/common
+- ../dependencies
 - ../operator
 - ../scorecard
 - ../samples
@@ -7,8 +8,9 @@ resources:
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
-  - name: monitoring-stack-operator
-    newName: quay.io/sthaha/monitoring-stack-operator
+- name: monitoring-stack-operator
+  newName: monitoring-stack-operator
+  newTag: 0.0.2
 patches:
 - patch: |-
     - op: add

@@ -1,0 +1,9 @@
+resources:
+- prometheus-operator-cluster-role-binding.yaml
+- prometheus-operator-cluster-role.yaml
+- prometheus-operator-deployment.yaml
+- prometheus-operator-service-account.yaml
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: operators
