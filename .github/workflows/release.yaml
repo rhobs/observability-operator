@@ -7,15 +7,6 @@ env:
   golang-version: '1.16'
 
 jobs:
-  e2e-tests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: e2e tests
-        uses: ./.github/e2e-tests
-        with:
-          go-version: ${{ env.go-version }}
-
   e2e-tests-olm:
     runs-on: ubuntu-latest
     steps:
@@ -30,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: quay
     needs:
-      - e2e-tests
+      - e2e-tests-olm
     steps:
       - uses: actions/checkout@v2
         with:
@@ -64,7 +55,7 @@ jobs:
 
   create-github-prerelease:
     needs:
-      - e2e-tests
+      - e2e-tests-olm
     runs-on: ubuntu-latest
     if: "startsWith(github.event.head_commit.message, 'chore(release):')"
     steps:
