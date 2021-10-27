@@ -48,17 +48,22 @@ runs:
     - name: Deploy the operator
       shell: bash
       run: |
+        # NOTE: e2e tests are run against the deployed operator, which in the absence
+        # OLM requires, crd, deploy/dependencies to be manually applied before
+        # running the test
+
         kubectl apply -k deploy/crds/kubernetes
-        cd deploy/operator
-        kustomize edit set namespace operators
+
         kubectl create ns operators
-        kubectl apply -k .
+        kubectl apply -k deploy/dependencies
+        kubectl apply -k deploy/operator
 
     - name: Wait for CRDs to become ready
       shell: bash
       run: |
         kubectl wait --for=condition=Established crds --all --timeout=300s
+        kubectl wait --for=condition=Ready pods --all -n operators --timeout=300s
 
     - name: Run tests
       shell: bash
-      run: go test ./test/e2e/... --with-operator=false
+      run: go test -v ./test/e2e/...

@@ -86,6 +86,7 @@ lint: $(GOLANGCI_LINT)
 generate-crds: $(CONTROLLER_GEN)
 	$(CONTROLLER_GEN) crd \
 		paths=./pkg/apis/... \
+		paths=./pkg/controllers/... \
 		rbac:roleName=monitoring-stack-operator \
 		output:dir=. \
 		output:rbac:dir=./deploy/operator \

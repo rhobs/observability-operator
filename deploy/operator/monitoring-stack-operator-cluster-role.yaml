@@ -7,13 +7,35 @@ metadata:
   name: monitoring-stack-operator
 rules:
 - apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - prometheuses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - monitoring.rhobs
   resources:
   - monitoringstacks
   verbs:
+  - create
+  - delete
   - get
   - list
+  - patch
+  - update
   - watch
+- apiGroups:
+  - monitoring.rhobs
+  resources:
+  - monitoringstacks/finalizers
+  verbs:
+  - update
 - apiGroups:
   - monitoring.rhobs
   resources:
@@ -21,4 +43,12 @@ rules:
   - monitoringstacks/status
   verbs:
   - get
+  - update
+- apiGroups:
+  - monitoring.rhobs
+  resources:
+  - monitoringstacks/status
+  verbs:
+  - get
+  - patch
   - update

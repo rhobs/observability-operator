@@ -3,6 +3,7 @@ package operator
 import (
 	"context"
 	"fmt"
+	stackctrl "rhobs/monitoring-stack-operator/pkg/controllers/monitoring-stack"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -10,6 +11,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
+// NOTE: The instance selector label is hardcoded in static assets.
+// Any change to that must be reflected here as well
+const instanceSelector = "app.kubernetes.io/managed-by=monitoring-stack-operator"
+
+// Operator embedds manager and exposes only the minimal set of functions
 type Operator struct {
 	manager manager.Manager
 }
@@ -21,6 +27,10 @@ func New(metricsAddr string) (*Operator, error) {
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to create manager: %w", err)
+	}
+
+	if err := stackctrl.RegisterWithManager(mgr, stackctrl.Options{InstanceSelector: instanceSelector}); err != nil {
+		return nil, fmt.Errorf("unable to register monitoring stack controller: %w", err)
 	}
 	return &Operator{
 		manager: mgr,

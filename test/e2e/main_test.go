@@ -2,7 +2,6 @@ package e2e
 
 import (
 	"context"
-	"flag"
 	"log"
 	"os"
 	"rhobs/monitoring-stack-operator/pkg/operator"
@@ -14,22 +13,15 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 var (
 	f *framework.Framework
-
-	withOperator = flag.Bool("with-operator", true, "Runs the operator together with the e2e tests. Disable this flag when running the tests against a cluster where the operator is already deployed.")
 )
 
-const operatorNamespace = "operators"
 const e2eTestNamespace = "e2e-tests"
 
 func TestMain(m *testing.M) {
-	flag.Parse()
 
 	// Deferred calls are not executed on os.Exit from TestMain.
 	// As a workaround, we call another function in which we can add deferred calls.
@@ -39,19 +31,9 @@ func TestMain(m *testing.M) {
 }
 
 func main(m *testing.M) int {
-	setLogger()
 	if err := setupFramework(); err != nil {
 		log.Println(err)
 		return 1
-	}
-
-	if *withOperator {
-		cleanup, err := createNamespace(operatorNamespace)
-		if err != nil {
-			log.Println(err)
-			return 1
-		}
-		defer cleanup()
 	}
 
 	cleanup, err := createNamespace(e2eTestNamespace)
@@ -63,54 +45,20 @@ func main(m *testing.M) int {
 	return m.Run()
 }
 
-func runOperator(op *operator.Operator, ctx context.Context) {
-	if err := op.Start(ctx); err != nil {
-		log.Println(err)
-		os.Exit(1)
-	}
-}
-
 func setupFramework() error {
-	var frameworkClient client.Client
 
-	if *withOperator {
-		op, err := createOperator()
-		if err != nil {
-			return err
-		}
-		frameworkClient = op.GetClient()
-		go runOperator(op, ctrl.SetupSignalHandler())
-	} else {
-		k8sClient, err := client.New(config.GetConfigOrDie(), client.Options{
-			Scheme: operator.NewScheme(),
-		})
-		if err != nil {
-			return err
-		}
-		frameworkClient = k8sClient
+	k8sClient, err := client.New(config.GetConfigOrDie(), client.Options{
+		Scheme: operator.NewScheme(),
+	})
+	if err != nil {
+		return err
 	}
 
 	f = &framework.Framework{
-		K8sClient: frameworkClient,
+		K8sClient: k8sClient,
 	}
 
 	return nil
-}
-
-func setLogger() {
-	opts := zap.Options{
-		Development: true,
-	}
-	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
-}
-
-func createOperator() (*operator.Operator, error) {
-	op, err := operator.New("")
-	if err != nil {
-		return nil, err
-	}
-
-	return op, nil
 }
 
 func createNamespace(name string) (func(), error) {

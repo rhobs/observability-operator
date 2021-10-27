@@ -2,4 +2,9 @@ apiVersion: monitoring.rhobs/v1alpha1
 kind: MonitoringStack
 metadata:
   name: sample-monitoring-stack
-spec: {}
+spec:
+  logLevel: debug
+  retention: 1d
+  resourceSelector:
+    matchLabels:
+      system: foo

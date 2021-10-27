@@ -25,20 +25,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
-var (
-	setupLog = ctrl.Log.WithName("setup")
-)
-
-var (
-	namespace                    string
-	metricsAddr                  string
-	deployPrometheusOperatorCRDs bool
-)
-
 func main() {
+	var (
+		namespace   string
+		metricsAddr string
+
+		setupLog = ctrl.Log.WithName("setup")
+	)
+
 	flag.StringVar(&namespace, "namespace", "default", "The namespace in which the operator runs")
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
-	flag.BoolVar(&deployPrometheusOperatorCRDs, "deploy-prometheus-operator-crds", true, "Whether the prometheus operator CRDs should be deployed")
 	opts := zap.Options{
 		Development: true,
 	}
