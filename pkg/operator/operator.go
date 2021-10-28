@@ -3,6 +3,7 @@ package operator
 import (
 	"context"
 	"fmt"
+	goctrl "rhobs/monitoring-stack-operator/pkg/controllers/grafana-operator"
 	stackctrl "rhobs/monitoring-stack-operator/pkg/controllers/monitoring-stack"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -32,6 +33,11 @@ func New(metricsAddr string) (*Operator, error) {
 	if err := stackctrl.RegisterWithManager(mgr, stackctrl.Options{InstanceSelector: instanceSelector}); err != nil {
 		return nil, fmt.Errorf("unable to register monitoring stack controller: %w", err)
 	}
+
+	if err := goctrl.RegisterWithManager(mgr); err != nil {
+		return nil, fmt.Errorf("unable to register the grafana operator controller with the manager: %w", err)
+	}
+
 	return &Operator{
 		manager: mgr,
 	}, nil

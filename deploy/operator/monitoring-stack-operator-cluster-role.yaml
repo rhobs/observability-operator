@@ -7,6 +7,22 @@ metadata:
   name: monitoring-stack-operator
 rules:
 - apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - create
+  - list
+- apiGroups:
+  - ""
+  resourceNames:
+  - monitoring-stack-operator
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - prometheuses
@@ -52,3 +68,24 @@ rules:
   - get
   - patch
   - update
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  creationTimestamp: null
+  name: monitoring-stack-operator
+  namespace: monitoring-stack-operator
+rules:
+- apiGroups:
+  - operators.coreos.com
+  resources:
+  - operatorgroups
+  - subscriptions
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - update
+  - watch
