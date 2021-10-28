@@ -156,7 +156,7 @@ func (r *reconciler) reconcileNamespace(ctx context.Context) error {
 
 	if errors.IsNotFound(err) {
 		r.logger.Info("Creating namespace", "Namespace", namespace)
-		return r.k8sClient.Create(ctx, newNamespace())
+		return r.k8sClient.Create(ctx, NewNamespace())
 	}
 
 	r.logger.Error(err, "error reconciling namespace ")
@@ -172,12 +172,12 @@ func (r *reconciler) reconcileOperatorGroup(ctx context.Context) error {
 	err := r.k8sClient.Get(ctx, key, &operatorGroup)
 	if err == nil {
 		r.logger.Info("Updating Grafana Operator OperatorGroup")
-		operatorGroup.Spec = newOperatorGroup().Spec
+		operatorGroup.Spec = NewOperatorGroup().Spec
 		return r.k8sClient.Update(ctx, &operatorGroup)
 	}
 	if errors.IsNotFound(err) {
 		r.logger.Info("Creating Grafana Operator OperatorGroup")
-		return r.k8sClient.Create(ctx, newOperatorGroup())
+		return r.k8sClient.Create(ctx, NewOperatorGroup())
 	}
 
 	r.logger.Error(err, "error reconciling operator group")
@@ -193,18 +193,18 @@ func (r *reconciler) reconcileSubscription(ctx context.Context) error {
 	err := r.k8sClient.Get(ctx, key, &subscription)
 	if err == nil {
 		r.logger.Info("Updating Grafana Operator Subscription")
-		subscription.Spec = newSubscription().Spec
+		subscription.Spec = NewSubscription().Spec
 		return r.k8sClient.Update(ctx, &subscription)
 	}
 	if errors.IsNotFound(err) {
 		r.logger.Info("Creating Grafana Operator Subscription")
-		return r.k8sClient.Create(ctx, newSubscription())
+		return r.k8sClient.Create(ctx, NewSubscription())
 	}
 
 	return err
 }
 
-func newNamespace() *corev1.Namespace {
+func NewNamespace() *corev1.Namespace {
 	return &corev1.Namespace{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -216,7 +216,7 @@ func newNamespace() *corev1.Namespace {
 	}
 }
 
-func newSubscription() *v1alpha1.Subscription {
+func NewSubscription() *v1alpha1.Subscription {
 	return &v1alpha1.Subscription{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "operators.coreos.com/v1alpha1",
@@ -237,7 +237,7 @@ func newSubscription() *v1alpha1.Subscription {
 	}
 }
 
-func newOperatorGroup() *operatorsv1.OperatorGroup {
+func NewOperatorGroup() *operatorsv1.OperatorGroup {
 	return &operatorsv1.OperatorGroup{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "operators.coreos.com/operatorsv1",
