@@ -2,7 +2,13 @@ package e2e
 
 import (
 	"context"
+	monitoringstack "rhobs/monitoring-stack-operator/pkg/controllers/monitoring-stack"
+	"rhobs/monitoring-stack-operator/test/e2e/framework"
 	"testing"
+	"time"
+
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 
 	stack "rhobs/monitoring-stack-operator/pkg/apis/v1alpha1"
 
@@ -41,6 +47,9 @@ func TestMonitoringStackController(t *testing.T) {
 		}, {
 			name:     "Controller reverts back changes to Prometheus",
 			scenario: reconcileRevertsManualChanges,
+		}, {
+			name:     "Prometheus stacks can scrape themselves",
+			scenario: assertPrometheusScrapesItself,
 		},
 	}
 
@@ -59,8 +68,17 @@ func emptyStackCreatesPrometheus(t *testing.T) {
 	f.GetResourceWithRetry(t, ms.Name, ms.Namespace, &prometheus)
 
 	expected := monv1.PrometheusSpec{
-		Retention: "120h",
-		LogLevel:  "info",
+		Retention:              "120h",
+		LogLevel:               "info",
+		ServiceMonitorSelector: &metav1.LabelSelector{},
+		PodMonitorSelector:     &metav1.LabelSelector{},
+		ServiceAccountName:     "empty-stack-prometheus",
+		AdditionalScrapeConfigs: &v1.SecretKeySelector{
+			LocalObjectReference: v1.LocalObjectReference{
+				Name: "empty-stack-prometheus-additional-scrape-configs",
+			},
+			Key: monitoringstack.AdditionalScrapeConfigsSelfScrapeKey,
+		},
 	}
 
 	assert.DeepEqual(t, expected, prometheus.Spec)
@@ -192,6 +210,39 @@ func validateStackRetention(t *testing.T) {
 	// cleanup
 	err = f.K8sClient.Delete(context.Background(), validMS)
 	assert.NilError(t, err, `deletion error`)
+}
+
+func assertPrometheusScrapesItself(t *testing.T) {
+	ms := newMonitoringStack("self-scrape")
+	err := f.K8sClient.Create(context.Background(), ms)
+	assert.NilError(t, err)
+	f.AssertResourceEventuallyExists("prometheus-self-scrape-0", e2eTestNamespace, &v1.Pod{})(t)
+
+	stopChan := make(chan struct{})
+	defer close(stopChan)
+	if err := wait.Poll(5*time.Second, wait.ForeverTestTimeout, func() (bool, error) {
+		err = f.StartPortForward("prometheus-self-scrape-0", e2eTestNamespace, "9090", stopChan)
+		return err == nil, nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	promClient := framework.NewPrometheusClient("http://localhost:9090")
+	if err := wait.Poll(5*time.Second, 5*time.Minute, func() (bool, error) {
+		query := "prometheus_tsdb_head_chunks"
+		result, err := promClient.Query(query)
+		if err != nil {
+			return false, nil
+		}
+
+		if len(result.Data.Result) == 0 {
+			return false, nil
+		}
+
+		return true, nil
+	}); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func newMonitoringStack(name string) *stack.MonitoringStack {

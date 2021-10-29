@@ -9,6 +9,16 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - endpoints
+  - pods
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - namespaces
   verbs:
   - create
@@ -23,15 +33,34 @@ rules:
   - get
   - watch
 - apiGroups:
-  - monitoring.coreos.com
+  - ""
   resources:
-  - prometheuses
+  - secrets
+  - serviceaccounts
   verbs:
   - create
   - delete
+  - list
+  - update
+  - watch
+- apiGroups:
+  - extensions
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
   - get
   - list
-  - patch
+  - watch
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - prometheuses
+  - servicemonitors
+  verbs:
+  - create
+  - delete
+  - list
   - update
   - watch
 - apiGroups:
@@ -40,22 +69,14 @@ rules:
   - monitoringstacks
   verbs:
   - create
-  - delete
   - get
   - list
-  - patch
   - update
   - watch
 - apiGroups:
   - monitoring.rhobs
   resources:
   - monitoringstacks/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - monitoring.rhobs
-  resources:
-  - monitoringstacks/finalizers
   - monitoringstacks/status
   verbs:
   - get
@@ -66,8 +87,18 @@ rules:
   - monitoringstacks/status
   verbs:
   - get
-  - patch
   - update
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - rolebindings
+  - roles
+  verbs:
+  - create
+  - delete
+  - list
+  - update
+  - watch
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -77,6 +108,16 @@ metadata:
   name: monitoring-stack-operator
   namespace: monitoring-stack-operator
 rules:
+- apiGroups:
+  - integreatly.org
+  resources:
+  - grafanadatasources
+  verbs:
+  - create
+  - delete
+  - list
+  - update
+  - watch
 - apiGroups:
   - operators.coreos.com
   resources:

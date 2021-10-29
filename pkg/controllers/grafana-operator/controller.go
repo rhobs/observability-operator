@@ -44,9 +44,9 @@ import (
 )
 
 const (
+	Namespace         = "monitoring-stack-operator"
 	subscriptionName  = "monitoring-stack-operator-grafana-operator"
 	operatorGroupName = "monitoring-stack-operator-grafana-operator"
-	namespace         = "monitoring-stack-operator"
 )
 
 type reconciler struct {
@@ -145,7 +145,7 @@ func (r *reconciler) Reconcile(ctx context.Context, _ controllerruntime.Request)
 
 func (r *reconciler) reconcileNamespace(ctx context.Context) error {
 	key := types.NamespacedName{
-		Name: namespace,
+		Name: Namespace,
 	}
 	var namespace corev1.Namespace
 	err := r.k8sClient.Get(ctx, key, &namespace)
@@ -166,7 +166,7 @@ func (r *reconciler) reconcileNamespace(ctx context.Context) error {
 func (r *reconciler) reconcileOperatorGroup(ctx context.Context) error {
 	key := types.NamespacedName{
 		Name:      operatorGroupName,
-		Namespace: namespace,
+		Namespace: Namespace,
 	}
 	var operatorGroup operatorsv1.OperatorGroup
 	err := r.k8sClient.Get(ctx, key, &operatorGroup)
@@ -187,7 +187,7 @@ func (r *reconciler) reconcileOperatorGroup(ctx context.Context) error {
 func (r *reconciler) reconcileSubscription(ctx context.Context) error {
 	key := types.NamespacedName{
 		Name:      subscriptionName,
-		Namespace: namespace,
+		Namespace: Namespace,
 	}
 	var subscription v1alpha1.Subscription
 	err := r.k8sClient.Get(ctx, key, &subscription)
@@ -211,7 +211,7 @@ func NewNamespace() *corev1.Namespace {
 			Kind:       "Namespace",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: namespace,
+			Name: Namespace,
 		},
 	}
 }
@@ -224,7 +224,7 @@ func NewSubscription() *v1alpha1.Subscription {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      subscriptionName,
-			Namespace: namespace,
+			Namespace: Namespace,
 		},
 		Spec: &v1alpha1.SubscriptionSpec{
 			CatalogSource:          "",
@@ -245,11 +245,11 @@ func NewOperatorGroup() *operatorsv1.OperatorGroup {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      operatorGroupName,
-			Namespace: namespace,
+			Namespace: Namespace,
 		},
 		Spec: operatorsv1.OperatorGroupSpec{
 			TargetNamespaces: []string{
-				namespace,
+				Namespace,
 			},
 		},
 	}
@@ -257,17 +257,17 @@ func NewOperatorGroup() *operatorsv1.OperatorGroup {
 
 func (r *reconciler) namespaceInformer() cache.SharedIndexInformer {
 	clientset := r.k8sClientset.CoreV1().RESTClient()
-	return singleResourceInformer(namespace, "", "namespaces", &corev1.Namespace{}, clientset)
+	return singleResourceInformer(Namespace, "", "namespaces", &corev1.Namespace{}, clientset)
 }
 
 func (r *reconciler) subscriptionInformer() cache.SharedIndexInformer {
 	clientset := r.olmClientset.OperatorsV1alpha1().RESTClient()
-	return singleResourceInformer(subscriptionName, namespace, "subscriptions", &v1alpha1.Subscription{}, clientset)
+	return singleResourceInformer(subscriptionName, Namespace, "subscriptions", &v1alpha1.Subscription{}, clientset)
 }
 
 func (r *reconciler) operatorGroupInformer() cache.SharedIndexInformer {
 	clientset := r.olmClientset.OperatorsV1().RESTClient()
-	return singleResourceInformer(operatorGroupName, namespace, "operatorgroups", &operatorsv1.OperatorGroup{}, clientset)
+	return singleResourceInformer(operatorGroupName, Namespace, "operatorgroups", &operatorsv1.OperatorGroup{}, clientset)
 }
 
 func singleResourceInformer(name string, namespace string, resource string, object runtime.Object, clientset rest.Interface) cache.SharedIndexInformer {
