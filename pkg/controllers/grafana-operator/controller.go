@@ -17,10 +17,20 @@ import (
 	"context"
 	"fmt"
 	"rhobs/monitoring-stack-operator/pkg/eventsource"
+	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	networkingv1 "k8s.io/api/networking/v1"
+
+	integreatlyv1alpha1 "github.com/grafana-operator/grafana-operator/v4/api/integreatly/v1alpha1"
+	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 
 	"github.com/operator-framework/operator-lifecycle-manager/pkg/api/client/clientset/versioned"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -34,7 +44,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	controllerruntime "sigs.k8s.io/controller-runtime"
@@ -47,19 +56,22 @@ const (
 	Namespace         = "monitoring-stack-operator"
 	subscriptionName  = "monitoring-stack-operator-grafana-operator"
 	operatorGroupName = "monitoring-stack-operator-grafana-operator"
+	grafanaName       = "monitoring-stack-operator-grafana"
 )
 
 type reconciler struct {
-	k8sClient    client.Client
-	scheme       *runtime.Scheme
-	logger       logr.Logger
-	olmClientset *versioned.Clientset
-	k8sClientset *kubernetes.Clientset
+	k8sClient        client.Client
+	scheme           *runtime.Scheme
+	logger           logr.Logger
+	olmClientset     *versioned.Clientset
+	k8sClientset     *kubernetes.Clientset
+	grafanaClientset rest.Interface
 }
 
-//+kubebuilder:rbac:groups=operators.coreos.com,resources=subscriptions;operatorgroups,verbs=get;list;watch;create;update;patch,namespace=monitoring-stack-operator
-//+kubebuilder:rbac:groups="",resources=namespaces,verbs=list;create
 //+kubebuilder:rbac:groups="",resources=namespaces,verbs=get;watch,resourceNames=monitoring-stack-operator
+//+kubebuilder:rbac:groups="",resources=namespaces,verbs=list;create
+//+kubebuilder:rbac:groups=operators.coreos.com,resources=subscriptions;operatorgroups,verbs=get;list;watch;create;update;patch,namespace=monitoring-stack-operator
+//+kubebuilder:rbac:groups=integreatly.org,namespace=monitoring-stack-operator,resources=grafanas,verbs=get;list;watch;create;update
 
 // RegisterWithManager registers the controller with Manager
 func RegisterWithManager(mgr controllerruntime.Manager) error {
@@ -73,13 +85,20 @@ func RegisterWithManager(mgr controllerruntime.Manager) error {
 		return fmt.Errorf("could not create new Kubernetes clientset: %w", err)
 	}
 
+	grafanaGVK := integreatlyv1alpha1.GroupVersion.WithKind("Grafana")
+	grafanaClientset, err := apiutil.RESTClientForGVK(grafanaGVK, false, mgr.GetConfig(), serializer.NewCodecFactory(mgr.GetScheme()))
+	if err != nil {
+		return fmt.Errorf("could not create new Grafana clientset: %w", err)
+	}
+
 	logger := controllerruntime.Log.WithName("grafana-operator")
 	r := &reconciler{
-		k8sClient:    mgr.GetClient(),
-		scheme:       mgr.GetScheme(),
-		logger:       logger,
-		olmClientset: olmClientset,
-		k8sClientset: k8sClientset,
+		k8sClient:        mgr.GetClient(),
+		scheme:           mgr.GetScheme(),
+		logger:           logger,
+		olmClientset:     olmClientset,
+		k8sClientset:     k8sClientset,
+		grafanaClientset: grafanaClientset,
 	}
 
 	ctrl, err := controller.New("grafana-operator", mgr, controller.Options{
@@ -91,7 +110,7 @@ func RegisterWithManager(mgr controllerruntime.Manager) error {
 		return err
 	}
 
-	ticker := eventsource.NewTickerSource()
+	ticker := eventsource.NewTickerSource(30 * time.Minute)
 	go ticker.Run()
 	if err := ctrl.Watch(ticker, &handler.EnqueueRequestForObject{}); err != nil {
 		return err
@@ -121,6 +140,14 @@ func RegisterWithManager(mgr controllerruntime.Manager) error {
 		return err
 	}
 
+	grafanaInformer := r.grafanaInformer()
+	go grafanaInformer.Run(nil)
+	if err := ctrl.Watch(&source.Informer{
+		Informer: grafanaInformer,
+	}, &handler.EnqueueRequestForObject{}, predicate.GenerationChangedPredicate{}); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -137,6 +164,11 @@ func (r *reconciler) Reconcile(ctx context.Context, _ controllerruntime.Request)
 
 	r.logger.V(10).Info("Reconciling Grafana Operator Subscription")
 	if err := r.reconcileSubscription(ctx); err != nil {
+		return controllerruntime.Result{}, err
+	}
+
+	r.logger.V(10).Info("Reconciling Grafana instance")
+	if err := r.reconcileGrafana(ctx); err != nil {
 		return controllerruntime.Result{}, err
 	}
 
@@ -204,6 +236,25 @@ func (r *reconciler) reconcileSubscription(ctx context.Context) error {
 	return err
 }
 
+func (r *reconciler) reconcileGrafana(ctx context.Context) error {
+	var grafana integreatlyv1alpha1.Grafana
+	key := types.NamespacedName{Name: grafanaName, Namespace: Namespace}
+	err := r.k8sClient.Get(ctx, key, &grafana)
+
+	if err == nil {
+		r.logger.Info("Updating Grafana instance")
+		grafana.Spec = newGrafana().Spec
+		return r.k8sClient.Update(ctx, &grafana)
+	}
+
+	if errors.IsNotFound(err) {
+		r.logger.Info("Creating Grafana instance")
+		return r.k8sClient.Create(ctx, newGrafana())
+	}
+
+	return err
+}
+
 func NewNamespace() *corev1.Namespace {
 	return &corev1.Namespace{
 		TypeMeta: metav1.TypeMeta{
@@ -255,6 +306,64 @@ func NewOperatorGroup() *operatorsv1.OperatorGroup {
 	}
 }
 
+func newGrafana() *integreatlyv1alpha1.Grafana {
+	flagTrue := true
+
+	replicas := int32(1)
+	maxUnavailable := intstr.FromInt(0)
+	maxSurge := intstr.FromInt(1)
+	return &integreatlyv1alpha1.Grafana{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "integreatly.org/v1alpha1",
+			Kind:       "Grafana",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      grafanaName,
+			Namespace: Namespace,
+		},
+		Spec: integreatlyv1alpha1.GrafanaSpec{
+			Ingress: &integreatlyv1alpha1.GrafanaIngress{
+				Enabled:  true,
+				PathType: string(networkingv1.PathTypePrefix),
+				Path:     "/",
+			},
+			Deployment: &integreatlyv1alpha1.GrafanaDeployment{
+				Replicas: &replicas,
+				Strategy: &v1.DeploymentStrategy{
+					Type: v1.RollingUpdateDeploymentStrategyType,
+					RollingUpdate: &v1.RollingUpdateDeployment{
+						MaxUnavailable: &maxUnavailable,
+						MaxSurge:       &maxSurge,
+					},
+				},
+			},
+			DashboardLabelSelector: []*metav1.LabelSelector{
+				{
+					MatchLabels: map[string]string{
+						"app.kubernetes.io/part-of": "monitoring-stack-operator",
+					},
+				},
+			},
+			Config: integreatlyv1alpha1.GrafanaConfig{
+				Log: &integreatlyv1alpha1.GrafanaConfigLog{
+					Mode:  "console",
+					Level: "error",
+				},
+				Auth: &integreatlyv1alpha1.GrafanaConfigAuth{
+					DisableLoginForm:   &flagTrue,
+					DisableSignoutMenu: &flagTrue,
+				},
+				AuthAnonymous: &integreatlyv1alpha1.GrafanaConfigAuthAnonymous{
+					Enabled: &flagTrue,
+				},
+				Users: &integreatlyv1alpha1.GrafanaConfigUsers{
+					ViewersCanEdit: &flagTrue,
+				},
+			},
+		},
+	}
+}
+
 func (r *reconciler) namespaceInformer() cache.SharedIndexInformer {
 	clientset := r.k8sClientset.CoreV1().RESTClient()
 	return singleResourceInformer(Namespace, "", "namespaces", &corev1.Namespace{}, clientset)
@@ -268,6 +377,10 @@ func (r *reconciler) subscriptionInformer() cache.SharedIndexInformer {
 func (r *reconciler) operatorGroupInformer() cache.SharedIndexInformer {
 	clientset := r.olmClientset.OperatorsV1().RESTClient()
 	return singleResourceInformer(operatorGroupName, Namespace, "operatorgroups", &operatorsv1.OperatorGroup{}, clientset)
+}
+
+func (r *reconciler) grafanaInformer() cache.SharedIndexInformer {
+	return singleResourceInformer(grafanaName, Namespace, "grafanas", &integreatlyv1alpha1.Grafana{}, r.grafanaClientset)
 }
 
 func singleResourceInformer(name string, namespace string, resource string, object runtime.Object, clientset rest.Interface) cache.SharedIndexInformer {
