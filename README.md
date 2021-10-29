@@ -5,6 +5,8 @@ The project is based on the [controller-runtime](https://github.com/kubernetes-s
 
 ## Development
 
+In order to contribute to this project, make sure you have go 1.17 on your local machine. 
+
 ### Commit message convention
 Commit messages need to comply to the [Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/) and should be structured as follows:
 ```
