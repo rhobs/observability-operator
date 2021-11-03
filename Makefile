@@ -227,3 +227,10 @@ initiate-release: $(STANDARD_VERSION)
 initiate-release-as: $(STANDARD_VERSION)
 	git fetch git@github.com:rhobs/monitoring-stack-operator.git --tags
 	$(STANDARD_VERSION) --skip.tag --release-as $(RELEASE_VERSION)
+
+.PHONY: kind-cluster
+kind-cluster:
+	kind create cluster --config hack/kind/config.yaml
+	$(OPERATOR_SDK) olm install
+	kubectl apply -f hack/kind/registry.yaml -n operators
+

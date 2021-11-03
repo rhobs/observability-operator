@@ -46,8 +46,8 @@ func main(m *testing.M) int {
 }
 
 func setupFramework() error {
-
-	k8sClient, err := client.New(config.GetConfigOrDie(), client.Options{
+	cfg := config.GetConfigOrDie()
+	k8sClient, err := client.New(cfg, client.Options{
 		Scheme: operator.NewScheme(),
 	})
 	if err != nil {
@@ -56,6 +56,7 @@ func setupFramework() error {
 
 	f = &framework.Framework{
 		K8sClient: k8sClient,
+		Config:    cfg,
 	}
 
 	return nil
