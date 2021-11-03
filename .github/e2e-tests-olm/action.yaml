@@ -43,11 +43,10 @@ runs:
         kubectl apply -f hack/kind/registry.yaml -n operators
         kubectl rollout status deployment local-registry -n operators
         # Expose the registry to the host so that we can build and push the image
-        kubectl port-forward -n operators svc/local-registry 5000:5000 &
         echo "127.0.0.1 local-registry" | sudo tee -a /etc/hosts
 
     - name: Build images
-      run: make operator-image bundle bundle-image IMAGE_BASE="local-registry:5000/monitoring-stack-operator" VERSION=0.0.0-ci
+      run: make operator-image bundle bundle-image IMAGE_BASE="local-registry:30000/monitoring-stack-operator" VERSION=0.0.0-ci
       shell: bash
 
     - name: Wait for cluster to finish bootstraping
@@ -58,7 +57,7 @@ runs:
         kubectl get pods -A
 
     - name: Publish images
-      run: make operator-push bundle-push IMAGE_BASE="local-registry:5000/monitoring-stack-operator" VERSION=0.0.0-ci
+      run: make operator-push bundle-push IMAGE_BASE="local-registry:30000/monitoring-stack-operator" VERSION=0.0.0-ci
       shell: bash
 
     - name: Deploy the operator
@@ -69,7 +68,7 @@ runs:
         kubectl wait --for=condition=Established crds --all --timeout=300s
 
         ./tmp/bin/operator-sdk run bundle \
-          local-registry:5000/monitoring-stack-operator-bundle:0.0.0-ci \
+          local-registry:30000/monitoring-stack-operator-bundle:0.0.0-ci \
           --install-mode AllNamespaces \
           --namespace operators \
           --skip-tls
