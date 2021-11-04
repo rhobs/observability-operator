@@ -21,7 +21,7 @@ const AdditionalScrapeConfigsSelfScrapeKey = "self-scrape-config"
 
 type emptyObjectFunc func() client.Object
 
-type patchObjectFunc func(object client.Object) (client.Object, error)
+type patchObjectFunc func(existing client.Object) (client.Object, error)
 
 type objectPatcher struct {
 	empty emptyObjectFunc
@@ -60,7 +60,7 @@ func stackComponentPatchers(ms *stack.MonitoringStack, instanceSelectorKey strin
 					ObjectMeta: sa.ObjectMeta,
 				}
 			},
-			patch: func(object client.Object) (client.Object, error) {
+			patch: func(existing client.Object) (client.Object, error) {
 				return newServiceAccount(ms), nil
 			},
 		},
@@ -72,16 +72,16 @@ func stackComponentPatchers(ms *stack.MonitoringStack, instanceSelectorKey strin
 					ObjectMeta: role.ObjectMeta,
 				}
 			},
-			patch: func(object client.Object) (client.Object, error) {
+			patch: func(existing client.Object) (client.Object, error) {
 				role := newRole(ms, rbacResourceName, rbacVerbs)
 
-				if object == nil {
+				if existing == nil {
 					return role, nil
 				}
 
-				desired, ok := object.DeepCopyObject().(*rbacv1.Role)
+				desired, ok := existing.(*rbacv1.Role)
 				if !ok {
-					return nil, NewObjectTypeError(role, object)
+					return nil, NewObjectTypeError(role, existing)
 				}
 
 				desired.Rules = role.Rules
@@ -96,16 +96,16 @@ func stackComponentPatchers(ms *stack.MonitoringStack, instanceSelectorKey strin
 					ObjectMeta: rb.ObjectMeta,
 				}
 			},
-			patch: func(object client.Object) (client.Object, error) {
+			patch: func(existing client.Object) (client.Object, error) {
 				roleBinding := newRoleBinding(ms, rbacResourceName)
 
-				if object == nil {
+				if existing == nil {
 					return roleBinding, nil
 				}
 
-				desired, ok := object.DeepCopyObject().(*rbacv1.RoleBinding)
+				desired, ok := existing.(*rbacv1.RoleBinding)
 				if !ok {
-					return nil, NewObjectTypeError(roleBinding, object)
+					return nil, NewObjectTypeError(roleBinding, existing)
 				}
 
 				desired.Subjects = roleBinding.Subjects
@@ -121,15 +121,15 @@ func stackComponentPatchers(ms *stack.MonitoringStack, instanceSelectorKey strin
 					ObjectMeta: secret.ObjectMeta,
 				}
 			},
-			patch: func(object client.Object) (client.Object, error) {
+			patch: func(existing client.Object) (client.Object, error) {
 				secret := newAdditionalScrapeConfigsSecret(additionalScrapeConfigsSecretName, ms.Namespace)
-				if object == nil {
+				if existing == nil {
 					return secret, nil
 				}
 
-				desired, ok := object.DeepCopyObject().(*corev1.Secret)
+				desired, ok := existing.(*corev1.Secret)
 				if !ok {
-					return nil, NewObjectTypeError(secret, object)
+					return nil, NewObjectTypeError(secret, existing)
 				}
 
 				desired.StringData = secret.StringData
@@ -145,16 +145,16 @@ func stackComponentPatchers(ms *stack.MonitoringStack, instanceSelectorKey strin
 					ObjectMeta: prometheus.ObjectMeta,
 				}
 			},
-			patch: func(object client.Object) (client.Object, error) {
+			patch: func(existing client.Object) (client.Object, error) {
 				prometheus := newPrometheus(ms, rbacResourceName, additionalScrapeConfigsSecretName, instanceSelectorKey, instanceSelectorValue)
 
-				if object == nil {
+				if existing == nil {
 					return prometheus, nil
 				}
 
-				desired, ok := object.DeepCopyObject().(*monv1.Prometheus)
+				desired, ok := existing.(*monv1.Prometheus)
 				if !ok {
-					return nil, NewObjectTypeError(prometheus, object)
+					return nil, NewObjectTypeError(prometheus, existing)
 				}
 
 				desired.Spec = prometheus.Spec
@@ -170,15 +170,15 @@ func stackComponentPatchers(ms *stack.MonitoringStack, instanceSelectorKey strin
 					ObjectMeta: dataSource.ObjectMeta,
 				}
 			},
-			patch: func(object client.Object) (client.Object, error) {
+			patch: func(existing client.Object) (client.Object, error) {
 				dataSource := newGrafanaDataSource(ms)
-				if object == nil {
+				if existing == nil {
 					return dataSource, nil
 				}
 
-				desired, ok := object.DeepCopyObject().(*grafanav1alpha1.GrafanaDataSource)
+				desired, ok := existing.(*grafanav1alpha1.GrafanaDataSource)
 				if !ok {
-					return nil, NewObjectTypeError(dataSource, object)
+					return nil, NewObjectTypeError(dataSource, existing)
 				}
 
 				desired.Spec = dataSource.Spec
