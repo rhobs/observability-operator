@@ -221,12 +221,12 @@ $(STANDARD_VERSION):
 .PHONY: initiate-release
 initiate-release: $(STANDARD_VERSION)
 	git fetch git@github.com:rhobs/monitoring-stack-operator.git --tags
-	$(STANDARD_VERSION) --skip.tag # The tag will be created in the pipeline
+	$(STANDARD_VERSION) -a --skip.tag # The tag will be created in the pipeline
 
 .PHONY: initiate-release-as
 initiate-release-as: $(STANDARD_VERSION)
 	git fetch git@github.com:rhobs/monitoring-stack-operator.git --tags
-	$(STANDARD_VERSION) --skip.tag --release-as $(RELEASE_VERSION)
+	$(STANDARD_VERSION) -a --skip.tag --release-as $(RELEASE_VERSION)
 
 .PHONY: kind-cluster
 kind-cluster:
