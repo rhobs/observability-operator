@@ -9,6 +9,6 @@
     }
   ],
   "scripts": {
-    "postbump": "make generate"
+    "postbump": "make generate && git add deploy/operator/kustomization.yaml"
   }
 }
