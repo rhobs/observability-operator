@@ -23,16 +23,32 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
+  name: local-registry
   labels:
     app: local-registry
-  name: local-registry
 spec:
   # Use a fixed IP address so that we can use it in config.yaml to
   # patch the registry address and force an http protocol
   clusterIP: 10.96.223.192
   ports:
-    - port: 5000
+    - port: 30000
       protocol: TCP
       targetPort: 5000
+  selector:
+    app: local-registry
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: local-registry-node-port
+  labels:
+    app: local-registry
+spec:
+  type: NodePort
+  ports:
+    - protocol: TCP
+      port: 30000
+      targetPort: 5000
+      nodePort: 30000
   selector:
     app: local-registry

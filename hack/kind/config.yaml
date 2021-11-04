@@ -3,10 +3,13 @@ apiVersion: kind.x-k8s.io/v1alpha4
 containerdConfigPatches:
   # 10.96.223.192 is the fixed ip of the registry service - see: hack/kind/registry.yaml
   - |-
-    [plugins."io.containerd.grpc.v1.cri".registry.mirrors."local-registry:5000"]
-      endpoint = ["http://10.96.223.192:5000"]
+    [plugins."io.containerd.grpc.v1.cri".registry.mirrors."local-registry:30000"]
+      endpoint = ["http://10.96.223.192:30000"]
 nodes:
   - role: control-plane
+    extraPortMappings:
+      - containerPort: 30000
+        hostPort: 30000
     kubeadmConfigPatches:
       - |
         kind: ClusterConfiguration
