@@ -22,7 +22,6 @@ rules:
   - namespaces
   verbs:
   - create
-  - list
 - apiGroups:
   - ""
   resourceNames:
@@ -30,7 +29,7 @@ rules:
   resources:
   - namespaces
   verbs:
-  - get
+  - list
   - watch
 - apiGroups:
   - ""
@@ -124,7 +123,6 @@ rules:
   - grafanas
   verbs:
   - create
-  - get
   - list
   - update
   - watch
@@ -135,8 +133,6 @@ rules:
   - subscriptions
   verbs:
   - create
-  - get
   - list
-  - patch
   - update
   - watch
