@@ -119,6 +119,16 @@ rules:
   - update
   - watch
 - apiGroups:
+  - integreatly.org
+  resources:
+  - grafanas
+  verbs:
+  - create
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
   - operators.coreos.com
   resources:
   - operatorgroups

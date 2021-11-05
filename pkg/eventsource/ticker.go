@@ -21,13 +21,13 @@ type TickerSource struct {
 }
 
 // NewTickerSource creates a new TickerSource
-func NewTickerSource() *TickerSource {
+func NewTickerSource(interval time.Duration) *TickerSource {
 	channel := make(chan event.GenericEvent, 1)
 	return &TickerSource{
 		Channel: source.Channel{
 			Source: channel,
 		},
-		ticker:  time.NewTicker(30 * time.Second),
+		ticker:  time.NewTicker(interval),
 		channel: channel,
 	}
 }

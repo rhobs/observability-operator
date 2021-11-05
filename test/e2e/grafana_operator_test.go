@@ -12,7 +12,6 @@ import (
 	"github.com/grafana-operator/grafana-operator/v4/api/integreatly/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -69,26 +68,8 @@ func TestControllerRestoresDeletedResources(t *testing.T) {
 	}
 }
 
-func TestGrafanaOperatorForResourcesInOwnNamespace(t *testing.T) {
-	resources := []client.Object{
-		newGrafana(operatorNamespace),
-	}
-	defer deleteResources(resources...)
-
+func TestDefaultGrafanaInstanceIsCreated(t *testing.T) {
 	ts := []testCase{
-		{
-			name: "Operator should create Grafana Operator CRDs",
-			scenario: func(t *testing.T) {
-				f.AssertResourceEventuallyExists("grafanadashboards.integreatly.org", "", &apiextensionsv1.CustomResourceDefinition{})(t)
-				f.AssertResourceEventuallyExists("grafanadatasources.integreatly.org", "", &apiextensionsv1.CustomResourceDefinition{})(t)
-				f.AssertResourceEventuallyExists("grafananotificationchannels.integreatly.org", "", &apiextensionsv1.CustomResourceDefinition{})(t)
-				f.AssertResourceEventuallyExists("grafanas.integreatly.org", "", &apiextensionsv1.CustomResourceDefinition{})(t)
-			},
-		},
-		{
-			name:     "Create grafana operator resources",
-			scenario: createResources(resources...),
-		},
 		{
 			name: "Operator should reconcile resources in its own namespace",
 			scenario: func(t *testing.T) {
