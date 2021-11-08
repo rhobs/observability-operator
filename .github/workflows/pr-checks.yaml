@@ -2,9 +2,6 @@ name: checks
 on:
   pull_request:
 
-env:
-  go-version: '1.17'
-
 jobs:
   commit-lint:
     runs-on: ubuntu-latest
@@ -19,11 +16,16 @@ jobs:
     name: Golang linter
     steps:
       - uses: actions/checkout@v2
+
+      - name: Import common environment variables
+        run: cat ".github/env" >> $GITHUB_ENV
+
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2
         with:
           version: v1.42.1
           args: --timeout 10m0s
+          go-version: ${{ env.go-version }}
 
   generate:
     runs-on: ${{ matrix.os }}
@@ -35,6 +37,10 @@ jobs:
     name: Generate and format
     steps:
       - uses: actions/checkout@v2
+
+      - name: Import common environment variables
+        run: cat ".github/env" >> $GITHUB_ENV
+
       - uses: actions/setup-go@v2
         with:
           go-version: ${{ env.go-version }}
@@ -44,6 +50,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
+      - name: Import common environment variables
+        run: cat ".github/env" >> $GITHUB_ENV
 
       - name: Setup Go environment
         uses: actions/setup-go@v2.1.4
@@ -57,6 +66,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
+      - name: Import common environment variables
+        run: cat ".github/env" >> $GITHUB_ENV
+
       - name: e2e tests through OLM
         uses: ./.github/e2e-tests-olm
         with:
