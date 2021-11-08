@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
 env:
-  golang-version: '1.16'
+  go-version: '1.17'
 
 jobs:
   e2e-tests-olm:
@@ -34,7 +34,7 @@ jobs:
       - name: Setup Go environment
         uses: actions/setup-go@v2.1.4
         with:
-          go-version: 1.16
+          go-version: ${{ env.go-version }}
 
       - name: Set version
         id: version
@@ -64,6 +64,15 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.REPOSITORY_PUSH_TOKEN }}
+
+      # Bumping the version in the next step will also run code generation scripts
+      # that depend on controller-gen.
+      # Therefore, we first need to setup Go so that we can install the
+      # controller-gen binary.
+      - name: Setup Go environment
+        uses: actions/setup-go@v2.1.4
+        with:
+          go-version: ${{ env.go-version }}
 
       - name: Generate release notes
         run: |
