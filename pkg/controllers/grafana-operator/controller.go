@@ -68,10 +68,10 @@ type reconciler struct {
 	grafanaClientset rest.Interface
 }
 
-//+kubebuilder:rbac:groups="",resources=namespaces,verbs=get;watch,resourceNames=monitoring-stack-operator
-//+kubebuilder:rbac:groups="",resources=namespaces,verbs=list;create
-//+kubebuilder:rbac:groups=operators.coreos.com,resources=subscriptions;operatorgroups,verbs=get;list;watch;create;update;patch,namespace=monitoring-stack-operator
-//+kubebuilder:rbac:groups=integreatly.org,namespace=monitoring-stack-operator,resources=grafanas,verbs=get;list;watch;create;update
+//+kubebuilder:rbac:groups="",resources=namespaces,verbs=list;watch,resourceNames=monitoring-stack-operator
+//+kubebuilder:rbac:groups="",resources=namespaces,verbs=create
+//+kubebuilder:rbac:groups=operators.coreos.com,resources=subscriptions;operatorgroups,verbs=list;watch;create;update,namespace=monitoring-stack-operator
+//+kubebuilder:rbac:groups=integreatly.org,namespace=monitoring-stack-operator,resources=grafanas,verbs=list;watch;create;update
 
 // RegisterWithManager registers the controller with Manager
 func RegisterWithManager(mgr controllerruntime.Manager) error {
