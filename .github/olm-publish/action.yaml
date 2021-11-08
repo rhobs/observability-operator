@@ -20,6 +20,9 @@ runs:
     with:
       go-version: ${{ inputs.go-version }}
 
+  - name: Use go cache
+    uses: ./.github/go-cache
+
   - name: Registry Login
     uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
     with:

@@ -1,0 +1,19 @@
+name: go-cache
+description: Caches go dependencies
+runs:
+  using: composite
+  steps:
+    - name: Get branch name
+      id: branch-name
+      uses: tj-actions/branch-names@v5
+
+    - uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ steps.branch-name.outputs.current_branch }}-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-${{ steps.branch-name.outputs.current_branch }}-
+          ${{ runner.os }}-go-main-
+          ${{ runner.os }}-go-
