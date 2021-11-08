@@ -3,8 +3,7 @@ description: Runs E2E tests against the OLM bundle
 inputs:
   go-version:
     description: "go version"
-    required: false
-    default: 1.16
+    required: true
   kind-version:
     description: "kind version"
     required: false
@@ -19,7 +18,7 @@ runs:
   steps:
     - uses: actions/setup-go@v2.1.4
       with:
-        go-version: 1.16
+        go-version: ${{ inputs.go-version }}
 
     - uses: azure/setup-kubectl@v1
 

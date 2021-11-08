@@ -13,6 +13,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Import common environment variables
+        run: cat ".github/env" >> $GITHUB_ENV
+
       - name: Set version
         id: version
         run: |
@@ -29,3 +32,4 @@ jobs:
         with:
           quay_login: ${{ secrets.QUAY_LOGIN }}
           quay_token: ${{ secrets.QUAY_TOKEN }}
+          go-version: ${{ env.go-version }}

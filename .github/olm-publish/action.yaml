@@ -7,6 +7,9 @@ inputs:
   quay_token:
     description: "Quay token"
     required: true
+  go-version:
+    description: "go version"
+    required: true
 runs:
   using: composite
   steps:
@@ -15,7 +18,7 @@ runs:
   - name: Setup Go environment
     uses: actions/setup-go@v2.1.4
     with:
-      go-version: 1.16
+      go-version: ${{ inputs.go-version }}
 
   - name: Registry Login
     uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
