@@ -20,6 +20,9 @@ runs:
       with:
         go-version: ${{ inputs.go-version }}
 
+    - name: Use go cache
+      uses: ./.github/go-cache
+
     - uses: azure/setup-kubectl@v1
 
     - name: Start KinD
