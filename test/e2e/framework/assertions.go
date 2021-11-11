@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -46,6 +48,20 @@ func (f *Framework) AssertResourceEventuallyExists(name string, namespace string
 			return false, nil
 		}); err == wait.ErrWaitTimeout {
 			t.Fatal(fmt.Errorf("statefulset %s/%s was never created", namespace, name))
+		}
+	}
+}
+
+// AssertPodEventuallyRuns asserts that a pod eventually gets into a Running phase
+func (f *Framework) AssertPodEventuallyRuns(name string, namespace string) func(t *testing.T) {
+	return func(t *testing.T) {
+		key := types.NamespacedName{Name: name, Namespace: namespace}
+		if err := wait.Poll(5*time.Second, wait.ForeverTestTimeout, func() (bool, error) {
+			pod := &corev1.Pod{}
+			err := f.K8sClient.Get(context.Background(), key, pod)
+			return err == nil && pod.Status.Phase == corev1.PodRunning, nil
+		}); err != nil {
+			t.Fatal(err)
 		}
 	}
 }

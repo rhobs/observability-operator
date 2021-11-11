@@ -56,10 +56,10 @@ type Options struct {
 //+kubebuilder:rbac:groups=monitoring.rhobs,resources=monitoringstacks,verbs=list;watch;create;update
 //+kubebuilder:rbac:groups=monitoring.rhobs,resources=monitoringstacks/status,verbs=get;update
 
-// RBAC for managing Prometheus CRs
-//+kubebuilder:rbac:groups=monitoring.coreos.com,resources=prometheuses;servicemonitors,verbs=list;watch;create;update;delete
+// RBAC for managing Prometheus Operator CRs
+//+kubebuilder:rbac:groups=monitoring.coreos.com,resources=alertmanagers;prometheuses;servicemonitors,verbs=list;watch;create;update;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles;rolebindings,verbs=list;watch;create;update;delete
-//+kubebuilder:rbac:groups="",resources=serviceaccounts;secrets,verbs=list;watch;create;update;delete
+//+kubebuilder:rbac:groups="",resources=serviceaccounts;services;secrets,verbs=list;watch;create;update;delete
 
 // RBAC for managing Grafana CRs
 //+kubebuilder:rbac:groups=integreatly.org,namespace=monitoring-stack-operator,resources=grafanadatasources,verbs=list;watch;create;update;delete

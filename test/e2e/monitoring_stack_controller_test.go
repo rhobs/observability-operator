@@ -2,12 +2,15 @@ package e2e
 
 import (
 	"context"
-	monitoringstack "rhobs/monitoring-stack-operator/pkg/controllers/monitoring-stack"
+	"encoding/json"
+	"fmt"
+	"net/http"
 	"rhobs/monitoring-stack-operator/test/e2e/framework"
 	"testing"
 	"time"
 
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
+
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	stack "rhobs/monitoring-stack-operator/pkg/apis/v1alpha1"
@@ -18,6 +21,10 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+type alert struct {
+	Labels map[string]string
+}
 
 func assertCRDExists(t *testing.T, crds ...string) {
 	for _, crd := range crds {
@@ -50,6 +57,9 @@ func TestMonitoringStackController(t *testing.T) {
 		}, {
 			name:     "Prometheus stacks can scrape themselves",
 			scenario: assertPrometheusScrapesItself,
+		}, {
+			name:     "Alertmanager receives alerts from the Prometheus instance",
+			scenario: assertAlertmanagerReceivesAlerts,
 		},
 	}
 
@@ -59,36 +69,17 @@ func TestMonitoringStackController(t *testing.T) {
 }
 
 func emptyStackCreatesPrometheus(t *testing.T) {
-	ms := newMonitoringStack("empty-stack")
+	ms := newMonitoringStack(t, "empty-stack")
 	err := f.K8sClient.Create(context.Background(), ms)
 	assert.NilError(t, err, "failed to create a monitoring stack")
 
 	// Creating an Empty monitoring stack must create a Prometheus with defaults applied
 	prometheus := monv1.Prometheus{}
 	f.GetResourceWithRetry(t, ms.Name, ms.Namespace, &prometheus)
-
-	expected := monv1.PrometheusSpec{
-		Retention:              "120h",
-		LogLevel:               "info",
-		ServiceMonitorSelector: &metav1.LabelSelector{},
-		PodMonitorSelector:     &metav1.LabelSelector{},
-		ServiceAccountName:     "empty-stack-prometheus",
-		AdditionalScrapeConfigs: &v1.SecretKeySelector{
-			LocalObjectReference: v1.LocalObjectReference{
-				Name: "empty-stack-prometheus-additional-scrape-configs",
-			},
-			Key: monitoringstack.AdditionalScrapeConfigsSelfScrapeKey,
-		},
-	}
-
-	assert.DeepEqual(t, expected, prometheus.Spec)
-
-	// cleanup
-	f.K8sClient.Delete(context.Background(), ms)
 }
 
 func reconcileStack(t *testing.T) {
-	ms := newMonitoringStack("reconcile-test")
+	ms := newMonitoringStack(t, "reconcile-test")
 	ms.Spec.LogLevel = "debug"
 	ms.Spec.Retention = "1h"
 	ms.Spec.ResourceSelector = &metav1.LabelSelector{
@@ -114,11 +105,10 @@ func reconcileStack(t *testing.T) {
 	assert.DeepEqual(t, expected.ServiceMonitorSelector, generated.Spec.ServiceMonitorSelector)
 	assert.Equal(t, expected.LogLevel, generated.Spec.LogLevel)
 	assert.Equal(t, expected.Retention, generated.Spec.Retention)
-
 }
 
 func reconcileRevertsManualChanges(t *testing.T) {
-	ms := newMonitoringStack("revert-test")
+	ms := newMonitoringStack(t, "revert-test")
 	ms.Spec.LogLevel = "debug"
 	ms.Spec.Retention = "1h"
 	ms.Spec.ResourceSelector = &metav1.LabelSelector{
@@ -153,9 +143,6 @@ func reconcileRevertsManualChanges(t *testing.T) {
 	f.GetResourceWithRetry(t, ms.Name, ms.Namespace, &reconciled)
 
 	assert.DeepEqual(t, generated.Spec, reconciled.Spec)
-
-	// cleanup
-	f.K8sClient.Delete(context.Background(), ms)
 }
 
 func validateStackLogLevel(t *testing.T) {
@@ -165,22 +152,17 @@ func validateStackLogLevel(t *testing.T) {
 		"Info",
 		"Debug",
 	}
-	ms := newMonitoringStack("invalid-loglevel-stack")
+	ms := newMonitoringStack(t, "invalid-loglevel-stack")
 	for _, v := range invalidLogLevels {
-
 		ms.Spec.LogLevel = stack.LogLevel(v)
 		err := f.K8sClient.Create(context.Background(), ms)
 		assert.ErrorContains(t, err, `spec.logLevel: Unsupported value`)
 	}
 
-	validMS := newMonitoringStack("valid-loglevel")
+	validMS := newMonitoringStack(t, "valid-loglevel")
 	validMS.Spec.LogLevel = "debug"
 	err := f.K8sClient.Create(context.Background(), validMS)
 	assert.NilError(t, err, `debug is a valid loglevel`)
-
-	// cleanup
-	err = f.K8sClient.Delete(context.Background(), validMS)
-	assert.NilError(t, err, `deletion error`)
 }
 
 func validateStackRetention(t *testing.T) {
@@ -194,29 +176,25 @@ func validateStackRetention(t *testing.T) {
 		"100d   ",
 	}
 
-	ms := newMonitoringStack("invalid-retention")
+	ms := newMonitoringStack(t, "invalid-retention")
 	for _, v := range invalidRetention {
 		ms.Spec.Retention = v
 		err := f.K8sClient.Create(context.Background(), ms)
 		assert.ErrorContains(t, err, `spec.retention: Invalid value`)
 	}
 
-	validMS := newMonitoringStack("valid-retention")
+	validMS := newMonitoringStack(t, "valid-retention")
 	validMS.Spec.Retention = "100h"
 
 	err := f.K8sClient.Create(context.Background(), validMS)
 	assert.NilError(t, err, `100h is a valid retention period`)
-
-	// cleanup
-	err = f.K8sClient.Delete(context.Background(), validMS)
-	assert.NilError(t, err, `deletion error`)
 }
 
 func assertPrometheusScrapesItself(t *testing.T) {
-	ms := newMonitoringStack("self-scrape")
+	ms := newMonitoringStack(t, "self-scrape")
 	err := f.K8sClient.Create(context.Background(), ms)
 	assert.NilError(t, err)
-	f.AssertResourceEventuallyExists("prometheus-self-scrape-0", e2eTestNamespace, &v1.Pod{})(t)
+	f.AssertPodEventuallyRuns("prometheus-self-scrape-0", e2eTestNamespace)(t)
 
 	stopChan := make(chan struct{})
 	defer close(stopChan)
@@ -245,11 +223,114 @@ func assertPrometheusScrapesItself(t *testing.T) {
 	}
 }
 
-func newMonitoringStack(name string) *stack.MonitoringStack {
-	return &stack.MonitoringStack{
+func assertAlertmanagerReceivesAlerts(t *testing.T) {
+	ms := newMonitoringStack(t, "alerting")
+	if err := f.K8sClient.Create(context.Background(), ms); err != nil {
+		t.Fatal(err)
+	}
+
+	rule := newAlerts(t)
+	if err := f.K8sClient.Create(context.Background(), rule); err != nil {
+		t.Fatal(err)
+	}
+	f.AssertPodEventuallyRuns("alertmanager-alerting-0", e2eTestNamespace)(t)
+
+	stopChan := make(chan struct{})
+	defer close(stopChan)
+	if err := wait.Poll(5*time.Second, 5*time.Minute, func() (bool, error) {
+		err := f.StartPortForward("alertmanager-alerting-0", e2eTestNamespace, "9093", stopChan)
+		return err == nil, nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := wait.Poll(5*time.Second, 5*time.Minute, func() (bool, error) {
+		alerts, err := getAlertmanagerAlerts()
+		if err != nil {
+			return false, nil
+		}
+
+		if len(alerts) == 0 {
+			return false, nil
+		}
+
+		if len(alerts) != 1 {
+			return true, fmt.Errorf("too many alerts fired")
+		}
+
+		if alerts[0].Labels["alertname"] == "AlwaysOn" {
+			return true, nil
+		}
+
+		return true, fmt.Errorf("wrong alert firing, got %s, want %s", alerts[0].Labels["alertname"], "AlwaysOn")
+	}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func getAlertmanagerAlerts() ([]alert, error) {
+	client := http.Client{}
+	resp, err := client.Get("http://localhost:9093/api/v2/alerts")
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var alerts []alert
+	if err := json.NewDecoder(resp.Body).Decode(&alerts); err != nil {
+		return nil, err
+	}
+
+	return alerts, nil
+}
+
+func newAlerts(t *testing.T) *monv1.PrometheusRule {
+	rule := &monv1.PrometheusRule{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "monitoring.coreos.com/v1",
+			Kind:       "PrometheusRule",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "always-on",
+			Namespace: e2eTestNamespace,
+		},
+		Spec: monv1.PrometheusRuleSpec{
+			Groups: []monv1.RuleGroup{
+				{
+					Name:     "Test",
+					Interval: "10s",
+					Rules: []monv1.Rule{
+						{
+							Alert: "AlwaysOn",
+							Expr:  intstr.FromString("vector(1)"),
+							For:   "1s",
+						},
+						{
+							Alert: "NeverOn",
+							Expr:  intstr.FromString("vector(1) == 0"),
+							For:   "1s",
+						},
+					},
+				},
+			},
+		},
+	}
+	t.Cleanup(func() {
+		f.K8sClient.Delete(context.Background(), rule)
+	})
+
+	return rule
+}
+
+func newMonitoringStack(t *testing.T, name string) *stack.MonitoringStack {
+	ms := &stack.MonitoringStack{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: e2eTestNamespace,
 		},
 	}
+	t.Cleanup(func() {
+		f.K8sClient.Delete(context.Background(), ms)
+	})
+	return ms
 }
