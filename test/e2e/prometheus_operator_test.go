@@ -2,7 +2,9 @@ package e2e
 
 import (
 	"context"
+	"rhobs/monitoring-stack-operator/test/e2e/framework"
 	"testing"
+	"time"
 
 	v1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -51,15 +53,18 @@ func TestPrometheusOperatorForNonOwnedResources(t *testing.T) {
 			scenario: func(t *testing.T) {
 				t.Run("Prometheus never exists", func(t *testing.T) {
 					t.Parallel()
-					f.AssertResourceNeverExists(prometheusStsName, e2eTestNamespace, &appsv1.StatefulSet{})(t)
+					f.AssertResourceNeverExists(prometheusStsName, e2eTestNamespace,
+						&appsv1.StatefulSet{}, framework.WithTimeout(15*time.Second))(t)
 				})
 				t.Run("Alertmanager never exists", func(t *testing.T) {
 					t.Parallel()
-					f.AssertResourceNeverExists(alertmanagerStsName, e2eTestNamespace, &appsv1.StatefulSet{})(t)
+					f.AssertResourceNeverExists(alertmanagerStsName, e2eTestNamespace,
+						&appsv1.StatefulSet{}, framework.WithTimeout(15*time.Second))(t)
 				})
 				t.Run("Thanos Ruler never exists", func(t *testing.T) {
 					t.Parallel()
-					f.AssertResourceNeverExists(thanosRulerStsName, e2eTestNamespace, &appsv1.StatefulSet{})(t)
+					f.AssertResourceNeverExists(thanosRulerStsName, e2eTestNamespace,
+						&appsv1.StatefulSet{}, framework.WithTimeout(15*time.Second))(t)
 				})
 			},
 		},

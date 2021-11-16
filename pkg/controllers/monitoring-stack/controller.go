@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -117,9 +118,20 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	for _, patcher := range patchers {
-		if err := r.reconcileObject(ctx, ms, patcher); err != nil {
-			return ctrl.Result{}, err
+
+		err := r.reconcileObject(ctx, ms, patcher)
+
+		// handle creation / updation errors that can happen due to a stale cache by
+		// retrying after some time.
+		if errors.IsAlreadyExists(err) || errors.IsConflict(err) {
+			logger.V(8).Info("skipping reconcile error", "err", err)
+			return ctrl.Result{RequeueAfter: 2 * time.Second}, nil
 		}
+		if err != nil {
+			return ctrl.Result{}, err
+
+		}
+
 	}
 
 	return ctrl.Result{}, nil

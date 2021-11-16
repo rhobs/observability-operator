@@ -3,7 +3,10 @@ package e2e
 import (
 	"context"
 	grafana_operator "rhobs/monitoring-stack-operator/pkg/controllers/grafana-operator"
+	"rhobs/monitoring-stack-operator/test/e2e/framework"
+	fw "rhobs/monitoring-stack-operator/test/e2e/framework"
 	"testing"
+	"time"
 
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
@@ -28,8 +31,8 @@ func TestControllerRestoresDeletedResources(t *testing.T) {
 			name: "Operator should create a Grafana Operator through OLM",
 			scenario: func(t *testing.T) {
 				f.AssertResourceEventuallyExists(operatorNamespace, "", &v1.Namespace{})(t)
-				f.AssertResourceEventuallyExists(resourceName, operatorNamespace, &olmv1alpha1.Subscription{})(t)
-				f.AssertResourceEventuallyExists(resourceName, operatorNamespace, &olmv1.OperatorGroup{})(t)
+				f.AssertResourceEventuallyExists(resourceName, operatorNamespace, &olmv1.OperatorGroup{}, fw.WithTimeout(1*time.Minute))(t)
+				f.AssertResourceEventuallyExists(resourceName, operatorNamespace, &olmv1alpha1.Subscription{}, fw.WithTimeout(1*time.Minute))(t)
 			},
 		},
 		{
@@ -73,7 +76,9 @@ func TestDefaultGrafanaInstanceIsCreated(t *testing.T) {
 		{
 			name: "Operator should reconcile resources in its own namespace",
 			scenario: func(t *testing.T) {
-				f.AssertResourceEventuallyExists(grafanaDeploymentName, operatorNamespace, &appsv1.Deployment{})(t)
+				f.AssertResourceEventuallyExists(
+					grafanaDeploymentName, operatorNamespace,
+					&appsv1.Deployment{}, fw.WithTimeout(2*time.Minute))(t)
 			},
 		},
 	}
@@ -84,23 +89,23 @@ func TestDefaultGrafanaInstanceIsCreated(t *testing.T) {
 }
 
 func TestGrafanaOperatorForResourcesOutsideOfItsOwnNamespace(t *testing.T) {
+	// grafana operator is deployed to 'monitoring-stack-operator' namespace and any
+	// grafana created outside it (e.g. e2eTestNamespace) should be ignored by the operator
 	resources := []client.Object{
 		newGrafana(e2eTestNamespace),
 	}
 	defer deleteResources(resources...)
 
-	ts := []testCase{
-		{
-			name:     "Create grafana resource",
-			scenario: createResources(resources...),
-		},
-		{
-			name: "Operator should not reconcile resources outside of its own namespace",
-			scenario: func(t *testing.T) {
-				f.AssertResourceNeverExists(grafanaDeploymentName, e2eTestNamespace, &appsv1.Deployment{})(t)
-			},
-		},
-	}
+	ts := []testCase{{
+		name:     "Create grafana resource",
+		scenario: createResources(resources...),
+	}, {
+
+		name: "Operator should not reconcile resources outside of its own namespace",
+		scenario: f.AssertResourceNeverExists(
+			grafanaDeploymentName, e2eTestNamespace, &appsv1.Deployment{},
+			framework.WithTimeout(15*time.Second)),
+	}}
 
 	for _, tc := range ts {
 		t.Run(tc.name, tc.scenario)

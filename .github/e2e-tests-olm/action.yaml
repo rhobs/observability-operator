@@ -33,11 +33,13 @@ runs:
         wait: 300s
         config: ./hack/kind/config.yaml
 
+    - name: Install required tools
+      shell: bash
+      run: make operator-sdk promq
+
     - name: Install OLM
       shell: bash
-      run: |
-        make operator-sdk
-        ./tmp/bin/operator-sdk olm install
+      run: ./tmp/bin/operator-sdk olm install
 
     - name: Create a local docker registry in the Kind cluster
       shell: bash
@@ -48,8 +50,8 @@ runs:
         echo "127.0.0.1 local-registry" | sudo tee -a /etc/hosts
 
     - name: Build images
-      run: make operator-image bundle bundle-image IMAGE_BASE="local-registry:30000/monitoring-stack-operator" VERSION=0.0.0-ci
       shell: bash
+      run: make operator-image bundle bundle-image IMAGE_BASE="local-registry:30000/monitoring-stack-operator" VERSION=0.0.0-ci
 
     - name: Wait for cluster to finish bootstraping
       shell: bash
@@ -59,8 +61,8 @@ runs:
         kubectl get pods -A
 
     - name: Publish images
-      run: make operator-push bundle-push IMAGE_BASE="local-registry:30000/monitoring-stack-operator" VERSION=0.0.0-ci
       shell: bash
+      run: make operator-push bundle-push IMAGE_BASE="local-registry:30000/monitoring-stack-operator" VERSION=0.0.0-ci
 
     - name: Deploy the operator
       shell: bash
@@ -75,6 +77,73 @@ runs:
           --namespace operators \
           --skip-tls
 
+        kubectl rollout status deployment monitoring-stack-operator -n operators
+
+    - name: Expose operator metrics endpoint
+      shell: bash
+      run: |
+        kubectl apply -n operators -f hack/kind/operator-metrics-service.yaml
+        sleep 2
+
+        # wait for the service to create an endpoint
+        while ! kubectl get -n operators ep  operator-metrics-service && [[ "$i" -le 5 ]]; do
+            (( i++ ))
+            echo " - $i ... repeat "
+            sleep 2
+        done
+
+    - name: Assert no reconciliation errors before running the test
+      shell: bash
+      run: |
+        # assert there are no reconciliation errors before running test
+        # give operator some time to start before collecting the metrics
+        sleep 5
+        ./tmp/bin/promq -t http://localhost:30001/metrics  \
+          -q 'controller_runtime_reconcile_errors_total' -o yaml
+
+        reconcile_errors=$( ./tmp/bin/promq \
+          -t http://localhost:30001/metrics  -o yaml \
+          -q 'sum(controller_runtime_reconcile_errors_total)' \
+          | tr -d ' ' | grep ^v: | cut -f2  -d: )
+
+        echo "Reconcile errors before running tests: $reconcile_errors"
+
+        if [[ "$reconcile_errors" -ne 0 ]]; then
+          kubectl logs -n operators deploy/monitoring-stack-operator
+          echo ================================================================
+          echo "Expecting 0 reconcile errors but found $reconcile_errors"
+          exit 1
+        fi
+
     - name: Run tests
       shell: bash
-      run: go test -v ./test/e2e/...
+      run: |
+        go test -v ./test/e2e/... || {
+          echo ================================================================
+          # print operator logs on failure
+          kubectl logs -n operators deploy/monitoring-stack-operator
+          exit 1
+        }
+
+    - name: Print operator logs and reconcile stats
+      shell: bash
+      run: |
+        kubectl logs -n operators deploy/monitoring-stack-operator
+        echo ================================================================
+
+        ./tmp/bin/promq -t http://localhost:30001/metrics  \
+          -q 'controller_runtime_reconcile_errors_total'
+
+    - name: Assert that there are no reconciliation errors
+      shell: bash
+      run: |
+        reconcile_errors=$( ./tmp/bin/promq \
+          -t http://localhost:30001/metrics  -o yaml \
+          -q 'sum(controller_runtime_reconcile_errors_total)' \
+          | tr -d ' ' | grep ^v: | cut -f2  -d: )
+
+        echo "Reconcile errors after test run: $reconcile_errors"
+        if [[ "$reconcile_errors" -ne 0 ]]; then
+          echo "Found $reconcile_errors reconciliation errors"
+          exit 1
+        fi
