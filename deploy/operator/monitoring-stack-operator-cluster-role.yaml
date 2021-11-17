@@ -36,6 +36,7 @@ rules:
   resources:
   - secrets
   - serviceaccounts
+  - services
   verbs:
   - create
   - delete
@@ -54,6 +55,7 @@ rules:
 - apiGroups:
   - monitoring.coreos.com
   resources:
+  - alertmanagers
   - prometheuses
   - servicemonitors
   verbs:

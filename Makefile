@@ -229,7 +229,7 @@ initiate-release-as: $(STANDARD_VERSION)
 	$(STANDARD_VERSION) -a --skip.tag --release-as $(RELEASE_VERSION)
 
 .PHONY: kind-cluster
-kind-cluster:
+kind-cluster: $(OPERATOR_SDK)
 	kind create cluster --config hack/kind/config.yaml
 	$(OPERATOR_SDK) olm install
 	kubectl apply -f hack/kind/registry.yaml -n operators
