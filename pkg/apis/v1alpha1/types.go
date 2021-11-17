@@ -91,6 +91,7 @@ type NamespaceSelector struct {
 // +k8s:openapi-gen=true
 // +kubebuilder:resource
 // +kubebuilder:subresource:status
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type ThanosQuerier struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

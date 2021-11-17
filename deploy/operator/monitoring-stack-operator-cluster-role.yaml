@@ -37,6 +37,40 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments/status
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - create
+  - delete
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - services/status
+  verbs:
+  - get
+- apiGroups:
   - extensions
   - networking.k8s.io
   resources:
@@ -81,6 +115,32 @@ rules:
   - monitoringstacks/status
   verbs:
   - get
+  - update
+- apiGroups:
+  - monitoring.rhobs
+  resources:
+  - thanosqueriers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - monitoring.rhobs
+  resources:
+  - thanosqueriers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - monitoring.rhobs
+  resources:
+  - thanosqueriers/status
+  verbs:
+  - get
+  - patch
   - update
 - apiGroups:
   - policy

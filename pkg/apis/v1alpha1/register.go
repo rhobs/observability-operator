@@ -36,5 +36,5 @@ var (
 )
 
 func init() {
-	SchemeBuilder.Register(&MonitoringStack{}, &MonitoringStackList{})
+	SchemeBuilder.Register(&MonitoringStack{}, &MonitoringStackList{}, &ThanosQuerier{}, &ThanosQuerierList{})
 }
