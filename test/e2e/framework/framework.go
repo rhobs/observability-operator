@@ -2,10 +2,14 @@ package framework
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
+
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/portforward"
@@ -47,4 +51,37 @@ func (f *Framework) StartPortForward(podName string, ns string, port string, sto
 
 	<-readyChan
 	return nil
+}
+
+// StartServicePortForward initiates a port forwarding connection to a service on the localhost interface.
+//
+// The function call blocks until the port forwarding proxy server is ready to receive connections.
+func (f *Framework) StartServicePortForward(serviceName string, ns string, port string, stopChan chan struct{}) error {
+	pods, err := f.getPodsForService(serviceName, ns)
+	if err != nil {
+		return err
+	}
+	if len(pods) == 0 {
+		return fmt.Errorf("no pods found for service %s/%s", serviceName, ns)
+	}
+	return f.StartPortForward(pods[0].Name, ns, port, stopChan)
+}
+
+func (f *Framework) getPodsForService(name string, namespace string) ([]corev1.Pod, error) {
+	var svc corev1.Service
+	key := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	if err := f.K8sClient.Get(context.Background(), key, &svc); err != nil {
+		return nil, err
+	}
+
+	selector := svc.Spec.Selector
+	var pods corev1.PodList
+	if err := f.K8sClient.List(context.Background(), &pods, client.MatchingLabels(selector)); err != nil {
+		return nil, err
+	}
+
+	return pods.Items, nil
 }
