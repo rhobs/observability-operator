@@ -10,6 +10,9 @@ nodes:
     extraPortMappings:
       - containerPort: 30000
         hostPort: 30000
+      # operator metrics endpoint for scrapping with promq
+      - containerPort: 30001
+        hostPort: 30001
     kubeadmConfigPatches:
       - |
         kind: ClusterConfiguration

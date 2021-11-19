@@ -18,6 +18,7 @@ GOLANGCI_LINT=$(TOOLS_DIR)/golangci-lint
 KUSTOMIZE=$(TOOLS_DIR)/kustomize
 OPERATOR_SDK = $(TOOLS_DIR)/operator-sdk
 OPM = $(TOOLS_DIR)/opm
+PROMQ = $(TOOLS_DIR)/promq
 
 $(TOOLS_DIR):
 	@mkdir -p $(TOOLS_DIR)
@@ -72,9 +73,23 @@ $(OPM) opm: $(TOOLS_DIR)
 		chmod +x $(OPM) ;\
 	}
 
+.PHONY: promq
+$(PROMQ) promq: $(TOOLS_DIR)
+	@{ \
+		set -ex ;\
+		[[ -f $(PROMQ) ]] && exit 0 ;\
+		TMP_DIR=$$(mktemp -d) ;\
+		cd $$TMP_DIR ;\
+		echo "Downloading promq" ;\
+		git clone --depth=1 https://github.com/kubernetes-sigs/instrumentation-tools ;\
+		cd instrumentation-tools ;\
+		go build -o $(PROMQ) . ;\
+		rm -rf $$TMP_DIR ;\
+	}
+
 # Install all required tools
 .PHONY: tools
-tools: $(CONTROLLER_GEN) $(KUSTOMIZE) $(OPERATOR_SDK) $(OPM)
+tools: $(CONTROLLER_GEN) $(KUSTOMIZE) $(OPERATOR_SDK) $(OPM) $(PROMQ)
 
 ## Development
 
