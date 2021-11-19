@@ -194,11 +194,11 @@ func assertPrometheusScrapesItself(t *testing.T) {
 	ms := newMonitoringStack(t, "self-scrape")
 	err := f.K8sClient.Create(context.Background(), ms)
 	assert.NilError(t, err)
-	f.AssertStatefulsetReady("prometheus-self-scrape", e2eTestNamespace, framework.WithTimeout(1*time.Minute))(t)
+	f.AssertStatefulsetReady("prometheus-self-scrape", e2eTestNamespace, framework.WithTimeout(2*time.Minute))(t)
 
 	stopChan := make(chan struct{})
 	defer close(stopChan)
-	if err := wait.Poll(5*time.Second, 1*time.Minute, func() (bool, error) {
+	if err := wait.Poll(5*time.Second, 2*time.Minute, func() (bool, error) {
 		err = f.StartServicePortForward("self-scrape-prometheus", e2eTestNamespace, "9090", stopChan)
 		return err == nil, nil
 	}); err != nil {
@@ -233,7 +233,7 @@ func assertAlertmanagerReceivesAlerts(t *testing.T) {
 	if err := f.K8sClient.Create(context.Background(), rule); err != nil {
 		t.Fatal(err)
 	}
-	f.AssertStatefulsetReady("alertmanager-alerting", e2eTestNamespace)(t)
+	f.AssertStatefulsetReady("alertmanager-alerting", e2eTestNamespace, framework.WithTimeout(2*time.Minute))(t)
 
 	stopChan := make(chan struct{})
 	defer close(stopChan)
