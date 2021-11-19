@@ -258,7 +258,7 @@ func (r *reconciler) reconcileGrafana(ctx context.Context) error {
 func NewNamespace() *corev1.Namespace {
 	return &corev1.Namespace{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
+			APIVersion: corev1.SchemeGroupVersion.String(),
 			Kind:       "Namespace",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -270,7 +270,7 @@ func NewNamespace() *corev1.Namespace {
 func NewSubscription() *v1alpha1.Subscription {
 	return &v1alpha1.Subscription{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "operators.coreos.com/v1alpha1",
+			APIVersion: v1alpha1.SchemeGroupVersion.String(),
 			Kind:       "Subscription",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -291,7 +291,7 @@ func NewSubscription() *v1alpha1.Subscription {
 func NewOperatorGroup() *operatorsv1.OperatorGroup {
 	return &operatorsv1.OperatorGroup{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "operators.coreos.com/operatorsv1",
+			APIVersion: operatorsv1.SchemeGroupVersion.String(),
 			Kind:       "OperatorGroup",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -314,7 +314,7 @@ func newGrafana() *integreatlyv1alpha1.Grafana {
 	maxSurge := intstr.FromInt(1)
 	return &integreatlyv1alpha1.Grafana{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "integreatly.org/v1alpha1",
+			APIVersion: integreatlyv1alpha1.GroupVersion.String(),
 			Kind:       "Grafana",
 		},
 		ObjectMeta: metav1.ObjectMeta{

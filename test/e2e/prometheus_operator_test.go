@@ -110,7 +110,7 @@ func TestPrometheusOperatorForOwnedResources(t *testing.T) {
 func newPrometheus(labels map[string]string) *v1.Prometheus {
 	return &v1.Prometheus{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "monitoring.coreos.com/v1",
+			APIVersion: v1.SchemeGroupVersion.String(),
 			Kind:       "Prometheus",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -124,7 +124,7 @@ func newPrometheus(labels map[string]string) *v1.Prometheus {
 func newAlertmanager(labels map[string]string) *v1.Alertmanager {
 	return &v1.Alertmanager{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "monitoring.coreos.com/v1",
+			APIVersion: v1.SchemeGroupVersion.String(),
 			Kind:       "Prometheus",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -138,7 +138,7 @@ func newAlertmanager(labels map[string]string) *v1.Alertmanager {
 func newThanosRuler(labels map[string]string) *v1.ThanosRuler {
 	return &v1.ThanosRuler{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "monitoring.coreos.com/v1",
+			APIVersion: v1.SchemeGroupVersion.String(),
 			Kind:       "Prometheus",
 		},
 		ObjectMeta: metav1.ObjectMeta{

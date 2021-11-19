@@ -110,7 +110,7 @@ func TestGrafanaOperatorForResourcesOutsideOfItsOwnNamespace(t *testing.T) {
 func newGrafana(namespace string) *v1alpha1.Grafana {
 	return &v1alpha1.Grafana{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "integreatly.org/v1alpha1",
+			APIVersion: v1alpha1.GroupVersion.String(),
 			Kind:       "Grafana",
 		},
 		ObjectMeta: metav1.ObjectMeta{
