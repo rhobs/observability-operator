@@ -265,7 +265,8 @@ func newGrafanaDataSource(ms *stack.MonitoringStack) *grafanav1alpha1.GrafanaDat
 	prometheusURL := fmt.Sprintf("prometheus-operated.%s:9090", ms.GetNamespace())
 	return &grafanav1alpha1.GrafanaDataSource{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "integreatly.org/v1alpha1",
+			// NOTE: uses a different naming convention for SchemeGroupVersion
+			APIVersion: grafanav1alpha1.GroupVersion.String(),
 			Kind:       "GrafanaDataSource",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -290,7 +291,7 @@ func newGrafanaDataSource(ms *stack.MonitoringStack) *grafanav1alpha1.GrafanaDat
 func newPrometheusRole(ms *stack.MonitoringStack, rbacResourceName string, rbacVerbs []string) *rbacv1.Role {
 	return &rbacv1.Role{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "rbac.authorization.k8s.io/v1",
+			APIVersion: rbacv1.SchemeGroupVersion.String(),
 			Kind:       "Role",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -315,7 +316,7 @@ func newPrometheusRole(ms *stack.MonitoringStack, rbacResourceName string, rbacV
 func newServiceAccount(name string, namespace string) *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
+			APIVersion: corev1.SchemeGroupVersion.String(),
 			Kind:       "ServiceAccount",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -338,8 +339,8 @@ func newPrometheus(
 	}
 	prometheus := &monv1.Prometheus{
 		TypeMeta: metav1.TypeMeta{
+			APIVersion: monv1.SchemeGroupVersion.String(),
 			Kind:       "Prometheus",
-			APIVersion: "monitoring.coreos.com/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ms.Name,
@@ -392,7 +393,7 @@ func newPrometheus(
 func newRoleBinding(ms *stack.MonitoringStack, rbacResourceName string) *rbacv1.RoleBinding {
 	roleBinding := &rbacv1.RoleBinding{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "rbac.authorization.k8s.io/v1",
+			APIVersion: rbacv1.SchemeGroupVersion.String(),
 			Kind:       "RoleBinding",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -401,14 +402,14 @@ func newRoleBinding(ms *stack.MonitoringStack, rbacResourceName string) *rbacv1.
 		},
 		Subjects: []rbacv1.Subject{
 			{
-				APIGroup:  "",
+				APIGroup:  corev1.SchemeGroupVersion.Group,
 				Kind:      "ServiceAccount",
 				Name:      rbacResourceName,
 				Namespace: ms.Namespace,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
-			APIGroup: "rbac.authorization.k8s.io",
+			APIGroup: rbacv1.SchemeGroupVersion.Group,
 			Kind:     "Role",
 			Name:     rbacResourceName,
 		},
@@ -419,7 +420,7 @@ func newRoleBinding(ms *stack.MonitoringStack, rbacResourceName string) *rbacv1.
 func newAdditionalScrapeConfigsSecret(ms *stack.MonitoringStack, name string) *corev1.Secret {
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
+			APIVersion: corev1.SchemeGroupVersion.String(),
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{

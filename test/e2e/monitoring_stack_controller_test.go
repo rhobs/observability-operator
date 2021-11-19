@@ -287,7 +287,7 @@ func getAlertmanagerAlerts() ([]alert, error) {
 func newAlerts(t *testing.T) *monv1.PrometheusRule {
 	rule := &monv1.PrometheusRule{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "monitoring.coreos.com/v1",
+			APIVersion: monv1.SchemeGroupVersion.String(),
 			Kind:       "PrometheusRule",
 		},
 		ObjectMeta: metav1.ObjectMeta{

@@ -65,7 +65,7 @@ func setupFramework() error {
 func createNamespace(name string) (func(), error) {
 	ns := &v1.Namespace{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
+			APIVersion: v1.SchemeGroupVersion.String(),
 			Kind:       "Namespace",
 		},
 		ObjectMeta: metav1.ObjectMeta{

@@ -23,8 +23,8 @@ func newAlertmanager(
 
 	return &monv1.Alertmanager{
 		TypeMeta: metav1.TypeMeta{
+			APIVersion: monv1.SchemeGroupVersion.String(),
 			Kind:       "Alertmanager",
-			APIVersion: "monitoring.coreos.com/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ms.Name,
@@ -46,7 +46,7 @@ func newAlertmanager(
 func newAlertmanagerService(ms *stack.MonitoringStack) *corev1.Service {
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
+			APIVersion: corev1.SchemeGroupVersion.String(),
 			Kind:       "Service",
 		},
 		ObjectMeta: metav1.ObjectMeta{
