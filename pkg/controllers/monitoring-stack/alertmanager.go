@@ -3,10 +3,11 @@ package monitoringstack
 import (
 	stack "rhobs/monitoring-stack-operator/pkg/apis/v1alpha1"
 
-	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func newAlertmanager(
@@ -29,11 +30,11 @@ func newAlertmanager(
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ms.Name,
 			Namespace: ms.Namespace,
-			Labels:    commonLabels(ms.Name, instanceSelectorKey, instanceSelectorValue),
+			Labels:    objectLabels(ms.Name, ms.Name, instanceSelectorKey, instanceSelectorValue),
 		},
 		Spec: monv1.AlertmanagerSpec{
 			PodMetadata: &monv1.EmbeddedObjectMetadata{
-				Labels: commonLabels(ms.Name, instanceSelectorKey, instanceSelectorValue),
+				Labels: podLabels("alertmanager", ms.Name),
 			},
 			Replicas:                            &replicas,
 			ServiceAccountName:                  rbacResourceName,
@@ -43,23 +44,20 @@ func newAlertmanager(
 	}
 }
 
-func newAlertmanagerService(ms *stack.MonitoringStack) *corev1.Service {
+func newAlertmanagerService(ms *stack.MonitoringStack, instanceSelectorKey string, instanceSelectorValue string) *corev1.Service {
+	name := ms.Name + "-alertmanager"
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Service",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      ms.Name + "-alertmanager",
+			Name:      name,
 			Namespace: ms.Namespace,
-			Labels: map[string]string{
-				"app.kubernetes.io/part-of": ms.Name,
-			},
+			Labels:    objectLabels(name, ms.Name, instanceSelectorKey, instanceSelectorValue),
 		},
 		Spec: corev1.ServiceSpec{
-			Selector: map[string]string{
-				"app.kubernetes.io/part-of": ms.Name,
-			},
+			Selector: podLabels("alertmanager", ms.Name),
 			Ports: []corev1.ServicePort{
 				{
 					Name:       "web",

@@ -183,14 +183,14 @@ func stackComponentPatchers(ms *stack.MonitoringStack, instanceSelectorKey strin
 		},
 		{
 			empty: func() client.Object {
-				service := newAlertmanagerService(ms)
+				service := newAlertmanagerService(ms, instanceSelectorKey, instanceSelectorValue)
 				return &corev1.Service{
 					TypeMeta:   service.TypeMeta,
 					ObjectMeta: service.ObjectMeta,
 				}
 			},
 			patch: func(existing client.Object) (client.Object, error) {
-				service := newAlertmanagerService(ms)
+				service := newAlertmanagerService(ms, instanceSelectorKey, instanceSelectorValue)
 
 				if existing == nil {
 					return service, nil
@@ -235,6 +235,33 @@ func stackComponentPatchers(ms *stack.MonitoringStack, instanceSelectorKey strin
 		},
 		{
 			empty: func() client.Object {
+				service := newPrometheusService(ms, instanceSelectorKey, instanceSelectorValue)
+				return &corev1.Service{
+					TypeMeta:   service.TypeMeta,
+					ObjectMeta: service.ObjectMeta,
+				}
+			},
+			patch: func(existing client.Object) (client.Object, error) {
+				service := newPrometheusService(ms, instanceSelectorKey, instanceSelectorValue)
+
+				if existing == nil {
+					return service, nil
+				}
+
+				desired, ok := existing.(*corev1.Service)
+				if !ok {
+					return nil, NewObjectTypeError(service, existing)
+				}
+
+				// The ClusterIP field is immutable and we have to take it from the observed object.
+				service.Spec.ClusterIP = desired.Spec.ClusterIP
+				desired.Spec = service.Spec
+				desired.Labels = service.Labels
+				return desired, nil
+			},
+		},
+		{
+			empty: func() client.Object {
 				dataSource := newGrafanaDataSource(ms)
 				return &grafanav1alpha1.GrafanaDataSource{
 					TypeMeta:   dataSource.TypeMeta,
@@ -261,8 +288,8 @@ func stackComponentPatchers(ms *stack.MonitoringStack, instanceSelectorKey strin
 }
 
 func newGrafanaDataSource(ms *stack.MonitoringStack) *grafanav1alpha1.GrafanaDataSource {
-	datasourceName := fmt.Sprintf("ms-%s-%s", ms.GetNamespace(), ms.GetName())
-	prometheusURL := fmt.Sprintf("prometheus-operated.%s:9090", ms.GetNamespace())
+	datasourceName := fmt.Sprintf("ms-%s-%s", ms.Namespace, ms.Name)
+	prometheusURL := fmt.Sprintf("%s-prometheus.%s:9090", ms.Name, ms.Namespace)
 	return &grafanav1alpha1.GrafanaDataSource{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "integreatly.org/v1alpha1",
@@ -344,10 +371,14 @@ func newPrometheus(
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ms.Name,
 			Namespace: ms.Namespace,
-			Labels:    commonLabels(ms.Name, instanceSelectorKey, instanceSelectorValue),
+			Labels:    objectLabels(ms.Name, ms.Name, instanceSelectorKey, instanceSelectorValue),
 		},
 
 		Spec: monv1.PrometheusSpec{
+			PodMetadata: &monv1.EmbeddedObjectMetadata{
+				Labels: podLabels("prometheus", ms.Name),
+			},
+
 			// Prometheus does not use an Enum for LogLevel, so need to convert to string
 			LogLevel: string(ms.Spec.LogLevel),
 
@@ -367,7 +398,7 @@ func newPrometheus(
 				Alertmanagers: []monv1.AlertmanagerEndpoints{
 					{
 						APIVersion: "v2",
-						Name:       newAlertmanagerService(ms).Name,
+						Name:       ms.Name + "-alertmanager",
 						Namespace:  ms.Namespace,
 						Scheme:     "http",
 						Port:       intstr.FromString("web"),
@@ -414,6 +445,31 @@ func newRoleBinding(ms *stack.MonitoringStack, rbacResourceName string) *rbacv1.
 		},
 	}
 	return roleBinding
+}
+
+func newPrometheusService(ms *stack.MonitoringStack, instanceSelectorKey string, instanceSelectorValue string) *corev1.Service {
+	name := ms.Name + "-prometheus"
+	return &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Service",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ms.Namespace,
+			Labels:    objectLabels(name, ms.Name, instanceSelectorKey, instanceSelectorValue),
+		},
+		Spec: corev1.ServiceSpec{
+			Selector: podLabels("prometheus", ms.Name),
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "web",
+					Port:       9090,
+					TargetPort: intstr.FromInt(9090),
+				},
+			},
+		},
+	}
 }
 
 func newAdditionalScrapeConfigsSecret(ms *stack.MonitoringStack, name string) *corev1.Secret {
@@ -581,9 +637,17 @@ func newAdditionalScrapeConfigsSecret(ms *stack.MonitoringStack, name string) *c
 	}
 }
 
-func commonLabels(msName string, instanceSelectorKey string, instanceSelectorValue string) map[string]string {
+func objectLabels(name string, msName string, instanceSelectorKey string, instanceSelectorValue string) map[string]string {
 	return map[string]string{
 		instanceSelectorKey:         instanceSelectorValue,
+		"app.kubernetes.io/name":    name,
 		"app.kubernetes.io/part-of": msName,
+	}
+}
+
+func podLabels(component string, msName string) map[string]string {
+	return map[string]string{
+		"app.kubernetes.io/component": component,
+		"app.kubernetes.io/part-of":   msName,
 	}
 }

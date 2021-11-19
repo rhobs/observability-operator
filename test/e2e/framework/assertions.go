@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	corev1 "k8s.io/api/core/v1"
+	appsv1 "k8s.io/api/apps/v1"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -52,14 +52,14 @@ func (f *Framework) AssertResourceEventuallyExists(name string, namespace string
 	}
 }
 
-// AssertPodEventuallyRuns asserts that a pod eventually gets into a Running phase
-func (f *Framework) AssertPodEventuallyRuns(name string, namespace string) func(t *testing.T) {
+// AssertStatefulsetReady asserts that a statefulset has the desired number of pods running
+func (f *Framework) AssertStatefulsetReady(name string, namespace string) func(t *testing.T) {
 	return func(t *testing.T) {
 		key := types.NamespacedName{Name: name, Namespace: namespace}
 		if err := wait.Poll(5*time.Second, wait.ForeverTestTimeout, func() (bool, error) {
-			pod := &corev1.Pod{}
+			pod := &appsv1.StatefulSet{}
 			err := f.K8sClient.Get(context.Background(), key, pod)
-			return err == nil && pod.Status.Phase == corev1.PodRunning, nil
+			return err == nil && pod.Status.ReadyReplicas == *pod.Spec.Replicas, nil
 		}); err != nil {
 			t.Fatal(err)
 		}

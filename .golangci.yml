@@ -7,6 +7,9 @@ linters:
 
 issues:
   exclude-rules:
+  - path: zz_generated.deepcopy.go
+    linters:
+      - goimports
   - path: _test.go
     linters:
     - errcheck
