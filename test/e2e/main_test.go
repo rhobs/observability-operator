@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"context"
+	"flag"
 	"log"
 	"os"
 	"rhobs/monitoring-stack-operator/pkg/operator"
@@ -21,7 +22,10 @@ var (
 
 const e2eTestNamespace = "e2e-tests"
 
+var retain = flag.Bool("retain", false, "When set, the namespace in which tests are run will not be cleaned up")
+
 func TestMain(m *testing.M) {
+	flag.Parse()
 
 	// Deferred calls are not executed on os.Exit from TestMain.
 	// As a workaround, we call another function in which we can add deferred calls.
@@ -41,7 +45,10 @@ func main(m *testing.M) int {
 		log.Println(err)
 		return 1
 	}
-	defer cleanup()
+	if !*retain {
+		defer cleanup()
+	}
+
 	return m.Run()
 }
 
@@ -57,6 +64,7 @@ func setupFramework() error {
 	f = &framework.Framework{
 		K8sClient: k8sClient,
 		Config:    cfg,
+		Retain:    *retain,
 	}
 
 	return nil

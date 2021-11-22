@@ -315,7 +315,7 @@ func newAlerts(t *testing.T) *monv1.PrometheusRule {
 			},
 		},
 	}
-	t.Cleanup(func() {
+	f.CleanUp(t, func() {
 		f.K8sClient.Delete(context.Background(), rule)
 	})
 
@@ -329,8 +329,9 @@ func newMonitoringStack(t *testing.T, name string) *stack.MonitoringStack {
 			Namespace: e2eTestNamespace,
 		},
 	}
-	t.Cleanup(func() {
+	f.CleanUp(t, func() {
 		f.K8sClient.Delete(context.Background(), ms)
 	})
+
 	return ms
 }
