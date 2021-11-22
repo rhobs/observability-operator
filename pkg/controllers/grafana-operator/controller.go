@@ -284,10 +284,8 @@ func (r *reconciler) reconcileGrafana(ctx context.Context) reconcileResult {
 	var grafana integreatlyv1alpha1.Grafana
 	err := r.k8sClient.Get(ctx, key, &grafana)
 	if err != nil && !errors.IsNotFound(err) {
-		if err != nil {
-			r.logger.Info("Get failed" + string(errors.ReasonForError(err)))
-		}
 
+		// Ignore error and requeue if the errors are related to CRD not present
 		if meta.IsNoMatchError(err) || errors.IsMethodNotSupported(err) {
 			r.logger.V(10).Info("Grafana CRD does not exist - NoMatchError")
 			return requeue(5*time.Second, nil)
