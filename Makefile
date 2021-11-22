@@ -19,6 +19,7 @@ KUSTOMIZE=$(TOOLS_DIR)/kustomize
 OPERATOR_SDK = $(TOOLS_DIR)/operator-sdk
 OPM = $(TOOLS_DIR)/opm
 PROMQ = $(TOOLS_DIR)/promq
+OC = $(TOOLS_DIR)/oc
 
 $(TOOLS_DIR):
 	@mkdir -p $(TOOLS_DIR)
@@ -85,6 +86,16 @@ $(PROMQ) promq: $(TOOLS_DIR)
 		cd instrumentation-tools ;\
 		go build -o $(PROMQ) . ;\
 		rm -rf $$TMP_DIR ;\
+	}
+
+.PHONY: oc
+$(OC) oc: $(TOOLS_DIR)
+	@{ \
+		set -ex ;\
+		[[ -f $(OC) ]] && exit 0 ;\
+		OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) && \
+		curl -sSLo $(OC) https://mirror.openshift.com/pub/openshift-v4/$${ARCH}/clients/oc/latest/$${OS}/oc.tar.gz ;\
+		tar -xf $(TOOLS_DIR)/oc -C $(TOOLS_DIR) ;\
 	}
 
 # Install all required tools

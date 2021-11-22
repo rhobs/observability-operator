@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"testing"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -20,6 +21,7 @@ import (
 type Framework struct {
 	Config    *rest.Config
 	K8sClient client.Client
+	Retain    bool
 }
 
 // StartPortForward initiates a port forwarding connection to a pod on the localhost interface.
@@ -84,4 +86,11 @@ func (f *Framework) getPodsForService(name string, namespace string) ([]corev1.P
 	}
 
 	return pods.Items, nil
+}
+
+func (f *Framework) CleanUp(t *testing.T, cleanupFunc func()) {
+	testSucceeded := !t.Failed()
+	if testSucceeded || !f.Retain {
+		t.Cleanup(cleanupFunc)
+	}
 }

@@ -117,13 +117,7 @@ runs:
 
     - name: Run tests
       shell: bash
-      run: |
-        go test -v ./test/e2e/... || {
-          echo ================================================================
-          # print operator logs on failure
-          kubectl logs -n operators deploy/monitoring-stack-operator
-          exit 1
-        }
+      run: go test -v -failfast ./test/e2e/... --retain=true
 
     - name: Print operator logs and reconcile stats
       shell: bash
@@ -147,3 +141,20 @@ runs:
           echo "Found $reconcile_errors reconciliation errors"
           exit 1
         fi
+
+    - name: Capture cluster state
+      if: always()
+      shell: bash
+      run: |
+        # Output operator logs
+        kubectl logs -n operators deploy/monitoring-stack-operator
+        # Capture apiserver state
+        make oc
+        oc adm inspect -A ns --dest-dir cluster-state || true
+
+    - name: Archive production artifacts
+      if: always()
+      uses: actions/upload-artifact@v2
+      with:
+        name: cluster-state
+        path: cluster-state
