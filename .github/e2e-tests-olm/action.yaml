@@ -35,7 +35,7 @@ runs:
 
     - name: Install required tools
       shell: bash
-      run: make operator-sdk promq
+      run: make operator-sdk promq oc
 
     - name: Install OLM
       shell: bash
@@ -149,7 +149,6 @@ runs:
         # Output operator logs
         kubectl logs -n operators deploy/monitoring-stack-operator
         # Capture apiserver state
-        make oc
         oc adm inspect node --dest-dir cluster-state || true
         oc adm inspect -A statefulset --dest-dir cluster-state || true
         oc adm inspect -A ns --dest-dir cluster-state || true

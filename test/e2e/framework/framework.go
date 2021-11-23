@@ -89,8 +89,10 @@ func (f *Framework) getPodsForService(name string, namespace string) ([]corev1.P
 }
 
 func (f *Framework) CleanUp(t *testing.T, cleanupFunc func()) {
-	testSucceeded := !t.Failed()
-	if testSucceeded || !f.Retain {
-		t.Cleanup(cleanupFunc)
-	}
+	t.Cleanup(func() {
+		testSucceeded := !t.Failed()
+		if testSucceeded || !f.Retain {
+			cleanupFunc()
+		}
+	})
 }

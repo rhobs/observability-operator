@@ -9,6 +9,9 @@ import (
 	"testing"
 	"time"
 
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
+
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -194,7 +197,7 @@ func assertPrometheusScrapesItself(t *testing.T) {
 	ms := newMonitoringStack(t, "self-scrape")
 	err := f.K8sClient.Create(context.Background(), ms)
 	assert.NilError(t, err)
-	f.AssertStatefulsetReady("prometheus-self-scrape", e2eTestNamespace, framework.WithTimeout(2*time.Minute))(t)
+	f.AssertStatefulsetReady("prometheus-self-scrape", e2eTestNamespace, framework.WithTimeout(5*time.Minute))(t)
 
 	stopChan := make(chan struct{})
 	defer close(stopChan)
@@ -331,7 +334,17 @@ func newMonitoringStack(t *testing.T, name string) *stack.MonitoringStack {
 	}
 	f.CleanUp(t, func() {
 		f.K8sClient.Delete(context.Background(), ms)
+		waitForStackDeletion(name)
 	})
 
 	return ms
+}
+
+func waitForStackDeletion(name string) error {
+	return wait.Poll(5*time.Second, wait.ForeverTestTimeout, func() (bool, error) {
+		key := types.NamespacedName{Name: name, Namespace: e2eTestNamespace}
+		var ms stack.MonitoringStack
+		err := f.K8sClient.Get(context.Background(), key, &ms)
+		return errors.IsNotFound(err), nil
+	})
 }
