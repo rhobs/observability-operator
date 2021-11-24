@@ -1,0 +1,32 @@
+name: tools-cache
+description: Caches develoment tools
+runs:
+  using: composite
+  steps:
+    - uses: actions/cache@v2
+      id: tools-cache
+      with:
+        path: ./tmp/bin
+        key: ${{ runner.os }}-tools-${{ hashFiles('.github/tools') }}
+
+    - name: Install Dependencies
+      if: steps.tools-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: make tools
+
+    - name: Show version info of tools
+      shell: bash
+      run: |
+        # verify if the restored/downloaded tools run properly
+
+        ls ./tmp/bin
+        echo -------------------------------------------
+
+        ./tmp/bin/controller-gen --version
+        ./tmp/bin/kustomize version
+        ./tmp/bin/oc version
+        ./tmp/bin/operator-sdk version
+        ./tmp/bin/opm version
+        ./tmp/bin/promq --help | head -n2
+
+        echo "---------- done ------------"

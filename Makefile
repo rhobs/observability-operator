@@ -13,13 +13,34 @@ all: operator
 
 ## Tools
 TOOLS_DIR = $(shell pwd)/tmp/bin
+
+## NOTE: each tool must have a version that will be recorded in .github/tools
+# The .github/tools file's hash is used to compute the key for cache in github
+# see: .github/tools-cache/action.yaml
+
 CONTROLLER_GEN=$(TOOLS_DIR)/controller-gen
-GOLANGCI_LINT=$(TOOLS_DIR)/golangci-lint
+CONTROLLER_GEN_VERSION= v0.7.0
+
 KUSTOMIZE=$(TOOLS_DIR)/kustomize
+KUSTOMIZE_VERSION= v3.9.4
+
 OPERATOR_SDK = $(TOOLS_DIR)/operator-sdk
+OPERATOR_SDK_VERSION = v1.13.0
+
 OPM = $(TOOLS_DIR)/opm
+OPM_VERSION = v1.15.1
+
+GOLANGCI_LINT=$(TOOLS_DIR)/golangci-lint
+GOLANGCI_LINT_VERSION= v1.42.1
+
+## NOTE: promq does not have any releases, so we use a fake version starting with v0.0.1
+# thus to upgrade/invalidate the github cache, increment the value
 PROMQ = $(TOOLS_DIR)/promq
+PROMQ_VERSION = v0.0.1
+
+# NOTE: oc is NOT downloadable using the OC_VERSION in its URL, so this has to be manually updated
 OC = $(TOOLS_DIR)/oc
+OC_VERSION = v4.9.7
 
 $(TOOLS_DIR):
 	@mkdir -p $(TOOLS_DIR)
@@ -28,14 +49,14 @@ $(TOOLS_DIR):
 $(CONTROLLER_GEN) controller-gen: $(TOOLS_DIR)
 	@{ \
 		set -ex ;\
-		GOBIN=$(TOOLS_DIR) go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.7.0 ;\
+		GOBIN=$(TOOLS_DIR) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_GEN_VERSION) ;\
 	}
 
 .PHONY: golangci-lint
 $(GOLANGCI_LINT) golangci-lint: $(TOOLS_DIR)
 	@{ \
 		set -ex ;\
-		GOBIN=$(TOOLS_DIR) go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.42.1 ;\
+		GOBIN=$(TOOLS_DIR) go install github.com/golangci/golangci-lint/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION) ;\
 	}
 
 # NOTE: kustomize does not support `go install` hence this workaround to install
@@ -51,7 +72,7 @@ $(KUSTOMIZE) kustomize: $(TOOLS_DIR)
 		cd $$TMP_DIR ;\
 		go mod init tmp ;\
 		echo "Downloading kustomize" ;\
-		GOBIN=$(TOOLS_DIR) go get sigs.k8s.io/kustomize/kustomize/v3@v3.9.4 ;\
+		GOBIN=$(TOOLS_DIR) go get sigs.k8s.io/kustomize/kustomize/v3@$(KUSTOMIZE_VERSION) ;\
 		rm -rf $$TMP_DIR ;\
 	}
 
@@ -61,7 +82,7 @@ $(OPERATOR_SDK) operator-sdk: $(TOOLS_DIR)
 		set -ex ;\
 		[[ -f $(OPERATOR_SDK) ]] && exit 0 ;\
 		OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) && \
-		curl -sSLo $(OPERATOR_SDK) https://github.com/operator-framework/operator-sdk/releases/download/v1.13.0/operator-sdk_$${OS}_$${ARCH} ;\
+		curl -sSLo $(OPERATOR_SDK) https://github.com/operator-framework/operator-sdk/releases/download/$(OPERATOR_SDK_VERSION)/operator-sdk_$${OS}_$${ARCH} ;\
 		chmod +x $(OPERATOR_SDK) ;\
 	}
 
@@ -70,7 +91,7 @@ $(OPM) opm: $(TOOLS_DIR)
 	@{ \
 		set -ex ;\
 		OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) && \
-		curl -sSLo $(OPM) https://github.com/operator-framework/operator-registry/releases/download/v1.15.1/$${OS}-$${ARCH}-opm ;\
+		curl -sSLo $(OPM) https://github.com/operator-framework/operator-registry/releases/download/$(OPM_VERSION)/$${OS}-$${ARCH}-opm ;\
 		chmod +x $(OPM) ;\
 	}
 
@@ -96,11 +117,31 @@ $(OC) oc: $(TOOLS_DIR)
 		OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) && \
 		curl -sSLo $(OC) https://mirror.openshift.com/pub/openshift-v4/$${ARCH}/clients/oc/latest/$${OS}/oc.tar.gz ;\
 		tar -xf $(TOOLS_DIR)/oc -C $(TOOLS_DIR) ;\
+		rm -f $(TOOLS_DIR)/README.md ;\
+		$(OC) version ;\
+		version=$(OC_VERSION) ;\
+		$(OC) version | grep -q $${version##v} ;\
 	}
 
 # Install all required tools
 .PHONY: tools
-tools: $(CONTROLLER_GEN) $(KUSTOMIZE) $(OPERATOR_SDK) $(OPM) $(PROMQ)
+tools: $(CONTROLLER_GEN) \
+ 		$(KUSTOMIZE) \
+		$(OC) \
+		$(OPERATOR_SDK) \
+		$(OPM) \
+	 	$(PROMQ)
+	@{ \
+		set -ex ;\
+		tools_file=.github/tools ;\
+		>$$tools_file ;\
+		echo  $$(basename $(CONTROLLER_GEN)) $(CONTROLLER_GEN_VERSION) >> $$tools_file ;\
+		echo  $$(basename $(KUSTOMIZE)) $(KUSTOMIZE_VERSION) >> $$tools_file ;\
+		echo  $$(basename $(OC)) $(OC_VERSION) >> $$tools_file ;\
+		echo  $$(basename $(OPERATOR_SDK)) $(OPERATOR_SDK_VERSION) >> $$tools_file ;\
+		echo  $$(basename $(OPM)) $(OPM_VERSION) >> $$tools_file ;\
+		echo  $$(basename $(PROMQ)) $(PROMQ_VERSION) >> $$tools_file ;\
+	}
 
 ## Development
 
