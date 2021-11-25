@@ -34,8 +34,7 @@ runs:
         config: ./hack/kind/config.yaml
 
     - name: Install required tools
-      shell: bash
-      run: make operator-sdk promq oc
+      uses: ./.github/tools-cache
 
     - name: Install OLM
       shell: bash
