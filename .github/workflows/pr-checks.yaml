@@ -11,6 +11,13 @@ jobs:
           fetch-depth: 0
       - uses: wagoid/commitlint-github-action@v4
 
+  github-actions-yaml-lint:
+    runs-on: ubuntu-latest
+    name: Github Actions yaml linter
+    steps:
+      - uses: actions/checkout@v2
+      - uses: reviewdog/action-actionlint@v1
+
   golang-lint:
     runs-on: ubuntu-latest
     name: Golang linter
