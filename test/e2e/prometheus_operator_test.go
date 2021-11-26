@@ -2,9 +2,10 @@ package e2e
 
 import (
 	"context"
-	"rhobs/monitoring-stack-operator/test/e2e/framework"
 	"testing"
 	"time"
+
+	"github.com/rhobs/monitoring-stack-operator/test/e2e/framework"
 
 	v1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"

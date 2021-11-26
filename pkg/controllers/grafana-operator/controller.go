@@ -16,8 +16,9 @@ package grafana_operator
 import (
 	"context"
 	"fmt"
-	"rhobs/monitoring-stack-operator/pkg/eventsource"
 	"time"
+
+	"github.com/rhobs/monitoring-stack-operator/pkg/eventsource"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 

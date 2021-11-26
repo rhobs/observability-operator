@@ -5,9 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"rhobs/monitoring-stack-operator/test/e2e/framework"
 	"testing"
 	"time"
+
+	"github.com/rhobs/monitoring-stack-operator/test/e2e/framework"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -16,7 +17,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/wait"
 
-	stack "rhobs/monitoring-stack-operator/pkg/apis/v1alpha1"
+	stack "github.com/rhobs/monitoring-stack-operator/pkg/apis/v1alpha1"
 
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 

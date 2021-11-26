@@ -19,7 +19,8 @@ package main
 import (
 	"flag"
 	"os"
-	"rhobs/monitoring-stack-operator/pkg/operator"
+
+	"github.com/rhobs/monitoring-stack-operator/pkg/operator"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"

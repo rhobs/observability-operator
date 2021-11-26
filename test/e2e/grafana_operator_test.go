@@ -2,11 +2,12 @@ package e2e
 
 import (
 	"context"
-	grafana_operator "rhobs/monitoring-stack-operator/pkg/controllers/grafana-operator"
-	"rhobs/monitoring-stack-operator/test/e2e/framework"
-	fw "rhobs/monitoring-stack-operator/test/e2e/framework"
 	"testing"
 	"time"
+
+	grafana_operator "github.com/rhobs/monitoring-stack-operator/pkg/controllers/grafana-operator"
+	"github.com/rhobs/monitoring-stack-operator/test/e2e/framework"
+	fw "github.com/rhobs/monitoring-stack-operator/test/e2e/framework"
 
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"

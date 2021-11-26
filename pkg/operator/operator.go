@@ -3,8 +3,9 @@ package operator
 import (
 	"context"
 	"fmt"
-	goctrl "rhobs/monitoring-stack-operator/pkg/controllers/grafana-operator"
-	stackctrl "rhobs/monitoring-stack-operator/pkg/controllers/monitoring-stack"
+
+	goctrl "github.com/rhobs/monitoring-stack-operator/pkg/controllers/grafana-operator"
+	stackctrl "github.com/rhobs/monitoring-stack-operator/pkg/controllers/monitoring-stack"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 

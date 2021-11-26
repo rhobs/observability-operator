@@ -2,8 +2,9 @@ package monitoringstack
 
 import (
 	"fmt"
-	stack "rhobs/monitoring-stack-operator/pkg/apis/v1alpha1"
-	grafana_operator "rhobs/monitoring-stack-operator/pkg/controllers/grafana-operator"
+
+	stack "github.com/rhobs/monitoring-stack-operator/pkg/apis/v1alpha1"
+	grafana_operator "github.com/rhobs/monitoring-stack-operator/pkg/controllers/grafana-operator"
 
 	"k8s.io/apimachinery/pkg/util/intstr"
 

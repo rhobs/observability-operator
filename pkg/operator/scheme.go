@@ -1,7 +1,7 @@
 package operator
 
 import (
-	rhobsv1alpha1 "rhobs/monitoring-stack-operator/pkg/apis/v1alpha1"
+	rhobsv1alpha1 "github.com/rhobs/monitoring-stack-operator/pkg/apis/v1alpha1"
 
 	integreatlyv1alpha1 "github.com/grafana-operator/grafana-operator/v4/api/integreatly/v1alpha1"
 	olmv1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/client/clientset/versioned/scheme"

@@ -5,9 +5,10 @@ import (
 	"flag"
 	"log"
 	"os"
-	"rhobs/monitoring-stack-operator/pkg/operator"
-	"rhobs/monitoring-stack-operator/test/e2e/framework"
 	"testing"
+
+	"github.com/rhobs/monitoring-stack-operator/pkg/operator"
+	"github.com/rhobs/monitoring-stack-operator/test/e2e/framework"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
