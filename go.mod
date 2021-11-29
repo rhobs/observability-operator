@@ -1,4 +1,4 @@
-module rhobs/monitoring-stack-operator
+module github.com/rhobs/monitoring-stack-operator
 
 go 1.17
 

@@ -1,7 +1,7 @@
 package monitoringstack
 
 import (
-	stack "rhobs/monitoring-stack-operator/pkg/apis/v1alpha1"
+	stack "github.com/rhobs/monitoring-stack-operator/pkg/apis/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
