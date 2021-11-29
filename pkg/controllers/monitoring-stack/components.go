@@ -485,34 +485,18 @@ func newAdditionalScrapeConfigsSecret(ms *stack.MonitoringStack, name string) *c
 			Namespace: ms.Namespace,
 		},
 		StringData: map[string]string{
-			AdditionalScrapeConfigsSelfScrapeKey: `- job_name: prometheus-self
+			AdditionalScrapeConfigsSelfScrapeKey: `
+- job_name: prometheus-self
   honor_labels: true
   relabel_configs:
-  - source_labels:
-    - job
-    target_label: __tmp_prometheus_job_name
   - action: keep
     source_labels:
-    - __meta_kubernetes_service_label_operated_prometheus
-    regex: "true"
+    - __meta_kubernetes_service_label_app_kubernetes_io_name
+    regex: ` + ms.Name + `-prometheus
   - action: keep
     source_labels:
     - __meta_kubernetes_endpoint_port_name
     regex: web
-  - source_labels:
-    - __meta_kubernetes_endpoint_address_target_kind
-    - __meta_kubernetes_endpoint_address_target_name
-    separator: ;
-    regex: Node;(.*)
-    replacement: ${1}
-    target_label: node
-  - source_labels:
-    - __meta_kubernetes_endpoint_address_target_kind
-    - __meta_kubernetes_endpoint_address_target_name
-    separator: ;
-    regex: Pod;(.*)
-    replacement: ${1}
-    target_label: pod
   - source_labels:
     - __meta_kubernetes_namespace
     target_label: namespace
@@ -525,21 +509,8 @@ func newAdditionalScrapeConfigsSecret(ms *stack.MonitoringStack, name string) *c
   - source_labels:
     - __meta_kubernetes_pod_container_name
     target_label: container
-  - source_labels:
-    - __meta_kubernetes_service_name
-    target_label: job
-    replacement: ${1}
   - target_label: endpoint
     replacement: web
-  - source_labels:
-    - __address__
-    target_label: __tmp_hash
-    modulus: 1
-    action: hashmod
-  - source_labels:
-    - __tmp_hash
-    regex: 0
-    action: keep
   kubernetes_sd_configs:
   - role: endpoints
     namespaces:
@@ -553,15 +524,10 @@ func newAdditionalScrapeConfigsSecret(ms *stack.MonitoringStack, name string) *c
   scheme: http
   follow_redirects: true
   relabel_configs:
-  - source_labels: [job]
+  - source_labels: 
+    - __meta_kubernetes_service_label_app_kubernetes_io_name
     separator: ;
-    regex: (.*)
-    target_label: __tmp_prometheus_job_name
-    replacement: $1
-    action: replace
-  - source_labels: [__meta_kubernetes_service_label_app_kubernetes_io_part_of]
-    separator: ;
-    regex: ` + ms.Name + `
+    regex: ` + ms.Name + `-alertmanager
     replacement: $1
     action: keep
   - source_labels: [__meta_kubernetes_endpoint_port_name]
@@ -569,18 +535,6 @@ func newAdditionalScrapeConfigsSecret(ms *stack.MonitoringStack, name string) *c
     regex: web
     replacement: $1
     action: keep
-  - source_labels: [__meta_kubernetes_endpoint_address_target_kind, __meta_kubernetes_endpoint_address_target_name]
-    separator: ;
-    regex: Node;(.*)
-    target_label: node
-    replacement: ${1}
-    action: replace
-  - source_labels: [__meta_kubernetes_endpoint_address_target_kind, __meta_kubernetes_endpoint_address_target_name]
-    separator: ;
-    regex: Pod;(.*)
-    target_label: pod
-    replacement: ${1}
-    action: replace
   - source_labels: [__meta_kubernetes_namespace]
     separator: ;
     regex: (.*)
@@ -605,29 +559,11 @@ func newAdditionalScrapeConfigsSecret(ms *stack.MonitoringStack, name string) *c
     target_label: container
     replacement: $1
     action: replace
-  - source_labels: [__meta_kubernetes_service_name]
-    separator: ;
-    regex: (.*)
-    target_label: job
-    replacement: ${1}
-    action: replace
   - separator: ;
     regex: (.*)
     target_label: endpoint
     replacement: web
     action: replace
-  - source_labels: [__address__]
-    separator: ;
-    regex: (.*)
-    modulus: 1
-    target_label: __tmp_hash
-    replacement: $1
-    action: hashmod
-  - source_labels: [__tmp_hash]
-    separator: ;
-    regex: "0"
-    replacement: $1
-    action: keep
   kubernetes_sd_configs:
   - role: endpoints
     kubeconfig_file: ""
