@@ -18,12 +18,12 @@ spec:
         app.kubernetes.io/name: prometheus-operator
         app.kubernetes.io/component: controller
         app.kubernetes.io/part-of: monitoring-stack-operator
-        app.kubernetes.io/version: 0.50.0
+        app.kubernetes.io/version: 0.52.1
     spec:
       serviceAccountName: monitoring-stack-operator-prometheus-operator-sa
       containers:
         - args:
-            - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.50.0
+            - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.52.1
             - --prometheus-instance-selector=app.kubernetes.io/managed-by=monitoring-stack-operator
             - --alertmanager-instance-selector=app.kubernetes.io/managed-by=monitoring-stack-operator
             - --thanos-ruler-instance-selector=app.kubernetes.io/managed-by=monitoring-stack-operator

@@ -5,72 +5,72 @@ metadata:
   name: monitoring-stack-operator-prometheus-operator
 rules:
 - apiGroups:
-  - monitoring.coreos.com
+    - monitoring.coreos.com
   resources:
-  - alertmanagers
-  - alertmanagers/finalizers
-  - alertmanagerconfigs
-  - prometheuses
-  - prometheuses/finalizers
-  - thanosrulers
-  - thanosrulers/finalizers
-  - servicemonitors
-  - podmonitors
-  - probes
-  - prometheusrules
+    - alertmanagers
+    - alertmanagers/finalizers
+    - alertmanagerconfigs
+    - prometheuses
+    - prometheuses/finalizers
+    - thanosrulers
+    - thanosrulers/finalizers
+    - servicemonitors
+    - podmonitors
+    - probes
+    - prometheusrules
   verbs:
-  - '*'
+    - '*'
 - apiGroups:
-  - apps
+    - apps
   resources:
-  - statefulsets
+    - statefulsets
   verbs:
-  - '*'
+    - '*'
 - apiGroups:
-  - ""
+    - ""
   resources:
-  - configmaps
-  - secrets
+    - configmaps
+    - secrets
   verbs:
-  - '*'
+    - '*'
 - apiGroups:
-  - ""
+    - ""
   resources:
-  - pods
+    - pods
   verbs:
-  - list
-  - delete
+    - list
+    - delete
 - apiGroups:
-  - ""
+    - ""
   resources:
-  - services
-  - services/finalizers
-  - endpoints
+    - services
+    - services/finalizers
+    - endpoints
   verbs:
-  - get
-  - create
-  - update
-  - delete
+    - get
+    - create
+    - update
+    - delete
 - apiGroups:
-  - ""
+    - ""
   resources:
-  - nodes
+    - nodes
   verbs:
-  - list
-  - watch
+    - list
+    - watch
 - apiGroups:
-  - ""
+    - ""
   resources:
-  - namespaces
+    - namespaces
   verbs:
-  - get
-  - list
-  - watch
+    - get
+    - list
+    - watch
 - apiGroups:
-  - networking.k8s.io
+    - networking.k8s.io
   resources:
-  - ingresses
+    - ingresses
   verbs:
-  - get
-  - list
-  - watch
+    - get
+    - list
+    - watch
