@@ -67,7 +67,7 @@ runs:
       shell: bash
       run: |
         # TODO: build a kubernetes-specific bundle to avoid doing this
-        kubectl apply -k deploy/crds/kubernetes
+        kubectl create -k deploy/crds/kubernetes
         kubectl wait --for=condition=Established crds --all --timeout=300s
 
         ./tmp/bin/operator-sdk run bundle \
