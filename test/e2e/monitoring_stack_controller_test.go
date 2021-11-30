@@ -210,18 +210,35 @@ func assertPrometheusScrapesItself(t *testing.T) {
 	}
 
 	promClient := framework.NewPrometheusClient("http://localhost:9090")
+	expectedResults := map[string]int{
+		"prometheus_build_info":   1,
+		"alertmanager_build_info": 3,
+	}
 	if err := wait.Poll(5*time.Second, 5*time.Minute, func() (bool, error) {
-		query := "prometheus_tsdb_head_chunks"
-		result, err := promClient.Query(query)
-		if err != nil {
-			return false, nil
+		correct := 0
+		for query, value := range expectedResults {
+			result, err := promClient.Query(query)
+			if err != nil {
+				return false, nil
+			}
+
+			if len(result.Data.Result) == 0 {
+				return false, nil
+			}
+
+			if len(result.Data.Result) > value {
+				resultErr := fmt.Errorf("invalid result for query %s, got %d, want %d", query, len(result.Data.Result), value)
+				return false, resultErr
+			}
+
+			if len(result.Data.Result) != value {
+				return false, nil
+			}
+
+			correct++
 		}
 
-		if len(result.Data.Result) == 0 {
-			return false, nil
-		}
-
-		return true, nil
+		return correct == len(expectedResults), nil
 	}); err != nil {
 		t.Fatal(err)
 	}
