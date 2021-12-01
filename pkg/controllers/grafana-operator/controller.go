@@ -18,11 +18,11 @@ import (
 	"fmt"
 	"time"
 
+	networkingv1 "k8s.io/api/networking/v1"
+
 	"github.com/rhobs/monitoring-stack-operator/pkg/eventsource"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	networkingv1 "k8s.io/api/networking/v1"
 
 	integreatlyv1alpha1 "github.com/grafana-operator/grafana-operator/v4/api/integreatly/v1alpha1"
 	v1 "k8s.io/api/apps/v1"
@@ -59,6 +59,7 @@ const (
 	subscriptionName  = "monitoring-stack-operator-grafana-operator"
 	operatorGroupName = "monitoring-stack-operator-grafana-operator"
 	grafanaName       = "monitoring-stack-operator-grafana"
+	grafanaCSV        = "grafana-operator.v4.0.1"
 )
 
 type reconciler struct {
@@ -79,6 +80,7 @@ type reconcileResult struct {
 //+kubebuilder:rbac:groups="",resources=namespaces,verbs=list;watch,resourceNames=monitoring-stack-operator
 //+kubebuilder:rbac:groups="",resources=namespaces,verbs=create
 //+kubebuilder:rbac:groups=operators.coreos.com,resources=subscriptions;operatorgroups,verbs=list;watch;create;update,namespace=monitoring-stack-operator
+//+kubebuilder:rbac:groups=operators.coreos.com,resources=installplans,verbs=list;watch;update,namespace=monitoring-stack-operator
 //+kubebuilder:rbac:groups=integreatly.org,namespace=monitoring-stack-operator,resources=grafanas,verbs=list;watch;create;update
 
 // RegisterWithManager registers the controller with Manager
@@ -156,6 +158,14 @@ func RegisterWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
+	installPlanInformer := r.installPlanInformer()
+	go installPlanInformer.Run(nil)
+	if err := c.Watch(&source.Informer{
+		Informer: installPlanInformer,
+	}, &handler.EnqueueRequestForObject{}, predicate.GenerationChangedPredicate{}); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -187,6 +197,11 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	logger.Info("Reconciling Grafana Operator Subscription")
 	if res := r.reconcileSubscription(ctx); res.stop {
+		return result(res)
+	}
+
+	logger.Info("Approving Grafana Operator Install Plan")
+	if res := r.approveInstallPlan(ctx); res.stop {
 		return result(res)
 	}
 
@@ -276,6 +291,40 @@ func (r *reconciler) reconcileSubscription(ctx context.Context) reconcileResult 
 	return updationResult(err)
 }
 
+func (r *reconciler) approveInstallPlan(ctx context.Context) reconcileResult {
+	subscriptionKey := types.NamespacedName{
+		Name:      subscriptionName,
+		Namespace: Namespace,
+	}
+	var subscription v1alpha1.Subscription
+	if err := r.k8sClient.Get(ctx, subscriptionKey, &subscription); err != nil {
+		return reconcileError(err)
+	}
+
+	installPlanRef := subscription.Status.InstallPlanRef
+	if installPlanRef == nil {
+		return end()
+	}
+
+	installPlanKey := types.NamespacedName{
+		Namespace: Namespace,
+		Name:      installPlanRef.Name,
+	}
+	var installPlan v1alpha1.InstallPlan
+	err := r.k8sClient.Get(ctx, installPlanKey, &installPlan)
+	if err != nil {
+		return reconcileError(err)
+	}
+
+	// Only approve install plans for the specified version
+	if installPlan.Spec.ClusterServiceVersionNames[0] != grafanaCSV {
+		return next()
+	}
+
+	installPlan.Spec.Approved = true
+	return updationResult(r.k8sClient.Update(ctx, &installPlan))
+}
+
 func (r *reconciler) reconcileGrafana(ctx context.Context) reconcileResult {
 	key := types.NamespacedName{
 		Name:      grafanaName,
@@ -343,8 +392,8 @@ func NewSubscription() *v1alpha1.Subscription {
 			CatalogSourceNamespace: "",
 			Package:                "grafana-operator",
 			Channel:                "v4",
-			InstallPlanApproval:    v1alpha1.ApprovalAutomatic,
-			StartingCSV:            "grafana-operator.v4.0.1",
+			InstallPlanApproval:    v1alpha1.ApprovalManual,
+			StartingCSV:            grafanaCSV,
 		},
 	}
 }
@@ -408,7 +457,7 @@ func newGrafana() *integreatlyv1alpha1.Grafana {
 			Config: integreatlyv1alpha1.GrafanaConfig{
 				Log: &integreatlyv1alpha1.GrafanaConfigLog{
 					Mode:  "console",
-					Level: "error",
+					Level: "info",
 				},
 				Auth: &integreatlyv1alpha1.GrafanaConfigAuth{
 					DisableLoginForm:   &flagTrue,
@@ -444,6 +493,11 @@ func (r *reconciler) grafanaInformer() cache.SharedIndexInformer {
 	return singleResourceInformer(grafanaName, Namespace, "grafanas", &integreatlyv1alpha1.Grafana{}, r.grafanaClientset)
 }
 
+func (r *reconciler) installPlanInformer() cache.SharedIndexInformer {
+	clientset := r.olmClientset.OperatorsV1alpha1().RESTClient()
+	return singleNamespaceInformer(Namespace, "installplans", &v1alpha1.InstallPlan{}, clientset)
+}
+
 func singleResourceInformer(name string, namespace string, resource string, object runtime.Object, clientset rest.Interface) cache.SharedIndexInformer {
 	listWatcher := cache.NewListWatchFromClient(
 		clientset,
@@ -451,6 +505,24 @@ func singleResourceInformer(name string, namespace string, resource string, obje
 		namespace,
 		fields.AndSelectors(
 			fields.OneTermEqualSelector("metadata.name", name),
+		),
+	)
+
+	return cache.NewSharedIndexInformer(
+		listWatcher,
+		object,
+		0,
+		cache.Indexers{},
+	)
+}
+
+func singleNamespaceInformer(namespace string, resource string, object runtime.Object, clientset rest.Interface) cache.SharedIndexInformer {
+	listWatcher := cache.NewListWatchFromClient(
+		clientset,
+		resource,
+		namespace,
+		fields.AndSelectors(
+			fields.OneTermEqualSelector("metadata.namespace", namespace),
 		),
 	)
 

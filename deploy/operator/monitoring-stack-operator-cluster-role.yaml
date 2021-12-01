@@ -131,6 +131,14 @@ rules:
 - apiGroups:
   - operators.coreos.com
   resources:
+  - installplans
+  verbs:
+  - list
+  - update
+  - watch
+- apiGroups:
+  - operators.coreos.com
+  resources:
   - operatorgroups
   - subscriptions
   verbs:
