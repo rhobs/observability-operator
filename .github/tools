@@ -6,6 +6,7 @@ oc v4.8.11
 operator-sdk v1.13.0
 opm v1.15.1
 promq v0.0.1
+crdoc v0.5.2
 jsonnet v0.17.0
 jsonnetfmt v0.17.0
 jsonnet-lint v0.17.0

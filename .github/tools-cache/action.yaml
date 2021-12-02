@@ -17,19 +17,5 @@ runs:
     - name: Show version info of tools
       shell: bash
       run: |
-        # verify if the restored/downloaded tools run properly
-
         ls ./tmp/bin
-        echo -------------------------------------------
-
-        ./tmp/bin/controller-gen --version
-        ./tmp/bin/kustomize version
-        ./tmp/bin/oc version
-        ./tmp/bin/operator-sdk version
-        ./tmp/bin/opm version
-        ./tmp/bin/promq --help | head -n2
-        ./tmp/bin/jsonnetfmt --version
-        ./tmp/bin/jsonnet-lint --version
-        ./tmp/bin/jb --version
-
-        echo "---------- done ------------"
+        make validate-tools
