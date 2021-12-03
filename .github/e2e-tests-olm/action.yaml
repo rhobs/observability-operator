@@ -150,6 +150,7 @@ runs:
         # Capture apiserver state
         oc adm inspect node --dest-dir cluster-state || true
         oc adm inspect -A statefulset --dest-dir cluster-state || true
+        oc adm inspect -A deployment --dest-dir cluster-state || true
         oc adm inspect -A ns --dest-dir cluster-state || true
 
     - name: Archive production artifacts

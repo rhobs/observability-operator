@@ -20,7 +20,7 @@ func newAlertmanager(
 	if resourceSelector == nil {
 		resourceSelector = &metav1.LabelSelector{}
 	}
-	replicas := int32(3)
+	replicas := int32(2)
 
 	return &monv1.Alertmanager{
 		TypeMeta: metav1.TypeMeta{
@@ -40,6 +40,31 @@ func newAlertmanager(
 			ServiceAccountName:                  rbacResourceName,
 			AlertmanagerConfigSelector:          resourceSelector,
 			AlertmanagerConfigNamespaceSelector: nil,
+			Affinity: &corev1.Affinity{
+				PodAntiAffinity: &corev1.PodAntiAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+						{
+							TopologyKey: "kubernetes.io/hostname",
+							LabelSelector: &metav1.LabelSelector{
+								MatchLabels: podLabels("alertmanager", ms.Name),
+							},
+						},
+					},
+					// We cannot expect all clusters to be multi-AZ, especially in the CI.
+					// This is why we set zone-spread as preferred instead of required.
+					PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+						{
+							Weight: 100,
+							PodAffinityTerm: corev1.PodAffinityTerm{
+								LabelSelector: &metav1.LabelSelector{
+									MatchLabels: podLabels("alertmanager", ms.Name),
+								},
+								TopologyKey: "topology.kubernetes.io/zone",
+							},
+						},
+					},
+				},
+			},
 		},
 	}
 }

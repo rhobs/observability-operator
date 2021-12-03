@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/rhobs/monitoring-stack-operator/test/e2e/framework"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -64,6 +66,9 @@ func TestMonitoringStackController(t *testing.T) {
 		}, {
 			name:     "Alertmanager receives alerts from the Prometheus instance",
 			scenario: assertAlertmanagerReceivesAlerts,
+		}, {
+			name:     "Alertmanager instances are on different nodes",
+			scenario: assertAlertmanagersAreOnDifferentNodes,
 		},
 	}
 
@@ -212,7 +217,7 @@ func assertPrometheusScrapesItself(t *testing.T) {
 	promClient := framework.NewPrometheusClient("http://localhost:9090")
 	expectedResults := map[string]int{
 		"prometheus_build_info":   1,
-		"alertmanager_build_info": 3,
+		"alertmanager_build_info": 2,
 	}
 	if err := wait.Poll(5*time.Second, 5*time.Minute, func() (bool, error) {
 		correct := 0
@@ -228,7 +233,7 @@ func assertPrometheusScrapesItself(t *testing.T) {
 
 			if len(result.Data.Result) > value {
 				resultErr := fmt.Errorf("invalid result for query %s, got %d, want %d", query, len(result.Data.Result), value)
-				return false, resultErr
+				return true, resultErr
 			}
 
 			if len(result.Data.Result) != value {
@@ -241,6 +246,35 @@ func assertPrometheusScrapesItself(t *testing.T) {
 		return correct == len(expectedResults), nil
 	}); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func assertAlertmanagersAreOnDifferentNodes(t *testing.T) {
+	ms := newMonitoringStack(t, "alerting")
+	if err := f.K8sClient.Create(context.Background(), ms); err != nil {
+		t.Fatal(err)
+	}
+	f.AssertStatefulsetReady("alertmanager-alerting", e2eTestNamespace, framework.WithTimeout(2*time.Minute))(t)
+
+	var pods corev1.PodList
+	if err := f.K8sClient.List(context.Background(), &pods); err != nil {
+		t.Fatal(err)
+	}
+	nodes := make([]string, 0, 2)
+	for _, pod := range pods.Items {
+		alertmanagerPod := false
+		for _, owner := range pod.OwnerReferences {
+			if owner.Name == "alertmanager-alerting" && owner.Kind == "StatefulSet" {
+				alertmanagerPod = true
+			}
+		}
+		if alertmanagerPod {
+			nodes = append(nodes, pod.Spec.NodeName)
+		}
+	}
+
+	if len(nodes) != 2 || nodes[0] == nodes[1] {
+		t.Fatal(fmt.Errorf("expected alertmanager pods to run on different nodes"))
 	}
 }
 
