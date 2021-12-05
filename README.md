@@ -48,7 +48,7 @@ to the controller-gen CLI page in the [kubebuilder documentation](https://book.k
 
 * Create a local kubernetes cluster with `kind create cluster`.
 
-* Apply the CRDs by running `kubectl apply -k deploy/crds/kubernetes`
+* Apply the CRDs by running `kubectl create -k deploy/crds/kubernetes`
   * Install OLM locally by running
 
     ```sh
