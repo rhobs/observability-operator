@@ -2,7 +2,7 @@ SHELL=/usr/bin/env bash -o pipefail
 
 # IMAGE_BASE defines the registry/namespace and part of the image name
 # This variable is used to construct full image tags for bundle and catalog images.
-IMAGE_BASE ?= monitoring-stack-operator
+IMAGE_BASE ?= quay.io/rhobs/monitoring-stack-operator
 
 
 VERSION ?= $(shell cat VERSION)
