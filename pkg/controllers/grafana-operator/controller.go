@@ -16,6 +16,7 @@ package grafana_operator
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	networkingv1 "k8s.io/api/networking/v1"
@@ -71,6 +72,8 @@ type reconciler struct {
 	grafanaClientset rest.Interface
 }
 
+type ReconcileFunc func(ctx context.Context) reconcileResult
+
 type reconcileResult struct {
 	ctrl.Result
 	err  error
@@ -101,11 +104,11 @@ func RegisterWithManager(mgr ctrl.Manager) error {
 		return fmt.Errorf("could not create new Grafana clientset: %w", err)
 	}
 
-	logger := ctrl.Log.WithName("grafana-operator")
+	log := ctrl.Log.WithName("grafana-operator")
 	r := &reconciler{
 		k8sClient:        mgr.GetClient(),
 		scheme:           mgr.GetScheme(),
-		logger:           logger,
+		logger:           log,
 		olmClientset:     olmClientset,
 		k8sClientset:     k8sClientset,
 		grafanaClientset: grafanaClientset,
@@ -114,7 +117,7 @@ func RegisterWithManager(mgr ctrl.Manager) error {
 	c, err := controller.New("grafana-operator", mgr, controller.Options{
 		MaxConcurrentReconciles: 1,
 		Reconciler:              r,
-		Log:                     logger,
+		Log:                     ctrl.Log,
 	})
 	if err != nil {
 		return err
@@ -170,49 +173,39 @@ func RegisterWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := r.logger.WithValues("req", req)
+	log := r.logger.WithValues("req", req)
 
 	result := func(r reconcileResult) (ctrl.Result, error) {
 		if r.err != nil {
-			logger.Error(r.err, "End Reconcile - creation or updation error")
+			log.Error(r.err, "Error Reconciling resources")
 		} else if r.Result.Requeue || r.Result.RequeueAfter != 0 {
-			logger.Info("End Reconcile - requeue after", "res", r.Result)
+			log.V(6).Info("Re-queueing after", "res", r.Result)
 		} else {
-			logger.Info("End Reconcile - no requeue")
+			log.V(6).Info("Successfully reconciled resources")
 		}
 		return r.Result, r.err
 	}
 
-	logger.Info("Start reconcile")
-	logger.Info("Reconciling Grafana Operator Namespace")
-	if res := r.reconcileNamespace(ctx); res.stop {
-		return result(res)
+	log.V(6).Info("Reconciling resources")
+	reconcilers := []ReconcileFunc{
+		r.reconcileNamespace,
+		r.reconcileOperatorGroup,
+		r.reconcileSubscription,
+		r.approveInstallPlan,
+		r.reconcileGrafana,
 	}
-
-	logger.Info("Reconciling Grafana Operator OperatorGroup")
-	if res := r.reconcileOperatorGroup(ctx); res.stop {
-		return result(res)
-	}
-
-	logger.Info("Reconciling Grafana Operator Subscription")
-	if res := r.reconcileSubscription(ctx); res.stop {
-		return result(res)
-	}
-
-	logger.Info("Approving Grafana Operator Install Plan")
-	if res := r.approveInstallPlan(ctx); res.stop {
-		return result(res)
-	}
-
-	logger.Info("Reconciling Grafana instance")
-	if res := r.reconcileGrafana(ctx); res.stop {
-		return result(res)
+	for _, reconciler := range reconcilers {
+		if res := reconciler(ctx); res.stop {
+			return result(res)
+		}
 	}
 
 	return result(reconcileResult{})
 }
 
 func (r *reconciler) reconcileNamespace(ctx context.Context) reconcileResult {
+	log := r.logger.WithValues("Name", Namespace)
+	log.V(6).Info("Reconciling namespace")
 
 	key := types.NamespacedName{Name: Namespace}
 	var namespace corev1.Namespace
@@ -222,7 +215,7 @@ func (r *reconciler) reconcileNamespace(ctx context.Context) reconcileResult {
 	}
 
 	if errors.IsNotFound(err) {
-		r.logger.Info("Creating namespace", "Namespace", namespace)
+		log.Info("Creating namespace")
 		err = r.k8sClient.Create(ctx, NewNamespace())
 		return creationResult(err)
 	}
@@ -230,15 +223,17 @@ func (r *reconciler) reconcileNamespace(ctx context.Context) reconcileResult {
 	// requeue if namespace is marked for deletion
 	// TODO(sthaha): decide if want to use finalizers to prevent deletion but
 	// we also need to solve how to properly cleanup / uninstall operator
-
 	if namespace.Status.Phase != corev1.NamespaceActive {
-		r.logger.Info("namespace is present but not active", "phase", namespace.Status.Phase)
-		return requeue(5*time.Second, nil)
+		log.Info("Namespace is present but not active", "phase", namespace.Status.Phase)
+		return end()
 	}
 	return next()
 }
 
 func (r *reconciler) reconcileOperatorGroup(ctx context.Context) reconcileResult {
+	log := r.logger.WithValues("Name", operatorGroupName)
+	log.V(6).Info("Reconciling OperatorGroup")
+
 	key := types.NamespacedName{
 		Name:      operatorGroupName,
 		Namespace: Namespace,
@@ -251,21 +246,25 @@ func (r *reconciler) reconcileOperatorGroup(ctx context.Context) reconcileResult
 	}
 
 	// create
+	desired := NewOperatorGroup()
 	if errors.IsNotFound(err) {
-		r.logger.Info("Creating Grafana OperatorGroup")
-		err := r.k8sClient.Create(ctx, NewOperatorGroup())
+		log.Info("Creating OperatorGroup")
+		err := r.k8sClient.Create(ctx, desired)
 		return creationResult(err)
 	}
 
 	// update
-	r.logger.Info("Updating Grafana OperatorGroup")
-	desired := NewOperatorGroup().Spec
-	operatorGroup.Spec = desired
-	err = r.k8sClient.Update(ctx, &operatorGroup)
-	return updationResult(err)
+	if !reflect.DeepEqual(operatorGroup.Spec, desired.Spec) {
+		log.Info("Updating OperatorGroup")
+		operatorGroup.Spec = desired.Spec
+		return updationResult(r.k8sClient.Update(ctx, &operatorGroup))
+	}
+
+	return next()
 }
 
 func (r *reconciler) reconcileSubscription(ctx context.Context) reconcileResult {
+	log := r.logger.WithValues("Name", subscriptionName)
 	key := types.NamespacedName{
 		Name:      subscriptionName,
 		Namespace: Namespace,
@@ -279,7 +278,7 @@ func (r *reconciler) reconcileSubscription(ctx context.Context) reconcileResult 
 	// create
 	desired := NewSubscription()
 	if errors.IsNotFound(err) {
-		r.logger.Info("Creating Grafana Operator Subscription")
+		log.Info("Creating Grafana Operator Subscription")
 		err := r.k8sClient.Create(ctx, desired)
 		return creationResult(err)
 	}
@@ -333,11 +332,11 @@ func (r *reconciler) approveInstallPlan(ctx context.Context) reconcileResult {
 			continue
 		}
 
-		r.logger.V(8).Info("install plan", "name", installPlan.Name, "csv", csv, "approved", installPlan.Spec.Approved)
+		r.logger.V(6).Info("Found InstallPlan", "name", installPlan.Name, "csv", csv, "approved", installPlan.Spec.Approved)
 
 		// look no further if an install plan for the desired CSV is already approved
 		if installPlan.Spec.Approved {
-			r.logger.V(8).Info("install plan already approved", "name", installPlan.Name, "csv", csv)
+			r.logger.V(6).Info("InstallPlan already approved", "name", installPlan.Name, "csv", csv)
 			return next()
 		}
 
@@ -351,12 +350,13 @@ func (r *reconciler) approveInstallPlan(ctx context.Context) reconcileResult {
 		return end()
 	}
 
-	r.logger.V(8).Info("going to approve plans", "name", approvePlan.Name, "approved", approvePlan.Spec.Approved)
+	r.logger.WithValues("Name", approvePlan.Name).Info("Approving InstallPlan")
 	approvePlan.Spec.Approved = true
 	return updationResult(r.k8sClient.Update(ctx, approvePlan))
 }
 
 func (r *reconciler) reconcileGrafana(ctx context.Context) reconcileResult {
+	log := r.logger.WithValues("Name", grafanaName)
 	key := types.NamespacedName{
 		Name:      grafanaName,
 		Namespace: Namespace,
@@ -367,7 +367,7 @@ func (r *reconciler) reconcileGrafana(ctx context.Context) reconcileResult {
 	if err != nil && !errors.IsNotFound(err) {
 		// Ignore error and requeue if the errors are related to CRD not present
 		if meta.IsNoMatchError(err) || errors.IsMethodNotSupported(err) {
-			r.logger.V(10).Info("Grafana CRD does not exist - NoMatchError")
+			r.logger.V(6).Info("Grafana CRD does not exist - NoMatchError")
 			return requeue(5*time.Second, nil)
 		}
 
@@ -375,13 +375,14 @@ func (r *reconciler) reconcileGrafana(ctx context.Context) reconcileResult {
 	}
 
 	// create
+	desired := newGrafana()
 	if errors.IsNotFound(err) {
-		r.logger.Info("Creating Grafana instance")
-		err := r.k8sClient.Create(ctx, newGrafana())
+		log.Info("Creating Grafana")
+		err := r.k8sClient.Create(ctx, desired)
 
 		// can fail because grafana operator hasn't created the CRD yet
 		if errors.IsNotFound(err) || errors.IsMethodNotSupported(err) || meta.IsNoMatchError(err) {
-			r.logger.V(10).Info("Grafana CRD is missing")
+			r.logger.V(6).Info("Grafana CRD is missing")
 			return requeue(5*time.Second, nil)
 		}
 
@@ -389,10 +390,13 @@ func (r *reconciler) reconcileGrafana(ctx context.Context) reconcileResult {
 	}
 
 	// update
-	r.logger.Info("Updating Grafana instance")
-	grafana.Spec = newGrafana().Spec
-	err = r.k8sClient.Update(ctx, &grafana)
-	return updationResult(err)
+	if !reflect.DeepEqual(desired.Spec, grafana.Spec) {
+		log.Info("Updating Grafana")
+		grafana.Spec = desired.Spec
+		return updationResult(r.k8sClient.Update(ctx, &grafana))
+	}
+
+	return next()
 }
 
 func NewNamespace() *corev1.Namespace {

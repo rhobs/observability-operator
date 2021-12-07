@@ -93,6 +93,7 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 	// child status changes.
 	p := predicate.GenerationChangedPredicate{}
 	return ctrl.NewControllerManagedBy(mgr).
+		WithLogger(ctrl.Log).
 		For(&stack.MonitoringStack{}).
 		Owns(&monv1.Prometheus{}).WithEventFilter(p).
 		Owns(&v1.ServiceAccount{}).WithEventFilter(p).
@@ -160,9 +161,10 @@ func (r *reconciler) getStack(ctx context.Context, req ctrl.Request) (*stack.Mon
 
 func (r *reconciler) reconcileObject(ctx context.Context, ms *stack.MonitoringStack, patcher objectPatcher) error {
 	existing := patcher.empty()
+	gvk := existing.GetObjectKind().GroupVersionKind()
 	logger := r.logger.WithValues(
-		"stack", ms.Namespace+"/"+ms.Name,
-		"GVK", existing.GetObjectKind().GroupVersionKind(),
+		"Stack", ms.Namespace+"/"+ms.Name,
+		"Component", fmt.Sprintf("%s.%s/%s", gvk.Kind, gvk.Group, gvk.Version),
 		"Name", existing.GetName())
 
 	key := types.NamespacedName{
