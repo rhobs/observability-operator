@@ -22,6 +22,8 @@ import (
 	"strings"
 	"time"
 
+	policyv1 "k8s.io/api/policy/v1"
+
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	v1 "k8s.io/api/core/v1"
@@ -61,6 +63,7 @@ type Options struct {
 //+kubebuilder:rbac:groups=monitoring.coreos.com,resources=alertmanagers;prometheuses;servicemonitors,verbs=list;watch;create;update;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles;rolebindings,verbs=list;watch;create;update;delete
 //+kubebuilder:rbac:groups="",resources=serviceaccounts;services;secrets,verbs=list;watch;create;update;delete
+//+kubebuilder:rbac:groups="policy",resources=poddisruptionbudgets,verbs=list;watch;create;update
 
 // RBAC for managing Grafana CRs
 //+kubebuilder:rbac:groups=integreatly.org,namespace=monitoring-stack-operator,resources=grafanadatasources,verbs=list;watch;create;update;delete
@@ -96,6 +99,7 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 		Owns(&rbacv1.Role{}).WithEventFilter(p).
 		Owns(&rbacv1.RoleBinding{}).WithEventFilter(p).
 		Owns(&monv1.ServiceMonitor{}).WithEventFilter(p).
+		Owns(&policyv1.PodDisruptionBudget{}).WithEventFilter(p).
 		Complete(r)
 }
 

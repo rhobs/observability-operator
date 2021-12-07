@@ -2,6 +2,7 @@ package monitoringstack
 
 import (
 	stack "github.com/rhobs/monitoring-stack-operator/pkg/apis/v1alpha1"
+	policyv1 "k8s.io/api/policy/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -89,6 +90,32 @@ func newAlertmanagerService(ms *stack.MonitoringStack, instanceSelectorKey strin
 					Port:       9093,
 					TargetPort: intstr.FromInt(9093),
 				},
+			},
+		},
+	}
+}
+
+func newAlertmanagerPDB(ms *stack.MonitoringStack, instanceSelectorKey string, instanceSelectorValue string) *policyv1.PodDisruptionBudget {
+	name := ms.Name + "-alertmanager"
+	selector := podLabels("alertmanager", ms.Name)
+
+	return &policyv1.PodDisruptionBudget{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: policyv1.SchemeGroupVersion.String(),
+			Kind:       "PodDisruptionBudget",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ms.Namespace,
+			Labels:    objectLabels(name, ms.Name, instanceSelectorKey, instanceSelectorValue),
+		},
+		Spec: policyv1.PodDisruptionBudgetSpec{
+			MinAvailable: &intstr.IntOrString{
+				Type:   intstr.Int,
+				IntVal: 1,
+			},
+			Selector: &metav1.LabelSelector{
+				MatchLabels: selector,
 			},
 		},
 	}

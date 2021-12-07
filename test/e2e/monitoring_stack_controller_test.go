@@ -67,8 +67,17 @@ func TestMonitoringStackController(t *testing.T) {
 			name:     "Alertmanager receives alerts from the Prometheus instance",
 			scenario: assertAlertmanagerReceivesAlerts,
 		}, {
-			name:     "Alertmanager instances are on different nodes",
-			scenario: assertAlertmanagersAreOnDifferentNodes,
+			name: "Alertmanager runs in HA mode",
+			scenario: func(t *testing.T) {
+				stackName := "alerting"
+				assertAlertmanagerCreated(t, stackName)
+				pods, err := f.GetStatefulSetPods("alertmanager-"+stackName, e2eTestNamespace)
+				if err != nil {
+					t.Fatal(err)
+				}
+				assertAlertmanagersAreOnDifferentNodes(t, pods)
+				assertAlertmanagersAreResilientToDisruption(t, pods)
+			},
 		},
 	}
 
@@ -249,32 +258,35 @@ func assertPrometheusScrapesItself(t *testing.T) {
 	}
 }
 
-func assertAlertmanagersAreOnDifferentNodes(t *testing.T) {
-	ms := newMonitoringStack(t, "alerting")
+func assertAlertmanagerCreated(t *testing.T, name string) {
+	ms := newMonitoringStack(t, name)
 	if err := f.K8sClient.Create(context.Background(), ms); err != nil {
 		t.Fatal(err)
 	}
-	f.AssertStatefulsetReady("alertmanager-alerting", e2eTestNamespace, framework.WithTimeout(2*time.Minute))(t)
+	f.AssertStatefulsetReady("alertmanager-"+name, e2eTestNamespace, framework.WithTimeout(2*time.Minute))(t)
+}
 
-	var pods corev1.PodList
-	if err := f.K8sClient.List(context.Background(), &pods); err != nil {
-		t.Fatal(err)
-	}
-	nodes := make([]string, 0, 2)
-	for _, pod := range pods.Items {
-		alertmanagerPod := false
-		for _, owner := range pod.OwnerReferences {
-			if owner.Name == "alertmanager-alerting" && owner.Kind == "StatefulSet" {
-				alertmanagerPod = true
-			}
+func assertAlertmanagersAreOnDifferentNodes(t *testing.T, pods []corev1.Pod) {
+	nodeAllocations := make(map[string]struct{})
+	for _, pod := range pods {
+		if _, ok := nodeAllocations[pod.Spec.NodeName]; ok {
+			err := fmt.Errorf("expected alertmanager pods to run on different nodes")
+			t.Fatal(err)
 		}
-		if alertmanagerPod {
-			nodes = append(nodes, pod.Spec.NodeName)
-		}
+		nodeAllocations[pod.Spec.NodeName] = struct{}{}
 	}
+}
 
-	if len(nodes) != 2 || nodes[0] == nodes[1] {
-		t.Fatal(fmt.Errorf("expected alertmanager pods to run on different nodes"))
+func assertAlertmanagersAreResilientToDisruption(t *testing.T, pods []corev1.Pod) {
+	for i, pod := range pods {
+		lastPod := i == len(pods)-1
+		err := f.Evict(&pod, 0)
+		if lastPod && err == nil {
+			t.Fatal("expected an error when evicting the last pod, got nil")
+		}
+		if !lastPod && err != nil {
+			t.Fatalf("expected no error when evicting pod with index %d, got %v", i, err)
+		}
 	}
 }
 
