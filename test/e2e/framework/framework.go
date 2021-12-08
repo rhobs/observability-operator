@@ -9,6 +9,12 @@ import (
 	"strings"
 	"testing"
 
+	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+
+	appsv1 "k8s.io/api/apps/v1"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -19,9 +25,10 @@ import (
 )
 
 type Framework struct {
-	Config    *rest.Config
-	K8sClient client.Client
-	Retain    bool
+	kubernetes kubernetes.Interface
+	Config     *rest.Config
+	K8sClient  client.Client
+	Retain     bool
 }
 
 // StartPortForward initiates a port forwarding connection to a pod on the localhost interface.
@@ -69,6 +76,25 @@ func (f *Framework) StartServicePortForward(serviceName string, ns string, port 
 	return f.StartPortForward(pods[0].Name, ns, port, stopChan)
 }
 
+func (f *Framework) GetStatefulSetPods(name string, namespace string) ([]corev1.Pod, error) {
+	var svc appsv1.StatefulSet
+	key := types.NamespacedName{
+		Namespace: namespace,
+		Name:      name,
+	}
+	if err := f.K8sClient.Get(context.Background(), key, &svc); err != nil {
+		return nil, err
+	}
+
+	selector := svc.Spec.Template.ObjectMeta.Labels
+	var pods corev1.PodList
+	if err := f.K8sClient.List(context.Background(), &pods, client.MatchingLabels(selector)); err != nil {
+		return nil, err
+	}
+
+	return pods.Items, nil
+}
+
 func (f *Framework) getPodsForService(name string, namespace string) ([]corev1.Pod, error) {
 	var svc corev1.Service
 	key := types.NamespacedName{
@@ -86,6 +112,42 @@ func (f *Framework) getPodsForService(name string, namespace string) ([]corev1.P
 	}
 
 	return pods.Items, nil
+}
+
+func (f *Framework) getKubernetesClient() (kubernetes.Interface, error) {
+	if f.kubernetes == nil {
+		c, err := kubernetes.NewForConfig(f.Config)
+		if err != nil {
+			return nil, err
+		}
+		f.kubernetes = c
+	}
+
+	return f.kubernetes, nil
+}
+
+func (f *Framework) Evict(pod *corev1.Pod, gracePeriodSeconds int64) error {
+	delOpts := metav1.DeleteOptions{
+		GracePeriodSeconds: &gracePeriodSeconds,
+	}
+
+	eviction := &policyv1beta1.Eviction{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: policyv1beta1.SchemeGroupVersion.String(),
+			Kind:       "Eviction",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      pod.Name,
+			Namespace: pod.Namespace,
+		},
+		DeleteOptions: &delOpts,
+	}
+
+	c, err := f.getKubernetesClient()
+	if err != nil {
+		return err
+	}
+	return c.PolicyV1beta1().Evictions(pod.Namespace).Evict(context.Background(), eviction)
 }
 
 func (f *Framework) CleanUp(t *testing.T, cleanupFunc func()) {

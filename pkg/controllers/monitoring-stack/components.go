@@ -3,6 +3,8 @@ package monitoringstack
 import (
 	"fmt"
 
+	policyv1 "k8s.io/api/policy/v1"
+
 	stack "github.com/rhobs/monitoring-stack-operator/pkg/apis/v1alpha1"
 	grafana_operator "github.com/rhobs/monitoring-stack-operator/pkg/controllers/grafana-operator"
 
@@ -206,6 +208,31 @@ func stackComponentPatchers(ms *stack.MonitoringStack, instanceSelectorKey strin
 				service.Spec.ClusterIP = desired.Spec.ClusterIP
 				desired.Spec = service.Spec
 				desired.Labels = service.Labels
+				return desired, nil
+			},
+		},
+		{
+			empty: func() client.Object {
+				pdb := newAlertmanagerPDB(ms, instanceSelectorKey, instanceSelectorValue)
+				return &policyv1.PodDisruptionBudget{
+					TypeMeta:   pdb.TypeMeta,
+					ObjectMeta: pdb.ObjectMeta,
+				}
+			},
+			patch: func(existing client.Object) (client.Object, error) {
+				pdb := newAlertmanagerPDB(ms, instanceSelectorKey, instanceSelectorValue)
+
+				if existing == nil {
+					return pdb, nil
+				}
+
+				desired, ok := existing.(*policyv1.PodDisruptionBudget)
+				if !ok {
+					return nil, NewObjectTypeError(pdb, existing)
+				}
+
+				desired.Spec = pdb.Spec
+				desired.Labels = pdb.Labels
 				return desired, nil
 			},
 		},
