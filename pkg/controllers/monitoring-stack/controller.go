@@ -22,6 +22,11 @@ import (
 	"strings"
 	"time"
 
+	grafanav1alpha1 "github.com/grafana-operator/grafana-operator/v4/api/integreatly/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
+
 	policyv1 "k8s.io/api/policy/v1"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -40,6 +45,11 @@ import (
 
 	"github.com/go-logr/logr"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+)
+
+const (
+	grafanaDatasourceOwnerName      = "monitoring-stack-operator/owner-name"
+	grafanaDatasourceOwnerNamespace = "monitoring-stack-operator/owner-namespace"
 )
 
 type reconciler struct {
@@ -100,7 +110,12 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 		Owns(&rbacv1.RoleBinding{}).WithEventFilter(p).
 		Owns(&monv1.ServiceMonitor{}).WithEventFilter(p).
 		Owns(&policyv1.PodDisruptionBudget{}).WithEventFilter(p).
-		Complete(r)
+		Watches(&source.Kind{Type: &grafanav1alpha1.GrafanaDataSource{}}, handler.EnqueueRequestsFromMapFunc(func(object client.Object) []reconcile.Request {
+			name := object.GetAnnotations()[grafanaDatasourceOwnerName]
+			namespace := object.GetAnnotations()[grafanaDatasourceOwnerNamespace]
+			namespaceName := types.NamespacedName{Name: name, Namespace: namespace}
+			return []reconcile.Request{{NamespacedName: namespaceName}}
+		})).Complete(r)
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
