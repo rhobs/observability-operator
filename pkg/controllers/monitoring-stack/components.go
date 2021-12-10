@@ -318,6 +318,11 @@ func stackComponentPatchers(ms *stack.MonitoringStack, instanceSelectorKey strin
 func newGrafanaDataSource(ms *stack.MonitoringStack) *grafanav1alpha1.GrafanaDataSource {
 	datasourceName := fmt.Sprintf("ms-%s-%s", ms.Namespace, ms.Name)
 	prometheusURL := fmt.Sprintf("%s-prometheus.%s:9090", ms.Name, ms.Namespace)
+	annotations := map[string]string{
+		grafanaDatasourceOwnerName:      ms.Name,
+		grafanaDatasourceOwnerNamespace: ms.Namespace,
+	}
+
 	return &grafanav1alpha1.GrafanaDataSource{
 		TypeMeta: metav1.TypeMeta{
 			// NOTE: uses a different naming convention for SchemeGroupVersion
@@ -325,8 +330,9 @@ func newGrafanaDataSource(ms *stack.MonitoringStack) *grafanav1alpha1.GrafanaDat
 			Kind:       "GrafanaDataSource",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      datasourceName,
-			Namespace: grafana_operator.Namespace,
+			Name:        datasourceName,
+			Namespace:   grafana_operator.Namespace,
+			Annotations: annotations,
 		},
 		Spec: grafanav1alpha1.GrafanaDataSourceSpec{
 			Name: datasourceName,

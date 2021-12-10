@@ -82,7 +82,7 @@ func (f *Framework) AssertResourceEventuallyExists(name, namespace string, resou
 			}
 			return false, nil
 		}); err == wait.ErrWaitTimeout {
-			t.Fatal(fmt.Errorf("statefulset %s/%s was never created", namespace, name))
+			t.Fatal(fmt.Errorf("resource %s/%s was never created", namespace, name))
 		}
 	}
 }

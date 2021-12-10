@@ -22,6 +22,12 @@ import (
 	"strings"
 	"time"
 
+	grafanav1alpha1 "github.com/grafana-operator/grafana-operator/v4/api/integreatly/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
+
 	policyv1 "k8s.io/api/policy/v1"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -42,12 +48,19 @@ import (
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 )
 
+const (
+	grafanaDatasourceOwnerName      = "monitoring-stack-operator/owner-name"
+	grafanaDatasourceOwnerNamespace = "monitoring-stack-operator/owner-namespace"
+)
+
 type reconciler struct {
 	k8sClient             client.Client
 	scheme                *runtime.Scheme
 	logger                logr.Logger
 	instanceSelectorKey   string
 	instanceSelectorValue string
+	grafanaDSWatchCreated bool
+	controller            controller.Controller
 }
 
 // Options allows for controller options to be set
@@ -85,6 +98,7 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 		logger:                ctrl.Log.WithName("monitoring-stack-operator"),
 		instanceSelectorKey:   split[0],
 		instanceSelectorValue: split[1],
+		grafanaDSWatchCreated: false,
 	}
 
 	// We only want to trigger a reconciliation when the generation
@@ -92,7 +106,8 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 	// we can save CPU cycles by avoiding reconciliations triggered by
 	// child status changes.
 	p := predicate.GenerationChangedPredicate{}
-	return ctrl.NewControllerManagedBy(mgr).
+
+	ctrl, err := ctrl.NewControllerManagedBy(mgr).
 		WithLogger(ctrl.Log).
 		For(&stack.MonitoringStack{}).
 		Owns(&monv1.Prometheus{}).WithEventFilter(p).
@@ -101,7 +116,13 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 		Owns(&rbacv1.RoleBinding{}).WithEventFilter(p).
 		Owns(&monv1.ServiceMonitor{}).WithEventFilter(p).
 		Owns(&policyv1.PodDisruptionBudget{}).WithEventFilter(p).
-		Complete(r)
+		Build(r)
+
+	if err != nil {
+		return err
+	}
+	r.controller = ctrl
+	return nil
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -122,6 +143,12 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, err
 	}
 
+	if requeue, err := r.createGrafanaDSWatch(ctx); err != nil {
+		return ctrl.Result{}, err
+	} else if requeue {
+		return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
+	}
+
 	for _, patcher := range patchers {
 
 		err := r.reconcileObject(ctx, ms, patcher)
@@ -136,7 +163,6 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return ctrl.Result{}, err
 
 		}
-
 	}
 
 	return ctrl.Result{}, nil
@@ -195,4 +221,36 @@ func (r *reconciler) reconcileObject(ctx context.Context, ms *stack.MonitoringSt
 
 	logger.Info("Updating stack component")
 	return r.k8sClient.Update(ctx, desired)
+}
+
+func (r *reconciler) createGrafanaDSWatch(ctx context.Context) (bool, error) {
+	if r.grafanaDSWatchCreated {
+		return false, nil
+	}
+	log := r.logger.WithName("create-grafana-ds-watch")
+	var dataSources grafanav1alpha1.GrafanaDataSourceList
+
+	err := r.k8sClient.List(ctx, &dataSources, client.InNamespace("default"))
+
+	if err != nil {
+		log.V(6).Info("grafana data source CRD is not defined")
+		return true, nil
+	}
+
+	err = r.controller.Watch(&source.Kind{Type: &grafanav1alpha1.GrafanaDataSource{}}, handler.EnqueueRequestsFromMapFunc(func(object client.Object) []reconcile.Request {
+		name := object.GetAnnotations()[grafanaDatasourceOwnerName]
+		namespace := object.GetAnnotations()[grafanaDatasourceOwnerNamespace]
+		namespacedName := types.NamespacedName{Name: name, Namespace: namespace}
+		return []reconcile.Request{{NamespacedName: namespacedName}}
+	}))
+	if err != nil {
+		log.Error(err, "unable to create watch on grafana data source")
+		return false, err
+	}
+
+	log.V(6).Info("Created watch on Grafana datasource")
+	r.grafanaDSWatchCreated = true
+
+	return false, nil
+
 }
