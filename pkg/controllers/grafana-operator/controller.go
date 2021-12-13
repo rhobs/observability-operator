@@ -279,50 +279,62 @@ func (r *reconciler) reconcileSubscription(ctx context.Context) reconcileResult 
 	}
 
 	// create
+	desired := NewSubscription()
 	if errors.IsNotFound(err) {
 		r.logger.Info("Creating Grafana Operator Subscription")
-		err := r.k8sClient.Create(ctx, NewSubscription())
+		err := r.k8sClient.Create(ctx, desired)
 		return creationResult(err)
 	}
 
 	r.logger.Info("Updating Grafana Operator Subscription")
-	subscription.Spec = NewSubscription().Spec
-	err = r.k8sClient.Update(ctx, &subscription)
-	return updationResult(err)
+	subscription.Spec.StartingCSV = desired.Spec.StartingCSV
+	return updationResult(r.k8sClient.Update(ctx, &subscription))
 }
 
 func (r *reconciler) approveInstallPlan(ctx context.Context) reconcileResult {
-	subscriptionKey := types.NamespacedName{
-		Name:      subscriptionName,
-		Namespace: Namespace,
-	}
-	var subscription v1alpha1.Subscription
-	if err := r.k8sClient.Get(ctx, subscriptionKey, &subscription); err != nil {
-		return reconcileError(err)
-	}
 
-	installPlanRef := subscription.Status.InstallPlanRef
-	if installPlanRef == nil {
-		return end()
-	}
-
-	installPlanKey := types.NamespacedName{
-		Namespace: Namespace,
-		Name:      installPlanRef.Name,
-	}
-	var installPlan v1alpha1.InstallPlan
-	err := r.k8sClient.Get(ctx, installPlanKey, &installPlan)
+	var installPlans v1alpha1.InstallPlanList
+	err := r.k8sClient.List(ctx, &installPlans, client.InNamespace(Namespace))
 	if err != nil {
 		return reconcileError(err)
 	}
 
-	// Only approve install plans for the specified version
-	if installPlan.Spec.ClusterServiceVersionNames[0] != grafanaCSV {
-		return next()
+	// wait for install plans to be created
+	if len(installPlans.Items) == 0 {
+		return end()
 	}
 
-	installPlan.Spec.Approved = true
-	return updationResult(r.k8sClient.Update(ctx, &installPlan))
+	var approvePlan *v1alpha1.InstallPlan
+
+	for _, installPlan := range installPlans.Items {
+		csv := installPlan.Spec.ClusterServiceVersionNames[0]
+		// ignore all but the install matching the Grafana version
+		// also ignore install-plans that has an empty status
+		if csv != grafanaCSV || len(installPlan.Status.BundleLookups) == 0 {
+			continue
+		}
+
+		r.logger.V(8).Info("install plan", "name", installPlan.Name, "csv", csv, "approved", installPlan.Spec.Approved)
+
+		// look no further if an install plan for the desired CSV is already approved
+		if installPlan.Spec.Approved {
+			r.logger.V(8).Info("install plan already approved", "name", installPlan.Name, "csv", csv)
+			return next()
+		}
+
+		approvePlan = &installPlan
+		break
+	}
+
+	// approvePlan can be nil if the install-plan for the desired version
+	// hasn't been created or properly initialised yet
+	if approvePlan == nil {
+		return end()
+	}
+
+	r.logger.V(8).Info("going to approve plans", "name", approvePlan.Name, "approved", approvePlan.Spec.Approved)
+	approvePlan.Spec.Approved = true
+	return updationResult(r.k8sClient.Update(ctx, approvePlan))
 }
 
 func (r *reconciler) reconcileGrafana(ctx context.Context) reconcileResult {
