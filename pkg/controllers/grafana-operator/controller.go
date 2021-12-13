@@ -59,7 +59,7 @@ const (
 	subscriptionName  = "monitoring-stack-operator-grafana-operator"
 	operatorGroupName = "monitoring-stack-operator-grafana-operator"
 	grafanaName       = "monitoring-stack-operator-grafana"
-	grafanaCSV        = "grafana-operator.v4.0.1"
+	grafanaCSV        = "grafana-operator.v4.1.0"
 )
 
 type reconciler struct {
@@ -162,7 +162,7 @@ func RegisterWithManager(mgr ctrl.Manager) error {
 	go installPlanInformer.Run(nil)
 	if err := c.Watch(&source.Informer{
 		Informer: installPlanInformer,
-	}, &handler.EnqueueRequestForObject{}, predicate.GenerationChangedPredicate{}); err != nil {
+	}, &handler.EnqueueRequestForObject{}, installPlanFilter{}); err != nil {
 		return err
 	}
 
@@ -173,7 +173,6 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	logger := r.logger.WithValues("req", req)
 
 	result := func(r reconcileResult) (ctrl.Result, error) {
-
 		if r.err != nil {
 			logger.Error(r.err, "End Reconcile - creation or updation error")
 		} else if r.Result.Requeue || r.Result.RequeueAfter != 0 {
@@ -228,7 +227,6 @@ func (r *reconciler) reconcileNamespace(ctx context.Context) reconcileResult {
 		return creationResult(err)
 	}
 
-	///
 	// requeue if namespace is marked for deletion
 	// TODO(sthaha): decide if want to use finalizers to prevent deletion but
 	// we also need to solve how to properly cleanup / uninstall operator
@@ -286,13 +284,35 @@ func (r *reconciler) reconcileSubscription(ctx context.Context) reconcileResult 
 		return creationResult(err)
 	}
 
-	r.logger.Info("Updating Grafana Operator Subscription")
-	subscription.Spec.StartingCSV = desired.Spec.StartingCSV
-	return updationResult(r.k8sClient.Update(ctx, &subscription))
+	if subscription.Spec.StartingCSV == desired.Spec.StartingCSV {
+		return next()
+	}
+
+	r.logger.WithValues("Name", subscription.Name).Info("Deleting Subscription")
+	if err := r.k8sClient.Delete(ctx, &subscription); err != nil {
+		return reconcileError(err)
+	}
+
+	r.logger.WithValues("Name", subscription.Status.InstalledCSV).Info("Deleting CSV")
+	csv := v1alpha1.ClusterServiceVersion{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: v1alpha1.SchemeGroupVersion.String(),
+			Kind:       "ClusterServiceVersion",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      subscription.Status.InstalledCSV,
+			Namespace: Namespace,
+		},
+	}
+	if err := r.k8sClient.Delete(ctx, &csv); err != nil {
+		return reconcileError(err)
+	}
+
+	r.logger.WithValues("Name", subscription.Name).Info("Creating Subscription")
+	return creationResult(r.k8sClient.Create(ctx, &subscription))
 }
 
 func (r *reconciler) approveInstallPlan(ctx context.Context) reconcileResult {
-
 	var installPlans v1alpha1.InstallPlanList
 	err := r.k8sClient.List(ctx, &installPlans, client.InNamespace(Namespace))
 	if err != nil {
@@ -305,7 +325,6 @@ func (r *reconciler) approveInstallPlan(ctx context.Context) reconcileResult {
 	}
 
 	var approvePlan *v1alpha1.InstallPlan
-
 	for _, installPlan := range installPlans.Items {
 		csv := installPlan.Spec.ClusterServiceVersionNames[0]
 		// ignore all but the install matching the Grafana version
@@ -346,7 +365,6 @@ func (r *reconciler) reconcileGrafana(ctx context.Context) reconcileResult {
 	var grafana integreatlyv1alpha1.Grafana
 	err := r.k8sClient.Get(ctx, key, &grafana)
 	if err != nil && !errors.IsNotFound(err) {
-
 		// Ignore error and requeue if the errors are related to CRD not present
 		if meta.IsNoMatchError(err) || errors.IsMethodNotSupported(err) {
 			r.logger.V(10).Info("Grafana CRD does not exist - NoMatchError")
@@ -406,6 +424,14 @@ func NewSubscription() *v1alpha1.Subscription {
 			Channel:                "v4",
 			InstallPlanApproval:    v1alpha1.ApprovalManual,
 			StartingCSV:            grafanaCSV,
+			Config: &v1alpha1.SubscriptionConfig{
+				Env: []corev1.EnvVar{
+					{
+						Name:  "DASHBOARD_NAMESPACES_ALL",
+						Value: "true",
+					},
+				},
+			},
 		},
 	}
 }
