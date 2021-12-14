@@ -40,13 +40,10 @@ import (
 
 	operatorsv1 "github.com/operator-framework/api/pkg/operators/v1"
 	"github.com/operator-framework/api/pkg/operators/v1alpha1"
-	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -64,12 +61,14 @@ const (
 )
 
 type reconciler struct {
-	k8sClient        client.Client
-	scheme           *runtime.Scheme
-	logger           logr.Logger
-	olmClientset     *versioned.Clientset
-	k8sClientset     *kubernetes.Clientset
-	grafanaClientset rest.Interface
+	controller              controller.Controller
+	grafanaWatchEstablished bool
+	k8sClient               client.Client
+	scheme                  *runtime.Scheme
+	logger                  logr.Logger
+	olmClientset            *versioned.Clientset
+	k8sClientset            *kubernetes.Clientset
+	grafanaClientset        rest.Interface
 }
 
 type ReconcileFunc func(ctx context.Context) reconcileResult
@@ -80,11 +79,13 @@ type reconcileResult struct {
 	stop bool
 }
 
-//+kubebuilder:rbac:groups="",resources=namespaces,verbs=list;watch,resourceNames=monitoring-stack-operator
-//+kubebuilder:rbac:groups="",resources=namespaces,verbs=create
-//+kubebuilder:rbac:groups=operators.coreos.com,resources=subscriptions;operatorgroups,verbs=list;watch;create;update,namespace=monitoring-stack-operator
-//+kubebuilder:rbac:groups=operators.coreos.com,resources=installplans,verbs=list;watch;update,namespace=monitoring-stack-operator
-//+kubebuilder:rbac:groups=integreatly.org,namespace=monitoring-stack-operator,resources=grafanas,verbs=list;watch;create;update
+//+kubebuilder:rbac:groups="",resources=namespaces,verbs=list;watch;create
+//+kubebuilder:rbac:groups=operators.coreos.com,resources=subscriptions;operatorgroups,verbs=list;watch
+//+kubebuilder:rbac:groups=operators.coreos.com,resources=subscriptions;operatorgroups,verbs=create;update,namespace=monitoring-stack-operator
+//+kubebuilder:rbac:groups=operators.coreos.com,resources=installplans,verbs=list;watch
+//+kubebuilder:rbac:groups=operators.coreos.com,resources=installplans,verbs=update,namespace=monitoring-stack-operator
+//+kubebuilder:rbac:groups=integreatly.org,resources=grafanas,verbs=list;watch
+//+kubebuilder:rbac:groups=integreatly.org,namespace=monitoring-stack-operator,resources=grafanas,verbs=create;update
 
 // RegisterWithManager registers the controller with Manager
 func RegisterWithManager(mgr ctrl.Manager) error {
@@ -122,6 +123,7 @@ func RegisterWithManager(mgr ctrl.Manager) error {
 	if err != nil {
 		return err
 	}
+	r.controller = c
 
 	ticker := eventsource.NewTickerSource(30 * time.Minute)
 	go ticker.Run()
@@ -129,42 +131,26 @@ func RegisterWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
-	namespaceInformer := r.namespaceInformer()
-	go namespaceInformer.Run(nil)
-	if err := c.Watch(&source.Informer{
-		Informer: namespaceInformer,
+	if err := c.Watch(&source.Kind{
+		Type: &corev1.Namespace{},
 	}, &handler.EnqueueRequestForObject{}, predicate.GenerationChangedPredicate{}); err != nil {
 		return err
 	}
 
-	operatorGroupInformer := r.operatorGroupInformer()
-	go operatorGroupInformer.Run(nil)
-	if err := c.Watch(&source.Informer{
-		Informer: operatorGroupInformer,
+	if err := c.Watch(&source.Kind{
+		Type: &operatorsv1.OperatorGroup{},
 	}, &handler.EnqueueRequestForObject{}, predicate.GenerationChangedPredicate{}); err != nil {
 		return err
 	}
 
-	subscriptionInformer := r.subscriptionInformer()
-	go subscriptionInformer.Run(nil)
-	if err := c.Watch(&source.Informer{
-		Informer: subscriptionInformer,
+	if err := c.Watch(&source.Kind{
+		Type: &v1alpha1.Subscription{},
 	}, &handler.EnqueueRequestForObject{}, predicate.GenerationChangedPredicate{}); err != nil {
 		return err
 	}
 
-	grafanaInformer := r.grafanaInformer()
-	go grafanaInformer.Run(nil)
-	if err := c.Watch(&source.Informer{
-		Informer: grafanaInformer,
-	}, &handler.EnqueueRequestForObject{}, predicate.GenerationChangedPredicate{}); err != nil {
-		return err
-	}
-
-	installPlanInformer := r.installPlanInformer()
-	go installPlanInformer.Run(nil)
-	if err := c.Watch(&source.Informer{
-		Informer: installPlanInformer,
+	if err := c.Watch(&source.Kind{
+		Type: &v1alpha1.InstallPlan{},
 	}, &handler.EnqueueRequestForObject{}, installPlanFilter{}); err != nil {
 		return err
 	}
@@ -192,6 +178,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		r.reconcileOperatorGroup,
 		r.reconcileSubscription,
 		r.approveInstallPlan,
+		r.setGrafanaWatch,
 		r.reconcileGrafana,
 	}
 	for _, reconciler := range reconcilers {
@@ -355,6 +342,32 @@ func (r *reconciler) approveInstallPlan(ctx context.Context) reconcileResult {
 	return updationResult(r.k8sClient.Update(ctx, approvePlan))
 }
 
+func (r *reconciler) setGrafanaWatch(ctx context.Context) reconcileResult {
+	if r.grafanaWatchEstablished {
+		return next()
+	}
+
+	log := r.controller.GetLogger()
+	log.V(6).Info("Trying to establish a watch on Grafana resources")
+	var datasources integreatlyv1alpha1.GrafanaDataSourceList
+	if err := r.k8sClient.List(context.Background(), &datasources, client.InNamespace("default")); err != nil {
+		log.V(6).Info("GrafanaDataSource CRD does not exist", "err", err)
+		return requeue(10*time.Second, nil)
+	}
+
+	if err := r.controller.Watch(
+		&source.Kind{Type: &integreatlyv1alpha1.Grafana{}},
+		&handler.EnqueueRequestForObject{},
+	); err != nil {
+		log.Error(err, "Could not establish a watch on Grafana CRs")
+		return reconcileError(err)
+	}
+
+	log.Info("Established a watch on Grafana resources")
+	r.grafanaWatchEstablished = true
+	return next()
+}
+
 func (r *reconciler) reconcileGrafana(ctx context.Context) reconcileResult {
 	log := r.logger.WithValues("Name", grafanaName)
 	key := types.NamespacedName{
@@ -365,12 +378,6 @@ func (r *reconciler) reconcileGrafana(ctx context.Context) reconcileResult {
 	var grafana integreatlyv1alpha1.Grafana
 	err := r.k8sClient.Get(ctx, key, &grafana)
 	if err != nil && !errors.IsNotFound(err) {
-		// Ignore error and requeue if the errors are related to CRD not present
-		if meta.IsNoMatchError(err) || errors.IsMethodNotSupported(err) {
-			r.logger.V(6).Info("Grafana CRD does not exist - NoMatchError")
-			return requeue(5*time.Second, nil)
-		}
-
 		return reconcileError(err)
 	}
 
@@ -378,15 +385,7 @@ func (r *reconciler) reconcileGrafana(ctx context.Context) reconcileResult {
 	desired := newGrafana()
 	if errors.IsNotFound(err) {
 		log.Info("Creating Grafana")
-		err := r.k8sClient.Create(ctx, desired)
-
-		// can fail because grafana operator hasn't created the CRD yet
-		if errors.IsNotFound(err) || errors.IsMethodNotSupported(err) || meta.IsNoMatchError(err) {
-			r.logger.V(6).Info("Grafana CRD is missing")
-			return requeue(5*time.Second, nil)
-		}
-
-		return creationResult(err)
+		return creationResult(r.k8sClient.Create(ctx, desired))
 	}
 
 	// update
@@ -514,66 +513,6 @@ func newGrafana() *integreatlyv1alpha1.Grafana {
 			},
 		},
 	}
-}
-
-func (r *reconciler) namespaceInformer() cache.SharedIndexInformer {
-	clientset := r.k8sClientset.CoreV1().RESTClient()
-	return singleResourceInformer(Namespace, "", "namespaces", &corev1.Namespace{}, clientset)
-}
-
-func (r *reconciler) subscriptionInformer() cache.SharedIndexInformer {
-	clientset := r.olmClientset.OperatorsV1alpha1().RESTClient()
-	return singleResourceInformer(subscriptionName, Namespace, "subscriptions", &v1alpha1.Subscription{}, clientset)
-}
-
-func (r *reconciler) operatorGroupInformer() cache.SharedIndexInformer {
-	clientset := r.olmClientset.OperatorsV1().RESTClient()
-	return singleResourceInformer(operatorGroupName, Namespace, "operatorgroups", &operatorsv1.OperatorGroup{}, clientset)
-}
-
-func (r *reconciler) grafanaInformer() cache.SharedIndexInformer {
-	return singleResourceInformer(grafanaName, Namespace, "grafanas", &integreatlyv1alpha1.Grafana{}, r.grafanaClientset)
-}
-
-func (r *reconciler) installPlanInformer() cache.SharedIndexInformer {
-	clientset := r.olmClientset.OperatorsV1alpha1().RESTClient()
-	return singleNamespaceInformer(Namespace, "installplans", &v1alpha1.InstallPlan{}, clientset)
-}
-
-func singleResourceInformer(name string, namespace string, resource string, object runtime.Object, clientset rest.Interface) cache.SharedIndexInformer {
-	listWatcher := cache.NewListWatchFromClient(
-		clientset,
-		resource,
-		namespace,
-		fields.AndSelectors(
-			fields.OneTermEqualSelector("metadata.name", name),
-		),
-	)
-
-	return cache.NewSharedIndexInformer(
-		listWatcher,
-		object,
-		0,
-		cache.Indexers{},
-	)
-}
-
-func singleNamespaceInformer(namespace string, resource string, object runtime.Object, clientset rest.Interface) cache.SharedIndexInformer {
-	listWatcher := cache.NewListWatchFromClient(
-		clientset,
-		resource,
-		namespace,
-		fields.AndSelectors(
-			fields.OneTermEqualSelector("metadata.namespace", namespace),
-		),
-	)
-
-	return cache.NewSharedIndexInformer(
-		listWatcher,
-		object,
-		0,
-		cache.Indexers{},
-	)
 }
 
 func creationResult(err error) reconcileResult {
