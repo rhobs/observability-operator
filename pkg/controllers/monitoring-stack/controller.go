@@ -22,19 +22,20 @@ import (
 	"strings"
 	"time"
 
-	grafanav1alpha1 "github.com/grafana-operator/grafana-operator/v4/api/integreatly/v1alpha1"
+	policyv1 "k8s.io/api/policy/v1"
+
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-
-	policyv1 "k8s.io/api/policy/v1"
-
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
+	grafanav1alpha1 "github.com/grafana-operator/grafana-operator/v4/api/integreatly/v1alpha1"
+	integreatlyv1alpha1 "github.com/grafana-operator/grafana-operator/v4/api/integreatly/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -58,6 +59,8 @@ type reconciler struct {
 	logger                logr.Logger
 	instanceSelectorKey   string
 	instanceSelectorValue string
+	controller            controller.Controller
+	grafanaWatchSet       bool
 }
 
 // Options allows for controller options to be set
@@ -102,7 +105,7 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 	// we can save CPU cycles by avoiding reconciliations triggered by
 	// child status changes.
 	p := predicate.GenerationChangedPredicate{}
-	return ctrl.NewControllerManagedBy(mgr).
+	c, err := ctrl.NewControllerManagedBy(mgr).
 		For(&stack.MonitoringStack{}).
 		Owns(&monv1.Prometheus{}).WithEventFilter(p).
 		Owns(&v1.ServiceAccount{}).WithEventFilter(p).
@@ -110,17 +113,52 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 		Owns(&rbacv1.RoleBinding{}).WithEventFilter(p).
 		Owns(&monv1.ServiceMonitor{}).WithEventFilter(p).
 		Owns(&policyv1.PodDisruptionBudget{}).WithEventFilter(p).
-		Watches(&source.Kind{Type: &grafanav1alpha1.GrafanaDataSource{}}, handler.EnqueueRequestsFromMapFunc(func(object client.Object) []reconcile.Request {
-			name := object.GetAnnotations()[grafanaDatasourceOwnerName]
-			namespace := object.GetAnnotations()[grafanaDatasourceOwnerNamespace]
-			namespaceName := types.NamespacedName{Name: name, Namespace: namespace}
-			return []reconcile.Request{{NamespacedName: namespaceName}}
-		})).Complete(r)
+		Build(r)
+	r.controller = c
+	return err
+
+}
+
+func (r *reconciler) watchGrafanaDatasource(ctx context.Context) error {
+	if r.grafanaWatchSet {
+		return nil
+	}
+
+	r.logger.Info("Waiting for Grafana to be installed")
+
+	var datasources integreatlyv1alpha1.GrafanaDataSourceList
+	if err := r.k8sClient.List(ctx, &datasources, client.InNamespace("default")); err != nil {
+		r.logger.Info("GrafanaDataSource CRD does not exist", "err", err)
+		return err
+	}
+
+	err := r.controller.Watch(&source.Kind{Type: &grafanav1alpha1.GrafanaDataSource{}},
+		handler.EnqueueRequestsFromMapFunc(func(object client.Object) []reconcile.Request {
+			annotations := object.GetAnnotations()
+			name := annotations[grafanaDatasourceOwnerName]
+			namespace := annotations[grafanaDatasourceOwnerNamespace]
+			namespacedName := types.NamespacedName{Name: name, Namespace: namespace}
+			return []reconcile.Request{{NamespacedName: namespacedName}}
+		}))
+	if err != nil {
+		r.logger.Info("grafana watch error", "err", err)
+		return err
+	}
+
+	r.logger.Info("grafanadatasource watch set successfully")
+	r.grafanaWatchSet = true
+	return nil
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+
 	logger := r.logger.WithValues("stack", req.NamespacedName)
+
 	logger.Info("Reconciling monitoring stack")
+	if err := r.watchGrafanaDatasource(ctx); err != nil {
+		return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
+	}
+
 	ms, err := r.getStack(ctx, req)
 	if err != nil {
 		// retry since some error has occured

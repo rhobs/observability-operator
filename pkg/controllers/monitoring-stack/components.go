@@ -316,7 +316,7 @@ func stackComponentPatchers(ms *stack.MonitoringStack, instanceSelectorKey strin
 }
 
 func newGrafanaDataSource(ms *stack.MonitoringStack) *grafanav1alpha1.GrafanaDataSource {
-	datasourceName := fmt.Sprintf("ms-%s-%s", ms.Namespace, ms.Name)
+	datasourceName := fmt.Sprintf("ms-%s-ns-%s", ms.Name, ms.Namespace)
 	prometheusURL := fmt.Sprintf("%s-prometheus.%s:9090", ms.Name, ms.Namespace)
 	annotations := map[string]string{
 		grafanaDatasourceOwnerName:      ms.Name,
