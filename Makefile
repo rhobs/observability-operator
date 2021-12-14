@@ -300,4 +300,6 @@ kind-cluster: $(OPERATOR_SDK)
 	kind create cluster --config hack/kind/config.yaml
 	$(OPERATOR_SDK) olm install
 	kubectl apply -f hack/kind/registry.yaml -n operators
+	kubectl create -k deploy/crds/kubernetes/
+	kubectl create -k deploy/dependencies
 
