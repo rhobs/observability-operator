@@ -18,11 +18,11 @@ TOOLS_DIR = $(shell pwd)/tmp/bin
 # The .github/tools file's hash is used to compute the key for cache in github
 # see: .github/tools-cache/action.yaml
 
-CONTROLLER_GEN=$(TOOLS_DIR)/controller-gen
-CONTROLLER_GEN_VERSION= v0.7.0
+CONTROLLER_GEN = $(TOOLS_DIR)/controller-gen
+CONTROLLER_GEN_VERSION = v0.7.0
 
-KUSTOMIZE=$(TOOLS_DIR)/kustomize
-KUSTOMIZE_VERSION= v3.9.4
+KUSTOMIZE = $(TOOLS_DIR)/kustomize
+KUSTOMIZE_VERSION = v3.9.4
 
 OPERATOR_SDK = $(TOOLS_DIR)/operator-sdk
 OPERATOR_SDK_VERSION = v1.13.0
@@ -30,8 +30,8 @@ OPERATOR_SDK_VERSION = v1.13.0
 OPM = $(TOOLS_DIR)/opm
 OPM_VERSION = v1.15.1
 
-GOLANGCI_LINT=$(TOOLS_DIR)/golangci-lint
-GOLANGCI_LINT_VERSION= v1.42.1
+GOLANGCI_LINT = $(TOOLS_DIR)/golangci-lint
+GOLANGCI_LINT_VERSION = v1.42.1
 
 ## NOTE: promq does not have any releases, so we use a fake version starting with v0.0.1
 # thus to upgrade/invalidate the github cache, increment the value
@@ -41,6 +41,24 @@ PROMQ_VERSION = v0.0.1
 # NOTE: oc is NOT downloadable using the OC_VERSION in its URL, so this has to be manually updated
 OC = $(TOOLS_DIR)/oc
 OC_VERSION = v4.9.7
+
+# jsonnet related tools and dependencies
+JSONNET = $(TOOLS_DIR)/jsonnet
+JSONNET_VERSION = v0.17.0
+
+JSONNETFMT = $(TOOLS_DIR)/jsonnetfmt
+JSONNETFMT_VERSION = v0.17.0
+
+JSONNETLINT = $(TOOLS_DIR)/jsonnet-lint
+JSONNETLINT_VERSION = v0.17.0
+
+JSONNET_BUNDLER = $(TOOLS_DIR)/jb
+JSONNET_BUNDLER_VERSION = v0.4.0
+
+GOJSONTOYAML = $(TOOLS_DIR)/gojsontoyaml
+
+JSONNET_VENDOR = jsonnet/vendor
+JSONNETFMT_ARGS = -n 2 --max-blank-lines 2 --string-style s --comment-style s
 
 $(TOOLS_DIR):
 	@mkdir -p $(TOOLS_DIR)
@@ -123,6 +141,49 @@ $(OC) oc: $(TOOLS_DIR)
 		$(OC) version | grep -q $${version##v} ;\
 	}
 
+.PHONY: jsonnet
+$(JSONNET) jsonnet: $(TOOLS_DIR)
+	@{ \
+		set -ex ;\
+		export GOBIN=$(TOOLS_DIR) ;\
+		[[ -f $(JSONNET) ]] ||  go install github.com/google/go-jsonnet/cmd/jsonnet@latest ;\
+	}
+
+.PHONY: jsonnetfmt
+$(JSONNETFMT) jsonnetfmt: $(TOOLS_DIR)
+	@{ \
+		set -ex ;\
+		export GOBIN=$(TOOLS_DIR) ;\
+	  [[ -f $(JSONNETFMT) ]] || go install github.com/google/go-jsonnet/cmd/jsonnetfmt@latest ;\
+	}
+
+.PHONY: jsonnetlint
+$(JSONNETLINT) jsonnetlint: $(TOOLS_DIR)
+	@{ \
+		set -ex ;\
+		export GOBIN=$(TOOLS_DIR) ;\
+		[[ -f $(JSONNETLINT) ]] || go install github.com/google/go-jsonnet/cmd/jsonnet-lint@latest ;\
+	}
+
+.PHONY: jsonnetbundler
+$(JSONNET_BUNDLER) jsonnetbundler: $(TOOLS_DIR)
+	@{ \
+		set -ex ;\
+		export GOBIN=$(TOOLS_DIR) ;\
+		[[ -f $(JSONNET_BUNDLER) ]] || go install github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb@latest ;\
+		[[ -f $(GOJSONTOYAML) ]] || go install github.com/brancz/gojsontoyaml@latest ;\
+	}
+
+.PHONY: gojsontoyaml
+$(GOJSONTOYAML) gojsontoyaml: $(TOOLS_DIR)
+	@{ \
+		set -ex ;\
+		export GOBIN=$(TOOLS_DIR) ;\
+		[[ -f $(GOJSONTOYAML) ]] || go install github.com/brancz/gojsontoyaml@latest ;\
+	}
+
+jsonnet-tools: jsonnet jsonnetfmt jsonnetlint jsonnetbundler gojsontoyaml
+
 # Install all required tools
 .PHONY: tools
 tools: $(CONTROLLER_GEN) \
@@ -130,7 +191,10 @@ tools: $(CONTROLLER_GEN) \
 		$(OC) \
 		$(OPERATOR_SDK) \
 		$(OPM) \
-	 	$(PROMQ)
+		$(PROMQ) \
+		$(JSONNETFMT) \
+		$(JSONNETLINT) \
+		$(JSONNET_BUNDLER)
 	@{ \
 		set -ex ;\
 		tools_file=.github/tools ;\
@@ -141,6 +205,9 @@ tools: $(CONTROLLER_GEN) \
 		echo  $$(basename $(OPERATOR_SDK)) $(OPERATOR_SDK_VERSION) >> $$tools_file ;\
 		echo  $$(basename $(OPM)) $(OPM_VERSION) >> $$tools_file ;\
 		echo  $$(basename $(PROMQ)) $(PROMQ_VERSION) >> $$tools_file ;\
+		echo  $$(basename $(JSONNETFMT)) $(JSONNETFMT_VERSION) >> $$tools_file ;\
+		echo  $$(basename $(JSONNETLINT)) $(JSONNETLINT_VERSION) >> $$tools_file ;\
+		echo  $$(basename $(JSONNET_BUNDLER)) $(JSONNET_BUNDLER_VERSION) >> $$tools_file ;\
 	}
 
 ## Development
@@ -148,6 +215,40 @@ tools: $(CONTROLLER_GEN) \
 .PHONY: lint
 lint: $(GOLANGCI_LINT)
 	$(GOLANGCI_LINT) run ./... --fix
+
+.PHONY: jsonnet-fmt
+jsonnet-fmt: $(JSONNETFMT)
+	find jsonnet/ -name 'vendor' -prune \
+	  -o -name '*.libsonnet' -print \
+		-o -name '*.jsonnet' -print \
+	| xargs -n 1 -- $(JSONNETFMT) $(JSONNETFMT_ARGS) -i
+
+.PHONY: jsonnet-lint
+jsonnet-lint: $(JSONNETLINT) jsonnet-vendor
+	find jsonnet/ -name 'vendor' -prune \
+	  -o -name '*.libsonnet' -print \
+		-o -name '*.jsonnet' -print \
+	| xargs -n 1 -- $(JSONNETLINT) -J $(JSONNET_VENDOR)
+
+.PHONY: check-jq
+check-jq:
+	jq --version > /dev/null
+
+jsonnet-vendor: $(JSONNET_BUNDLER)
+	rm -rf jsonnet/vendor
+	cd jsonnet && $(JSONNET_BUNDLER) install
+
+.PHONY: generate-prometheus-rules
+generate-prometheus-rules: jsonnet-tools check-jq jsonnet-vendor kustomize
+	for dir in jsonnet/components/*/; do \
+		component=$$(basename $$dir) ;\
+		echo "Generating prometheusrule file for $$component" ;\
+		$(JSONNET) -J $(JSONNET_VENDOR) $$dir/main.jsonnet \
+		| jq .rule \
+		| $(GOJSONTOYAML) > deploy/operator/monitoring-stack-operator-$$component-rules.yaml ;\
+		cd deploy/operator && \
+		$(KUSTOMIZE) edit add resource "monitoring-stack-operator-$$component-rules.yaml" && cd - ;\
+	done;
 
 .PHONY: generate-crds
 generate-crds: $(CONTROLLER_GEN)
@@ -303,3 +404,6 @@ kind-cluster: $(OPERATOR_SDK)
 	kubectl create -k deploy/crds/kubernetes/
 	kubectl create -k deploy/dependencies
 
+.PHONY: clean
+clean:
+	rm -rf $(JSONNET_VENDOR) tmp/ bundle/ bundle.Dockerfile
