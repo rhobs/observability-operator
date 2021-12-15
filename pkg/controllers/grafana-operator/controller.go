@@ -19,6 +19,8 @@ import (
 	"reflect"
 	"time"
 
+	"k8s.io/apimachinery/pkg/util/wait"
+
 	networkingv1 "k8s.io/api/networking/v1"
 
 	"github.com/rhobs/monitoring-stack-operator/pkg/eventsource"
@@ -130,7 +132,7 @@ func RegisterWithManager(mgr ctrl.Manager) error {
 	}
 
 	namespaceInformer := r.namespaceInformer()
-	go namespaceInformer.Run(nil)
+	go namespaceInformer.Run(wait.NeverStop)
 	if err := c.Watch(&source.Informer{
 		Informer: namespaceInformer,
 	}, &handler.EnqueueRequestForObject{}, predicate.GenerationChangedPredicate{}); err != nil {
@@ -138,7 +140,7 @@ func RegisterWithManager(mgr ctrl.Manager) error {
 	}
 
 	operatorGroupInformer := r.operatorGroupInformer()
-	go operatorGroupInformer.Run(nil)
+	go operatorGroupInformer.Run(wait.NeverStop)
 	if err := c.Watch(&source.Informer{
 		Informer: operatorGroupInformer,
 	}, &handler.EnqueueRequestForObject{}, predicate.GenerationChangedPredicate{}); err != nil {
@@ -146,7 +148,7 @@ func RegisterWithManager(mgr ctrl.Manager) error {
 	}
 
 	subscriptionInformer := r.subscriptionInformer()
-	go subscriptionInformer.Run(nil)
+	go subscriptionInformer.Run(wait.NeverStop)
 	if err := c.Watch(&source.Informer{
 		Informer: subscriptionInformer,
 	}, &handler.EnqueueRequestForObject{}, predicate.GenerationChangedPredicate{}); err != nil {
@@ -154,7 +156,7 @@ func RegisterWithManager(mgr ctrl.Manager) error {
 	}
 
 	grafanaInformer := r.grafanaInformer()
-	go grafanaInformer.Run(nil)
+	go grafanaInformer.Run(wait.NeverStop)
 	if err := c.Watch(&source.Informer{
 		Informer: grafanaInformer,
 	}, &handler.EnqueueRequestForObject{}, predicate.GenerationChangedPredicate{}); err != nil {
@@ -162,7 +164,7 @@ func RegisterWithManager(mgr ctrl.Manager) error {
 	}
 
 	installPlanInformer := r.installPlanInformer()
-	go installPlanInformer.Run(nil)
+	go installPlanInformer.Run(wait.NeverStop)
 	if err := c.Watch(&source.Informer{
 		Informer: installPlanInformer,
 	}, &handler.EnqueueRequestForObject{}, installPlanFilter{}); err != nil {
