@@ -46,11 +46,13 @@ import (
 
 	"github.com/go-logr/logr"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	goctrl "github.com/rhobs/monitoring-stack-operator/pkg/controllers/grafana-operator"
 )
 
 const (
 	grafanaDatasourceOwnerName      = "monitoring-stack-operator/owner-name"
 	grafanaDatasourceOwnerNamespace = "monitoring-stack-operator/owner-namespace"
+	finalizerName                   = "monitoring-stack-grafana-ds/finalizer"
 )
 
 type reconciler struct {
@@ -142,11 +144,14 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-
 	if requeue, err := r.createGrafanaDSWatch(ctx); err != nil {
 		return ctrl.Result{}, err
 	} else if requeue {
 		return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
+	}
+
+	if !ms.ObjectMeta.DeletionTimestamp.IsZero() {
+		return r.cleanupResources(ctx, ms)
 	}
 
 	for _, patcher := range patchers {
@@ -164,8 +169,63 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 		}
 	}
+	return r.setupFinalizer(ctx, ms)
+}
 
+func (r *reconciler) deleteGrafanaDS(ctx context.Context, ms *stack.MonitoringStack) error {
+	logger := r.logger.WithValues(stackName(ms)...)
+
+	gds := types.NamespacedName{Namespace: goctrl.Namespace, Name: GrafanaDSName(ms)}
+	grafanaDS := grafanav1alpha1.GrafanaDataSource{}
+	if err := r.k8sClient.Get(ctx, gds, &grafanaDS); err != nil {
+		// if the datasource is already deleted, take no further action
+		return client.IgnoreNotFound(err)
+	}
+
+	// grafana ds exists; so delete it
+	logger.WithValues("GrafanaDataSource", grafanaDS.Name).Info("Deleting GrafanaDataSource")
+	err := r.k8sClient.Delete(ctx, &grafanaDS)
+	return client.IgnoreNotFound(err)
+}
+
+func (r *reconciler) cleanupResources(ctx context.Context, ms *stack.MonitoringStack) (ctrl.Result, error) {
+	logger := r.logger.WithValues(stackName(ms)...)
+
+	if !controllerutil.ContainsFinalizer(ms, finalizerName) {
+		logger.V(6).Info("Finalizer already removed")
+		return ctrl.Result{}, nil
+	}
+
+	if err := r.deleteGrafanaDS(ctx, ms); err != nil {
+		logger.V(6).Info("Could not delete GrafanaDataSource", "err", err)
+		return ctrl.Result{}, err
+	}
+
+	logger.Info("Removing finalizer")
+	controllerutil.RemoveFinalizer(ms, finalizerName)
+	err := r.k8sClient.Update(ctx, ms)
+	if errors.IsConflict(err) {
+		return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
+	}
+	return ctrl.Result{}, err
+}
+
+func (r *reconciler) setupFinalizer(ctx context.Context, ms *stack.MonitoringStack) (ctrl.Result, error) {
+	if controllerutil.ContainsFinalizer(ms, finalizerName) {
+		return ctrl.Result{}, nil
+	}
+	controllerutil.AddFinalizer(ms, finalizerName)
+	if err := r.k8sClient.Update(ctx, ms); err != nil {
+		if errors.IsConflict(err) {
+			return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
+		}
+		return ctrl.Result{}, err
+	}
 	return ctrl.Result{}, nil
+}
+
+func GrafanaDSName(ms *stack.MonitoringStack) string {
+	return fmt.Sprintf("ms-%s-%s", ms.Namespace, ms.Name)
 }
 
 func (r *reconciler) getStack(ctx context.Context, req ctrl.Request) (*stack.MonitoringStack, error) {
@@ -253,4 +313,8 @@ func (r *reconciler) createGrafanaDSWatch(ctx context.Context) (bool, error) {
 
 	return false, nil
 
+}
+
+func stackName(ms *stack.MonitoringStack) []interface{} {
+	return []interface{}{"Stack", ms.Namespace + "/" + ms.Name}
 }
