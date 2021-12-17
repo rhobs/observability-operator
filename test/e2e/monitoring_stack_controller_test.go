@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	grafana_operator "github.com/rhobs/monitoring-stack-operator/pkg/controllers/grafana-operator"
+
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/rhobs/monitoring-stack-operator/test/e2e/framework"
@@ -23,6 +25,7 @@ import (
 
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 
+	grafanav1alpha1 "github.com/grafana-operator/grafana-operator/v4/api/integreatly/v1alpha1"
 	"gotest.tools/v3/assert"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -78,6 +81,9 @@ func TestMonitoringStackController(t *testing.T) {
 				assertAlertmanagersAreOnDifferentNodes(t, pods)
 				assertAlertmanagersAreResilientToDisruption(t, pods)
 			},
+		}, {
+			name:     "Grafana data source is recreated on delete",
+			scenario: recreateDeleteGrafanaDS,
 		},
 	}
 
@@ -161,6 +167,20 @@ func reconcileRevertsManualChanges(t *testing.T) {
 	f.GetResourceWithRetry(t, ms.Name, ms.Namespace, &reconciled)
 
 	assert.DeepEqual(t, generated.Spec, reconciled.Spec)
+}
+
+func recreateDeleteGrafanaDS(t *testing.T) {
+	ms := newMonitoringStack(t, "test-grafana-ds")
+	datasourceName := fmt.Sprintf("ms-%s-%s", ms.Namespace, ms.Name)
+
+	err := f.K8sClient.Create(context.Background(), ms)
+	assert.NilError(t, err, "failed to create a monitoring stack")
+
+	grafanaDS := grafanav1alpha1.GrafanaDataSource{}
+	f.AssertResourceEventuallyExists(datasourceName, grafana_operator.Namespace, &grafanaDS)
+
+	f.K8sClient.Delete(context.Background(), &grafanaDS)
+	f.AssertResourceEventuallyExists(datasourceName, grafana_operator.Namespace, &grafanaDS)
 }
 
 func validateStackLogLevel(t *testing.T) {
