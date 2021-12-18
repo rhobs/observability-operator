@@ -28,5 +28,8 @@ runs:
         ./tmp/bin/operator-sdk version
         ./tmp/bin/opm version
         ./tmp/bin/promq --help | head -n2
+        ./tmp/bin/jsonnetfmt --version
+        ./tmp/bin/jsonnet-lint --version
+        ./tmp/bin/jb --version
 
         echo "---------- done ------------"

@@ -9,8 +9,7 @@
           labels: labels,
           name: name,
         },
-        spec:
-          rules,
+        spec: rules,
       },
     },
   },

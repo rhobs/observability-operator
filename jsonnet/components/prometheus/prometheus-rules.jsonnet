@@ -1,4 +1,5 @@
-/*Cannot use https://github.com/prometheus/prometheus/blob/main/documentation/prometheus-mixin/mixin.libsonnet since it generates yaml with double quotes wrapped*/
+/* cannot use import https://github.com/prometheus/prometheus/blob/main/documentation/prometheus-mixin/mixin.libsonnet directly */
+/* since it generates yaml with double quotes wrapped */
 
 local rules = (
   import 'github.com/prometheus/prometheus/documentation/prometheus-mixin/mixin.libsonnet'
