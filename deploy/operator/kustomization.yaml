@@ -6,6 +6,9 @@ resources:
 - monitoring-stack-operator-service.yaml
 - monitoring-stack-operator-service-monitor.yaml
 - monitoring-stack-operator-rules.yaml
+- monitoring-stack-operator-alertmanager-rules.yaml
+- monitoring-stack-operator-prometheus-operator-rules.yaml
+- monitoring-stack-operator-prometheus-rules.yaml
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
