@@ -15,26 +15,19 @@ package grafana_operator
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 	"time"
 
 	networkingv1 "k8s.io/api/networking/v1"
 
-	"github.com/rhobs/monitoring-stack-operator/pkg/eventsource"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	integreatlyv1alpha1 "github.com/grafana-operator/grafana-operator/v4/api/integreatly/v1alpha1"
+	"github.com/rhobs/monitoring-stack-operator/pkg/eventsource"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 
-	"github.com/operator-framework/operator-lifecycle-manager/pkg/api/client/clientset/versioned"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
@@ -44,10 +37,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/cluster"
 
 	"github.com/go-logr/logr"
 )
@@ -58,17 +56,18 @@ const (
 	operatorGroupName = "monitoring-stack-operator-grafana-operator"
 	grafanaName       = "monitoring-stack-operator-grafana"
 	grafanaCSV        = "grafana-operator.v4.1.0"
+
+	managedBy    = "app.kubernetes.io/managed-by"
+	operatorName = "monitoring-stack-operator"
 )
 
 type reconciler struct {
 	controller              controller.Controller
 	grafanaWatchEstablished bool
-	k8sClient               client.Client
+	cache                   cache.Cache
+	nsClient                client.Client
 	scheme                  *runtime.Scheme
 	logger                  logr.Logger
-	olmClientset            *versioned.Clientset
-	k8sClientset            *kubernetes.Clientset
-	grafanaClientset        rest.Interface
 }
 
 type ReconcileFunc func(ctx context.Context) reconcileResult
@@ -80,39 +79,17 @@ type reconcileResult struct {
 }
 
 //+kubebuilder:rbac:groups="",resources=namespaces,verbs=list;watch;create
-//+kubebuilder:rbac:groups=operators.coreos.com,resources=subscriptions;operatorgroups,verbs=list;watch
-//+kubebuilder:rbac:groups=operators.coreos.com,resources=subscriptions;operatorgroups,verbs=create;update,namespace=monitoring-stack-operator
-//+kubebuilder:rbac:groups=operators.coreos.com,resources=installplans,verbs=list;watch
-//+kubebuilder:rbac:groups=operators.coreos.com,resources=installplans,verbs=update,namespace=monitoring-stack-operator
-//+kubebuilder:rbac:groups=integreatly.org,resources=grafanas,verbs=list;watch
-//+kubebuilder:rbac:groups=integreatly.org,namespace=monitoring-stack-operator,resources=grafanas,verbs=create;update
+//+kubebuilder:rbac:groups=operators.coreos.com,resources=subscriptions;operatorgroups,verbs=list;watch;create;update,namespace=monitoring-stack-operator
+//+kubebuilder:rbac:groups=operators.coreos.com,resources=installplans,verbs=list;watch;update,namespace=monitoring-stack-operator
+//+kubebuilder:rbac:groups=integreatly.org,resources=grafanas,verbs=list;watch;create;update,namespace=monitoring-stack-operator
 
 // RegisterWithManager registers the controller with Manager
 func RegisterWithManager(mgr ctrl.Manager) error {
-	olmClientset, err := versioned.NewForConfig(mgr.GetConfig())
-	if err != nil {
-		return fmt.Errorf("could not create new OLM clientset: %w", err)
-	}
-
-	k8sClientset, err := kubernetes.NewForConfig(mgr.GetConfig())
-	if err != nil {
-		return fmt.Errorf("could not create new Kubernetes clientset: %w", err)
-	}
-
-	grafanaGVK := integreatlyv1alpha1.GroupVersion.WithKind("Grafana")
-	grafanaClientset, err := apiutil.RESTClientForGVK(grafanaGVK, false, mgr.GetConfig(), serializer.NewCodecFactory(mgr.GetScheme()))
-	if err != nil {
-		return fmt.Errorf("could not create new Grafana clientset: %w", err)
-	}
 
 	log := ctrl.Log.WithName("grafana-operator")
 	r := &reconciler{
-		k8sClient:        mgr.GetClient(),
-		scheme:           mgr.GetScheme(),
-		logger:           log,
-		olmClientset:     olmClientset,
-		k8sClientset:     k8sClientset,
-		grafanaClientset: grafanaClientset,
+		scheme: mgr.GetScheme(),
+		logger: log,
 	}
 
 	c, err := controller.New("grafana-operator", mgr, controller.Options{
@@ -125,33 +102,75 @@ func RegisterWithManager(mgr ctrl.Manager) error {
 	}
 	r.controller = c
 
+	// NOTE: ticker starts the first reconcile loop
 	ticker := eventsource.NewTickerSource(30 * time.Minute)
 	go ticker.Run()
 	if err := c.Watch(ticker, &handler.EnqueueRequestForObject{}); err != nil {
 		return err
 	}
 
-	if err := c.Watch(&source.Kind{
-		Type: &corev1.Namespace{},
-	}, &handler.EnqueueRequestForObject{}, predicate.GenerationChangedPredicate{}); err != nil {
+	nameSelector := fields.Set{"metadata.name": Namespace}.AsSelector()
+	labelSelector := labels.Set{managedBy: operatorName}.AsSelector()
+
+	selectorsByObject := cache.SelectorsByObject{
+		&corev1.Namespace{}: {
+			Field: nameSelector,
+		},
+		&operatorsv1.OperatorGroup{}: {
+			Label: labelSelector,
+		},
+		&v1alpha1.Subscription{}: {
+			Label: labelSelector,
+		},
+		// note: install-plan get created by OLM and will not have the labelSelector
+		&integreatlyv1alpha1.Grafana{}: {
+			Label: labelSelector,
+		},
+	}
+
+	cache, err := cache.New(mgr.GetConfig(), cache.Options{
+		Scheme:            mgr.GetScheme(),
+		Mapper:            mgr.GetRESTMapper(),
+		Namespace:         Namespace,
+		SelectorsByObject: selectorsByObject,
+	})
+	if err != nil {
+		return err
+	}
+	if err := mgr.Add(cache); err != nil {
 		return err
 	}
 
-	if err := c.Watch(&source.Kind{
-		Type: &operatorsv1.OperatorGroup{},
-	}, &handler.EnqueueRequestForObject{}, predicate.GenerationChangedPredicate{}); err != nil {
+	r.cache = cache
+	r.nsClient, err = cluster.DefaultNewClient(cache, mgr.GetConfig(), client.Options{
+		Scheme: mgr.GetScheme(),
+		Mapper: mgr.GetRESTMapper(),
+	})
+	if err != nil {
 		return err
 	}
 
-	if err := c.Watch(&source.Kind{
-		Type: &v1alpha1.Subscription{},
-	}, &handler.EnqueueRequestForObject{}, predicate.GenerationChangedPredicate{}); err != nil {
+	// set watches
+	if err := c.Watch(source.NewKindWithCache(&corev1.Namespace{}, cache),
+		&handler.EnqueueRequestForObject{},
+		predicate.GenerationChangedPredicate{}); err != nil {
 		return err
 	}
 
-	if err := c.Watch(&source.Kind{
-		Type: &v1alpha1.InstallPlan{},
-	}, &handler.EnqueueRequestForObject{}, installPlanFilter{}); err != nil {
+	if err := c.Watch(source.NewKindWithCache(&operatorsv1.OperatorGroup{}, cache),
+		&handler.EnqueueRequestForObject{},
+		predicate.GenerationChangedPredicate{}); err != nil {
+		return err
+	}
+	if err := c.Watch(source.NewKindWithCache(&v1alpha1.Subscription{}, cache),
+		&handler.EnqueueRequestForObject{},
+		predicate.GenerationChangedPredicate{}); err != nil {
+		return err
+	}
+
+	if err := c.Watch(source.NewKindWithCache(&v1alpha1.InstallPlan{}, cache),
+		&handler.EnqueueRequestForObject{},
+		installPlanFilter{}); err != nil {
 		return err
 	}
 
@@ -196,14 +215,14 @@ func (r *reconciler) reconcileNamespace(ctx context.Context) reconcileResult {
 
 	key := types.NamespacedName{Name: Namespace}
 	var namespace corev1.Namespace
-	err := r.k8sClient.Get(ctx, key, &namespace)
+	err := r.nsClient.Get(ctx, key, &namespace)
 	if err != nil && !errors.IsNotFound(err) {
 		return reconcileError(err)
 	}
 
 	if errors.IsNotFound(err) {
 		log.Info("Creating namespace")
-		err = r.k8sClient.Create(ctx, NewNamespace())
+		err = r.nsClient.Create(ctx, NewNamespace())
 		return creationResult(err)
 	}
 
@@ -227,7 +246,7 @@ func (r *reconciler) reconcileOperatorGroup(ctx context.Context) reconcileResult
 	}
 	var operatorGroup operatorsv1.OperatorGroup
 
-	err := r.k8sClient.Get(ctx, key, &operatorGroup)
+	err := r.nsClient.Get(ctx, key, &operatorGroup)
 	if err != nil && !errors.IsNotFound(err) {
 		return reconcileError(err)
 	}
@@ -236,7 +255,7 @@ func (r *reconciler) reconcileOperatorGroup(ctx context.Context) reconcileResult
 	desired := NewOperatorGroup()
 	if errors.IsNotFound(err) {
 		log.Info("Creating OperatorGroup")
-		err := r.k8sClient.Create(ctx, desired)
+		err := r.nsClient.Create(ctx, desired)
 		return creationResult(err)
 	}
 
@@ -244,7 +263,7 @@ func (r *reconciler) reconcileOperatorGroup(ctx context.Context) reconcileResult
 	if !reflect.DeepEqual(operatorGroup.Spec, desired.Spec) {
 		log.Info("Updating OperatorGroup")
 		operatorGroup.Spec = desired.Spec
-		return updationResult(r.k8sClient.Update(ctx, &operatorGroup))
+		return updationResult(r.nsClient.Update(ctx, &operatorGroup))
 	}
 
 	return next()
@@ -257,7 +276,7 @@ func (r *reconciler) reconcileSubscription(ctx context.Context) reconcileResult 
 		Namespace: Namespace,
 	}
 	var subscription v1alpha1.Subscription
-	err := r.k8sClient.Get(ctx, key, &subscription)
+	err := r.nsClient.Get(ctx, key, &subscription)
 	if err != nil && !errors.IsNotFound(err) {
 		return reconcileError(err)
 	}
@@ -266,7 +285,7 @@ func (r *reconciler) reconcileSubscription(ctx context.Context) reconcileResult 
 	desired := NewSubscription()
 	if errors.IsNotFound(err) {
 		log.Info("Creating Grafana Operator Subscription")
-		err := r.k8sClient.Create(ctx, desired)
+		err := r.nsClient.Create(ctx, desired)
 		return creationResult(err)
 	}
 
@@ -275,7 +294,7 @@ func (r *reconciler) reconcileSubscription(ctx context.Context) reconcileResult 
 	}
 
 	r.logger.WithValues("Name", subscription.Name).Info("Deleting Subscription")
-	if err := r.k8sClient.Delete(ctx, &subscription); err != nil {
+	if err := r.nsClient.Delete(ctx, &subscription); err != nil {
 		return reconcileError(err)
 	}
 
@@ -288,19 +307,20 @@ func (r *reconciler) reconcileSubscription(ctx context.Context) reconcileResult 
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      subscription.Status.InstalledCSV,
 			Namespace: Namespace,
+			Labels:    commonLabels(),
 		},
 	}
-	if err := r.k8sClient.Delete(ctx, &csv); err != nil {
+	if err := r.nsClient.Delete(ctx, &csv); err != nil {
 		return reconcileError(err)
 	}
 
 	r.logger.WithValues("Name", subscription.Name).Info("Creating Subscription")
-	return creationResult(r.k8sClient.Create(ctx, &subscription))
+	return creationResult(r.nsClient.Create(ctx, &subscription))
 }
 
 func (r *reconciler) approveInstallPlan(ctx context.Context) reconcileResult {
 	var installPlans v1alpha1.InstallPlanList
-	err := r.k8sClient.List(ctx, &installPlans, client.InNamespace(Namespace))
+	err := r.nsClient.List(ctx, &installPlans, client.InNamespace(Namespace))
 	if err != nil {
 		return reconcileError(err)
 	}
@@ -339,7 +359,7 @@ func (r *reconciler) approveInstallPlan(ctx context.Context) reconcileResult {
 
 	r.logger.WithValues("Name", approvePlan.Name).Info("Approving InstallPlan")
 	approvePlan.Spec.Approved = true
-	return updationResult(r.k8sClient.Update(ctx, approvePlan))
+	return updationResult(r.nsClient.Update(ctx, approvePlan))
 }
 
 func (r *reconciler) setGrafanaWatch(ctx context.Context) reconcileResult {
@@ -350,13 +370,13 @@ func (r *reconciler) setGrafanaWatch(ctx context.Context) reconcileResult {
 	log := r.controller.GetLogger()
 	log.V(6).Info("Trying to establish a watch on Grafana resources")
 	var datasources integreatlyv1alpha1.GrafanaDataSourceList
-	if err := r.k8sClient.List(context.Background(), &datasources, client.InNamespace("default")); err != nil {
+	if err := r.nsClient.List(context.Background(), &datasources, client.InNamespace("default")); err != nil {
 		log.V(6).Info("GrafanaDataSource CRD does not exist", "err", err)
 		return requeue(10*time.Second, nil)
 	}
 
 	if err := r.controller.Watch(
-		&source.Kind{Type: &integreatlyv1alpha1.Grafana{}},
+		source.NewKindWithCache(&integreatlyv1alpha1.Grafana{}, r.cache),
 		&handler.EnqueueRequestForObject{},
 	); err != nil {
 		log.Error(err, "Could not establish a watch on Grafana CRs")
@@ -376,7 +396,7 @@ func (r *reconciler) reconcileGrafana(ctx context.Context) reconcileResult {
 	}
 
 	var grafana integreatlyv1alpha1.Grafana
-	err := r.k8sClient.Get(ctx, key, &grafana)
+	err := r.nsClient.Get(ctx, key, &grafana)
 	if err != nil && !errors.IsNotFound(err) {
 		return reconcileError(err)
 	}
@@ -385,14 +405,14 @@ func (r *reconciler) reconcileGrafana(ctx context.Context) reconcileResult {
 	desired := newGrafana()
 	if errors.IsNotFound(err) {
 		log.Info("Creating Grafana")
-		return creationResult(r.k8sClient.Create(ctx, desired))
+		return creationResult(r.nsClient.Create(ctx, desired))
 	}
 
 	// update
 	if !reflect.DeepEqual(desired.Spec, grafana.Spec) {
 		log.Info("Updating Grafana")
 		grafana.Spec = desired.Spec
-		return updationResult(r.k8sClient.Update(ctx, &grafana))
+		return updationResult(r.nsClient.Update(ctx, &grafana))
 	}
 
 	return next()
@@ -405,7 +425,8 @@ func NewNamespace() *corev1.Namespace {
 			Kind:       "Namespace",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: Namespace,
+			Name:   Namespace,
+			Labels: commonLabels(),
 		},
 	}
 }
@@ -419,6 +440,7 @@ func NewSubscription() *v1alpha1.Subscription {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      subscriptionName,
 			Namespace: Namespace,
+			Labels:    commonLabels(),
 		},
 		Spec: &v1alpha1.SubscriptionSpec{
 			CatalogSource:          "",
@@ -448,6 +470,7 @@ func NewOperatorGroup() *operatorsv1.OperatorGroup {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      operatorGroupName,
 			Namespace: Namespace,
+			Labels:    commonLabels(),
 		},
 		Spec: operatorsv1.OperatorGroupSpec{
 			TargetNamespaces: []string{
@@ -471,6 +494,7 @@ func newGrafana() *integreatlyv1alpha1.Grafana {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      grafanaName,
 			Namespace: Namespace,
+			Labels:    commonLabels(),
 		},
 		Spec: integreatlyv1alpha1.GrafanaSpec{
 			Ingress: &integreatlyv1alpha1.GrafanaIngress{
@@ -512,6 +536,12 @@ func newGrafana() *integreatlyv1alpha1.Grafana {
 				},
 			},
 		},
+	}
+}
+
+func commonLabels() map[string]string {
+	return map[string]string{
+		managedBy: operatorName,
 	}
 }
 

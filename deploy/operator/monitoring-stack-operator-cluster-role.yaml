@@ -46,13 +46,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - integreatly.org
-  resources:
-  - grafanas
-  verbs:
-  - list
-  - watch
-- apiGroups:
   - monitoring.coreos.com
   resources:
   - alertmanagers
@@ -89,21 +82,6 @@ rules:
   verbs:
   - get
   - update
-- apiGroups:
-  - operators.coreos.com
-  resources:
-  - installplans
-  verbs:
-  - list
-  - watch
-- apiGroups:
-  - operators.coreos.com
-  resources:
-  - operatorgroups
-  - subscriptions
-  verbs:
-  - list
-  - watch
 - apiGroups:
   - policy
   resources:
@@ -149,13 +127,17 @@ rules:
   - grafanas
   verbs:
   - create
+  - list
   - update
+  - watch
 - apiGroups:
   - operators.coreos.com
   resources:
   - installplans
   verbs:
+  - list
   - update
+  - watch
 - apiGroups:
   - operators.coreos.com
   resources:
@@ -163,4 +145,6 @@ rules:
   - subscriptions
   verbs:
   - create
+  - list
   - update
+  - watch
