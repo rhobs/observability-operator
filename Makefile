@@ -4,7 +4,6 @@ SHELL=/usr/bin/env bash -o pipefail
 # This variable is used to construct full image tags for bundle and catalog images.
 IMAGE_BASE ?= monitoring-stack-operator
 
-
 VERSION ?= $(shell cat VERSION)
 OPERATOR_IMG = $(IMAGE_BASE):$(VERSION)
 

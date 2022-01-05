@@ -46,7 +46,10 @@ to the controller-gen CLI page in the [kubebuilder documentation](https://book.k
 
 * Install [kind](https://github.com/kubernetes-sigs/kind)
 
-* Create a local kubernetes cluster with `kind create cluster`.
+* Create a local kubernetes cluster with kind node image >= v1.22, older images seem to have issues with OLM installation.
+  ```sh
+  kind create cluster --image kindest/node:v1.22.4
+  ```
 
 * Apply the CRDs by running `kubectl create -k deploy/crds/kubernetes`
   * Install OLM locally by running
@@ -58,7 +61,7 @@ to the controller-gen CLI page in the [kubebuilder documentation](https://book.k
 
 * Apply the dependecies; i.e - Prometheus Operator and Grafana Operator by running
 
-    ```go
+    ```sh
     kubectl apply -k deploy/dependencies
     ```
 
