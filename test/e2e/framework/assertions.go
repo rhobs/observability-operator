@@ -54,14 +54,14 @@ func (f *Framework) AssertResourceNeverExists(name, namespace string, resource c
 				return false, nil
 			}
 
-			return true, fmt.Errorf("statefulset %s/%s should not have been created", namespace, name)
+			return true, fmt.Errorf("resource %s/%s should not have been created", namespace, name)
 		}); err != wait.ErrWaitTimeout {
 			t.Fatal(err)
 		}
 	}
 }
 
-// AssertResourceEventuallyExists asserts that a statefulset is created duration a time period of wait.ForeverTestTimeout
+// AssertResourceEventuallyExists asserts that a resource is created duration a time period of wait.ForeverTestTimeout
 func (f *Framework) AssertResourceEventuallyExists(name, namespace string, resource client.Object, fns ...OptionFn) func(t *testing.T) {
 	option := AssertOption{
 		PollInterval: 5 * time.Second,

@@ -6,7 +6,7 @@ import (
 	policyv1 "k8s.io/api/policy/v1"
 
 	stack "github.com/rhobs/monitoring-stack-operator/pkg/apis/v1alpha1"
-	grafana_operator "github.com/rhobs/monitoring-stack-operator/pkg/controllers/grafana-operator"
+	goctrl "github.com/rhobs/monitoring-stack-operator/pkg/controllers/grafana-operator"
 
 	"k8s.io/apimachinery/pkg/util/intstr"
 
@@ -316,7 +316,7 @@ func stackComponentPatchers(ms *stack.MonitoringStack, instanceSelectorKey strin
 }
 
 func newGrafanaDataSource(ms *stack.MonitoringStack) *grafanav1alpha1.GrafanaDataSource {
-	datasourceName := fmt.Sprintf("ms-%s-%s", ms.Namespace, ms.Name)
+	datasourceName := GrafanaDSName(ms)
 	prometheusURL := fmt.Sprintf("%s-prometheus.%s:9090", ms.Name, ms.Namespace)
 	annotations := map[string]string{
 		grafanaDatasourceOwnerName:      ms.Name,
@@ -331,7 +331,7 @@ func newGrafanaDataSource(ms *stack.MonitoringStack) *grafanav1alpha1.GrafanaDat
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        datasourceName,
-			Namespace:   grafana_operator.Namespace,
+			Namespace:   goctrl.Namespace,
 			Annotations: annotations,
 		},
 		Spec: grafanav1alpha1.GrafanaDataSourceSpec{
