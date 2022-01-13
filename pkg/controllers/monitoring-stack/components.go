@@ -24,7 +24,7 @@ import (
 
 const AdditionalScrapeConfigsSelfScrapeKey = "self-scrape-config"
 
-type emptyObjectFunc func() client.Object
+type emptyObjectFunc func() []client.Object
 
 type patchObjectFunc func(existing client.Object) (client.Object, error)
 
@@ -60,11 +60,13 @@ func stackComponentPatchers(ms *stack.MonitoringStack, instanceSelectorKey strin
 
 	return []objectPatcher{
 		{
-			empty: func() client.Object {
+			empty: func() []client.Object {
 				sa := newServiceAccount(prometheusRBACResourceName, ms.Namespace)
-				return &corev1.ServiceAccount{
-					TypeMeta:   sa.TypeMeta,
-					ObjectMeta: sa.ObjectMeta,
+				return []client.Object{
+					&corev1.ServiceAccount{
+						TypeMeta:   sa.TypeMeta,
+						ObjectMeta: sa.ObjectMeta,
+					},
 				}
 			},
 			patch: func(existing client.Object) (client.Object, error) {
@@ -72,15 +74,17 @@ func stackComponentPatchers(ms *stack.MonitoringStack, instanceSelectorKey strin
 			},
 		},
 		{
-			empty: func() client.Object {
-				role := newPrometheusRole(ms, prometheusRBACResourceName, rbacVerbs)
-				return &rbacv1.Role{
-					TypeMeta:   role.TypeMeta,
-					ObjectMeta: role.ObjectMeta,
+			empty: func() []client.Object {
+				objects := make([]client.Object, 0, len(ms.Spec.AdditionalNamespaces)+1)
+				objects = append(objects, newPrometheusRole(ms.Namespace, prometheusRBACResourceName, rbacVerbs))
+				for _, ns := range ms.Spec.AdditionalNamespaces {
+					objects = append(objects, newPrometheusRole(ns, prometheusRBACResourceName, rbacVerbs))
 				}
+
+				return objects
 			},
 			patch: func(existing client.Object) (client.Object, error) {
-				role := newPrometheusRole(ms, prometheusRBACResourceName, rbacVerbs)
+				role := newPrometheusRole(existing.GetNamespace(), prometheusRBACResourceName, rbacVerbs)
 
 				if existing == nil {
 					return role, nil
@@ -97,15 +101,17 @@ func stackComponentPatchers(ms *stack.MonitoringStack, instanceSelectorKey strin
 			},
 		},
 		{
-			empty: func() client.Object {
-				rb := newRoleBinding(ms, prometheusRBACResourceName)
-				return &rbacv1.RoleBinding{
-					TypeMeta:   rb.TypeMeta,
-					ObjectMeta: rb.ObjectMeta,
+			empty: func() []client.Object {
+				objects := make([]client.Object, 0, len(ms.Spec.AdditionalNamespaces)+1)
+				objects = append(objects, newRoleBinding(ms, ms.Namespace, prometheusRBACResourceName))
+				for _, ns := range ms.Spec.AdditionalNamespaces {
+					objects = append(objects, newRoleBinding(ms, ns, prometheusRBACResourceName))
 				}
+
+				return objects
 			},
 			patch: func(existing client.Object) (client.Object, error) {
-				roleBinding := newRoleBinding(ms, prometheusRBACResourceName)
+				roleBinding := newRoleBinding(ms, existing.GetNamespace(), prometheusRBACResourceName)
 
 				if existing == nil {
 					return roleBinding, nil
@@ -123,11 +129,13 @@ func stackComponentPatchers(ms *stack.MonitoringStack, instanceSelectorKey strin
 			},
 		},
 		{
-			empty: func() client.Object {
+			empty: func() []client.Object {
 				secret := newAdditionalScrapeConfigsSecret(ms, additionalScrapeConfigsSecretName)
-				return &corev1.Secret{
-					TypeMeta:   secret.TypeMeta,
-					ObjectMeta: secret.ObjectMeta,
+				return []client.Object{
+					&corev1.Secret{
+						TypeMeta:   secret.TypeMeta,
+						ObjectMeta: secret.ObjectMeta,
+					},
 				}
 			},
 			patch: func(existing client.Object) (client.Object, error) {
@@ -148,11 +156,13 @@ func stackComponentPatchers(ms *stack.MonitoringStack, instanceSelectorKey strin
 			},
 		},
 		{
-			empty: func() client.Object {
+			empty: func() []client.Object {
 				sa := newServiceAccount(alertmanagerRBACResourceName, ms.Namespace)
-				return &corev1.ServiceAccount{
-					TypeMeta:   sa.TypeMeta,
-					ObjectMeta: sa.ObjectMeta,
+				return []client.Object{
+					&corev1.ServiceAccount{
+						TypeMeta:   sa.TypeMeta,
+						ObjectMeta: sa.ObjectMeta,
+					},
 				}
 			},
 			patch: func(existing client.Object) (client.Object, error) {
@@ -160,11 +170,13 @@ func stackComponentPatchers(ms *stack.MonitoringStack, instanceSelectorKey strin
 			},
 		},
 		{
-			empty: func() client.Object {
+			empty: func() []client.Object {
 				alertmanager := newAlertmanager(ms, alertmanagerRBACResourceName, instanceSelectorKey, instanceSelectorValue)
-				return &monv1.Alertmanager{
-					TypeMeta:   alertmanager.TypeMeta,
-					ObjectMeta: alertmanager.ObjectMeta,
+				return []client.Object{
+					&monv1.Alertmanager{
+						TypeMeta:   alertmanager.TypeMeta,
+						ObjectMeta: alertmanager.ObjectMeta,
+					},
 				}
 			},
 			patch: func(existing client.Object) (client.Object, error) {
@@ -185,11 +197,13 @@ func stackComponentPatchers(ms *stack.MonitoringStack, instanceSelectorKey strin
 			},
 		},
 		{
-			empty: func() client.Object {
+			empty: func() []client.Object {
 				service := newAlertmanagerService(ms, instanceSelectorKey, instanceSelectorValue)
-				return &corev1.Service{
-					TypeMeta:   service.TypeMeta,
-					ObjectMeta: service.ObjectMeta,
+				return []client.Object{
+					&corev1.Service{
+						TypeMeta:   service.TypeMeta,
+						ObjectMeta: service.ObjectMeta,
+					},
 				}
 			},
 			patch: func(existing client.Object) (client.Object, error) {
@@ -212,11 +226,13 @@ func stackComponentPatchers(ms *stack.MonitoringStack, instanceSelectorKey strin
 			},
 		},
 		{
-			empty: func() client.Object {
+			empty: func() []client.Object {
 				pdb := newAlertmanagerPDB(ms, instanceSelectorKey, instanceSelectorValue)
-				return &policyv1.PodDisruptionBudget{
-					TypeMeta:   pdb.TypeMeta,
-					ObjectMeta: pdb.ObjectMeta,
+				return []client.Object{
+					&policyv1.PodDisruptionBudget{
+						TypeMeta:   pdb.TypeMeta,
+						ObjectMeta: pdb.ObjectMeta,
+					},
 				}
 			},
 			patch: func(existing client.Object) (client.Object, error) {
@@ -237,11 +253,13 @@ func stackComponentPatchers(ms *stack.MonitoringStack, instanceSelectorKey strin
 			},
 		},
 		{
-			empty: func() client.Object {
+			empty: func() []client.Object {
 				prometheus := newPrometheus(ms, prometheusRBACResourceName, additionalScrapeConfigsSecretName, instanceSelectorKey, instanceSelectorValue)
-				return &monv1.Prometheus{
-					TypeMeta:   prometheus.TypeMeta,
-					ObjectMeta: prometheus.ObjectMeta,
+				return []client.Object{
+					&monv1.Prometheus{
+						TypeMeta:   prometheus.TypeMeta,
+						ObjectMeta: prometheus.ObjectMeta,
+					},
 				}
 			},
 			patch: func(existing client.Object) (client.Object, error) {
@@ -262,11 +280,13 @@ func stackComponentPatchers(ms *stack.MonitoringStack, instanceSelectorKey strin
 			},
 		},
 		{
-			empty: func() client.Object {
+			empty: func() []client.Object {
 				service := newPrometheusService(ms, instanceSelectorKey, instanceSelectorValue)
-				return &corev1.Service{
-					TypeMeta:   service.TypeMeta,
-					ObjectMeta: service.ObjectMeta,
+				return []client.Object{
+					&corev1.Service{
+						TypeMeta:   service.TypeMeta,
+						ObjectMeta: service.ObjectMeta,
+					},
 				}
 			},
 			patch: func(existing client.Object) (client.Object, error) {
@@ -289,11 +309,13 @@ func stackComponentPatchers(ms *stack.MonitoringStack, instanceSelectorKey strin
 			},
 		},
 		{
-			empty: func() client.Object {
+			empty: func() []client.Object {
 				dataSource := newGrafanaDataSource(ms)
-				return &grafanav1alpha1.GrafanaDataSource{
-					TypeMeta:   dataSource.TypeMeta,
-					ObjectMeta: dataSource.ObjectMeta,
+				return []client.Object{
+					&grafanav1alpha1.GrafanaDataSource{
+						TypeMeta:   dataSource.TypeMeta,
+						ObjectMeta: dataSource.ObjectMeta,
+					},
 				}
 			},
 			patch: func(existing client.Object) (client.Object, error) {
@@ -349,7 +371,7 @@ func newGrafanaDataSource(ms *stack.MonitoringStack) *grafanav1alpha1.GrafanaDat
 	}
 }
 
-func newPrometheusRole(ms *stack.MonitoringStack, rbacResourceName string, rbacVerbs []string) *rbacv1.Role {
+func newPrometheusRole(namespace string, rbacResourceName string, rbacVerbs []string) *rbacv1.Role {
 	return &rbacv1.Role{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: rbacv1.SchemeGroupVersion.String(),
@@ -357,7 +379,7 @@ func newPrometheusRole(ms *stack.MonitoringStack, rbacResourceName string, rbacV
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rbacResourceName,
-			Namespace: ms.Namespace,
+			Namespace: namespace,
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -398,6 +420,19 @@ func newPrometheus(
 	if prometheusSelector == nil {
 		prometheusSelector = &metav1.LabelSelector{}
 	}
+
+	namespaces := []string{ms.Namespace}
+	namespaces = append(namespaces, ms.Spec.AdditionalNamespaces...)
+	namespaceSelector := &metav1.LabelSelector{
+		MatchExpressions: []metav1.LabelSelectorRequirement{
+			{
+				Key:      "kubernetes.io/metadata.name",
+				Operator: metav1.LabelSelectorOpIn,
+				Values:   namespaces,
+			},
+		},
+	}
+
 	prometheus := &monv1.Prometheus{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: monv1.SchemeGroupVersion.String(),
@@ -423,11 +458,11 @@ func newPrometheus(
 			ServiceAccountName: rbacResourceName,
 
 			ServiceMonitorSelector:          prometheusSelector,
-			ServiceMonitorNamespaceSelector: nil,
+			ServiceMonitorNamespaceSelector: namespaceSelector,
 			PodMonitorSelector:              prometheusSelector,
-			PodMonitorNamespaceSelector:     nil,
+			PodMonitorNamespaceSelector:     namespaceSelector,
 			RuleSelector:                    prometheusSelector,
-			RuleNamespaceSelector:           nil,
+			RuleNamespaceSelector:           namespaceSelector,
 
 			Alerting: &monv1.AlertingSpec{
 				Alertmanagers: []monv1.AlertmanagerEndpoints{
@@ -455,7 +490,7 @@ func newPrometheus(
 	return prometheus
 }
 
-func newRoleBinding(ms *stack.MonitoringStack, rbacResourceName string) *rbacv1.RoleBinding {
+func newRoleBinding(ms *stack.MonitoringStack, namespace string, rbacResourceName string) *rbacv1.RoleBinding {
 	roleBinding := &rbacv1.RoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: rbacv1.SchemeGroupVersion.String(),
@@ -463,7 +498,7 @@ func newRoleBinding(ms *stack.MonitoringStack, rbacResourceName string) *rbacv1.
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rbacResourceName,
-			Namespace: ms.Namespace,
+			Namespace: namespace,
 		},
 		Subjects: []rbacv1.Subject{
 			{

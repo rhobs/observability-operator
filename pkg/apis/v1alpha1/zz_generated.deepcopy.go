@@ -93,6 +93,11 @@ func (in *MonitoringStackSpec) DeepCopyInto(out *MonitoringStackSpec) {
 		*out = new(v1.LabelSelector)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.AdditionalNamespaces != nil {
+		in, out := &in.AdditionalNamespaces, &out.AdditionalNamespaces
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	in.Resources.DeepCopyInto(&out.Resources)
 }
 

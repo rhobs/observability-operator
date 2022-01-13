@@ -246,41 +246,50 @@ func (r *reconciler) getStack(ctx context.Context, req ctrl.Request) (*stack.Mon
 }
 
 func (r *reconciler) reconcileObject(ctx context.Context, ms *stack.MonitoringStack, patcher objectPatcher) error {
-	existing := patcher.empty()
-	gvk := existing.GetObjectKind().GroupVersionKind()
-	logger := r.logger.WithValues(
-		"Stack", ms.Namespace+"/"+ms.Name,
-		"Component", fmt.Sprintf("%s.%s/%s", gvk.Kind, gvk.Group, gvk.Version),
-		"Name", existing.GetName())
+	for _, existing := range patcher.empty() {
+		gvk := existing.GetObjectKind().GroupVersionKind()
+		logger := r.logger.WithValues(
+			"Stack", ms.Namespace+"/"+ms.Name,
+			"Component", fmt.Sprintf("%s.%s/%s", gvk.Kind, gvk.Group, gvk.Version),
+			"Name", existing.GetName())
 
-	key := types.NamespacedName{
-		Name:      existing.GetName(),
-		Namespace: existing.GetNamespace(),
-	}
-	err := r.k8sClient.Get(ctx, key, existing)
-	if err != nil && !errors.IsNotFound(err) {
-		return err
-	}
-	createNew := errors.IsNotFound(err)
+		key := types.NamespacedName{
+			Name:      existing.GetName(),
+			Namespace: existing.GetNamespace(),
+		}
+		err := r.k8sClient.Get(ctx, key, existing)
+		if err != nil && !errors.IsNotFound(err) {
+			return err
+		}
+		createNew := errors.IsNotFound(err)
 
-	desired, err := patcher.patch(existing)
-	if err != nil {
-		return err
-	}
+		desired, err := patcher.patch(existing)
+		if err != nil {
+			return err
+		}
 
-	if ms.Namespace == desired.GetNamespace() {
-		if err := controllerutil.SetControllerReference(ms, desired, r.scheme); err != nil {
+		if ms.Namespace == desired.GetNamespace() {
+			if err := controllerutil.SetControllerReference(ms, desired, r.scheme); err != nil {
+				return err
+			}
+		}
+
+		if createNew {
+			logger.Info("Creating stack component")
+			err = r.k8sClient.Create(ctx, desired)
+			if err != nil {
+				return err
+			}
+		}
+
+		logger.Info("Updating stack component")
+		err = r.k8sClient.Update(ctx, desired)
+		if err != nil {
 			return err
 		}
 	}
 
-	if createNew {
-		logger.Info("Creating stack component")
-		return r.k8sClient.Create(ctx, desired)
-	}
-
-	logger.Info("Updating stack component")
-	return r.k8sClient.Update(ctx, desired)
+	return nil
 }
 
 func (r *reconciler) createGrafanaDSWatch(ctx context.Context) (bool, error) {

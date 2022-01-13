@@ -37,6 +37,12 @@ spec:
             description: MonitoringStackSpec is the specification for desired Monitoring
               Stack
             properties:
+              additionalNamespaces:
+                description: Namespaces to monitor in addition to the MonitoringStack
+                  namespace
+                items:
+                  type: string
+                type: array
               logLevel:
                 default: info
                 description: Loglevel set log levels of configured components

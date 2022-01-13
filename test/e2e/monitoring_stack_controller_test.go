@@ -53,6 +53,9 @@ func TestMonitoringStackController(t *testing.T) {
 			name:     "Empty stack spec must create a Prometheus",
 			scenario: emptyStackCreatesPrometheus,
 		}, {
+			name:     "Verify multi-namespace support",
+			scenario: verifyMultinamespaceSupport,
+		}, {
 			name:     "stack spec are reflected in Prometheus",
 			scenario: reconcileStack,
 		}, {
@@ -104,6 +107,71 @@ func emptyStackCreatesPrometheus(t *testing.T) {
 	// Creating an Empty monitoring stack must create a Prometheus with defaults applied
 	prometheus := monv1.Prometheus{}
 	f.GetResourceWithRetry(t, ms.Name, ms.Namespace, &prometheus)
+}
+
+func verifyMultinamespaceSupport(t *testing.T) {
+	newNamespace(t, "test-namespace")
+	newPod(t, "prometheus", "test-namespace", "quay.io/prometheus/prometheus:v2.32.1")
+	pm := monv1.PodMonitor{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: monv1.SchemeGroupVersion.String(),
+			Kind:       "ServiceMonitor",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "prometheus",
+			Namespace: "test-namespace",
+		},
+		Spec: monv1.PodMonitorSpec{
+			Selector: metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"app.kubernetes.io/name": "prometheus",
+				},
+			},
+			PodMetricsEndpoints: []monv1.PodMetricsEndpoint{
+				{
+					Interval: "10s",
+					Port:     "metrics",
+					Path:     "/metrics",
+				},
+			},
+		},
+	}
+	err := f.K8sClient.Create(context.Background(), &pm)
+	assert.NilError(t, err)
+	f.CleanUp(t, func() {
+		f.K8sClient.Delete(context.Background(), &pm)
+	})
+
+	ms := newMonitoringStack(t, "multi-ns-stack")
+	ms.Spec.AdditionalNamespaces = []string{"test-namespace"}
+	err = f.K8sClient.Create(context.Background(), ms)
+	assert.NilError(t, err, "failed to create a monitoring stack")
+
+	stopChan := make(chan struct{})
+	defer close(stopChan)
+	if err := wait.Poll(5*time.Second, 2*time.Minute, func() (bool, error) {
+		err = f.StartServicePortForward("multi-ns-stack-prometheus", e2eTestNamespace, "9090", stopChan)
+		return err == nil, nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	promClient := framework.NewPrometheusClient("http://localhost:9090")
+	if err := wait.Poll(5*time.Second, 5*time.Minute, func() (bool, error) {
+		query := `prometheus_build_info{namespace="test-namespace"}`
+		result, err := promClient.Query(query)
+		if err != nil {
+			return false, nil
+		}
+
+		if len(result.Data.Result) != 1 {
+			return false, nil
+		}
+
+		return true, nil
+	}); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func reconcileStack(t *testing.T) {
@@ -427,6 +495,24 @@ func newAlerts(t *testing.T) *monv1.PrometheusRule {
 	return rule
 }
 
+func newNamespace(t *testing.T, name string) {
+	ns := corev1.Namespace{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "v1",
+			APIVersion: "Namespace",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+	}
+
+	err := f.K8sClient.Create(context.Background(), &ns)
+	assert.NilError(t, err, "failed to create namespace")
+	f.CleanUp(t, func() {
+		f.K8sClient.Delete(context.Background(), &ns)
+	})
+}
+
 func newMonitoringStack(t *testing.T, name string) *stack.MonitoringStack {
 	ms := &stack.MonitoringStack{
 		ObjectMeta: metav1.ObjectMeta{
@@ -440,6 +526,42 @@ func newMonitoringStack(t *testing.T, name string) *stack.MonitoringStack {
 	})
 
 	return ms
+}
+
+func newPod(t *testing.T, name string, namespace string, image string) {
+	pod := corev1.Pod{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "v1",
+			APIVersion: "Pod",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+			Labels: map[string]string{
+				"app.kubernetes.io/name": name,
+			},
+		},
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Name:  "app",
+					Image: image,
+					Ports: []corev1.ContainerPort{
+						{
+							Name:          "metrics",
+							ContainerPort: 9090,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	err := f.K8sClient.Create(context.Background(), &pod)
+	assert.NilError(t, err)
+	f.CleanUp(t, func() {
+		f.K8sClient.Delete(context.Background(), &pod)
+	})
 }
 
 func waitForStackDeletion(name string) error {

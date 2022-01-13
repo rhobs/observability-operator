@@ -86,6 +86,13 @@ MonitoringStackSpec is the specification for desired Monitoring Stack
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>additionalNamespaces</b></td>
+        <td>[]string</td>
+        <td>
+          Namespaces to monitor in addition to the MonitoringStack namespace<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>logLevel</b></td>
         <td>enum</td>
         <td>
