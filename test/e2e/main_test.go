@@ -50,7 +50,19 @@ func main(m *testing.M) int {
 		defer cleanup()
 	}
 
-	return m.Run()
+	exitCode := m.Run()
+
+	tests := []testing.InternalTest{{
+		Name: "NoReconcilationErrors",
+		F:    f.AssertNoReconcileErrors,
+	}}
+
+	log.Println("=== Running post e2e test validations ===")
+	if !testing.RunTests(func(_, _ string) (bool, error) { return true, nil }, tests) {
+		return 1
+	}
+
+	return exitCode
 }
 
 func setupFramework() error {
