@@ -67,6 +67,10 @@ type MonitoringStackSpec struct {
 	// +optional
 	// +kubebuilder:default={requests:{cpu: "100m", memory: "256M"}, limits:{memory: "512M", cpu: "500m"}}
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// Define prometheus config
+	// +optional
+	PrometheusConfig *PrometheusConfig `json:"prometheusConfig,omitempty"`
 }
 
 // MonitoringStackStatus defines the observed state of MonitoringStack.
@@ -74,6 +78,12 @@ type MonitoringStackSpec struct {
 type MonitoringStackStatus struct {
 	// TODO(sthaha): INSERT ADDITIONAL STATUS FIELDS -- observed state of prometheus
 	// ??
+}
+
+type PrometheusConfig struct {
+	// Define persistent volume claim for prometheus
+	// +optional
+	PersistentVolumeClaim corev1.PersistentVolumeClaimSpec `json:"persistentVolumeClaim,omitempty"`
 }
 
 // NamespaceSelector is a selector for selecting either all namespaces or a

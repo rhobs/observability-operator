@@ -483,6 +483,14 @@ func newPrometheus(
 			},
 		},
 	}
+
+	if ms.Spec.PrometheusConfig != nil {
+		prometheus.Spec.Storage = &monv1.StorageSpec{
+			VolumeClaimTemplate: monv1.EmbeddedPersistentVolumeClaim{
+				Spec: ms.Spec.PrometheusConfig.PersistentVolumeClaim,
+			},
+		}
+	}
 	return prometheus
 }
 
