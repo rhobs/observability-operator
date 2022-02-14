@@ -113,6 +113,7 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 		WithLogger(ctrl.Log).
 		For(&stack.MonitoringStack{}).
 		Owns(&monv1.Prometheus{}).WithEventFilter(p).
+		Owns(&v1.Service{}).WithEventFilter(p).
 		Owns(&v1.ServiceAccount{}).WithEventFilter(p).
 		Owns(&rbacv1.Role{}).WithEventFilter(p).
 		Owns(&rbacv1.RoleBinding{}).WithEventFilter(p).

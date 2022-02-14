@@ -290,6 +290,33 @@ func stackComponentPatchers(ms *stack.MonitoringStack, instanceSelectorKey strin
 		},
 		{
 			empty: func() client.Object {
+				service := newThanosSidecarService(ms, instanceSelectorKey, instanceSelectorValue)
+				return &corev1.Service{
+					TypeMeta:   service.TypeMeta,
+					ObjectMeta: service.ObjectMeta,
+				}
+			},
+			patch: func(existing client.Object) (client.Object, error) {
+				service := newThanosSidecarService(ms, instanceSelectorKey, instanceSelectorValue)
+
+				if existing == nil {
+					return service, nil
+				}
+
+				desired, ok := existing.(*corev1.Service)
+				if !ok {
+					return nil, NewObjectTypeError(service, existing)
+				}
+
+				// The ClusterIP field is immutable and we have to take it from the observed object.
+				service.Spec.ClusterIP = desired.Spec.ClusterIP
+				desired.Spec = service.Spec
+				desired.Labels = service.Labels
+				return desired, nil
+			},
+		},
+		{
+			empty: func() client.Object {
 				dataSource := newGrafanaDataSource(ms)
 				return &grafanav1alpha1.GrafanaDataSource{
 					TypeMeta:   dataSource.TypeMeta,
@@ -450,6 +477,10 @@ func newPrometheus(
 				},
 				Key: AdditionalScrapeConfigsSelfScrapeKey,
 			},
+			Thanos: &monv1.ThanosSpec{
+				BaseImage: stringPtr("quay.io/thanos/thanos"),
+				Version:   stringPtr("v0.24.0"),
+			},
 		},
 	}
 	return prometheus
@@ -501,6 +532,32 @@ func newPrometheusService(ms *stack.MonitoringStack, instanceSelectorKey string,
 					Name:       "web",
 					Port:       9090,
 					TargetPort: intstr.FromInt(9090),
+				},
+			},
+		},
+	}
+}
+
+func newThanosSidecarService(ms *stack.MonitoringStack, instanceSelectorKey string, instanceSelectorValue string) *corev1.Service {
+	name := ms.Name + "-thanos-sidecar"
+	return &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "Service",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ms.Namespace,
+			Labels:    objectLabels(name, ms.Name, instanceSelectorKey, instanceSelectorValue),
+		},
+		Spec: corev1.ServiceSpec{
+			ClusterIP: "none",
+			Selector:  podLabels("prometheus", ms.Name),
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "grpc",
+					Port:       10901,
+					TargetPort: intstr.FromString("grpc"),
 				},
 			},
 		},
@@ -621,4 +678,8 @@ func podLabels(component string, msName string) map[string]string {
 		"app.kubernetes.io/component": component,
 		"app.kubernetes.io/part-of":   msName,
 	}
+}
+
+func stringPtr(s string) *string {
+	return &s
 }
