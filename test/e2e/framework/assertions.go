@@ -250,5 +250,6 @@ func (f *Framework) AssertNoReconcileErrors(t *testing.T) {
 		map[string]float64{
 			`{__name__="controller_runtime_reconcile_errors_total", controller="grafana-operator"}`: 0,
 			`{__name__="controller_runtime_reconcile_errors_total", controller="monitoringstack"}`:  0,
+			`{__name__="controller_runtime_reconcile_errors_total", controller="thanosquerier"}`:    0,
 		})
 }

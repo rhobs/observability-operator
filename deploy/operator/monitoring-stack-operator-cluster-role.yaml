@@ -48,14 +48,9 @@ rules:
   - update
   - watch
 - apiGroups:
-  - apps
-  resources:
-  - deployments/status
-  verbs:
-  - get
-- apiGroups:
   - ""
   resources:
+  - serviceaccounts
   - services
   verbs:
   - create
@@ -64,12 +59,6 @@ rules:
   - patch
   - update
   - watch
-- apiGroups:
-  - ""
-  resources:
-  - services/status
-  verbs:
-  - get
 - apiGroups:
   - extensions
   - networking.k8s.io
@@ -89,6 +78,17 @@ rules:
   - create
   - delete
   - list
+  - update
+  - watch
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - servicemonitors
+  verbs:
+  - create
+  - delete
+  - list
+  - patch
   - update
   - watch
 - apiGroups:
@@ -123,7 +123,6 @@ rules:
   verbs:
   - create
   - delete
-  - get
   - list
   - patch
   - update

@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -22,18 +23,12 @@ import (
 )
 
 func TestThanosQuerierController(t *testing.T) {
-	assertCRDExists(t,
-		"thanosquerier.monitoring.rhobs",
-	)
+	assertCRDExists(t, "thanosqueriers.monitoring.rhobs")
 
 	ts := []testCase{
 		{
 			name:     "Create resources for single monitoring stack",
 			scenario: singleStackWithSidecar,
-		},
-		{
-			name:     "Don't create any resources if selector matches nothing",
-			scenario: noStack,
 		},
 		{
 			name:     "Delete resources if matched monitoring stack is deleted",
@@ -44,18 +39,6 @@ func TestThanosQuerierController(t *testing.T) {
 	for _, tc := range ts {
 		t.Run(tc.name, tc.scenario)
 	}
-}
-
-func noStack(t *testing.T) {
-	tq := newThanosQuerier(t, "no-stack", map[string]string{"doesnt": "exist"})
-	err := f.K8sClient.Create(context.Background(), tq)
-	assert.NilError(t, err, "failed to create a thanos querier")
-
-	name := "thanos-querier-" + tq.Name
-	thanosDeployment := appsv1.Deployment{}
-	f.AssertResourceNeverExists(name, tq.Namespace, &thanosDeployment, framework.WithTimeout(15*time.Second))(t)
-	thanosService := corev1.Service{}
-	f.AssertResourceNeverExists(name, tq.Namespace, &thanosService, framework.WithTimeout(15*time.Second))(t)
 }
 
 func stackWithSidecarGetsDeleted(t *testing.T) {
@@ -81,12 +64,56 @@ func singleStackWithSidecar(t *testing.T) {
 	err = f.K8sClient.Create(context.Background(), ms)
 	assert.NilError(t, err, "failed to create a monitoring stack")
 
-	// Creating a basic combo must create a thanos deplouyment and a service
+	// Creating a basic combo must create a thanos deployment and a service
 	name := "thanos-querier-" + tq.Name
 	thanosDeployment := appsv1.Deployment{}
 	f.GetResourceWithRetry(t, name, tq.Namespace, &thanosDeployment)
+
 	thanosService := corev1.Service{}
 	f.GetResourceWithRetry(t, name, tq.Namespace, &thanosService)
+
+	// Assert prometheus instance can be queried
+	stopChan := make(chan struct{})
+	defer close(stopChan)
+	if err := wait.Poll(5*time.Second, 2*time.Minute, func() (bool, error) {
+		err = f.StartServicePortForward(name, e2eTestNamespace, "9090", stopChan)
+		return err == nil, nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	promClient := framework.NewPrometheusClient("http://localhost:9090")
+	expectedResults := map[string]int{
+		"prometheus_build_info": 1,
+	}
+	if err := wait.Poll(5*time.Second, 5*time.Minute, func() (bool, error) {
+		correct := 0
+		for query, value := range expectedResults {
+			result, err := promClient.Query(query)
+			if err != nil {
+				return false, nil
+			}
+
+			if len(result.Data.Result) == 0 {
+				return false, nil
+			}
+
+			if len(result.Data.Result) > value {
+				resultErr := fmt.Errorf("invalid result for query %s, got %d, want %d", query, len(result.Data.Result), value)
+				return true, resultErr
+			}
+
+			if len(result.Data.Result) != value {
+				return false, nil
+			}
+
+			correct++
+		}
+
+		return correct == len(expectedResults), nil
+	}); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func newThanosQuerier(t *testing.T, name string, selector map[string]string) *msov1.ThanosQuerier {
