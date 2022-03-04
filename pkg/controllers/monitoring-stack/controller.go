@@ -156,9 +156,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	for _, patcher := range patchers {
-
 		err := r.reconcileObject(ctx, ms, patcher)
-
 		// handle creation / updation errors that can happen due to a stale cache by
 		// retrying after some time.
 		if errors.IsAlreadyExists(err) || errors.IsConflict(err) {
@@ -167,7 +165,6 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 		if err != nil {
 			return ctrl.Result{}, err
-
 		}
 	}
 	return r.setupFinalizer(ctx, ms)
@@ -291,20 +288,22 @@ func (r *reconciler) createGrafanaDSWatch(ctx context.Context) (bool, error) {
 	log := r.logger.WithName("create-grafana-ds-watch")
 	var dataSources grafanav1alpha1.GrafanaDataSourceList
 
-	err := r.k8sClient.List(ctx, &dataSources, client.InNamespace("default"))
-
-	if err != nil {
+	if err := r.k8sClient.List(ctx, &dataSources, client.InNamespace("default")); err != nil {
 		log.V(6).Info("grafana data source CRD is not defined")
 		return true, nil
 	}
 
-	err = r.controller.Watch(&source.Kind{Type: &grafanav1alpha1.GrafanaDataSource{}}, handler.EnqueueRequestsFromMapFunc(func(object client.Object) []reconcile.Request {
-		name := object.GetAnnotations()[grafanaDatasourceOwnerName]
-		namespace := object.GetAnnotations()[grafanaDatasourceOwnerNamespace]
-		namespacedName := types.NamespacedName{Name: name, Namespace: namespace}
-		return []reconcile.Request{{NamespacedName: namespacedName}}
-	}))
-	if err != nil {
+	if err := r.controller.Watch(
+		&source.Kind{Type: &grafanav1alpha1.GrafanaDataSource{}},
+		handler.EnqueueRequestsFromMapFunc(
+			func(object client.Object) []reconcile.Request {
+				name := object.GetAnnotations()[grafanaDatasourceOwnerName]
+				namespace := object.GetAnnotations()[grafanaDatasourceOwnerNamespace]
+				namespacedName := types.NamespacedName{Name: name, Namespace: namespace}
+				return []reconcile.Request{{NamespacedName: namespacedName}}
+			},
+		),
+	); err != nil {
 		log.Error(err, "unable to create watch on grafana data source")
 		return false, err
 	}

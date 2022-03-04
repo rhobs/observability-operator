@@ -16,18 +16,11 @@ type components []client.Object
 
 func thanosComponents(thanos *msoapi.ThanosQuerier, sidecarUrls []string) components {
 	name := "thanos-querier-" + thanos.Name
-	resourceLabels := map[string]string{
-		"app.kubernetes.io/part-of": name,
-	}
-
 	return []client.Object{
-		// ServiceAccount
-		ensureLabels(newServiceAccount(name, thanos.Namespace), resourceLabels),
-		// Deployment
-		ensureLabels(newThanosQuerierDeployment(name, thanos, sidecarUrls), resourceLabels),
-		// Service
-		ensureLabels(newService(name, thanos.Namespace), resourceLabels),
-		ensureLabels(newServiceMonitor(name, thanos.Namespace), resourceLabels),
+		newServiceAccount(name, thanos.Namespace),
+		newThanosQuerierDeployment(name, thanos, sidecarUrls),
+		newService(name, thanos.Namespace),
+		newServiceMonitor(name, thanos.Namespace),
 	}
 }
 

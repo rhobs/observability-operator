@@ -110,6 +110,25 @@ type ThanosQuerier struct {
 	Status ThanosQuerierStatus `json:"status,omitempty"`
 }
 
+func (t ThanosQuerier) MatchesNamespace(namespace string) bool {
+	namespaceSelector := t.Spec.NamespaceSelector
+	if namespaceSelector.Any {
+		return true
+	}
+
+	if len(namespaceSelector.MatchNames) == 0 {
+		return t.Namespace == namespace
+	}
+
+	for _, ns := range namespaceSelector.MatchNames {
+		if ns == namespace {
+			return true
+		}
+	}
+
+	return false
+}
+
 // ThanosQuerierList contains a list of ThanosQuerier
 // +kubebuilder:resource
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
