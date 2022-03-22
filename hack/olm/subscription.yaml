@@ -1,14 +1,15 @@
+---
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
   labels:
-    operators.coreos.com/monitoring-operator-stack.openshift-operators: ""
-  name: monitoring-operator-stack
+    operators.coreos.com/monitoring-stack-operator.openshift-operators: ""
+  name: monitoring-stack-operator
   namespace: openshift-operators
 spec:
-  channel: alpha
+  channel: stable
   installPlanApproval: Automatic
-  name: monitoring-operator-stack
+  name: monitoring-stack-operator
   source: monitoring-operators
   sourceNamespace: openshift-marketplace
-  startingCSV: monitoring-operator-stack.v0.0.1
+  startingCSV: monitoring-stack-operator.v0.0.6
