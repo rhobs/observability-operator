@@ -197,6 +197,10 @@ tools: $(CONTROLLER_GEN) \
 		echo  $$(basename $(GOJSONTOYAML)) $(GOJSONTOYAML_VERSRION) >> $$tools_file ;\
 	}
 
+.PHONY: clean-tools
+clean-tools:
+	rm -rf $(TOOLS_DIR)
+
 .PHONY: validate-tools
 validate-tools:
 	@$(CONTROLLER_GEN) --version

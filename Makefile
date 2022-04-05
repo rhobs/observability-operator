@@ -216,5 +216,5 @@ kind-cluster: $(OPERATOR_SDK)
 	kubectl create -k deploy/dependencies
 
 .PHONY: clean
-clean:
+clean: clean-tools
 	rm -rf $(JSONNET_VENDOR) bundle/ bundle.Dockerfile
