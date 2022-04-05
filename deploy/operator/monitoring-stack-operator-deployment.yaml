@@ -38,9 +38,9 @@ spec:
           resources:
             limits:
               cpu: 200m
-              memory: 100Mi
+              memory: 300Mi
             requests:
               cpu: 100m
-              memory: 20Mi
+              memory: 150Mi
       serviceAccountName: monitoring-stack-operator-sa
       terminationGracePeriodSeconds: 30
