@@ -4,6 +4,25 @@ The monitoring stack operator is a Kubernetes operator which enables the managem
 
 The project is based on the [controller-runtime](https://github.com/kubernetes-sigs/controller-runtime) library.
 
+## Trying out the Operator
+
+### OLM
+
+The easiest way to try out the operator is to use OLM (that comes shipped with
+OpenShift). Assuming you are using OpenShift, add the Monitoring Stack Operator Catalog
+as shown below.
+
+```
+kubectl apply -f hack/olm/catalog-src.yaml
+```
+
+This adds a new Catalog to the list of Catalogs. Now, you should be able to use
+OLM Web interface to install Monitoring Stack Operator like any other operator.
+
+### Kubernetes
+
+Refer `Running the Operator in Kind `below to run the operator in Kubernetes.
+
 ## Development
 
 In order to contribute to this project, make sure you have go 1.17 on your local machine.
