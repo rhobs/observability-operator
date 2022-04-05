@@ -1,357 +1,62 @@
 package monitoringstack
 
 import (
-	"fmt"
+	"context"
 	"reflect"
-
-	policyv1 "k8s.io/api/policy/v1"
 
 	stack "github.com/rhobs/monitoring-stack-operator/pkg/apis/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"k8s.io/apimachinery/pkg/runtime"
-
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 const AdditionalScrapeConfigsSelfScrapeKey = "self-scrape-config"
 
-type emptyObjectFunc func() client.Object
+type reconcileFunction func(ctx context.Context, c client.Client, scheme *runtime.Scheme) error
 
-type patchObjectFunc func(existing client.Object) (client.Object, error)
+func defaultReconciler(component client.Object, ms *stack.MonitoringStack) reconcileFunction {
+	return func(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
+		if ms.Namespace == component.GetNamespace() {
+			if err := controllerutil.SetControllerReference(ms, component, scheme); err != nil {
+				return err
+			}
+		}
 
-type objectPatcher struct {
-	empty emptyObjectFunc
-	patch patchObjectFunc
-}
-
-type ObjectTypeError struct {
-	expectedType string
-	actualType   string
-}
-
-func NewObjectTypeError(expected runtime.Object, actual runtime.Object) error {
-	gvk := func(o runtime.Object) string {
-		gvk := o.GetObjectKind().GroupVersionKind()
-		return gvk.Group + "/" + gvk.Version + " " + gvk.Kind
+		if err := c.Patch(ctx, component, client.Apply, client.ForceOwnership, client.FieldOwner("monitoring-stack-controller")); err != nil {
+			return err
+		}
+		return nil
 	}
-
-	return ObjectTypeError{expectedType: gvk(expected), actualType: gvk(actual)}
 }
 
-func (e ObjectTypeError) Error() string {
-	return fmt.Sprintf("object type %q is not %q", e.actualType, e.expectedType)
-}
-
-func stackComponentPatchers(ms *stack.MonitoringStack, instanceSelectorKey string, instanceSelectorValue string) ([]objectPatcher, error) {
+func stackComponentReconcilers(ms *stack.MonitoringStack, instanceSelectorKey string, instanceSelectorValue string) []reconcileFunction {
 	prometheusRBACResourceName := ms.Name + "-prometheus"
 	alertmanagerRBACResourceName := ms.Name + "-alertmanager"
-
 	rbacVerbs := []string{"get", "list", "watch"}
 	additionalScrapeConfigsSecretName := ms.Name + "-prometheus-additional-scrape-configs"
-
-	return []objectPatcher{
-		{
-			empty: func() client.Object {
-				sa := newServiceAccount(prometheusRBACResourceName, ms.Namespace)
-				return &corev1.ServiceAccount{
-					TypeMeta:   sa.TypeMeta,
-					ObjectMeta: sa.ObjectMeta,
-				}
-			},
-			patch: func(existing client.Object) (client.Object, error) {
-				return newServiceAccount(prometheusRBACResourceName, ms.Namespace), nil
-			},
-		},
-		{
-			empty: func() client.Object {
-				role := newPrometheusRole(ms, prometheusRBACResourceName, rbacVerbs)
-				return &rbacv1.Role{
-					TypeMeta:   role.TypeMeta,
-					ObjectMeta: role.ObjectMeta,
-				}
-			},
-			patch: func(existing client.Object) (client.Object, error) {
-				role := newPrometheusRole(ms, prometheusRBACResourceName, rbacVerbs)
-
-				if existing == nil {
-					return role, nil
-				}
-
-				desired, ok := existing.(*rbacv1.Role)
-				if !ok {
-					return nil, NewObjectTypeError(role, existing)
-				}
-
-				desired.Labels = role.Labels
-				desired.Rules = role.Rules
-				return desired, nil
-			},
-		},
-		{
-			empty: func() client.Object {
-				rb := newRoleBinding(ms, prometheusRBACResourceName)
-				return &rbacv1.RoleBinding{
-					TypeMeta:   rb.TypeMeta,
-					ObjectMeta: rb.ObjectMeta,
-				}
-			},
-			patch: func(existing client.Object) (client.Object, error) {
-				roleBinding := newRoleBinding(ms, prometheusRBACResourceName)
-
-				if existing == nil {
-					return roleBinding, nil
-				}
-
-				desired, ok := existing.(*rbacv1.RoleBinding)
-				if !ok {
-					return nil, NewObjectTypeError(roleBinding, existing)
-				}
-
-				desired.Labels = roleBinding.Labels
-				desired.Subjects = roleBinding.Subjects
-				desired.RoleRef = roleBinding.RoleRef
-				return desired, nil
-			},
-		},
-		{
-			empty: func() client.Object {
-				secret := newAdditionalScrapeConfigsSecret(ms, additionalScrapeConfigsSecretName)
-				return &corev1.Secret{
-					TypeMeta:   secret.TypeMeta,
-					ObjectMeta: secret.ObjectMeta,
-				}
-			},
-			patch: func(existing client.Object) (client.Object, error) {
-				secret := newAdditionalScrapeConfigsSecret(ms, additionalScrapeConfigsSecretName)
-				if existing == nil {
-					return secret, nil
-				}
-
-				desired, ok := existing.(*corev1.Secret)
-				if !ok {
-					return nil, NewObjectTypeError(secret, existing)
-				}
-
-				desired.Labels = secret.Labels
-				desired.StringData = secret.StringData
-
-				return desired, nil
-			},
-		},
-		{
-			empty: func() client.Object {
-				sa := newServiceAccount(alertmanagerRBACResourceName, ms.Namespace)
-				return &corev1.ServiceAccount{
-					TypeMeta:   sa.TypeMeta,
-					ObjectMeta: sa.ObjectMeta,
-				}
-			},
-			patch: func(existing client.Object) (client.Object, error) {
-				return newServiceAccount(alertmanagerRBACResourceName, ms.Namespace), nil
-			},
-		},
-		{
-			empty: func() client.Object {
-				alertmanager := newAlertmanager(ms, alertmanagerRBACResourceName, instanceSelectorKey, instanceSelectorValue)
-				return &monv1.Alertmanager{
-					TypeMeta:   alertmanager.TypeMeta,
-					ObjectMeta: alertmanager.ObjectMeta,
-				}
-			},
-			patch: func(existing client.Object) (client.Object, error) {
-				alertmanager := newAlertmanager(ms, alertmanagerRBACResourceName, instanceSelectorKey, instanceSelectorValue)
-
-				if existing == nil {
-					return alertmanager, nil
-				}
-
-				desired, ok := existing.(*monv1.Alertmanager)
-				if !ok {
-					return nil, NewObjectTypeError(alertmanager, existing)
-				}
-
-				desired.Labels = alertmanager.Labels
-				desired.Spec = alertmanager.Spec
-				return desired, nil
-			},
-		},
-		{
-			empty: func() client.Object {
-				service := newAlertmanagerService(ms, instanceSelectorKey, instanceSelectorValue)
-				return &corev1.Service{
-					TypeMeta:   service.TypeMeta,
-					ObjectMeta: service.ObjectMeta,
-				}
-			},
-			patch: func(existing client.Object) (client.Object, error) {
-				service := newAlertmanagerService(ms, instanceSelectorKey, instanceSelectorValue)
-
-				if existing == nil {
-					return service, nil
-				}
-
-				desired, ok := existing.(*corev1.Service)
-				if !ok {
-					return nil, NewObjectTypeError(service, existing)
-				}
-
-				// The ClusterIP field is immutable and we have to take it from the observed object.
-				service.Spec.ClusterIP = desired.Spec.ClusterIP
-				desired.Spec = service.Spec
-				desired.Labels = service.Labels
-				return desired, nil
-			},
-		},
-		{
-			empty: func() client.Object {
-				pdb := newAlertmanagerPDB(ms, instanceSelectorKey, instanceSelectorValue)
-				return &policyv1.PodDisruptionBudget{
-					TypeMeta:   pdb.TypeMeta,
-					ObjectMeta: pdb.ObjectMeta,
-				}
-			},
-			patch: func(existing client.Object) (client.Object, error) {
-				pdb := newAlertmanagerPDB(ms, instanceSelectorKey, instanceSelectorValue)
-
-				if existing == nil {
-					return pdb, nil
-				}
-
-				desired, ok := existing.(*policyv1.PodDisruptionBudget)
-				if !ok {
-					return nil, NewObjectTypeError(pdb, existing)
-				}
-
-				desired.Spec = pdb.Spec
-				desired.Labels = pdb.Labels
-				return desired, nil
-			},
-		},
-		{
-			empty: func() client.Object {
-				prometheus := newPrometheus(ms, prometheusRBACResourceName, additionalScrapeConfigsSecretName, instanceSelectorKey, instanceSelectorValue)
-				return &monv1.Prometheus{
-					TypeMeta:   prometheus.TypeMeta,
-					ObjectMeta: prometheus.ObjectMeta,
-				}
-			},
-			patch: func(existing client.Object) (client.Object, error) {
-				prometheus := newPrometheus(ms, prometheusRBACResourceName, additionalScrapeConfigsSecretName, instanceSelectorKey, instanceSelectorValue)
-
-				if existing == nil {
-					return prometheus, nil
-				}
-
-				desired, ok := existing.(*monv1.Prometheus)
-				if !ok {
-					return nil, NewObjectTypeError(prometheus, existing)
-				}
-
-				desired.Labels = prometheus.Labels
-				desired.Spec = prometheus.Spec
-				return desired, nil
-			},
-		},
-		{
-			empty: func() client.Object {
-				service := newPrometheusService(ms, instanceSelectorKey, instanceSelectorValue)
-				return &corev1.Service{
-					TypeMeta:   service.TypeMeta,
-					ObjectMeta: service.ObjectMeta,
-				}
-			},
-			patch: func(existing client.Object) (client.Object, error) {
-				service := newPrometheusService(ms, instanceSelectorKey, instanceSelectorValue)
-
-				if existing == nil {
-					return service, nil
-				}
-
-				desired, ok := existing.(*corev1.Service)
-				if !ok {
-					return nil, NewObjectTypeError(service, existing)
-				}
-
-				// The ClusterIP field is immutable and we have to take it from the observed object.
-				service.Spec.ClusterIP = desired.Spec.ClusterIP
-				desired.Spec = service.Spec
-				desired.Labels = service.Labels
-				return desired, nil
-			},
-		},
-		{
-			empty: func() client.Object {
-				pdb := newPrometheusPDB(ms, instanceSelectorKey, instanceSelectorValue)
-				return &policyv1.PodDisruptionBudget{
-					TypeMeta:   pdb.TypeMeta,
-					ObjectMeta: pdb.ObjectMeta,
-				}
-			},
-			patch: func(existing client.Object) (client.Object, error) {
-				// delete pdb if prometheus is not run on HA mode
-				if *ms.Spec.PrometheusConfig.Replicas <= 1 {
-					return nil, nil
-				}
-
-				pdb := newPrometheusPDB(ms, instanceSelectorKey, instanceSelectorValue)
-
-				if existing == nil {
-					return pdb, nil
-				}
-
-				desired, ok := existing.(*policyv1.PodDisruptionBudget)
-				if !ok {
-					return nil, NewObjectTypeError(pdb, existing)
-				}
-
-				desired.Spec = pdb.Spec
-				desired.Labels = pdb.Labels
-				return desired, nil
-			},
-		},
-		{
-			empty: func() client.Object {
-				service := newThanosSidecarService(ms, instanceSelectorKey, instanceSelectorValue)
-				return &corev1.Service{
-					TypeMeta:   service.TypeMeta,
-					ObjectMeta: service.ObjectMeta,
-					Spec: corev1.ServiceSpec{
-
-						// NOTE: Setting this to "None" makes a "headless service" (no virtual
-						// IP), which is useful when direct endpoint connections are preferred
-						// and proxying is not required.
-						// This is a required for thanos service-discovery to work correctly
-						ClusterIP: "None",
-					},
-				}
-			},
-			patch: func(existing client.Object) (client.Object, error) {
-				service := newThanosSidecarService(ms, instanceSelectorKey, instanceSelectorValue)
-
-				if existing == nil {
-					return service, nil
-				}
-
-				desired, ok := existing.(*corev1.Service)
-				if !ok {
-					return nil, NewObjectTypeError(service, existing)
-				}
-
-				// The ClusterIP field is immutable and we have to take it from the observed object.
-				service.Spec.ClusterIP = desired.Spec.ClusterIP
-				desired.Spec = service.Spec
-				desired.Labels = service.Labels
-				return desired, nil
-			},
-		},
-	}, nil
+	return []reconcileFunction{
+		defaultReconciler(newServiceAccount(prometheusRBACResourceName, ms.Namespace), ms),
+		defaultReconciler(newPrometheusRole(ms, prometheusRBACResourceName, rbacVerbs), ms),
+		defaultReconciler(newRoleBinding(ms, prometheusRBACResourceName), ms),
+		defaultReconciler(newAdditionalScrapeConfigsSecret(ms, additionalScrapeConfigsSecretName), ms),
+		defaultReconciler(newServiceAccount(alertmanagerRBACResourceName, ms.Namespace), ms),
+		defaultReconciler(newAlertmanager(ms, alertmanagerRBACResourceName, instanceSelectorKey, instanceSelectorValue), ms),
+		defaultReconciler(newAlertmanagerService(ms, instanceSelectorKey, instanceSelectorValue), ms),
+		defaultReconciler(newAlertmanagerPDB(ms, instanceSelectorKey, instanceSelectorValue), ms),
+		defaultReconciler(newPrometheus(ms, prometheusRBACResourceName, additionalScrapeConfigsSecretName, instanceSelectorKey, instanceSelectorValue), ms),
+		defaultReconciler(newPrometheusService(ms, instanceSelectorKey, instanceSelectorValue), ms),
+		defaultReconciler(newThanosSidecarService(ms, instanceSelectorKey, instanceSelectorValue), ms),
+		prometheusPDBReconciler(newPrometheusPDB(ms, instanceSelectorKey, instanceSelectorValue), ms),
+	}
 }
 
 func newPrometheusRole(ms *stack.MonitoringStack, rbacResourceName string, rbacVerbs []string) *rbacv1.Role {
@@ -432,12 +137,9 @@ func newPrometheus(
 
 			ServiceAccountName: rbacResourceName,
 
-			ServiceMonitorSelector:          prometheusSelector,
-			ServiceMonitorNamespaceSelector: nil,
-			PodMonitorSelector:              prometheusSelector,
-			PodMonitorNamespaceSelector:     nil,
-			RuleSelector:                    prometheusSelector,
-			RuleNamespaceSelector:           nil,
+			ServiceMonitorSelector: prometheusSelector,
+			PodMonitorSelector:     prometheusSelector,
+			RuleSelector:           prometheusSelector,
 
 			Alerting: &monv1.AlertingSpec{
 				Alertmanagers: []monv1.AlertmanagerEndpoints{
@@ -532,7 +234,7 @@ func newPrometheusService(ms *stack.MonitoringStack, instanceSelectorKey string,
 	name := ms.Name + "-prometheus"
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
+			APIVersion: corev1.SchemeGroupVersion.String(),
 			Kind:       "Service",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -709,6 +411,19 @@ func newPrometheusPDB(ms *stack.MonitoringStack, instanceSelectorKey string, ins
 				MatchLabels: selector,
 			},
 		},
+	}
+}
+
+func prometheusPDBReconciler(component client.Object, ms *stack.MonitoringStack) reconcileFunction {
+	if *ms.Spec.PrometheusConfig.Replicas <= 1 {
+		return func(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
+			if err := c.Delete(ctx, component); client.IgnoreNotFound(err) != nil {
+				return err
+			}
+			return nil
+		}
+	} else {
+		return defaultReconciler(component, ms)
 	}
 }
 

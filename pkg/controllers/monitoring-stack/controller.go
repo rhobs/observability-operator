@@ -26,15 +26,12 @@ import (
 
 	policyv1 "k8s.io/api/policy/v1"
 
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -64,10 +61,10 @@ type Options struct {
 //+kubebuilder:rbac:groups=monitoring.rhobs,resources=monitoringstacks/status,verbs=get;update
 
 // RBAC for managing Prometheus Operator CRs
-//+kubebuilder:rbac:groups=monitoring.coreos.com,resources=alertmanagers;prometheuses;servicemonitors,verbs=list;watch;create;update;delete
-//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles;rolebindings,verbs=list;watch;create;update;delete
-//+kubebuilder:rbac:groups="",resources=serviceaccounts;services;secrets,verbs=list;watch;create;update;delete
-//+kubebuilder:rbac:groups="policy",resources=poddisruptionbudgets,verbs=list;watch;create;update;delete
+//+kubebuilder:rbac:groups=monitoring.coreos.com,resources=alertmanagers;prometheuses;servicemonitors,verbs=list;watch;create;update;delete;patch
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles;rolebindings,verbs=list;watch;create;update;delete;patch
+//+kubebuilder:rbac:groups="",resources=serviceaccounts;services;secrets,verbs=list;watch;create;update;delete;patch
+//+kubebuilder:rbac:groups="policy",resources=poddisruptionbudgets,verbs=list;watch;create;update;delete;patch
 
 // RBAC for delegating permissions to Prometheus
 //+kubebuilder:rbac:groups="",resources=pods;services;endpoints,verbs=get;list;watch
@@ -99,6 +96,7 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 		WithLogger(ctrl.Log).
 		For(&stack.MonitoringStack{}).
 		Owns(&monv1.Prometheus{}).WithEventFilter(p).
+		Owns(&monv1.Alertmanager{}).WithEventFilter(p).
 		Owns(&v1.Service{}).WithEventFilter(p).
 		Owns(&v1.ServiceAccount{}).WithEventFilter(p).
 		Owns(&rbacv1.Role{}).WithEventFilter(p).
@@ -127,22 +125,18 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, nil
 	}
 
-	patchers, err := stackComponentPatchers(ms, r.instanceSelectorKey, r.instanceSelectorValue)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
 	if !ms.ObjectMeta.DeletionTimestamp.IsZero() {
 		logger.V(6).Info("skipping reconcile since object is already schedule for deletion")
 		return ctrl.Result{}, nil
 	}
 
-	for _, patcher := range patchers {
-		err := r.reconcileObject(ctx, ms, patcher)
-		// handle creation / updation errors that can happen due to a stale cache by
+	reconcilers := stackComponentReconcilers(ms, r.instanceSelectorKey, r.instanceSelectorValue)
+	for _, reconciler := range reconcilers {
+		err := reconciler(ctx, r.k8sClient, r.scheme)
+		// handle create / update errors that can happen due to a stale cache by
 		// retrying after some time.
 		if errors.IsAlreadyExists(err) || errors.IsConflict(err) {
-			logger.V(8).Info("skipping reconcile error", "err", err)
+			logger.V(3).Info("skipping reconcile error", "err", err)
 			return ctrl.Result{RequeueAfter: 2 * time.Second}, nil
 		}
 		if err != nil {
@@ -167,52 +161,4 @@ func (r *reconciler) getStack(ctx context.Context, req ctrl.Request) (*stack.Mon
 	}
 
 	return &ms, nil
-}
-
-func (r *reconciler) reconcileObject(ctx context.Context, ms *stack.MonitoringStack, patcher objectPatcher) error {
-	existing := patcher.empty()
-	gvk := existing.GetObjectKind().GroupVersionKind()
-	logger := r.logger.WithValues(
-		"Stack", ms.Namespace+"/"+ms.Name,
-		"Component", fmt.Sprintf("%s.%s/%s", gvk.Kind, gvk.Group, gvk.Version),
-		"Name", existing.GetName())
-
-	key := types.NamespacedName{
-		Name:      existing.GetName(),
-		Namespace: existing.GetNamespace(),
-	}
-	err := r.k8sClient.Get(ctx, key, existing)
-	if err != nil && !errors.IsNotFound(err) {
-		return err
-	}
-	notFound := errors.IsNotFound(err)
-
-	desired, err := patcher.patch(existing)
-	if err != nil {
-		return err
-	}
-
-	// delete existing if desired is nil
-	if desired == nil {
-		if notFound {
-			return nil
-		}
-
-		logger.Info("Deleting stack component")
-		return r.k8sClient.Delete(ctx, existing)
-	}
-
-	if ms.Namespace == desired.GetNamespace() {
-		if err := controllerutil.SetControllerReference(ms, desired, r.scheme); err != nil {
-			return err
-		}
-	}
-
-	if notFound {
-		logger.Info("Creating stack component")
-		return r.k8sClient.Create(ctx, desired)
-	}
-
-	logger.Info("Updating stack component")
-	return r.k8sClient.Update(ctx, desired)
 }
