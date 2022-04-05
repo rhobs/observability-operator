@@ -27,11 +27,8 @@ jobs:
       - name: Import common environment variables
         run: cat ".github/env" >> $GITHUB_ENV
 
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v2
+      - uses: actions/setup-go@v3
         with:
-          version: v1.42.1
-          args: --timeout 10m0s
           go-version: ${{ env.go-version }}
 
       - name: Use go cache
@@ -39,6 +36,9 @@ jobs:
 
       - name: Use tools cache
         uses: ./.github/tools-cache
+
+      - name: golangci-lint
+        run: make lint-golang
 
       - name: jsonnet-fmt
         run: make fmt-jsonnet && git diff --exit-code
