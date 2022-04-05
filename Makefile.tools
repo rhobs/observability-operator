@@ -20,7 +20,7 @@ OPM=$(TOOLS_DIR)/opm
 OPM_VERSION = v1.15.1
 
 GOLANGCI_LINT=$(TOOLS_DIR)/golangci-lint
-GOLANGCI_LINT_VERSION = v1.42.1
+GOLANGCI_LINT_VERSION = v1.45.2
 
 ## NOTE: promq does not have any releases, so we use a fake version starting with v0.0.1
 # thus to upgrade/invalidate the github cache, increment the value
@@ -196,6 +196,10 @@ tools: $(CONTROLLER_GEN) \
 		echo  $$(basename $(JB)) $(JB_VERSION) >> $$tools_file ;\
 		echo  $$(basename $(GOJSONTOYAML)) $(GOJSONTOYAML_VERSRION) >> $$tools_file ;\
 	}
+
+.PHONY: clean-tools
+clean-tools:
+	rm -rf $(TOOLS_DIR)
 
 .PHONY: validate-tools
 validate-tools:
