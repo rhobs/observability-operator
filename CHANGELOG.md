@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.7](https://github.com/rhobs/monitoring-stack-operator/commit/) (2022-04-06)
+
+
+### Features
+
+* add a pod disruption budget for Alertmanager ([94db768](https://github.com/rhobs/monitoring-stack-operator/commit/94db768d28c6f3cdaa679f2ee958a440be001df0))
+* add alert rules for mso ([#94](https://github.com/rhobs/monitoring-stack-operator/issues/94)) ([c13d605](https://github.com/rhobs/monitoring-stack-operator/commit/c13d605bc108c71cbca1b83e57502431dd8c9c2f))
+* changes to enable persistent storage for prometheus ([#111](https://github.com/rhobs/monitoring-stack-operator/issues/111)) ([b68b750](https://github.com/rhobs/monitoring-stack-operator/commit/b68b7503e7dc84f083ccd25c73a33ef5da1fae6a))
+* deploy alertmanagers on different nodes ([79fad13](https://github.com/rhobs/monitoring-stack-operator/commit/79fad138f46c6f5fa6c04bbcc54cadcbfc234e34))
+* upgrade grafana-operator to 4.1.0 ([3a741ee](https://github.com/rhobs/monitoring-stack-operator/commit/3a741ee45e7d7c72cc8fe76ac2a01e6b144d5434))
+* use jsonnet to pull existing alerts from mixins available ([#105](https://github.com/rhobs/monitoring-stack-operator/issues/105)) ([18b0469](https://github.com/rhobs/monitoring-stack-operator/commit/18b046967208cc183b0c949a2131a12e82b63b63))
+
+
+### Bug Fixes
+
+* cleaning up grafana datasource on deleting monitoring stack ([#107](https://github.com/rhobs/monitoring-stack-operator/issues/107)) ([b125c25](https://github.com/rhobs/monitoring-stack-operator/commit/b125c25d4131dd6219d2f112113c3c5b886188fe))
+* correct the naming for mso rule file ([#106](https://github.com/rhobs/monitoring-stack-operator/issues/106)) ([27dded9](https://github.com/rhobs/monitoring-stack-operator/commit/27dded9df7fcc41c0dac4223877db80d16199933))
+* enabling deleted grafana datasources to be recreated ([#96](https://github.com/rhobs/monitoring-stack-operator/issues/96)) ([2c71d1d](https://github.com/rhobs/monitoring-stack-operator/commit/2c71d1d27682ef546b2a219d21fbce9afddc0231))
+* establish a watch on Grafana CRs ince the CRD is present ([f5787ed](https://github.com/rhobs/monitoring-stack-operator/commit/f5787ed2b540058fec3e741ce7f43c4c440f2f31))
+* grafana-operator to use more optimised watches ([7b1cd05](https://github.com/rhobs/monitoring-stack-operator/commit/7b1cd05ded3d3f556df5ff9a7fd0c97e1c494c92))
+* increase resource(memory) limit of mso operator ([dd0fd92](https://github.com/rhobs/monitoring-stack-operator/commit/dd0fd9201de789a0131fd9118251e55afbdef9ec))
+* install-plan approval logic to approve the right plan ([#97](https://github.com/rhobs/monitoring-stack-operator/issues/97)) ([b669e08](https://github.com/rhobs/monitoring-stack-operator/commit/b669e086cdf9e7a156d9ebece99b296e260e41a2))
+* olm subscription to use latest stable channel ([#113](https://github.com/rhobs/monitoring-stack-operator/issues/113)) ([c29c5d2](https://github.com/rhobs/monitoring-stack-operator/commit/c29c5d2ac47c6ec420a980ed64a06907a23df980))
+
 ### [0.0.6](https://github.com/rhobs/monitoring-stack-operator/commit/) (2021-12-02)
 
 
