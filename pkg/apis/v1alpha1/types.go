@@ -5,6 +5,7 @@
 package v1alpha1
 
 import (
+	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -81,6 +82,9 @@ type MonitoringStackStatus struct {
 }
 
 type PrometheusConfig struct {
+	// Define remote write for prometheus
+	// +optional
+	RemoteWrite []monv1.RemoteWriteSpec `json:"remoteWrite,omitempty"`
 	// Define persistent volume claim for prometheus
 	// +optional
 	PersistentVolumeClaim *corev1.PersistentVolumeClaimSpec `json:"persistentVolumeClaim,omitempty"`
