@@ -83,7 +83,7 @@ type MonitoringStackStatus struct {
 type PrometheusConfig struct {
 	// Define persistent volume claim for prometheus
 	// +optional
-	PersistentVolumeClaim corev1.PersistentVolumeClaimSpec `json:"persistentVolumeClaim,omitempty"`
+	PersistentVolumeClaim *corev1.PersistentVolumeClaimSpec `json:"persistentVolumeClaim,omitempty"`
 }
 
 // NamespaceSelector is a selector for selecting either all namespaces or a

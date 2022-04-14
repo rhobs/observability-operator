@@ -2,6 +2,7 @@ package monitoringstack
 
 import (
 	"fmt"
+	"reflect"
 
 	policyv1 "k8s.io/api/policy/v1"
 
@@ -425,6 +426,13 @@ func newPrometheus(
 	if prometheusSelector == nil {
 		prometheusSelector = &metav1.LabelSelector{}
 	}
+
+	// create a default config if user hasn't specified one
+	config := ms.Spec.PrometheusConfig
+	if config == nil {
+		config = &stack.PrometheusConfig{}
+	}
+
 	prometheus := &monv1.Prometheus{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: monv1.SchemeGroupVersion.String(),
@@ -481,17 +489,27 @@ func newPrometheus(
 				BaseImage: stringPtr("quay.io/thanos/thanos"),
 				Version:   stringPtr("v0.24.0"),
 			},
+			Storage: storageForPVC(config.PersistentVolumeClaim),
 		},
 	}
 
-	if ms.Spec.PrometheusConfig != nil {
-		prometheus.Spec.Storage = &monv1.StorageSpec{
-			VolumeClaimTemplate: monv1.EmbeddedPersistentVolumeClaim{
-				Spec: ms.Spec.PrometheusConfig.PersistentVolumeClaim,
-			},
-		}
-	}
 	return prometheus
+}
+
+func storageForPVC(pvc *corev1.PersistentVolumeClaimSpec) *monv1.StorageSpec {
+	if pvc == nil {
+		return nil
+	}
+
+	if reflect.DeepEqual(*pvc, corev1.PersistentVolumeClaimSpec{}) {
+		return nil
+	}
+
+	return &monv1.StorageSpec{
+		VolumeClaimTemplate: monv1.EmbeddedPersistentVolumeClaim{
+			Spec: *pvc,
+		},
+	}
 }
 
 func newRoleBinding(ms *stack.MonitoringStack, rbacResourceName string) *rbacv1.RoleBinding {
