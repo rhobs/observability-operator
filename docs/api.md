@@ -148,6 +148,13 @@ Define prometheus config
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>externalLabels</b></td>
+        <td>map[string]string</td>
+        <td>
+          Define ExternalLabels for prometheus<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#monitoringstackspecprometheusconfigpersistentvolumeclaim">persistentVolumeClaim</a></b></td>
         <td>object</td>
         <td>
