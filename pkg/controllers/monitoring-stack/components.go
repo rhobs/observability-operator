@@ -489,7 +489,8 @@ func newPrometheus(
 				BaseImage: stringPtr("quay.io/thanos/thanos"),
 				Version:   stringPtr("v0.24.0"),
 			},
-			Storage: storageForPVC(config.PersistentVolumeClaim),
+			Storage:     storageForPVC(config.PersistentVolumeClaim),
+			RemoteWrite: config.RemoteWrite,
 		},
 	}
 

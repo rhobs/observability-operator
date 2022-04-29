@@ -154,6 +154,13 @@ Define prometheus config
           Define persistent volume claim for prometheus<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindex">remoteWrite</a></b></td>
+        <td>[]object</td>
+        <td>
+          Define remote write for prometheus<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -419,6 +426,756 @@ A label selector requirement is a selector that contains values, a key, and an o
         <td>[]string</td>
         <td>
           values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index]
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfig)</sup></sup>
+
+
+
+RemoteWriteSpec defines the remote_write configuration for prometheus.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>url</b></td>
+        <td>string</td>
+        <td>
+          The URL of the endpoint to send samples to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexbasicauth">basicAuth</a></b></td>
+        <td>object</td>
+        <td>
+          BasicAuth for the URL.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>bearerToken</b></td>
+        <td>string</td>
+        <td>
+          Bearer token for remote write.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>bearerTokenFile</b></td>
+        <td>string</td>
+        <td>
+          File to read bearer token for remote write.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>headers</b></td>
+        <td>map[string]string</td>
+        <td>
+          Custom HTTP headers to be sent along with each remote write request. Be aware that headers that are set by Prometheus itself can't be overwritten. Only valid in Prometheus versions 2.25.0 and newer.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexmetadataconfig">metadataConfig</a></b></td>
+        <td>object</td>
+        <td>
+          MetadataConfig configures the sending of series metadata to remote storage.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          The name of the remote write queue, must be unique if specified. The name is used in metrics and logging in order to differentiate queues. Only valid in Prometheus versions 2.15.0 and newer.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>proxyUrl</b></td>
+        <td>string</td>
+        <td>
+          Optional ProxyURL<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexqueueconfig">queueConfig</a></b></td>
+        <td>object</td>
+        <td>
+          QueueConfig allows tuning of the remote write queue parameters.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>remoteTimeout</b></td>
+        <td>string</td>
+        <td>
+          Timeout for requests to the remote write endpoint.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindextlsconfig">tlsConfig</a></b></td>
+        <td>object</td>
+        <td>
+          TLS Config to use for remote write.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexwriterelabelconfigsindex">writeRelabelConfigs</a></b></td>
+        <td>[]object</td>
+        <td>
+          The list of remote write relabel configurations.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].basicAuth
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindex)</sup></sup>
+
+
+
+BasicAuth for the URL.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexbasicauthpassword">password</a></b></td>
+        <td>object</td>
+        <td>
+          The secret in the service monitor namespace that contains the password for authentication.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexbasicauthusername">username</a></b></td>
+        <td>object</td>
+        <td>
+          The secret in the service monitor namespace that contains the username for authentication.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].basicAuth.password
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindexbasicauth)</sup></sup>
+
+
+
+The secret in the service monitor namespace that contains the password for authentication.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].basicAuth.username
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindexbasicauth)</sup></sup>
+
+
+
+The secret in the service monitor namespace that contains the username for authentication.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].metadataConfig
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindex)</sup></sup>
+
+
+
+MetadataConfig configures the sending of series metadata to remote storage.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>send</b></td>
+        <td>boolean</td>
+        <td>
+          Whether metric metadata is sent to remote storage or not.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>sendInterval</b></td>
+        <td>string</td>
+        <td>
+          How frequently metric metadata is sent to remote storage.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].queueConfig
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindex)</sup></sup>
+
+
+
+QueueConfig allows tuning of the remote write queue parameters.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>batchSendDeadline</b></td>
+        <td>string</td>
+        <td>
+          BatchSendDeadline is the maximum time a sample will wait in buffer.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>capacity</b></td>
+        <td>integer</td>
+        <td>
+          Capacity is the number of samples to buffer per shard before we start dropping them.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>maxBackoff</b></td>
+        <td>string</td>
+        <td>
+          MaxBackoff is the maximum retry delay.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>maxRetries</b></td>
+        <td>integer</td>
+        <td>
+          MaxRetries is the maximum number of times to retry a batch on recoverable errors.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>maxSamplesPerSend</b></td>
+        <td>integer</td>
+        <td>
+          MaxSamplesPerSend is the maximum number of samples per send.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>maxShards</b></td>
+        <td>integer</td>
+        <td>
+          MaxShards is the maximum number of shards, i.e. amount of concurrency.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>minBackoff</b></td>
+        <td>string</td>
+        <td>
+          MinBackoff is the initial retry delay. Gets doubled for every retry.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>minShards</b></td>
+        <td>integer</td>
+        <td>
+          MinShards is the minimum number of shards, i.e. amount of concurrency.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].tlsConfig
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindex)</sup></sup>
+
+
+
+TLS Config to use for remote write.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindextlsconfigca">ca</a></b></td>
+        <td>object</td>
+        <td>
+          Struct containing the CA cert to use for the targets.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>caFile</b></td>
+        <td>string</td>
+        <td>
+          Path to the CA cert in the Prometheus container to use for the targets.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindextlsconfigcert">cert</a></b></td>
+        <td>object</td>
+        <td>
+          Struct containing the client cert file for the targets.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>certFile</b></td>
+        <td>string</td>
+        <td>
+          Path to the client cert file in the Prometheus container for the targets.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>insecureSkipVerify</b></td>
+        <td>boolean</td>
+        <td>
+          Disable target certificate validation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>keyFile</b></td>
+        <td>string</td>
+        <td>
+          Path to the client key file in the Prometheus container for the targets.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindextlsconfigkeysecret">keySecret</a></b></td>
+        <td>object</td>
+        <td>
+          Secret containing the client key file for the targets.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>serverName</b></td>
+        <td>string</td>
+        <td>
+          Used to verify the hostname for the targets.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].tlsConfig.ca
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindextlsconfig)</sup></sup>
+
+
+
+Struct containing the CA cert to use for the targets.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindextlsconfigcaconfigmap">configMap</a></b></td>
+        <td>object</td>
+        <td>
+          ConfigMap containing data to use for the targets.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindextlsconfigcasecret">secret</a></b></td>
+        <td>object</td>
+        <td>
+          Secret containing data to use for the targets.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].tlsConfig.ca.configMap
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindextlsconfigca)</sup></sup>
+
+
+
+ConfigMap containing data to use for the targets.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key to select.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the ConfigMap or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].tlsConfig.ca.secret
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindextlsconfigca)</sup></sup>
+
+
+
+Secret containing data to use for the targets.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].tlsConfig.cert
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindextlsconfig)</sup></sup>
+
+
+
+Struct containing the client cert file for the targets.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindextlsconfigcertconfigmap">configMap</a></b></td>
+        <td>object</td>
+        <td>
+          ConfigMap containing data to use for the targets.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindextlsconfigcertsecret">secret</a></b></td>
+        <td>object</td>
+        <td>
+          Secret containing data to use for the targets.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].tlsConfig.cert.configMap
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindextlsconfigcert)</sup></sup>
+
+
+
+ConfigMap containing data to use for the targets.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key to select.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the ConfigMap or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].tlsConfig.cert.secret
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindextlsconfigcert)</sup></sup>
+
+
+
+Secret containing data to use for the targets.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].tlsConfig.keySecret
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindextlsconfig)</sup></sup>
+
+
+
+Secret containing the client key file for the targets.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].writeRelabelConfigs[index]
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindex)</sup></sup>
+
+
+
+RelabelConfig allows dynamic rewriting of the label set, being applied to samples before ingestion. It defines `<metric_relabel_configs>`-section of Prometheus configuration. More info: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#metric_relabel_configs
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>action</b></td>
+        <td>string</td>
+        <td>
+          Action to perform based on regex matching. Default is 'replace'<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>modulus</b></td>
+        <td>integer</td>
+        <td>
+          Modulus to take of the hash of the source label values.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>regex</b></td>
+        <td>string</td>
+        <td>
+          Regular expression against which the extracted value is matched. Default is '(.*)'<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>replacement</b></td>
+        <td>string</td>
+        <td>
+          Replacement value against which a regex replace is performed if the regular expression matches. Regex capture groups are available. Default is '$1'<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>separator</b></td>
+        <td>string</td>
+        <td>
+          Separator placed between concatenated source label values. default is ';'.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>sourceLabels</b></td>
+        <td>[]string</td>
+        <td>
+          The source labels select values from existing labels. Their content is concatenated using the configured separator and matched against the configured regular expression for the replace, keep, and drop actions.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>targetLabel</b></td>
+        <td>string</td>
+        <td>
+          Label to which the resulting value is written in a replace action. It is mandatory for replace actions. Regex capture groups are available.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
