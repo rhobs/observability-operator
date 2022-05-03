@@ -69,7 +69,21 @@ to the controller-gen CLI page in the [kubebuilder documentation](https://book.k
   ```sh
   kind create cluster --image kindest/node:v1.22.4
   ```
-
+  &nbsp; For more advanced tests, a 3 node cluster may be more suitable.
+  ```sh
+  cat <<EOF > config.yaml
+  kind: Cluster
+  apiVersion: kind.x-k8s.io/v1alpha4
+  nodes:
+  - role: control-plane
+    image: kindest/node:v1.22.4
+  - role: worker
+    image: kindest/node:v1.22.4
+  - role: worker
+    image: kindest/node:v1.22.4
+  EOF
+  kind create cluster --config=config.yaml
+  ```
 * Apply the CRDs by running `kubectl create -k deploy/crds/kubernetes`
   * Install OLM locally by running
 

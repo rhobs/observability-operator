@@ -191,7 +191,7 @@ func (f *Framework) GetOperatorPod(t *testing.T) *v1.Pod {
 
 	// get the operator deployment
 	operator := appsv1.Deployment{}
-	f.AssertResourceEventuallyExists("monitoring-stack-operator", "operators", &operator)(t)
+	f.AssertResourceEventuallyExists("monitoring-stack-operator-prometheus-operator", "operators", &operator)(t)
 
 	selector, err := metav1.LabelSelectorAsSelector(operator.Spec.Selector)
 	if err != nil {
