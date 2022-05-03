@@ -3,3 +3,4 @@
 bundle.Dockerfile
 RELEASE_BODY.md
 jsonnet/vendor
+config.yaml
