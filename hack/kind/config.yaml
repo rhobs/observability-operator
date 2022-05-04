@@ -7,6 +7,7 @@ containerdConfigPatches:
       endpoint = ["http://10.96.223.192:30000"]
 nodes:
   - role: control-plane
+    image: kindest/node:v1.22.4
     extraPortMappings:
       - containerPort: 30000
         hostPort: 30000
@@ -39,4 +40,6 @@ nodes:
         containerPath: /etc/kubernetes/policies/audit-policy.yaml
         readOnly: true
   - role: worker
+    image: kindest/node:v1.22.4
   - role: worker
+    image: kindest/node:v1.22.4
