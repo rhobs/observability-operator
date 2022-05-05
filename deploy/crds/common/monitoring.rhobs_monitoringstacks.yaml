@@ -48,6 +48,11 @@ spec:
               prometheusConfig:
                 description: Define prometheus config
                 properties:
+                  externalLabels:
+                    additionalProperties:
+                      type: string
+                    description: Define ExternalLabels for prometheus
+                    type: object
                   persistentVolumeClaim:
                     description: Define persistent volume claim for prometheus
                     properties:
