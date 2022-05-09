@@ -291,10 +291,48 @@ func stackComponentPatchers(ms *stack.MonitoringStack, instanceSelectorKey strin
 		},
 		{
 			empty: func() client.Object {
+				pdb := newPrometheusPDB(ms, instanceSelectorKey, instanceSelectorValue)
+				return &policyv1.PodDisruptionBudget{
+					TypeMeta:   pdb.TypeMeta,
+					ObjectMeta: pdb.ObjectMeta,
+				}
+			},
+			patch: func(existing client.Object) (client.Object, error) {
+				// delete pdb if prometheus is not run on HA mode
+				if *ms.Spec.PrometheusConfig.Replicas <= 1 {
+					return nil, nil
+				}
+
+				pdb := newPrometheusPDB(ms, instanceSelectorKey, instanceSelectorValue)
+
+				if existing == nil {
+					return pdb, nil
+				}
+
+				desired, ok := existing.(*policyv1.PodDisruptionBudget)
+				if !ok {
+					return nil, NewObjectTypeError(pdb, existing)
+				}
+
+				desired.Spec = pdb.Spec
+				desired.Labels = pdb.Labels
+				return desired, nil
+			},
+		},
+		{
+			empty: func() client.Object {
 				service := newThanosSidecarService(ms, instanceSelectorKey, instanceSelectorValue)
 				return &corev1.Service{
 					TypeMeta:   service.TypeMeta,
 					ObjectMeta: service.ObjectMeta,
+					Spec: corev1.ServiceSpec{
+
+						// NOTE: Setting this to "None" makes a "headless service" (no virtual
+						// IP), which is useful when direct endpoint connections are preferred
+						// and proxying is not required.
+						// This is a required for thanos service-discovery to work correctly
+						ClusterIP: "None",
+					},
 				}
 			},
 			patch: func(existing client.Object) (client.Object, error) {
@@ -427,11 +465,7 @@ func newPrometheus(
 		prometheusSelector = &metav1.LabelSelector{}
 	}
 
-	// create a default config if user hasn't specified one
 	config := ms.Spec.PrometheusConfig
-	if config == nil {
-		config = &stack.PrometheusConfig{}
-	}
 
 	prometheus := &monv1.Prometheus{
 		TypeMeta: metav1.TypeMeta{
@@ -445,6 +479,8 @@ func newPrometheus(
 		},
 
 		Spec: monv1.PrometheusSpec{
+			Replicas: config.Replicas,
+
 			PodMetadata: &monv1.EmbeddedObjectMetadata{
 				Labels: podLabels("prometheus", ms.Name),
 			},
@@ -472,6 +508,18 @@ func newPrometheus(
 						Namespace:  ms.Namespace,
 						Scheme:     "http",
 						Port:       intstr.FromString("web"),
+					},
+				},
+			},
+			Affinity: &corev1.Affinity{
+				PodAntiAffinity: &corev1.PodAntiAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+						{
+							TopologyKey: "kubernetes.io/hostname",
+							LabelSelector: &metav1.LabelSelector{
+								MatchLabels: podLabels("prometheus", ms.Name),
+							},
+						},
 					},
 				},
 			},
@@ -579,8 +627,14 @@ func newThanosSidecarService(ms *stack.MonitoringStack, instanceSelectorKey stri
 			Labels:    objectLabels(name, ms.Name, instanceSelectorKey, instanceSelectorValue),
 		},
 		Spec: corev1.ServiceSpec{
-			ClusterIP: "none",
-			Selector:  podLabels("prometheus", ms.Name),
+
+			// NOTE: Setting this to "None" makes a "headless service" (no virtual
+			// IP), which is useful when direct endpoint connections are preferred
+			// and proxying is not required.
+			// This is a required for thanos service-discovery to work correctly
+			ClusterIP: "None",
+
+			Selector: podLabels("prometheus", ms.Name),
 			Ports: []corev1.ServicePort{
 				{
 					Name:       "grpc",
@@ -642,7 +696,7 @@ func newAdditionalScrapeConfigsSecret(ms *stack.MonitoringStack, name string) *c
   scheme: http
   follow_redirects: true
   relabel_configs:
-  - source_labels: 
+  - source_labels:
     - __meta_kubernetes_service_label_app_kubernetes_io_name
     separator: ;
     regex: ` + ms.Name + `-alertmanager
@@ -689,6 +743,32 @@ func newAdditionalScrapeConfigsSecret(ms *stack.MonitoringStack, name string) *c
     namespaces:
       names:
       - ` + ms.Namespace,
+		},
+	}
+}
+
+func newPrometheusPDB(ms *stack.MonitoringStack, instanceSelectorKey string, instanceSelectorValue string) *policyv1.PodDisruptionBudget {
+	name := ms.Name + "-prometheus"
+	selector := podLabels("prometheus", ms.Name)
+
+	return &policyv1.PodDisruptionBudget{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: policyv1.SchemeGroupVersion.String(),
+			Kind:       "PodDisruptionBudget",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ms.Namespace,
+			Labels:    objectLabels(name, ms.Name, instanceSelectorKey, instanceSelectorValue),
+		},
+		Spec: policyv1.PodDisruptionBudgetSpec{
+			MinAvailable: &intstr.IntOrString{
+				Type:   intstr.Int,
+				IntVal: 1,
+			},
+			Selector: &metav1.LabelSelector{
+				MatchLabels: selector,
+			},
 		},
 	}
 }

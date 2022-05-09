@@ -147,6 +147,7 @@ rules:
   - poddisruptionbudgets
   verbs:
   - create
+  - delete
   - list
   - update
   - watch

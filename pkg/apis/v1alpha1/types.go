@@ -71,6 +71,7 @@ type MonitoringStackSpec struct {
 
 	// Define prometheus config
 	// +optional
+	// +kubebuilder:default={replicas: 2}
 	PrometheusConfig *PrometheusConfig `json:"prometheusConfig,omitempty"`
 }
 
@@ -82,6 +83,11 @@ type MonitoringStackStatus struct {
 }
 
 type PrometheusConfig struct {
+	// Number of replicas/pods to deploy for a Prometheus deployment.
+	// +optional
+	// +kubebuilder:default=2
+	Replicas *int32 `json:"replicas,omitempty"`
+
 	// Define remote write for prometheus
 	// +optional
 	RemoteWrite []monv1.RemoteWriteSpec `json:"remoteWrite,omitempty"`

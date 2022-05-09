@@ -100,6 +100,8 @@ MonitoringStackSpec is the specification for desired Monitoring Stack
         <td>object</td>
         <td>
           Define prometheus config<br/>
+          <br/>
+            <i>Default</i>: map[replicas:2]<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -166,6 +168,16 @@ Define prometheus config
         <td>[]object</td>
         <td>
           Define remote write for prometheus<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>replicas</b></td>
+        <td>integer</td>
+        <td>
+          Number of replicas/pods to deploy for a Prometheus deployment.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Default</i>: 2<br/>
         </td>
         <td>false</td>
       </tr></tbody>

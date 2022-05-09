@@ -84,7 +84,7 @@ func singleStackWithSidecar(t *testing.T) {
 
 	promClient := framework.NewPrometheusClient("http://localhost:9090")
 	expectedResults := map[string]int{
-		"prometheus_build_info": 1,
+		"prometheus_build_info": 2, // must return from both prometheus pods
 	}
 	if err := wait.Poll(5*time.Second, 5*time.Minute, func() (bool, error) {
 		correct := 0

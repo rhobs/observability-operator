@@ -78,7 +78,7 @@ type Options struct {
 //+kubebuilder:rbac:groups=monitoring.coreos.com,resources=alertmanagers;prometheuses;servicemonitors,verbs=list;watch;create;update;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles;rolebindings,verbs=list;watch;create;update;delete
 //+kubebuilder:rbac:groups="",resources=serviceaccounts;services;secrets,verbs=list;watch;create;update;delete
-//+kubebuilder:rbac:groups="policy",resources=poddisruptionbudgets,verbs=list;watch;create;update
+//+kubebuilder:rbac:groups="policy",resources=poddisruptionbudgets,verbs=list;watch;create;update;delete
 
 // RBAC for managing Grafana CRs
 //+kubebuilder:rbac:groups=integreatly.org,namespace=monitoring-stack-operator,resources=grafanadatasources,verbs=list;watch;create;update;delete
@@ -259,11 +259,21 @@ func (r *reconciler) reconcileObject(ctx context.Context, ms *stack.MonitoringSt
 	if err != nil && !errors.IsNotFound(err) {
 		return err
 	}
-	createNew := errors.IsNotFound(err)
+	notFound := errors.IsNotFound(err)
 
 	desired, err := patcher.patch(existing)
 	if err != nil {
 		return err
+	}
+
+	// delete existing if desired is nil
+	if desired == nil {
+		if notFound {
+			return nil
+		}
+
+		logger.Info("Deleting stack component")
+		return r.k8sClient.Delete(ctx, existing)
 	}
 
 	if ms.Namespace == desired.GetNamespace() {
@@ -272,7 +282,7 @@ func (r *reconciler) reconcileObject(ctx context.Context, ms *stack.MonitoringSt
 		}
 	}
 
-	if createNew {
+	if notFound {
 		logger.Info("Creating stack component")
 		return r.k8sClient.Create(ctx, desired)
 	}

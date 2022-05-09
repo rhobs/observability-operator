@@ -30,6 +30,7 @@ func newThanosQuerierDeployment(name string, spec *msoapi.ThanosQuerier, sidecar
 		"--grpc-address=127.0.0.1:10901",
 		"--http-address=127.0.0.1:9090",
 		"--log.format=logfmt",
+		"--query.replica-label=prometheus_replica",
 		"--query.auto-downsampling",
 	}
 	for _, endpoint := range sidecarUrls {
