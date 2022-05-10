@@ -156,19 +156,21 @@ bundle-push: ## Build the bundle image.
 BUNDLE_IMGS ?= $(BUNDLE_IMG)
 
 # The image tag given to the resulting catalog image
-# The tag is used as latest since it allows a CatalogSubscription to point to
-# a single image which keeps updating
-CATALOG_IMG ?= $(IMAGE_BASE)-catalog:latest
-# enable continuous release by referring to the same catalog image for `--from-index`
-CATALOG_BASE_IMG ?= $(CATALOG_IMG)
+CATALOG_IMG ?= $(IMAGE_BASE)-catalog:$(VERSION)
 
-# mark release as first by default for easier/quicker development
-FIRST_OLM_RELEASE ?= true
+# The tag is used as latest since it allows a CatalogSubscription to point to
+# a single image which keeps updating there by allowing auto upgrades
+CATALOG_IMG_LATEST ?= $(IMAGE_BASE)-catalog:latest
+
+
+# mark release as first by setting FIRST_OLM_RELEASE to true. This results in a
+# root catalog image  (i.e. no previous catalog images/ --from-index)
+FIRST_OLM_RELEASE ?= false
 
 # Set CATALOG_BASE_IMG to an existing catalog image tag to add $BUNDLE_IMGS to
 # that image except for FIRST_OLM_RELEASE
 ifeq ($(FIRST_OLM_RELEASE), false)
-FROM_INDEX_OPT := --from-index $(CATALOG_BASE_IMG)
+FROM_INDEX_OPT := --from-index $(CATALOG_IMG_LATEST)
 endif
 
 # Build a catalog image by adding bundle images to an empty catalog using the
@@ -184,11 +186,15 @@ catalog-image: $(OPM)
 		--mode semver \
 		--tag $(CATALOG_IMG) \
 		--bundles $(BUNDLE_IMGS) $(FROM_INDEX_OPT)
+	# tag the catalog img:version as latest so that continious release
+	# is possible by refering to latest tag instead of a version
+	docker tag $(CATALOG_IMG) $(CATALOG_IMG_LATEST)
 
 # Push the catalog image.
 .PHONY: catalog-push
 catalog-push: ## Push a catalog image.
 	docker push $(CATALOG_IMG)
+	docker push $(CATALOG_IMG_LATEST)
 
 .PHONY: release
 release: operator-image operator-push bundle-image bundle-push catalog-image catalog-push
