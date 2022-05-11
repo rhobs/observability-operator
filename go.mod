@@ -5,8 +5,6 @@ go 1.17
 require (
 	github.com/go-logr/logr v1.2.0
 	github.com/grafana-operator/grafana-operator/v4 v4.0.1
-	github.com/operator-framework/api v0.10.3
-	github.com/operator-framework/operator-lifecycle-manager v0.19.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.49.0
 	github.com/prometheus/common v0.32.1
 	github.com/prometheus/prometheus v1.8.2-0.20211105201321-411021ada9ab
@@ -58,6 +56,8 @@ require (
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/openshift/api v3.9.0+incompatible // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
+	github.com/operator-framework/api v0.10.3 // indirect
+	github.com/operator-framework/operator-lifecycle-manager v0.19.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_golang v1.11.0 // indirect

@@ -7,7 +7,6 @@ import (
 	policyv1 "k8s.io/api/policy/v1"
 
 	stack "github.com/rhobs/monitoring-stack-operator/pkg/apis/v1alpha1"
-	goctrl "github.com/rhobs/monitoring-stack-operator/pkg/controllers/grafana-operator"
 
 	"k8s.io/apimachinery/pkg/util/intstr"
 
@@ -359,7 +358,7 @@ func newGrafanaDataSource(ms *stack.MonitoringStack) *grafanav1alpha1.GrafanaDat
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        datasourceName,
-			Namespace:   goctrl.Namespace,
+			Namespace:   ms.Namespace,
 			Annotations: annotations,
 		},
 		Spec: grafanav1alpha1.GrafanaDataSourceSpec{

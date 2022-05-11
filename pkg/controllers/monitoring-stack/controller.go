@@ -46,7 +46,6 @@ import (
 
 	"github.com/go-logr/logr"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	goctrl "github.com/rhobs/monitoring-stack-operator/pkg/controllers/grafana-operator"
 )
 
 const (
@@ -173,7 +172,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 func (r *reconciler) deleteGrafanaDS(ctx context.Context, ms *stack.MonitoringStack) error {
 	logger := r.logger.WithValues(stackName(ms)...)
 
-	gds := types.NamespacedName{Namespace: goctrl.Namespace, Name: GrafanaDSName(ms)}
+	gds := types.NamespacedName{Namespace: ms.Namespace, Name: GrafanaDSName(ms)}
 	grafanaDS := grafanav1alpha1.GrafanaDataSource{}
 	if err := r.k8sClient.Get(ctx, gds, &grafanaDS); err != nil {
 		// if the datasource is already deleted, take no further action

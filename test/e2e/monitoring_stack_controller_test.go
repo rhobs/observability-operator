@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	goctrl "github.com/rhobs/monitoring-stack-operator/pkg/controllers/grafana-operator"
 	msctrl "github.com/rhobs/monitoring-stack-operator/pkg/controllers/monitoring-stack"
 
 	corev1 "k8s.io/api/core/v1"
@@ -181,10 +180,10 @@ func recreateDeleteGrafanaDS(t *testing.T) {
 	assert.NilError(t, err, "failed to create a monitoring stack")
 
 	grafanaDS := grafanav1alpha1.GrafanaDataSource{}
-	f.AssertResourceEventuallyExists(datasourceName, goctrl.Namespace, &grafanaDS)(t)
+	f.AssertResourceEventuallyExists(datasourceName, ms.Namespace, &grafanaDS)(t)
 
 	f.K8sClient.Delete(context.Background(), &grafanaDS)
-	f.AssertResourceEventuallyExists(datasourceName, goctrl.Namespace, &grafanaDS)(t)
+	f.AssertResourceEventuallyExists(datasourceName, ms.Namespace, &grafanaDS)(t)
 }
 
 func validateStackLogLevel(t *testing.T) {
@@ -367,10 +366,10 @@ func cleanupGrafanaDS(t *testing.T) {
 	assert.NilError(t, err, "failed to create a monitoring stack")
 
 	grafanaDS := &grafanav1alpha1.GrafanaDataSource{}
-	f.AssertResourceEventuallyExists(datasourceName, goctrl.Namespace, grafanaDS)(t)
+	f.AssertResourceEventuallyExists(datasourceName, ms.Namespace, grafanaDS)(t)
 
 	f.K8sClient.Delete(context.Background(), ms)
-	f.AssertResourceNeverExists(datasourceName, goctrl.Namespace, grafanaDS)(t)
+	f.AssertResourceNeverExists(datasourceName, ms.Namespace, grafanaDS)(t)
 }
 
 func getAlertmanagerAlerts() ([]alert, error) {
