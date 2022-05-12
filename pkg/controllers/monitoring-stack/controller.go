@@ -22,11 +22,7 @@ import (
 	"strings"
 	"time"
 
-	grafanav1alpha1 "github.com/grafana-operator/grafana-operator/v4/api/integreatly/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	policyv1 "k8s.io/api/policy/v1"
 
@@ -46,12 +42,6 @@ import (
 
 	"github.com/go-logr/logr"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-)
-
-const (
-	grafanaDatasourceOwnerName      = "monitoring-stack-operator/owner-name"
-	grafanaDatasourceOwnerNamespace = "monitoring-stack-operator/owner-namespace"
-	finalizerName                   = "monitoring-stack-grafana-ds/finalizer"
 )
 
 type reconciler struct {
@@ -78,9 +68,6 @@ type Options struct {
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles;rolebindings,verbs=list;watch;create;update;delete
 //+kubebuilder:rbac:groups="",resources=serviceaccounts;services;secrets,verbs=list;watch;create;update;delete
 //+kubebuilder:rbac:groups="policy",resources=poddisruptionbudgets,verbs=list;watch;create;update
-
-// RBAC for managing Grafana CRs
-//+kubebuilder:rbac:groups=integreatly.org,namespace=monitoring-stack-operator,resources=grafanadatasources,verbs=list;watch;create;update;delete
 
 // RBAC for delegating permissions to Prometheus
 //+kubebuilder:rbac:groups="",resources=pods;services;endpoints,verbs=get;list;watch
@@ -144,14 +131,10 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	if requeue, err := r.createGrafanaDSWatch(ctx); err != nil {
-		return ctrl.Result{}, err
-	} else if requeue {
-		return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
-	}
 
 	if !ms.ObjectMeta.DeletionTimestamp.IsZero() {
-		return r.cleanupResources(ctx, ms)
+		logger.V(6).Info("skipping reconcile since object is already schedule for deletion")
+		return ctrl.Result{}, nil
 	}
 
 	for _, patcher := range patchers {
@@ -166,63 +149,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return ctrl.Result{}, err
 		}
 	}
-	return r.setupFinalizer(ctx, ms)
-}
-
-func (r *reconciler) deleteGrafanaDS(ctx context.Context, ms *stack.MonitoringStack) error {
-	logger := r.logger.WithValues(stackName(ms)...)
-
-	gds := types.NamespacedName{Namespace: ms.Namespace, Name: GrafanaDSName(ms)}
-	grafanaDS := grafanav1alpha1.GrafanaDataSource{}
-	if err := r.k8sClient.Get(ctx, gds, &grafanaDS); err != nil {
-		// if the datasource is already deleted, take no further action
-		return client.IgnoreNotFound(err)
-	}
-
-	// grafana ds exists; so delete it
-	logger.WithValues("GrafanaDataSource", grafanaDS.Name).Info("Deleting GrafanaDataSource")
-	err := r.k8sClient.Delete(ctx, &grafanaDS)
-	return client.IgnoreNotFound(err)
-}
-
-func (r *reconciler) cleanupResources(ctx context.Context, ms *stack.MonitoringStack) (ctrl.Result, error) {
-	logger := r.logger.WithValues(stackName(ms)...)
-
-	if !controllerutil.ContainsFinalizer(ms, finalizerName) {
-		logger.V(6).Info("Finalizer already removed")
-		return ctrl.Result{}, nil
-	}
-
-	if err := r.deleteGrafanaDS(ctx, ms); err != nil {
-		logger.V(6).Info("Could not delete GrafanaDataSource", "err", err)
-		return ctrl.Result{}, err
-	}
-
-	logger.Info("Removing finalizer")
-	controllerutil.RemoveFinalizer(ms, finalizerName)
-	err := r.k8sClient.Update(ctx, ms)
-	if errors.IsConflict(err) {
-		return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
-	}
-	return ctrl.Result{}, err
-}
-
-func (r *reconciler) setupFinalizer(ctx context.Context, ms *stack.MonitoringStack) (ctrl.Result, error) {
-	if controllerutil.ContainsFinalizer(ms, finalizerName) {
-		return ctrl.Result{}, nil
-	}
-	controllerutil.AddFinalizer(ms, finalizerName)
-	if err := r.k8sClient.Update(ctx, ms); err != nil {
-		if errors.IsConflict(err) {
-			return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
-		}
-		return ctrl.Result{}, err
-	}
 	return ctrl.Result{}, nil
-}
-
-func GrafanaDSName(ms *stack.MonitoringStack) string {
-	return fmt.Sprintf("ms-%s-%s", ms.Namespace, ms.Name)
 }
 
 func (r *reconciler) getStack(ctx context.Context, req ctrl.Request) (*stack.MonitoringStack, error) {
@@ -278,42 +205,4 @@ func (r *reconciler) reconcileObject(ctx context.Context, ms *stack.MonitoringSt
 
 	logger.Info("Updating stack component")
 	return r.k8sClient.Update(ctx, desired)
-}
-
-func (r *reconciler) createGrafanaDSWatch(ctx context.Context) (bool, error) {
-	if r.grafanaDSWatchCreated {
-		return false, nil
-	}
-	log := r.logger.WithName("create-grafana-ds-watch")
-	var dataSources grafanav1alpha1.GrafanaDataSourceList
-
-	if err := r.k8sClient.List(ctx, &dataSources, client.InNamespace("default")); err != nil {
-		log.V(6).Info("grafana data source CRD is not defined")
-		return true, nil
-	}
-
-	if err := r.controller.Watch(
-		&source.Kind{Type: &grafanav1alpha1.GrafanaDataSource{}},
-		handler.EnqueueRequestsFromMapFunc(
-			func(object client.Object) []reconcile.Request {
-				name := object.GetAnnotations()[grafanaDatasourceOwnerName]
-				namespace := object.GetAnnotations()[grafanaDatasourceOwnerNamespace]
-				namespacedName := types.NamespacedName{Name: name, Namespace: namespace}
-				return []reconcile.Request{{NamespacedName: namespacedName}}
-			},
-		),
-	); err != nil {
-		log.Error(err, "unable to create watch on grafana data source")
-		return false, err
-	}
-
-	log.V(6).Info("Created watch on Grafana datasource")
-	r.grafanaDSWatchCreated = true
-
-	return false, nil
-
-}
-
-func stackName(ms *stack.MonitoringStack) []interface{} {
-	return []interface{}{"Stack", ms.Namespace + "/" + ms.Name}
 }

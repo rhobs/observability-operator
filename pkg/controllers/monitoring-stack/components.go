@@ -12,8 +12,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 
-	grafanav1alpha1 "github.com/grafana-operator/grafana-operator/v4/api/integreatly/v1alpha1"
-
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 
@@ -315,65 +313,7 @@ func stackComponentPatchers(ms *stack.MonitoringStack, instanceSelectorKey strin
 				return desired, nil
 			},
 		},
-		{
-			empty: func() client.Object {
-				dataSource := newGrafanaDataSource(ms)
-				return &grafanav1alpha1.GrafanaDataSource{
-					TypeMeta:   dataSource.TypeMeta,
-					ObjectMeta: dataSource.ObjectMeta,
-				}
-			},
-			patch: func(existing client.Object) (client.Object, error) {
-				dataSource := newGrafanaDataSource(ms)
-				if existing == nil {
-					return dataSource, nil
-				}
-
-				desired, ok := existing.(*grafanav1alpha1.GrafanaDataSource)
-				if !ok {
-					return nil, NewObjectTypeError(dataSource, existing)
-				}
-
-				desired.Labels = dataSource.Labels
-				desired.Spec = dataSource.Spec
-				return desired, nil
-			},
-		},
 	}, nil
-}
-
-func newGrafanaDataSource(ms *stack.MonitoringStack) *grafanav1alpha1.GrafanaDataSource {
-	datasourceName := GrafanaDSName(ms)
-	prometheusURL := fmt.Sprintf("%s-prometheus.%s:9090", ms.Name, ms.Namespace)
-	annotations := map[string]string{
-		grafanaDatasourceOwnerName:      ms.Name,
-		grafanaDatasourceOwnerNamespace: ms.Namespace,
-	}
-
-	return &grafanav1alpha1.GrafanaDataSource{
-		TypeMeta: metav1.TypeMeta{
-			// NOTE: uses a different naming convention for SchemeGroupVersion
-			APIVersion: grafanav1alpha1.GroupVersion.String(),
-			Kind:       "GrafanaDataSource",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        datasourceName,
-			Namespace:   ms.Namespace,
-			Annotations: annotations,
-		},
-		Spec: grafanav1alpha1.GrafanaDataSourceSpec{
-			Name: datasourceName,
-			Datasources: []grafanav1alpha1.GrafanaDataSourceFields{
-				{
-					Name:    datasourceName,
-					Type:    "prometheus",
-					Access:  "proxy",
-					Url:     prometheusURL,
-					Version: 1,
-				},
-			},
-		},
-	}
 }
 
 func newPrometheusRole(ms *stack.MonitoringStack, rbacResourceName string, rbacVerbs []string) *rbacv1.Role {
