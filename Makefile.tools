@@ -147,23 +147,44 @@ $(CRDOC) crdoc: $(TOOLS_DIR)
 
 .PHONY: jsonnet
 $(JSONNET) jsonnet: $(TOOLS_DIR)
-		GOBIN=$(TOOLS_DIR) go install github.com/google/go-jsonnet/cmd/jsonnet@latest
+	@{ \
+		set -ex ;\
+		[[ -f $(JSONNET) ]] && exit 0 ;\
+		GOBIN=$(TOOLS_DIR) go install github.com/google/go-jsonnet/cmd/jsonnet@latest ;\
+	}
+
 
 .PHONY: jsonnetfmt
 $(JSONNETFMT) jsonnetfmt: $(TOOLS_DIR)
-		GOBIN=$(TOOLS_DIR)  go install github.com/google/go-jsonnet/cmd/jsonnetfmt@latest
+	@{ \
+		set -ex ;\
+		[[ -f $(JSONNETFMT) ]] && exit 0 ;\
+		GOBIN=$(TOOLS_DIR)  go install github.com/google/go-jsonnet/cmd/jsonnetfmt@latest ;\
+	}
 
 .PHONY: jsonnet-lint
 $(JSONNET_LINT) jsonnet-lint: $(TOOLS_DIR)
-	GOBIN=$(TOOLS_DIR)  go install github.com/google/go-jsonnet/cmd/jsonnet-lint@latest
+	@{ \
+		set -ex ;\
+		[[ -f $(JSONNET_LINT) ]] && exit 0 ;\
+		GOBIN=$(TOOLS_DIR)  go install github.com/google/go-jsonnet/cmd/jsonnet-lint@latest ;\
+	}
 
 .PHONY: jb
 $(JB) jb: $(TOOLS_DIR)
-	GOBIN=$(TOOLS_DIR) go install github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb@latest
+	@{ \
+		set -ex ;\
+		[[ -f $(JB) ]] && exit 0 ;\
+		GOBIN=$(TOOLS_DIR) go install github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb@latest ;\
+	}
 
 .PHONY: gojsontoyaml
 $(GOJSONTOYAML) gojsontoyaml: $(TOOLS_DIR)
-	GOBIN=$(TOOLS_DIR) go install github.com/brancz/gojsontoyaml@latest
+	@{ \
+		set -ex ;\
+		[[ -f $(GOJSONTOYAML) ]] && exit 0 ;\
+		GOBIN=$(TOOLS_DIR) go install github.com/brancz/gojsontoyaml@latest ;\
+	}
 
 .PHONY: jsonnet-tools
 jsonnet-tools: jsonnet jsonnetfmt jsonnet-lint jb gojsontoyaml
