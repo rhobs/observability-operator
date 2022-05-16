@@ -69,36 +69,35 @@ to the controller-gen CLI page in the [kubebuilder documentation](https://book.k
   ```sh
   kind create cluster --image kindest/node:v1.22.4
   ```
-  &nbsp; For more advanced tests, a 3 node cluster may be more suitable.
+  &nbsp; To run the e2e tests, a 3 node cluster is necessary (due to anti-affinity).
   ```sh
   kind create cluster --config=hack/kind/config.yaml
   ```
-* Apply the CRDs by running `kubectl create -k deploy/crds/kubernetes`
-  * Install OLM locally by running
+* Apply the CRDs by running 
 
-    ```sh
-    make $(pwd)/tmp/bin/operator-sdk
-    ./tmp/bin/operator-sdk olm install
-    ```
+  ```sh
+  kubectl create -k deploy/crds/kubernetes
+  ```
 
-* Apply the dependecies; i.e - Prometheus Operator and Grafana Operator by running
+* Apply the dependecies; i.e - Prometheus Operator by running
 
-    ```sh
-    kubectl apply -k deploy/dependencies
-    ```
+  ```sh
+  kubectl create ns operators
+  kubectl apply -k deploy/dependencies
+  ```
 
 * Set the `KUBECONFIG` environment variable to your local cluster and run the
-  operator with `go run cmd/operator/main.go`.
+  operator with `go run ./cmd/operator/...`.
 
 * Alternatively, you can also set the `kubeconfig` on the command line:
-  `go run cmd/operator/main.go --kubeconfig <path-to-kubeconfig>`
+  `go run ./cmd/operator/... --kubeconfig <path-to-kubeconfig>`
 
 **TIP**: Using `fd` and `entr` to automatically build and run operator can come handy.
 E.g the following re-runs operator when any of the `.go` files change.
 
  ```sh
   fd .go$ -- cmd pkg |
-    entr -rs 'go run cmd/operator/... --zap-devel --zap-log-level=10 2>&1 |
+    entr -rs 'go run ./cmd/operator/... --zap-devel --zap-log-level=10' 2>&1 |
     tee ./tmp/operator.log
  ```
 
@@ -112,6 +111,9 @@ in cluster or outside it (`go run ./cmd/operator/...`). To run e2e tests locally
 * Follow the section above to run the operator'
 
 * In a new terminal, run `go test -v ./test/e2e/...`
+
+Note: when running the operator outside of the cluster the post e2e tests are
+expected to fail.
 
 ## Managing releases
 
