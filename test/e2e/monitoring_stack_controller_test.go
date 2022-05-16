@@ -12,6 +12,7 @@ import (
 	msctrl "github.com/rhobs/monitoring-stack-operator/pkg/controllers/monitoring-stack"
 
 	corev1 "k8s.io/api/core/v1"
+	policyv1 "k8s.io/api/policy/v1"
 
 	"github.com/rhobs/monitoring-stack-operator/test/e2e/framework"
 
@@ -50,6 +51,9 @@ func TestMonitoringStackController(t *testing.T) {
 
 	ts := []testCase{
 		{
+			name:     "Defaults are applied to Monitoring CR",
+			scenario: promConfigDefaultsAreApplied,
+		}, {
 			name:     "Empty stack spec must create a Prometheus",
 			scenario: emptyStackCreatesPrometheus,
 		}, {
@@ -64,6 +68,9 @@ func TestMonitoringStackController(t *testing.T) {
 		}, {
 			name:     "Controller reverts back changes to Prometheus",
 			scenario: reconcileRevertsManualChanges,
+		}, {
+			name:     "single prometheus replica has no pdb",
+			scenario: singlePrometheusReplicaHasNoPDB,
 		}, {
 			name:     "Prometheus stacks can scrape themselves",
 			scenario: assertPrometheusScrapesItself,
@@ -104,6 +111,54 @@ func emptyStackCreatesPrometheus(t *testing.T) {
 	// Creating an Empty monitoring stack must create a Prometheus with defaults applied
 	prometheus := monv1.Prometheus{}
 	f.GetResourceWithRetry(t, ms.Name, ms.Namespace, &prometheus)
+}
+
+func promConfigDefaultsAreApplied(t *testing.T) {
+	tests := []struct {
+		name     string
+		config   *stack.PrometheusConfig
+		expected int32
+	}{
+		// creating an empty stack should have 2 replicas
+		{"empty-stack", nil, 2},
+
+		// creating a stack with replicas explictly set must honour that
+		{"explict-replica", &stack.PrometheusConfig{Replicas: intPtr(1)}, 1},
+
+		// creating an stack with a partical config (no replicas) should default to 2
+		{
+			name: "partial-config",
+			config: &stack.PrometheusConfig{
+				RemoteWrite: []monv1.RemoteWriteSpec{
+					{URL: "https://foobar"},
+				},
+			},
+			expected: 2,
+		},
+	}
+
+	for _, tt := range tests {
+
+		t.Run(tt.name, func(t *testing.T) {
+			t.Log(tt.name)
+			ms := newMonitoringStack(t, tt.name)
+			ms.Spec.PrometheusConfig = tt.config
+
+			err := f.K8sClient.Create(context.Background(), ms)
+			assert.NilError(t, err, "failed to create a monitoring stack")
+
+			created := stack.MonitoringStack{}
+			f.GetResourceWithRetry(t, ms.Name, ms.Namespace, &created)
+
+			assert.Equal(t, tt.expected, *created.Spec.PrometheusConfig.Replicas)
+		})
+
+	}
+
+}
+
+func intPtr(i int32) *int32 {
+	return &i
 }
 
 func reconcileStack(t *testing.T) {
@@ -232,6 +287,34 @@ func validateStackRetention(t *testing.T) {
 	assert.NilError(t, err, `100h is a valid retention period`)
 }
 
+func singlePrometheusReplicaHasNoPDB(t *testing.T) {
+	// asserts that no prometheus pdb is created for stacks with replicas set to 1
+
+	// Initially, ensure that pdb is created by default for the default stack.
+	// This should later be removed when replicas is set to 1
+	ms := newMonitoringStack(t, "single-replica")
+
+	err := f.K8sClient.Create(context.Background(), ms)
+	assert.NilError(t, err, "failed to create a monitoring stack")
+
+	// ensure pdb is created for default stack
+	pdb := policyv1.PodDisruptionBudget{}
+	pdbName := ms.Name + "-prometheus"
+	f.AssertResourceEventuallyExists(pdbName, ms.Namespace, &pdb)(t)
+
+	// Update replica count to 1 and assert that pdb is removed
+	key := types.NamespacedName{Name: ms.Name, Namespace: ms.Namespace}
+	err = f.K8sClient.Get(context.Background(), key, ms)
+	assert.NilError(t, err, "failed to get a monitoring stack")
+
+	ms.Spec.PrometheusConfig.Replicas = intPtr(1)
+	err = f.K8sClient.Update(context.Background(), ms)
+	assert.NilError(t, err, "failed to update monitoring stack")
+
+	// ensure there is no pdb
+	f.AssertResourceNeverExists(pdbName, ms.Namespace, &pdb)(t)
+}
+
 func assertPrometheusScrapesItself(t *testing.T) {
 	ms := newMonitoringStack(t, "self-scrape")
 	err := f.K8sClient.Create(context.Background(), ms)
@@ -249,7 +332,7 @@ func assertPrometheusScrapesItself(t *testing.T) {
 
 	promClient := framework.NewPrometheusClient("http://localhost:9090")
 	expectedResults := map[string]int{
-		"prometheus_build_info":   1,
+		"prometheus_build_info":   2, // scrapes from both endpoints
 		"alertmanager_build_info": 2,
 	}
 	if err := wait.Poll(5*time.Second, 5*time.Minute, func() (bool, error) {

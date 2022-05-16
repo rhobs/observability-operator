@@ -46,6 +46,8 @@ spec:
                 - warning
                 type: string
               prometheusConfig:
+                default:
+                  replicas: 2
                 description: Define prometheus config
                 properties:
                   externalLabels:
@@ -529,6 +531,12 @@ spec:
                       - url
                       type: object
                     type: array
+                  replicas:
+                    default: 2
+                    description: Number of replicas/pods to deploy for a Prometheus
+                      deployment.
+                    format: int32
+                    type: integer
                 type: object
               resourceSelector:
                 description: Label selector for Monitoring Stack Resources.
