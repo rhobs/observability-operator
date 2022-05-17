@@ -158,3 +158,17 @@ For example,
 ```sh
 make initiate-release-as RELEASE_VERSION=1.4.0
 ```
+
+## Meetings
+___
+- Regular East friendly meeting: [Thursday at 08:00 CET (Central European Time)](https://meet.google.com/gwy-vssi-hfr)
+  - [Meeting notes and Agenda](https://docs.google.com/document/d/1Iy3CRIEzsHUhtMuzCVRX-8fbmsivcu2iju1J2vN2knQ/edit?usp=meetingnotes&showmeetingnotespromo=true).
+
+- Regular West friendly meeting: [Thursday at 16:30 CET (Central European Time)](https://meet.google.com/gwy-vssi-hfr)
+  - [Meeting notes and Agenda](https://docs.google.com/document/d/1Iy3CRIEzsHUhtMuzCVRX-8fbmsivcu2iju1J2vN2knQ/edit?usp=meetingnotes&showmeetingnotespromo=true).
+
+## Contact
+___
+- CoreOS Slack #mso-users and ping @mso-support. 
+- [Mailing list](mso-users@redhat.com)
+- Github Team: @rhobs/monitoring-stack-operator-maintainers
