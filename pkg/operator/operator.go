@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	goctrl "github.com/rhobs/monitoring-stack-operator/pkg/controllers/grafana-operator"
 	stackctrl "github.com/rhobs/monitoring-stack-operator/pkg/controllers/monitoring-stack"
 	tqctrl "github.com/rhobs/monitoring-stack-operator/pkg/controllers/thanos-querier"
 
@@ -34,10 +33,6 @@ func New(metricsAddr string) (*Operator, error) {
 
 	if err := stackctrl.RegisterWithManager(mgr, stackctrl.Options{InstanceSelector: instanceSelector}); err != nil {
 		return nil, fmt.Errorf("unable to register monitoring stack controller: %w", err)
-	}
-
-	if err := goctrl.RegisterWithManager(mgr); err != nil {
-		return nil, fmt.Errorf("unable to register the grafana operator controller with the manager: %w", err)
 	}
 
 	if err := tqctrl.RegisterWithManager(mgr); err != nil {
