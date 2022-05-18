@@ -123,23 +123,53 @@ func newPrometheus(
 		},
 
 		Spec: monv1.PrometheusSpec{
-			Replicas: config.Replicas,
+			CommonPrometheusFields: monv1.CommonPrometheusFields{
+				Replicas: config.Replicas,
 
-			PodMetadata: &monv1.EmbeddedObjectMetadata{
-				Labels: podLabels("prometheus", ms.Name),
+				PodMetadata: &monv1.EmbeddedObjectMetadata{
+					Labels: podLabels("prometheus", ms.Name),
+				},
+
+				// Prometheus does not use an Enum for LogLevel, so need to convert to string
+				LogLevel: string(ms.Spec.LogLevel),
+
+				Resources: ms.Spec.Resources,
+
+				ServiceAccountName: rbacResourceName,
+
+				ServiceMonitorSelector:          prometheusSelector,
+				ServiceMonitorNamespaceSelector: nil,
+				PodMonitorSelector:              prometheusSelector,
+				PodMonitorNamespaceSelector:     nil,
+				Affinity: &corev1.Affinity{
+					PodAntiAffinity: &corev1.PodAntiAffinity{
+						RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+							{
+								TopologyKey: "kubernetes.io/hostname",
+								LabelSelector: &metav1.LabelSelector{
+									MatchLabels: podLabels("prometheus", ms.Name),
+								},
+							},
+						},
+					},
+				},
+
+				// Prometheus should be configured for self-scraping through a static job.
+				// It avoids the need to synthesize a ServiceMonitor with labels that will match
+				// what the user defines in the monitoring stacks's resourceSelector field.
+				AdditionalScrapeConfigs: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: additionalScrapeConfigsSecretName,
+					},
+					Key: AdditionalScrapeConfigsSelfScrapeKey,
+				},
+				Storage:        storageForPVC(config.PersistentVolumeClaim),
+				RemoteWrite:    config.RemoteWrite,
+				ExternalLabels: config.ExternalLabels,
 			},
-
-			// Prometheus does not use an Enum for LogLevel, so need to convert to string
-			LogLevel: string(ms.Spec.LogLevel),
-
-			Retention: ms.Spec.Retention,
-			Resources: ms.Spec.Resources,
-
-			ServiceAccountName: rbacResourceName,
-
-			ServiceMonitorSelector: prometheusSelector,
-			PodMonitorSelector:     prometheusSelector,
-			RuleSelector:           prometheusSelector,
+			Retention:             ms.Spec.Retention,
+			RuleSelector:          prometheusSelector,
+			RuleNamespaceSelector: nil,
 
 			Alerting: &monv1.AlertingSpec{
 				Alertmanagers: []monv1.AlertmanagerEndpoints{
@@ -152,35 +182,10 @@ func newPrometheus(
 					},
 				},
 			},
-			Affinity: &corev1.Affinity{
-				PodAntiAffinity: &corev1.PodAntiAffinity{
-					RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
-						{
-							TopologyKey: "kubernetes.io/hostname",
-							LabelSelector: &metav1.LabelSelector{
-								MatchLabels: podLabels("prometheus", ms.Name),
-							},
-						},
-					},
-				},
-			},
-
-			// Prometheus should be configured for self-scraping through a static job.
-			// It avoids the need to synthesize a ServiceMonitor with labels that will match
-			// what the user defines in the monitoring stacks's resourceSelector field.
-			AdditionalScrapeConfigs: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: additionalScrapeConfigsSecretName,
-				},
-				Key: AdditionalScrapeConfigsSelfScrapeKey,
-			},
 			Thanos: &monv1.ThanosSpec{
 				BaseImage: stringPtr("quay.io/thanos/thanos"),
 				Version:   stringPtr("v0.24.0"),
 			},
-			Storage:        storageForPVC(config.PersistentVolumeClaim),
-			RemoteWrite:    config.RemoteWrite,
-			ExternalLabels: config.ExternalLabels,
 		},
 	}
 
