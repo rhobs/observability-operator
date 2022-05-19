@@ -23,6 +23,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
+	monitoringstack "github.com/rhobs/observability-operator/pkg/controllers/monitoring/monitoring-stack"
 
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 
@@ -182,6 +183,27 @@ func reconcileStack(t *testing.T) {
 	assert.DeepEqual(t, expected.ServiceMonitorSelector, generated.Spec.ServiceMonitorSelector)
 	assert.Equal(t, expected.LogLevel, generated.Spec.LogLevel)
 	assert.Equal(t, expected.Retention, generated.Spec.Retention)
+
+	availableMs := f.GetStackWhenAvailable(t, ms.Name, ms.Namespace)
+	availableC := getConditionByType(availableMs.Status.Conditions, stack.AvailableCondition)
+	assertCondition(t, availableC, monitoringstack.AvailableReason, stack.AvailableCondition, availableMs)
+	reconciledC := getConditionByType(availableMs.Status.Conditions, stack.ReconciledCondition)
+	assertCondition(t, reconciledC, monitoringstack.ReconciledReason, stack.ReconciledCondition, availableMs)
+}
+
+func assertCondition(t *testing.T, c *stack.Condition, reason string, ctype stack.ConditionType, ms stack.MonitoringStack) {
+	assert.Check(t, c != nil, "failed to find %s status condition for %s monitoring stack", ctype, ms.Name)
+	assert.Check(t, c.Status == stack.ConditionTrue, "unexpected %s condition status", ctype)
+	assert.Check(t, c.Reason == reason, "unexpected %s condition reason", ctype)
+}
+
+func getConditionByType(conditions []stack.Condition, ctype stack.ConditionType) *stack.Condition {
+	for _, c := range conditions {
+		if c.Type == ctype {
+			return &c
+		}
+	}
+	return nil
 }
 
 func reconcileRevertsManualChanges(t *testing.T) {
