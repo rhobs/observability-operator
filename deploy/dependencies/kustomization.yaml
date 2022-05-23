@@ -1,9 +1,50 @@
 resources:
-- prometheus-operator-cluster-role-binding.yaml
-- prometheus-operator-cluster-role.yaml
-- prometheus-operator-deployment.yaml
-- prometheus-operator-service-account.yaml
+- https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.52.1/example/rbac/prometheus-operator/prometheus-operator-deployment.yaml
+- https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.52.1/example/rbac/prometheus-operator/prometheus-operator-cluster-role-binding.yaml
+- https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.52.1/example/rbac/prometheus-operator/prometheus-operator-cluster-role.yaml
+- https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.52.1/example/rbac/prometheus-operator/prometheus-operator-service-account.yaml
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: operators
+namePrefix: monitoring-stack-operator-
+commonLabels:
+  app.kubernetes.io/part-of: monitoring-stack-operator
+
+patches:
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: prometheus-operator
+      spec:
+        selector:
+          matchLabels:
+            app.kubernetes.io/part-of: monitoring-stack-operator
+        template:
+          metadata:
+            annotations:
+              target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
+            labels:
+              app.kubernetes.io/part-of: monitoring-stack-operator
+          spec:
+            containers:
+              - name: prometheus-operator
+                args:
+                  - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.55.1
+                  - --prometheus-instance-selector=app.kubernetes.io/managed-by=monitoring-stack-operator
+                  - --alertmanager-instance-selector=app.kubernetes.io/managed-by=monitoring-stack-operator
+                  - --thanos-ruler-instance-selector=app.kubernetes.io/managed-by=monitoring-stack-operator
+                resources:
+                  requests:
+                    cpu: 5m
+                    memory: 150Mi
+                terminationMessagePolicy: FallbackToLogsOnError
+  - patch: |-
+      - op: remove
+        path: /spec/template/spec/nodeSelector
+    target:
+      group: apps
+      version: v1
+      kind: Deployment
+
