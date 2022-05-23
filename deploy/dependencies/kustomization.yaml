@@ -1,8 +1,8 @@
 resources:
-- https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.52.1/example/rbac/prometheus-operator/prometheus-operator-deployment.yaml
-- https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.52.1/example/rbac/prometheus-operator/prometheus-operator-cluster-role-binding.yaml
-- https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.52.1/example/rbac/prometheus-operator/prometheus-operator-cluster-role.yaml
-- https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.52.1/example/rbac/prometheus-operator/prometheus-operator-service-account.yaml
+- https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.55.1/example/rbac/prometheus-operator/prometheus-operator-deployment.yaml
+- https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.55.1/example/rbac/prometheus-operator/prometheus-operator-cluster-role-binding.yaml
+- https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.55.1/example/rbac/prometheus-operator/prometheus-operator-cluster-role.yaml
+- https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.55.1/example/rbac/prometheus-operator/prometheus-operator-service-account.yaml
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization

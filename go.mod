@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/go-logr/logr v1.2.0
-	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.55.0
+	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.55.1
 	github.com/prometheus/common v0.32.1
 	github.com/prometheus/prometheus v1.8.2-0.20211105201321-411021ada9ab
 	go.uber.org/zap v1.19.1
