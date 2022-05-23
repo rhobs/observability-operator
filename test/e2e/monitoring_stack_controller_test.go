@@ -20,6 +20,8 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/wait"
 
+	"github.com/google/go-cmp/cmp"
+
 	stack "github.com/rhobs/monitoring-stack-operator/pkg/apis/v1alpha1"
 
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -181,6 +183,7 @@ func reconcileStack(t *testing.T) {
 }
 
 func reconcileRevertsManualChanges(t *testing.T) {
+	t.Skip("Skipping revert-test, see https://github.com/rhobs/monitoring-stack-operator/issues/142")
 	ms := newMonitoringStack(t, "revert-test")
 	ms.Spec.LogLevel = "debug"
 	ms.Spec.Retention = "1h"
@@ -212,10 +215,23 @@ func reconcileRevertsManualChanges(t *testing.T) {
 	err = f.K8sClient.Update(context.Background(), modified)
 	assert.NilError(t, err, "failed to update a prometheus")
 
-	reconciled := monv1.Prometheus{}
-	f.GetResourceWithRetry(t, ms.Name, ms.Namespace, &reconciled)
+	err = wait.Poll(5*time.Second, time.Minute, func() (bool, error) {
+		reconciled := monv1.Prometheus{}
+		key := types.NamespacedName{Name: ms.Name, Namespace: ms.Namespace}
 
-	assert.DeepEqual(t, generated.Spec, reconciled.Spec)
+		if err := f.K8sClient.Get(context.Background(), key, &reconciled); errors.IsNotFound(err) {
+			// retry
+			return false, nil
+		}
+
+		if diff := cmp.Diff(generated.Spec, reconciled.Spec); diff != "" {
+			t.Logf("Mismatch in prometheus spec, retrying (-want +got):\n%s", diff)
+			// retry
+			return false, nil
+		}
+		return true, nil
+	})
+	assert.NilError(t, err, "failed to revert manual changes to prometheus spec")
 }
 
 func validateStackLogLevel(t *testing.T) {

@@ -37,10 +37,9 @@ func newAlertmanager(
 			PodMetadata: &monv1.EmbeddedObjectMetadata{
 				Labels: podLabels("alertmanager", ms.Name),
 			},
-			Replicas:                            &replicas,
-			ServiceAccountName:                  rbacResourceName,
-			AlertmanagerConfigSelector:          resourceSelector,
-			AlertmanagerConfigNamespaceSelector: nil,
+			Replicas:                   &replicas,
+			ServiceAccountName:         rbacResourceName,
+			AlertmanagerConfigSelector: resourceSelector,
 			Affinity: &corev1.Affinity{
 				PodAntiAffinity: &corev1.PodAntiAffinity{
 					RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
