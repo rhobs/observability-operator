@@ -172,9 +172,11 @@ func reconcileStack(t *testing.T) {
 	f.GetResourceWithRetry(t, ms.Name, ms.Namespace, &generated)
 
 	expected := monv1.PrometheusSpec{
-		LogLevel:               string(ms.Spec.LogLevel),
-		Retention:              ms.Spec.Retention,
-		ServiceMonitorSelector: ms.Spec.ResourceSelector.DeepCopy(),
+		Retention: ms.Spec.Retention,
+		CommonPrometheusFields: monv1.CommonPrometheusFields{
+			LogLevel:               string(ms.Spec.LogLevel),
+			ServiceMonitorSelector: ms.Spec.ResourceSelector.DeepCopy(),
+		},
 	}
 
 	assert.DeepEqual(t, expected.ServiceMonitorSelector, generated.Spec.ServiceMonitorSelector)

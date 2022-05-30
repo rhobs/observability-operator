@@ -61,8 +61,18 @@ docs: $(CRDOC)
 	mkdir -p docs
 	$(CRDOC) --resources deploy/crds/common --output docs/api.md
 
+# This generates the prometheus-operator CRD manifests from the
+# prometheus-operator dependency defined in go.mod. This ensures we carry the
+# correct version of the CRD manifests.
+.PHONY: generate-prom-op-crds
+generate-prom-operator-crds: $(CONTROLLER_GEN)
+	$(CONTROLLER_GEN) crd \
+		paths=github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/... \
+		output:dir=. \
+		output:crd:dir=./deploy/crds/kubernetes
+
 .PHONY: generate-crds
-generate-crds: $(CONTROLLER_GEN)
+generate-crds: $(CONTROLLER_GEN) generate-prom-op-crds
 	$(CONTROLLER_GEN) crd \
 		paths=./pkg/apis/... \
 		paths=./pkg/controllers/... \

@@ -456,7 +456,7 @@ A label selector requirement is a selector that contains values, a key, and an o
 
 
 
-RemoteWriteSpec defines the remote_write configuration for prometheus.
+RemoteWriteSpec defines the configuration to write samples from Prometheus to a remote endpoint.
 
 <table>
     <thead>
@@ -474,6 +474,13 @@ RemoteWriteSpec defines the remote_write configuration for prometheus.
           The URL of the endpoint to send samples to.<br/>
         </td>
         <td>true</td>
+      </tr><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexauthorization">authorization</a></b></td>
+        <td>object</td>
+        <td>
+          Authorization section for remote write<br/>
+        </td>
+        <td>false</td>
       </tr><tr>
         <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexbasicauth">basicAuth</a></b></td>
         <td>object</td>
@@ -506,21 +513,28 @@ RemoteWriteSpec defines the remote_write configuration for prometheus.
         <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexmetadataconfig">metadataConfig</a></b></td>
         <td>object</td>
         <td>
-          MetadataConfig configures the sending of series metadata to remote storage.<br/>
+          MetadataConfig configures the sending of series metadata to the remote storage.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          The name of the remote write queue, must be unique if specified. The name is used in metrics and logging in order to differentiate queues. Only valid in Prometheus versions 2.15.0 and newer.<br/>
+          The name of the remote write queue, it must be unique if specified. The name is used in metrics and logging in order to differentiate queues. Only valid in Prometheus versions 2.15.0 and newer.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexoauth2">oauth2</a></b></td>
+        <td>object</td>
+        <td>
+          OAuth2 for the URL. Only valid in Prometheus versions 2.27.0 and newer.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>proxyUrl</b></td>
         <td>string</td>
         <td>
-          Optional ProxyURL<br/>
+          Optional ProxyURL.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -538,6 +552,20 @@ RemoteWriteSpec defines the remote_write configuration for prometheus.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>sendExemplars</b></td>
+        <td>boolean</td>
+        <td>
+          Enables sending of exemplars over remote write. Note that exemplar-storage itself must be enabled using the enableFeature option for exemplars to be scraped in the first place.  Only valid in Prometheus versions 2.27.0 and newer.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexsigv4">sigv4</a></b></td>
+        <td>object</td>
+        <td>
+          Sigv4 allows to configures AWS's Signature Verification 4<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindextlsconfig">tlsConfig</a></b></td>
         <td>object</td>
         <td>
@@ -549,6 +577,88 @@ RemoteWriteSpec defines the remote_write configuration for prometheus.
         <td>[]object</td>
         <td>
           The list of remote write relabel configurations.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].authorization
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindex)</sup></sup>
+
+
+
+Authorization section for remote write
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexauthorizationcredentials">credentials</a></b></td>
+        <td>object</td>
+        <td>
+          The secret's key that contains the credentials of the request<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>credentialsFile</b></td>
+        <td>string</td>
+        <td>
+          File to read a secret from, mutually exclusive with Credentials (from SafeAuthorization)<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          Set the authentication type. Defaults to Bearer, Basic will cause an error<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].authorization.credentials
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindexauthorization)</sup></sup>
+
+
+
+The secret's key that contains the credentials of the request
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the Secret or its key must be defined<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -676,7 +786,7 @@ The secret in the service monitor namespace that contains the username for authe
 
 
 
-MetadataConfig configures the sending of series metadata to remote storage.
+MetadataConfig configures the sending of series metadata to the remote storage.
 
 <table>
     <thead>
@@ -691,14 +801,226 @@ MetadataConfig configures the sending of series metadata to remote storage.
         <td><b>send</b></td>
         <td>boolean</td>
         <td>
-          Whether metric metadata is sent to remote storage or not.<br/>
+          Whether metric metadata is sent to the remote storage or not.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>sendInterval</b></td>
         <td>string</td>
         <td>
-          How frequently metric metadata is sent to remote storage.<br/>
+          How frequently metric metadata is sent to the remote storage.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].oauth2
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindex)</sup></sup>
+
+
+
+OAuth2 for the URL. Only valid in Prometheus versions 2.27.0 and newer.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexoauth2clientid">clientId</a></b></td>
+        <td>object</td>
+        <td>
+          The secret or configmap containing the OAuth2 client id<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexoauth2clientsecret">clientSecret</a></b></td>
+        <td>object</td>
+        <td>
+          The secret containing the OAuth2 client secret<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>tokenUrl</b></td>
+        <td>string</td>
+        <td>
+          The URL to fetch the token from<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>endpointParams</b></td>
+        <td>map[string]string</td>
+        <td>
+          Parameters to append to the token URL<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>scopes</b></td>
+        <td>[]string</td>
+        <td>
+          OAuth2 scopes used for the token request<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].oauth2.clientId
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindexoauth2)</sup></sup>
+
+
+
+The secret or configmap containing the OAuth2 client id
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexoauth2clientidconfigmap">configMap</a></b></td>
+        <td>object</td>
+        <td>
+          ConfigMap containing data to use for the targets.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexoauth2clientidsecret">secret</a></b></td>
+        <td>object</td>
+        <td>
+          Secret containing data to use for the targets.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].oauth2.clientId.configMap
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindexoauth2clientid)</sup></sup>
+
+
+
+ConfigMap containing data to use for the targets.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key to select.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the ConfigMap or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].oauth2.clientId.secret
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindexoauth2clientid)</sup></sup>
+
+
+
+Secret containing data to use for the targets.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].oauth2.clientSecret
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindexoauth2)</sup></sup>
+
+
+
+The secret containing the OAuth2 client secret
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the Secret or its key must be defined<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -775,6 +1097,150 @@ QueueConfig allows tuning of the remote write queue parameters.
         <td>integer</td>
         <td>
           MinShards is the minimum number of shards, i.e. amount of concurrency.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>retryOnRateLimit</b></td>
+        <td>boolean</td>
+        <td>
+          Retry upon receiving a 429 status code from the remote-write storage. This is experimental feature and might change in the future.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].sigv4
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindex)</sup></sup>
+
+
+
+Sigv4 allows to configures AWS's Signature Verification 4
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexsigv4accesskey">accessKey</a></b></td>
+        <td>object</td>
+        <td>
+          AccessKey is the AWS API key. If blank, the environment variable `AWS_ACCESS_KEY_ID` is used.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>profile</b></td>
+        <td>string</td>
+        <td>
+          Profile is the named AWS profile used to authenticate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>region</b></td>
+        <td>string</td>
+        <td>
+          Region is the AWS region. If blank, the region from the default credentials chain used.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>roleArn</b></td>
+        <td>string</td>
+        <td>
+          RoleArn is the named AWS profile used to authenticate.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexsigv4secretkey">secretKey</a></b></td>
+        <td>object</td>
+        <td>
+          SecretKey is the AWS API secret. If blank, the environment variable `AWS_SECRET_ACCESS_KEY` is used.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].sigv4.accessKey
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindexsigv4)</sup></sup>
+
+
+
+AccessKey is the AWS API key. If blank, the environment variable `AWS_ACCESS_KEY_ID` is used.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].sigv4.secretKey
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindexsigv4)</sup></sup>
+
+
+
+SecretKey is the AWS API secret. If blank, the environment variable `AWS_SECRET_ACCESS_KEY` is used.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the Secret or its key must be defined<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1148,9 +1614,12 @@ RelabelConfig allows dynamic rewriting of the label set, being applied to sample
     </thead>
     <tbody><tr>
         <td><b>action</b></td>
-        <td>string</td>
+        <td>enum</td>
         <td>
           Action to perform based on regex matching. Default is 'replace'<br/>
+          <br/>
+            <i>Enum</i>: replace, keep, drop, hashmod, labelmap, labeldrop, labelkeep<br/>
+            <i>Default</i>: replace<br/>
         </td>
         <td>false</td>
       </tr><tr>
