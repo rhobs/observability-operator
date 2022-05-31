@@ -51,7 +51,7 @@ runs:
 
   - name: Build Catalog Image
     shell: bash
-    run: make catalog-image
+    run: make catalog-image FIRST_OLM_RELEASE=true
 
   - name: Publish catalog image
     shell: bash

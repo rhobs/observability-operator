@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rhobs/monitoring-stack-operator/test/e2e/framework"
+	"github.com/rhobs/observability-operator/test/e2e/framework"
 
 	v1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -19,7 +19,7 @@ var (
 	alertmanagerStsName = "alertmanager-alertmanager"
 	thanosRulerStsName  = "thanos-ruler-thanosruler"
 	ownedResourceLabels = map[string]string{
-		"app.kubernetes.io/managed-by": "monitoring-stack-operator",
+		"app.kubernetes.io/managed-by": "observability-operator",
 	}
 )
 

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	stackctrl "github.com/rhobs/monitoring-stack-operator/pkg/controllers/monitoring-stack"
-	tqctrl "github.com/rhobs/monitoring-stack-operator/pkg/controllers/thanos-querier"
+	stackctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/monitoring-stack"
+	tqctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/thanos-querier"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -15,7 +15,7 @@ import (
 
 // NOTE: The instance selector label is hardcoded in static assets.
 // Any change to that must be reflected here as well
-const instanceSelector = "app.kubernetes.io/managed-by=monitoring-stack-operator"
+const instanceSelector = "app.kubernetes.io/managed-by=observability-operator"
 
 // Operator embedds manager and exposes only the minimal set of functions
 type Operator struct {

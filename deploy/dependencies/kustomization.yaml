@@ -7,9 +7,9 @@ resources:
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: operators
-namePrefix: monitoring-stack-operator-
+namePrefix: observability-operator-
 commonLabels:
-  app.kubernetes.io/part-of: monitoring-stack-operator
+  app.kubernetes.io/part-of: observability-operator
 
 patches:
   - patch: |-
@@ -20,21 +20,21 @@ patches:
       spec:
         selector:
           matchLabels:
-            app.kubernetes.io/part-of: monitoring-stack-operator
+            app.kubernetes.io/part-of: observability-operator
         template:
           metadata:
             annotations:
               target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
             labels:
-              app.kubernetes.io/part-of: monitoring-stack-operator
+              app.kubernetes.io/part-of: observability-operator
           spec:
             containers:
               - name: prometheus-operator
                 args:
                   - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.55.1
-                  - --prometheus-instance-selector=app.kubernetes.io/managed-by=monitoring-stack-operator
-                  - --alertmanager-instance-selector=app.kubernetes.io/managed-by=monitoring-stack-operator
-                  - --thanos-ruler-instance-selector=app.kubernetes.io/managed-by=monitoring-stack-operator
+                  - --prometheus-instance-selector=app.kubernetes.io/managed-by=observability-operator
+                  - --alertmanager-instance-selector=app.kubernetes.io/managed-by=observability-operator
+                  - --thanos-ruler-instance-selector=app.kubernetes.io/managed-by=observability-operator
                 resources:
                   requests:
                     cpu: 5m

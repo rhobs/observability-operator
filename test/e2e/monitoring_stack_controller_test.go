@@ -11,7 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
 
-	"github.com/rhobs/monitoring-stack-operator/test/e2e/framework"
+	"github.com/rhobs/observability-operator/test/e2e/framework"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -22,7 +22,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	stack "github.com/rhobs/monitoring-stack-operator/pkg/apis/v1alpha1"
+	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 
@@ -185,7 +185,7 @@ func reconcileStack(t *testing.T) {
 }
 
 func reconcileRevertsManualChanges(t *testing.T) {
-	t.Skip("Skipping revert-test, see https://github.com/rhobs/monitoring-stack-operator/issues/142")
+	t.Skip("Skipping revert-test, see https://github.com/rhobs/observability-operator/issues/142")
 	ms := newMonitoringStack(t, "revert-test")
 	ms.Spec.LogLevel = "debug"
 	ms.Spec.Retention = "1h"

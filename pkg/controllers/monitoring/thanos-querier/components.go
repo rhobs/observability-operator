@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	msoapi "github.com/rhobs/monitoring-stack-operator/pkg/apis/v1alpha1"
+	msoapi "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

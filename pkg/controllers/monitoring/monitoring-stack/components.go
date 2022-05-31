@@ -4,7 +4,7 @@ import (
 	"context"
 	"reflect"
 
-	stack "github.com/rhobs/monitoring-stack-operator/pkg/apis/v1alpha1"
+	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/util/intstr"
 

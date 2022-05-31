@@ -35,7 +35,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	stack "github.com/rhobs/monitoring-stack-operator/pkg/apis/v1alpha1"
+	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 
 	"github.com/go-logr/logr"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -80,7 +80,7 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 	r := &reconciler{
 		k8sClient:             mgr.GetClient(),
 		scheme:                mgr.GetScheme(),
-		logger:                ctrl.Log.WithName("monitoring-stack-operator"),
+		logger:                ctrl.Log.WithName("observability-operator"),
 		instanceSelectorKey:   split[0],
 		instanceSelectorValue: split[1],
 		grafanaDSWatchCreated: false,

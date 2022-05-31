@@ -20,7 +20,7 @@ import (
 	"flag"
 	"os"
 
-	"github.com/rhobs/monitoring-stack-operator/pkg/operator"
+	"github.com/rhobs/observability-operator/pkg/operator"
 	"go.uber.org/zap/zapcore"
 
 	ctrl "sigs.k8s.io/controller-runtime"

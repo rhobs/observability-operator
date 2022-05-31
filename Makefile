@@ -4,7 +4,7 @@ include Makefile.tools
 
 # IMAGE_BASE defines the registry/namespace and part of the image name
 # This variable is used to construct full image tags for bundle and catalog images.
-IMAGE_BASE ?= monitoring-stack-operator
+IMAGE_BASE ?= observability-operator
 
 VERSION ?= $(shell cat VERSION)
 OPERATOR_IMG = $(IMAGE_BASE):$(VERSION)
@@ -51,9 +51,9 @@ generate-prometheus-rules: jsonnet-tools check-jq kustomize jsonnet-vendor
 		echo "Generating prometheusrule file for $$component" ;\
 		$(JSONNET) -J $(JSONNET_VENDOR) $$dir/main.jsonnet \
 			| jq .rule \
-			| $(GOJSONTOYAML) > deploy/operator/monitoring-stack-operator-$$component-rules.yaml ;\
+			| $(GOJSONTOYAML) > deploy/operator/monitoring/monitoring-$$component-rules.yaml ;\
 		cd deploy/operator && \
-		$(KUSTOMIZE) edit add resource "monitoring-stack-operator-$$component-rules.yaml" && cd - ;\
+		$(KUSTOMIZE) edit add resource "monitoring/monitoring-$$component-rules.yaml" && cd - ;\
 	done;
 
 .PHONY: docs
@@ -76,16 +76,16 @@ generate-crds: $(CONTROLLER_GEN) generate-prom-op-crds
 	$(CONTROLLER_GEN) crd \
 		paths=./pkg/apis/... \
 		paths=./pkg/controllers/... \
-		rbac:roleName=monitoring-stack-operator \
+		rbac:roleName=observability-operator \
 		output:dir=. \
 		output:rbac:dir=./deploy/operator \
 		output:crd:dir=./deploy/crds/common
-	mv deploy/operator/role.yaml deploy/operator/monitoring-stack-operator-cluster-role.yaml
+	mv deploy/operator/role.yaml deploy/operator/observability-operator-cluster-role.yaml
 
 .PHONY: generate-kustomize
 generate-kustomize: $(KUSTOMIZE)
 	cd deploy/operator && \
-		$(KUSTOMIZE) edit set image monitoring-stack-operator=*:$(VERSION)
+		$(KUSTOMIZE) edit set image observability-operator=*:$(VERSION)
 
 .PHONY: generate-deepcopy
 generate-deepcopy: $(CONTROLLER_GEN)
@@ -140,14 +140,14 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 .PHONY: bundle
 bundle: $(KUSTOMIZE) $(OPERATOR_SDK) generate
 	cd deploy/olm && \
-		$(KUSTOMIZE) edit set image monitoring-stack-operator=$(OPERATOR_IMG)
+		$(KUSTOMIZE) edit set image observability-operator=$(OPERATOR_IMG)
 
 	$(KUSTOMIZE) build deploy/olm | tee tmp/pre-bundle.yaml |  \
 	 	$(OPERATOR_SDK) generate bundle \
 			--overwrite \
 		 	--version $(VERSION) \
 			--kustomize-dir=deploy/olm \
-			--package=monitoring-stack-operator \
+			--package=observability-operator \
 		 	$(BUNDLE_METADATA_OPTS)
 	$(OPERATOR_SDK) bundle validate ./bundle
 
@@ -215,12 +215,12 @@ $(STANDARD_VERSION):
 
 .PHONY: initiate-release
 initiate-release: $(STANDARD_VERSION)
-	git fetch git@github.com:rhobs/monitoring-stack-operator.git --tags
+	git fetch git@github.com:rhobs/observability-operator.git --tags
 	$(STANDARD_VERSION) -a --skip.tag # The tag will be created in the pipeline
 
 .PHONY: initiate-release-as
 initiate-release-as: $(STANDARD_VERSION)
-	git fetch git@github.com:rhobs/monitoring-stack-operator.git --tags
+	git fetch git@github.com:rhobs/observability-operator.git --tags
 	$(STANDARD_VERSION) -a --skip.tag --release-as $(RELEASE_VERSION)
 
 .PHONY: kind-cluster

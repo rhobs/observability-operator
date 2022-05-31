@@ -17,7 +17,7 @@ import (
 	"fmt"
 	"time"
 
-	msoapi "github.com/rhobs/monitoring-stack-operator/pkg/apis/v1alpha1"
+	msoapi "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -109,7 +109,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	componentLabels := map[string]string{
 		"app.kubernetes.io/instance":   querier.Name,
 		"app.kubernetes.io/part-of":    "ThanosQuerier",
-		"app.kubernetes.io/managed-by": "monitoring-stack-operator",
+		"app.kubernetes.io/managed-by": "observability-operator",
 	}
 	for _, c := range components {
 		err := r.reconcileComponent(ctx, querier, ensureLabels(c, componentLabels))

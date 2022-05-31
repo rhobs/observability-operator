@@ -14,4 +14,4 @@ spec:
       nodePort: 30001
   selector:
     app.kubernetes.io/component: operator
-    app.kubernetes.io/name: monitoring-stack-operator
+    app.kubernetes.io/name: observability-operator

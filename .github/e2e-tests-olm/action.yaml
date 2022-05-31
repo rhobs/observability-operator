@@ -50,7 +50,7 @@ runs:
 
     - name: Build images
       shell: bash
-      run: make operator-image bundle bundle-image IMAGE_BASE="local-registry:30000/monitoring-stack-operator" VERSION=0.0.0-ci
+      run: make operator-image bundle bundle-image IMAGE_BASE="local-registry:30000/observability-operator" VERSION=0.0.0-ci
 
     - name: Wait for cluster to finish bootstraping
       shell: bash
@@ -61,7 +61,7 @@ runs:
 
     - name: Publish images
       shell: bash
-      run: make operator-push bundle-push IMAGE_BASE="local-registry:30000/monitoring-stack-operator" VERSION=0.0.0-ci
+      run: make operator-push bundle-push IMAGE_BASE="local-registry:30000/observability-operator" VERSION=0.0.0-ci
 
     - name: Deploy the operator
       shell: bash
@@ -71,12 +71,12 @@ runs:
         kubectl wait --for=condition=Established crds --all --timeout=300s
 
         ./tmp/bin/operator-sdk run bundle \
-          local-registry:30000/monitoring-stack-operator-bundle:0.0.0-ci \
+          local-registry:30000/observability-operator-bundle:0.0.0-ci \
           --install-mode AllNamespaces \
           --namespace operators \
           --skip-tls
 
-        kubectl rollout status deployment monitoring-stack-operator -n operators
+        kubectl rollout status deployment observability-operator -n operators
 
     - name: Expose operator metrics endpoint
       shell: bash
@@ -108,7 +108,7 @@ runs:
         echo "Reconcile errors before running tests: $reconcile_errors"
 
         if [[ "$reconcile_errors" -ne 0 ]]; then
-          kubectl logs -n operators deploy/monitoring-stack-operator
+          kubectl logs -n operators deploy/observability-operator
           echo ================================================================
           echo "Expecting 0 reconcile errors but found $reconcile_errors"
           exit 1
@@ -121,7 +121,7 @@ runs:
     - name: Print operator logs and reconcile stats
       shell: bash
       run: |
-        kubectl logs -n operators deploy/monitoring-stack-operator
+        kubectl logs -n operators deploy/observability-operator
         echo ================================================================
 
         ./tmp/bin/promq -t http://localhost:30001/metrics  \
@@ -146,7 +146,7 @@ runs:
       shell: bash
       run: |
         # Output operator logs
-        kubectl logs -n operators deploy/monitoring-stack-operator
+        kubectl logs -n operators deploy/observability-operator
         # Capture apiserver state
         oc adm inspect node --dest-dir cluster-state || true
         oc adm inspect -A statefulset --dest-dir cluster-state || true
