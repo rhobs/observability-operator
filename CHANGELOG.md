@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.10](https://github.com/rhobs/monitoring-stack-operator/tree/0.0.10) (2022-06-01)
+
+### ⚠ BREAKING CHANGES
+
+* [ISSUE - 145](https://github.com/rhobs/observability-operator/issues/145)
+    The Operator has been renamed to `Observability Operator`
+* **NOTE:** The last release of Monitoring Stack Operator is `0.0.9`
+
+
+### Migrating from 0.0.9
+
+* Uninstall and unsubscribe the old Monitoring Stack Operator
+* Subscribe to the new `Observability Operator` - see :
+    ``hack/olm/catalog-src.yaml``
+
 ### [0.0.9](https://github.com/rhobs/monitoring-stack-operator/tree/v0.0.9) (2022-05-30)
 
 
