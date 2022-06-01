@@ -1,18 +1,18 @@
 resources:
-- monitoring-stack-operator-deployment.yaml
-- monitoring-stack-operator-service-account.yaml
-- monitoring-stack-operator-cluster-role.yaml
-- monitoring-stack-operator-cluster-role-binding.yaml
-- monitoring-stack-operator-service.yaml
-- monitoring-stack-operator-service-monitor.yaml
-- monitoring-stack-operator-rules.yaml
-- monitoring-stack-operator-alertmanager-rules.yaml
-- monitoring-stack-operator-prometheus-operator-rules.yaml
-- monitoring-stack-operator-prometheus-rules.yaml
+- observability-operator-deployment.yaml
+- observability-operator-service-account.yaml
+- observability-operator-cluster-role.yaml
+- observability-operator-cluster-role-binding.yaml
+- observability-operator-service.yaml
+- observability-operator-service-monitor.yaml
+- observability-operator-rules.yaml
+- monitoring/monitoring-prometheus-rules.yaml
+- monitoring/monitoring-alertmanager-rules.yaml
+- monitoring/monitoring-prometheus-operator-rules.yaml
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
-- name: monitoring-stack-operator
+- name: observability-operator
   newTag: 0.0.9
 namespace: operators

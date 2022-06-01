@@ -3,11 +3,11 @@ kind: PrometheusRule
 metadata:
   labels:
     app.kubernetes.io/component: operator
-    app.kubernetes.io/name: monitoring-stack-operator-prometheus-operator-rules
-    app.kubernetes.io/part-of: monitoring-stack-operator
+    app.kubernetes.io/name: observability-operator-prometheus-operator-rules
+    app.kubernetes.io/part-of: observability-operator
     prometheus: k8s
     role: alert-rules
-  name: monitoring-stack-operator-prometheus-operator-rules
+  name: observability-operator-prometheus-operator-rules
 spec:
   groups:
   - name: prometheus-operator

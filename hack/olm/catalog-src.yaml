@@ -11,7 +11,7 @@ spec:
   icon:
     base64data: ""
     mediatype: ""
-  image: quay.io/rhobs/monitoring-stack-operator-catalog:latest
+  image: quay.io/rhobs/observability-operator-catalog:latest
   publisher: Sunil Thaha
   sourceType: grpc
   updateStrategy:

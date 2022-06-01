@@ -1,7 +1,7 @@
 package monitoringstack
 
 import (
-	stack "github.com/rhobs/monitoring-stack-operator/pkg/apis/v1alpha1"
+	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 	policyv1 "k8s.io/api/policy/v1"
 
 	corev1 "k8s.io/api/core/v1"

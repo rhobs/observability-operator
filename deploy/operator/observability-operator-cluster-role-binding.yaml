@@ -2,25 +2,25 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: monitoring-stack-operator
+  name: observability-operator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: monitoring-stack-operator
+  name: observability-operator
 subjects:
 - kind: ServiceAccount
-  name: monitoring-stack-operator-sa
+  name: observability-operator-sa
   namespace: default
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: monitoring-stack-operator
+  name: observability-operator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: monitoring-stack-operator
+  name: observability-operator
 subjects:
   - kind: ServiceAccount
-    name: monitoring-stack-operator-sa
+    name: observability-operator-sa
     namespace: default

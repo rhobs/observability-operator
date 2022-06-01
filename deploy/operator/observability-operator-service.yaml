@@ -1,0 +1,15 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: observability-operator
+  labels:
+    app.kubernetes.io/component: operator
+    app.kubernetes.io/name: observability-operator
+    app.kubernetes.io/part-of: observability-operator
+spec:
+  selector:
+    app.kubernetes.io/name: observability-operator
+    app.kubernetes.io/component: operator
+  ports:
+  - name: metrics
+    port: 8080

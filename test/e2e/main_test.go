@@ -7,8 +7,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/rhobs/monitoring-stack-operator/pkg/operator"
-	"github.com/rhobs/monitoring-stack-operator/test/e2e/framework"
+	"github.com/rhobs/observability-operator/pkg/operator"
+	"github.com/rhobs/observability-operator/test/e2e/framework"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"

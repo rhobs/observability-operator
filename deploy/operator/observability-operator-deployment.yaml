@@ -2,21 +2,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: monitoring-stack-operator
+  name: observability-operator
   labels:
-    app.kubernetes.io/name: monitoring-stack-operator
+    app.kubernetes.io/name: observability-operator
     app.kubernetes.io/component: operator
     app.kubernetes.io/version: 0.0.1
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/name: monitoring-stack-operator
+      app.kubernetes.io/name: observability-operator
       app.kubernetes.io/component: operator
   replicas: 1
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: monitoring-stack-operator
+        app.kubernetes.io/name: observability-operator
         app.kubernetes.io/component: operator
         app.kubernetes.io/version: 0.0.1
     spec:
@@ -24,7 +24,7 @@ spec:
         runAsNonRoot: true
       containers:
         - name: operator
-          image: monitoring-stack-operator:0.0.1
+          image: observability-operator:0.0.1
           imagePullPolicy: IfNotPresent
           args:
             - --namespace=$(NAMESPACE)
@@ -42,5 +42,5 @@ spec:
             requests:
               cpu: 100m
               memory: 150Mi
-      serviceAccountName: monitoring-stack-operator-sa
+      serviceAccountName: observability-operator-sa
       terminationGracePeriodSeconds: 30

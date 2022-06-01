@@ -8,6 +8,6 @@ resources:
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
-- name: monitoring-stack-operator
-  newName: monitoring-stack-operator
-  newTag: 0.0.5
+- name: observability-operator
+  newName: local-registry:30000/observability-operator
+  newTag: 0.0.0-ci

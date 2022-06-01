@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	msov1 "github.com/rhobs/monitoring-stack-operator/pkg/apis/v1alpha1"
-	"github.com/rhobs/monitoring-stack-operator/test/e2e/framework"
+	msov1 "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
+	"github.com/rhobs/observability-operator/test/e2e/framework"
 
 	"gotest.tools/v3/assert"
 

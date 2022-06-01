@@ -1,6 +1,8 @@
-# monitoring-stack-operator
+# observability-operator
 
-The monitoring stack operator is a Kubernetes operator which enables the management of independent and self-contained, Prometheus-based monitoring stacks through Kubernetes CRDs.
+The Observability Operator (previously known as Monitoring Stack Operator) is a
+Kubernetes operator which enables the management of Monitoring, Logging and
+Tracing stacks through Kubernetes CRDs.
 
 The project is based on the [controller-runtime](https://github.com/kubernetes-sigs/controller-runtime) library.
 
@@ -9,15 +11,14 @@ The project is based on the [controller-runtime](https://github.com/kubernetes-s
 ### OLM
 
 The easiest way to try out the operator is to use OLM (that comes shipped with
-OpenShift). Assuming you are using OpenShift, add the Monitoring Stack Operator Catalog
+OpenShift). Assuming you are using OpenShift, add the Observability Operator Catalog
 as shown below.
 
 ```
 kubectl apply -f hack/olm/catalog-src.yaml
 ```
-
 This adds a new Catalog to the list of Catalogs. Now, you should be able to use
-OLM Web interface to install Monitoring Stack Operator like any other operator.
+OLM Web interface to install Observability Operator like any other operator.
 
 ### Kubernetes
 
@@ -73,13 +74,13 @@ to the controller-gen CLI page in the [kubebuilder documentation](https://book.k
   ```sh
   kind create cluster --config=hack/kind/config.yaml
   ```
-* Apply the CRDs by running 
+* Apply the CRDs by running
 
   ```sh
   kubectl create -k deploy/crds/kubernetes
   ```
 
-* Apply the dependecies; i.e - Prometheus Operator by running
+* Apply the dependencies; i.e. - Prometheus Operator by running
 
   ```sh
   kubectl create ns operators
@@ -93,7 +94,7 @@ to the controller-gen CLI page in the [kubebuilder documentation](https://book.k
   `go run ./cmd/operator/... --kubeconfig <path-to-kubeconfig>`
 
 **TIP**: Using `fd` and `entr` to automatically build and run operator can come handy.
-E.g the following re-runs operator when any of the `.go` files change.
+E.g. the following re-runs operator when any of the `.go` files change.
 
  ```sh
   fd .go$ -- cmd pkg |
@@ -103,18 +104,74 @@ E.g the following re-runs operator when any of the `.go` files change.
 
 The above can be tweaked to automatically run `make generate` when the `pkg/apis/` change.
 
-### Running e2e tests
+### Running E2E Tests
 
 E2E tests are run against a deployment, so it requires operator to be running
 in cluster or outside it (`go run ./cmd/operator/...`). To run e2e tests locally,
 
-* Follow the section above to run the operator'
+* Follow the section above to run the operator
 
 * In a new terminal, run `go test -v ./test/e2e/...`
 
 Note: when running the operator outside of the cluster the post e2e tests are
-expected to fail.
+expected to fail since it requires operator to be deployed in the cluster.
+Refer to the "Running Operator Bundle" section below.
 
+## Running Operator Bundle
+
+OperatorSDK provides `run bundle` command allowing us to run the Operator in
+`kind` cluster as if it is installed via OLM. To run the operator follow the
+steps below
+
+1. Use `hack/kind/config.yaml` to create your kind cluster
+```sh
+kind create cluster --config=hack/kind/config.yaml
+```
+2. Install Prometheus Operator CRDs and Dependencies
+```sh
+  kubectl create -k deploy/crds/kubernetes
+  kubectl create -k deploy/dependencies
+```
+3. Ensure local-registry entry is added to `/etc/hosts`. This is needed
+   to build and push all container images (operator, bundle and catalog) that
+   is used by `run bundle` command to subscribe and run the operator. E.g.
+   below is a sample hosts entry that works.
+```
+❯ cat /etc/hosts
+127.0.0.1 localhost localhost.localdomain
+::1 localhost localhost.localdomain
+127.0.0.2 www.example.com
+
+127.0.0.1 local-registry
+# ☝️ adds the local-registry
+```
+4. Build and push operator images to the `local-registry`
+```
+make operator-image bundle-image \
+  operator-push bundle-push \
+  IMAGE_BASE=local-registry:30000/observability-operator \
+  VERSION=0.0.0-ci  \
+  FIRST_OLM_RELEASE=true
+```
+
+5. Run operator-sdk run bundle to subscribe to the operator
+```
+./tmp/bin/operator-sdk run bundle \
+    local-registry:30000/observability-operator-bundle:0.0.0-ci \
+    --install-mode AllNamespaces  \
+    --skip-tls \
+    --namespace operators \
+    --verbose | tee tmp/olm.log
+```
+6. Run `e2e` tests
+```
+go test -v ./test/e2e/...
+```
+A good way to monitor if the tests are running correctly is to watch the
+pods in the `e2e-tests` namespace. E.g.
+```
+kubectl get pods -w --output-watch-events -n e2e-tests
+```
 ## Managing releases
 
 This project follows [SemVer 2.0.0](https://semver.org/)
@@ -169,6 +226,6 @@ ___
 
 ## Contact
 ___
-- CoreOS Slack #mso-users and ping @mso-support. 
+- CoreOS Slack #mso-users and ping @mso-support.
 - [Mailing list](mso-users@redhat.com)
-- Github Team: @rhobs/monitoring-stack-operator-maintainers
+- Github Team: @rhobs/observability-operator-maintainers
