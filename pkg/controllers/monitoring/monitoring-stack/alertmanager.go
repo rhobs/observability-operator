@@ -3,6 +3,8 @@ package monitoringstack
 import (
 	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 	policyv1 "k8s.io/api/policy/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/utils/pointer"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -65,6 +67,14 @@ func newAlertmanager(
 					},
 				},
 			},
+			SecurityContext: &corev1.PodSecurityContext{
+				FSGroup:      pointer.Int64(AlertmanagerUserFSGroupID),
+				RunAsNonRoot: pointer.Bool(true),
+				RunAsUser:    pointer.Int64(AlertmanagerUserFSGroupID),
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+			},
 		},
 	}
 }
@@ -115,6 +125,27 @@ func newAlertmanagerPDB(ms *stack.MonitoringStack, instanceSelectorKey string, i
 			},
 			Selector: &metav1.LabelSelector{
 				MatchLabels: selector,
+			},
+		},
+	}
+}
+
+func newAlertManagerRole(ms *stack.MonitoringStack, rbacResourceName string, rbacVerbs []string) *rbacv1.Role {
+	return &rbacv1.Role{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: rbacv1.SchemeGroupVersion.String(),
+			Kind:       "Role",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      rbacResourceName,
+			Namespace: ms.Namespace,
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups:     []string{"security.openshift.io"},
+				Resources:     []string{"securitycontextconstraints"},
+				ResourceNames: []string{"nonroot-v2"},
+				Verbs:         []string{"use"},
 			},
 		},
 	}

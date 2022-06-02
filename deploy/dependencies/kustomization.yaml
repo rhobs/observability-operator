@@ -40,6 +40,10 @@ patches:
                     cpu: 5m
                     memory: 150Mi
                 terminationMessagePolicy: FallbackToLogsOnError
+            securityContext:
+              runAsNonRoot: true
+              seccompProfile:
+                type: RuntimeDefault
   - patch: |-
       - op: remove
         path: /spec/template/spec/nodeSelector
@@ -48,3 +52,20 @@ patches:
       version: v1
       kind: Deployment
 
+  - patch: |-
+      - op: add
+        path: /rules/-
+        value:
+          apiGroups:
+            - security.openshift.io
+          resourceNames:
+            - nonroot-v2
+          resources:
+            - securitycontextconstraints
+          verbs:
+            - use
+    target:
+      group: rbac.authorization.k8s.io
+      version: v1
+      kind: ClusterRole
+      name: prometheus-operator
