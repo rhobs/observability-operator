@@ -4,10 +4,10 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
   annotations:
-  name: monitoring-operators
+  name: observability-operator
   namespace: openshift-marketplace
 spec:
-  displayName: Monitoring Test Operator
+  displayName: Observability Operator - Test
   icon:
     base64data: ""
     mediatype: ""
