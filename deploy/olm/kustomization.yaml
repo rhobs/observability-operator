@@ -11,3 +11,26 @@ images:
 - name: observability-operator
   newName: local-registry:30000/observability-operator
   newTag: 0.0.0-ci
+
+patches:
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: NOT-USED-BECAUSE-TARGET-IS-SPECIFIED
+      spec:
+        template:
+          spec:
+            affinity:
+              nodeAffinity:
+                preferredDuringSchedulingIgnoredDuringExecution:
+                - preference:
+                    matchExpressions:
+                    - key: node-role.kubernetes.io/infra
+                      operator: Exists
+                  weight: 1
+    target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: .*-operator
