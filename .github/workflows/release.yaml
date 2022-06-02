@@ -37,7 +37,7 @@ jobs:
       # Therefore, we first need to setup Go so that we can install the
       # controller-gen binary.
       - name: Setup Go environment
-        uses: actions/setup-go@v2.1.4
+        uses: actions/setup-go@v3
         with:
           go-version: ${{ env.go-version }}
 

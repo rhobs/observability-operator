@@ -16,7 +16,7 @@ runs:
   - uses: actions/checkout@v2
 
   - name: Setup Go environment
-    uses: actions/setup-go@v2.1.4
+    uses: actions/setup-go@v3
     with:
       go-version: ${{ inputs.go-version }}
 
