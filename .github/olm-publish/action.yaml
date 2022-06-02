@@ -43,7 +43,7 @@ runs:
 
   - name: Build Bundle Image
     shell: bash
-    run: make bundle-image
+    run: make bundle bundle-image
 
   - name: Publish Bundle
     shell: bash

@@ -110,7 +110,7 @@ jobs:
         uses: ./.github/tools-cache
 
       - name: Build Bundle Image
-        run: make bundle-image
+        run: make bundle bundle-image
 
   e2e-tests-olm:
     runs-on: ubuntu-latest

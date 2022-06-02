@@ -151,8 +151,22 @@ bundle: $(KUSTOMIZE) $(OPERATOR_SDK) generate
 		 	$(BUNDLE_METADATA_OPTS)
 	$(OPERATOR_SDK) bundle validate ./bundle
 
+.PHONY: e2e-bundle
+e2e-bundle: $(KUSTOMIZE) $(OPERATOR_SDK) generate
+	cd deploy/e2e-olm && \
+		$(KUSTOMIZE) edit set image observability-operator=$(OPERATOR_IMG)
+
+	$(KUSTOMIZE) build deploy/e2e-olm | tee tmp/pre-bundle.yaml |  \
+	 	$(OPERATOR_SDK) generate bundle \
+			--overwrite \
+		 	--version $(VERSION) \
+			--kustomize-dir=deploy/e2e-olm \
+			--package=observability-operator \
+		 	$(BUNDLE_METADATA_OPTS)
+	$(OPERATOR_SDK) bundle validate ./bundle
+
 .PHONY: bundle-image
-bundle-image: bundle ## Build the bundle image.
+bundle-image: ## Build the bundle image.
 	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
 
 .PHONY: bundle-push
