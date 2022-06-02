@@ -226,6 +226,6 @@ ___
 
 ## Contact
 ___
-- CoreOS Slack #mso-users and ping @mso-support.
+- CoreOS Slack #observability-users and ping @obo-support.
 - [Mailing list](mso-users@redhat.com)
 - Github Team: @rhobs/observability-operator-maintainers
