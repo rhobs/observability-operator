@@ -10,6 +10,6 @@ spec:
   channel: stable
   installPlanApproval: Automatic
   name: observability-operator
-  source: monitoring-operators
+  source: observability-operator
   sourceNamespace: openshift-marketplace
   startingCSV: observability-operator.v0.0.10
