@@ -22,6 +22,8 @@ spec:
     spec:
       securityContext:
         runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: operator
           image: observability-operator:0.0.1
@@ -35,6 +37,9 @@ spec:
                 fieldPath: metadata.namespace
           securityContext:
             allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
           resources:
             limits:
               cpu: 200m

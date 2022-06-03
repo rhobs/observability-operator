@@ -7,6 +7,7 @@ import (
 	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/pointer"
 
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	policyv1 "k8s.io/api/policy/v1"
@@ -20,6 +21,8 @@ import (
 )
 
 const AdditionalScrapeConfigsSelfScrapeKey = "self-scrape-config"
+const PrometheusUserFSGroupID = 65534
+const AlertmanagerUserFSGroupID = 65535
 
 type reconcileFunction func(ctx context.Context, c client.Client, scheme *runtime.Scheme) error
 
@@ -49,6 +52,8 @@ func stackComponentReconcilers(ms *stack.MonitoringStack, instanceSelectorKey st
 		defaultReconciler(newRoleBinding(ms, prometheusRBACResourceName), ms),
 		defaultReconciler(newAdditionalScrapeConfigsSecret(ms, additionalScrapeConfigsSecretName), ms),
 		defaultReconciler(newServiceAccount(alertmanagerRBACResourceName, ms.Namespace), ms),
+		defaultReconciler(newAlertManagerRole(ms, alertmanagerRBACResourceName, rbacVerbs), ms),
+		defaultReconciler(newRoleBinding(ms, alertmanagerRBACResourceName), ms),
 		defaultReconciler(newAlertmanager(ms, alertmanagerRBACResourceName, instanceSelectorKey, instanceSelectorValue), ms),
 		defaultReconciler(newAlertmanagerService(ms, instanceSelectorKey, instanceSelectorValue), ms),
 		defaultReconciler(newAlertmanagerPDB(ms, instanceSelectorKey, instanceSelectorValue), ms),
@@ -79,6 +84,12 @@ func newPrometheusRole(ms *stack.MonitoringStack, rbacResourceName string, rbacV
 				APIGroups: []string{"extensions", "networking.k8s.io"},
 				Resources: []string{"ingresses"},
 				Verbs:     rbacVerbs,
+			},
+			{
+				APIGroups:     []string{"security.openshift.io"},
+				Resources:     []string{"securitycontextconstraints"},
+				ResourceNames: []string{"nonroot-v2"},
+				Verbs:         []string{"use"},
 			},
 		},
 	}
@@ -163,7 +174,15 @@ func newPrometheus(
 					},
 					Key: AdditionalScrapeConfigsSelfScrapeKey,
 				},
-				Storage:        storageForPVC(config.PersistentVolumeClaim),
+				Storage: storageForPVC(config.PersistentVolumeClaim),
+				SecurityContext: &corev1.PodSecurityContext{
+					FSGroup:      pointer.Int64(PrometheusUserFSGroupID),
+					RunAsNonRoot: pointer.Bool(true),
+					RunAsUser:    pointer.Int64(PrometheusUserFSGroupID),
+					SeccompProfile: &corev1.SeccompProfile{
+						Type: corev1.SeccompProfileTypeRuntimeDefault,
+					},
+				},
 				RemoteWrite:    config.RemoteWrite,
 				ExternalLabels: config.ExternalLabels,
 			},
