@@ -62,20 +62,16 @@ This project uses the [controller-gen](https://github.com/kubernetes-sigs/contro
 For detailed information on the available code generation markers, please refer
 to the controller-gen CLI page in the [kubebuilder documentation](https://book.kubebuilder.io/reference/markers.html)
 
-### Running the operator in kind
+### Running the operator in Kind cluster
 
-* Install [kind](https://github.com/kubernetes-sigs/kind)
+Run `./hack/kind/setup.sh` to create a kind cluster named `obs-operator` and
+sets up all the required dependencies (OLM, infra-node, registry).
 
-* Create a local kubernetes cluster with kind node image >= v1.22, older images seem to have issues with OLM installation.
-  ```sh
-  kind create cluster --image kindest/node:v1.22.4
-  ```
-  &nbsp; To run the e2e tests, a 3 node cluster is necessary (due to anti-affinity).
-  ```sh
-  kind create cluster --config=hack/kind/config.yaml
-  ```
+To cleanup the cluster or to retry the setup script after a failed attempt run `kind delete cluster --name obs-operator`
+
+#### Install CRDs and Prometheus Operator
+
 * Apply the CRDs by running
-
   ```sh
   kubectl create -k deploy/crds/kubernetes
   ```
@@ -123,31 +119,9 @@ OperatorSDK provides `run bundle` command allowing us to run the Operator in
 `kind` cluster as if it is installed via OLM. To run the operator follow the
 steps below
 
-1. Use `hack/kind/config.yaml` to create your kind cluster
-```sh
-kind create cluster --config=hack/kind/config.yaml
+1. Build and push operator images to the `local-registry`
 ```
-2. Install Prometheus Operator CRDs and Dependencies
-```sh
-  kubectl create -k deploy/crds/kubernetes
-  kubectl create -k deploy/dependencies
-```
-3. Ensure local-registry entry is added to `/etc/hosts`. This is needed
-   to build and push all container images (operator, bundle and catalog) that
-   is used by `run bundle` command to subscribe and run the operator. E.g.
-   below is a sample hosts entry that works.
-```
-❯ cat /etc/hosts
-127.0.0.1 localhost localhost.localdomain
-::1 localhost localhost.localdomain
-127.0.0.2 www.example.com
-
-127.0.0.1 local-registry
-# ☝️ adds the local-registry
-```
-4. Build and push operator images to the `local-registry`
-```
-make operator-image bundle-image \
+make operator-image bundle bundle-image \
   operator-push bundle-push \
   IMAGE_BASE=local-registry:30000/observability-operator \
   VERSION=0.0.0-ci  \
