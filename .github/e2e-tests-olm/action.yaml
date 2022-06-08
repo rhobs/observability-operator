@@ -67,6 +67,7 @@ runs:
       shell: bash
       run: |
         # TODO: build a kubernetes-specific bundle to avoid doing this
+        kubectl label nodes -l node-role.kubernetes.io/control-plane="" node-role.kubernetes.io/infra=""
         kubectl create -k deploy/crds/kubernetes
         kubectl wait --for=condition=Established crds --all --timeout=300s
 
