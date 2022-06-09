@@ -60,9 +60,8 @@ type MonitoringStackSpec struct {
 
 	// Time duration to retain data for. Default is '120h',
 	// and must match the regular expression `[0-9]+(ms|s|m|h|d|w|y)` (milliseconds seconds minutes hours days weeks years).
-	// +kubebuilder:validation:Pattern="^[0-9]+(ms|s|m|h|d|w|y)$"
 	// +kubebuilder:default="120h"
-	Retention string `json:"retention,omitempty"`
+	Retention monv1.Duration `json:"retention,omitempty"`
 
 	// Define resources requests and limits for Monitoring Stack Pods.
 	// +optional

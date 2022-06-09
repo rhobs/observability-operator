@@ -326,6 +326,7 @@ spec:
                             sendInterval:
                               description: How frequently metric metadata is sent
                                 to the remote storage.
+                              pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
                               type: string
                           type: object
                         name:
@@ -469,6 +470,7 @@ spec:
                           type: object
                         remoteTimeout:
                           description: Timeout for requests to the remote write endpoint.
+                          pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
                           type: string
                         sendExemplars:
                           description: Enables sending of exemplars over remote write.
@@ -825,7 +827,7 @@ spec:
                 description: Time duration to retain data for. Default is '120h',
                   and must match the regular expression `[0-9]+(ms|s|m|h|d|w|y)` (milliseconds
                   seconds minutes hours days weeks years).
-                pattern: ^[0-9]+(ms|s|m|h|d|w|y)$
+                pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
                 type: string
             type: object
           status:

@@ -257,7 +257,7 @@ func validateStackLogLevel(t *testing.T) {
 }
 
 func validateStackRetention(t *testing.T) {
-	invalidRetention := []string{
+	invalidRetention := []monv1.Duration{
 		"100days",
 		"100ducks",
 		"100 days",
