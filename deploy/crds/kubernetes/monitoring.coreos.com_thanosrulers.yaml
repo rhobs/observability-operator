@@ -15,6 +15,8 @@ spec:
     kind: ThanosRuler
     listKind: ThanosRulerList
     plural: thanosrulers
+    shortNames:
+    - ruler
     singular: thanosruler
   scope: Namespaced
   versions:
@@ -2168,8 +2170,46 @@ spec:
                   value will always be the namespace of the object that is being created.
                 type: string
               evaluationInterval:
+                default: 15s
                 description: Interval between consecutive evaluations.
+                pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
                 type: string
+              excludedFromEnforcement:
+                description: List of references to PrometheusRule objects to be excluded
+                  from enforcing a namespace label of origin. Applies only if enforcedNamespaceLabel
+                  set to true.
+                items:
+                  description: ObjectReference references a PodMonitor, ServiceMonitor,
+                    Probe or PrometheusRule object.
+                  properties:
+                    group:
+                      default: monitoring.coreos.com
+                      description: Group of the referent. When not specified, it defaults
+                        to `monitoring.coreos.com`
+                      enum:
+                      - monitoring.coreos.com
+                      type: string
+                    name:
+                      description: Name of the referent. When not set, all resources
+                        are matched.
+                      type: string
+                    namespace:
+                      description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                      minLength: 1
+                      type: string
+                    resource:
+                      description: Resource of the referent.
+                      enum:
+                      - prometheusrules
+                      - servicemonitors
+                      - podmonitors
+                      - probes
+                      type: string
+                  required:
+                  - namespace
+                  - resource
+                  type: object
+                type: array
               externalPrefix:
                 description: The external URL the Thanos Ruler instances will be available
                   under. This is necessary to generate correct URLs. This is necessary
@@ -2296,6 +2336,28 @@ spec:
                     description: Used to verify the hostname for the targets.
                     type: string
                 type: object
+              hostAliases:
+                description: Pods' hostAliases configuration
+                items:
+                  description: HostAlias holds the mapping between IP and hostnames
+                    that will be injected as an entry in the pod's hosts file.
+                  properties:
+                    hostnames:
+                      description: Hostnames for the above IP address.
+                      items:
+                        type: string
+                      type: array
+                    ip:
+                      description: IP address of the host file entry.
+                      type: string
+                  required:
+                  - hostnames
+                  - ip
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - ip
+                x-kubernetes-list-type: map
               image:
                 description: Thanos container image URL.
                 type: string
@@ -3551,9 +3613,19 @@ spec:
                 type: boolean
               logFormat:
                 description: Log format for ThanosRuler to be configured with.
+                enum:
+                - ""
+                - logfmt
+                - json
                 type: string
               logLevel:
                 description: Log level for ThanosRuler to be configured with.
+                enum:
+                - ""
+                - debug
+                - info
+                - warn
+                - error
                 type: string
               minReadySeconds:
                 description: Minimum number of seconds for which a newly created pod
@@ -3631,10 +3703,11 @@ spec:
                 description: Priority class assigned to the Pods
                 type: string
               prometheusRulesExcludedFromEnforce:
-                description: PrometheusRulesExcludedFromEnforce - list of Prometheus
+                description: 'PrometheusRulesExcludedFromEnforce - list of Prometheus
                   rules to be excluded from enforcing of adding namespace labels.
                   Works only if enforcedNamespaceLabel set to true. Make sure both
-                  ruleNamespace and ruleName are set for each pair
+                  ruleNamespace and ruleName are set for each pair Deprecated: use
+                  excludedFromEnforcement instead.'
                 items:
                   description: PrometheusRuleExcludeConfig enables users to configure
                     excluded PrometheusRule names and their namespaces to be ignored
@@ -3709,9 +3782,11 @@ spec:
                     type: object
                 type: object
               retention:
+                default: 24h
                 description: Time duration ThanosRuler shall retain data for. Default
                   is '24h', and must match the regular expression `[0-9]+(ms|s|m|h|d|w|y)`
                   (milliseconds seconds minutes hours days weeks years).
+                pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
                 type: string
               routePrefix:
                 description: The route prefix ThanosRuler registers HTTP handlers
