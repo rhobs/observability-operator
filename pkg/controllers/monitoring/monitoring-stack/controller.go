@@ -70,8 +70,8 @@ type Options struct {
 //+kubebuilder:rbac:groups="",resources=pods;services;endpoints,verbs=get;list;watch
 //+kubebuilder:rbac:groups=extensions;networking.k8s.io,resources=ingresses,verbs=get;list;watch
 
-// RBAC for delegating the use of SCC nonroot-v2 needed for OpenShift
-//+kubebuilder:rbac:groups="security.openshift.io",resources=securitycontextconstraints,resourceNames=nonroot-v2,verbs=use
+// RBAC for delegating the use of SCC nonroot-v2 (for OpenShift >= 4.11) and nonroot (for OpenShift < 4.11)
+//+kubebuilder:rbac:groups="security.openshift.io",resources=securitycontextconstraints,resourceNames=nonroot;nonroot-v2,verbs=use
 
 // RegisterWithManager registers the controller with Manager
 func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
