@@ -71,9 +71,6 @@ func newAlertmanager(
 				FSGroup:      pointer.Int64(AlertmanagerUserFSGroupID),
 				RunAsNonRoot: pointer.Bool(true),
 				RunAsUser:    pointer.Int64(AlertmanagerUserFSGroupID),
-				SeccompProfile: &corev1.SeccompProfile{
-					Type: corev1.SeccompProfileTypeRuntimeDefault,
-				},
 			},
 		},
 	}

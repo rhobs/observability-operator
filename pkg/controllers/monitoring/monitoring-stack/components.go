@@ -179,9 +179,6 @@ func newPrometheus(
 					FSGroup:      pointer.Int64(PrometheusUserFSGroupID),
 					RunAsNonRoot: pointer.Bool(true),
 					RunAsUser:    pointer.Int64(PrometheusUserFSGroupID),
-					SeccompProfile: &corev1.SeccompProfile{
-						Type: corev1.SeccompProfileTypeRuntimeDefault,
-					},
 				},
 				RemoteWrite:    config.RemoteWrite,
 				ExternalLabels: config.ExternalLabels,

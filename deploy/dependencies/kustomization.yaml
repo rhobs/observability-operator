@@ -42,8 +42,6 @@ patches:
                 terminationMessagePolicy: FallbackToLogsOnError
             securityContext:
               runAsNonRoot: true
-              seccompProfile:
-                type: RuntimeDefault
   - patch: |-
       - op: remove
         path: /spec/template/spec/nodeSelector
