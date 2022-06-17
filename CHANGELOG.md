@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.11](https://github.com/rhobs/monitoring-stack-operator/commit/) (2022-06-17)
+
+
+### Features
+
+* set soft affinity on operator deployments ([#152](https://github.com/rhobs/monitoring-stack-operator/issues/152)) ([f83e38b](https://github.com/rhobs/monitoring-stack-operator/commit/f83e38b5df749390a4212525ab601486c7e4c2da))
+* update prometheus-operator dependency in go.mod ([#159](https://github.com/rhobs/monitoring-stack-operator/issues/159)) ([ff75353](https://github.com/rhobs/monitoring-stack-operator/commit/ff75353ef68dab0a0892dacd02d524c56f4ea705))
+
+
+### Bug Fixes
+
+* change slack details in README according to rename ([#155](https://github.com/rhobs/monitoring-stack-operator/issues/155)) ([be9fe46](https://github.com/rhobs/monitoring-stack-operator/commit/be9fe46072b869006b13333810d7ad2d492e4359))
+* grants SA of components access to nonroot SCC ([#161](https://github.com/rhobs/monitoring-stack-operator/issues/161)) ([83567e0](https://github.com/rhobs/monitoring-stack-operator/commit/83567e0066b3bc8a04b5a859437f08ad1e477471))
+* remove SeccompProfile ([#164](https://github.com/rhobs/monitoring-stack-operator/issues/164)) ([3098fc2](https://github.com/rhobs/monitoring-stack-operator/commit/3098fc20c8183268f0431c666d81cd2cd75ad6e0))
+* rename operator catalog ([390a4aa](https://github.com/rhobs/monitoring-stack-operator/commit/390a4aa250e3c0d401c9bc0a68bce041f6a6df8b))
+* set seccomp profiles and grant SAs necessary premissions to run ([#154](https://github.com/rhobs/monitoring-stack-operator/issues/154)) ([1d44825](https://github.com/rhobs/monitoring-stack-operator/commit/1d448254d7bfce836c260e5af7962de158af2f27))
+* subscription source should be observability-operator ([ad8101a](https://github.com/rhobs/monitoring-stack-operator/commit/ad8101a93592906c406f478d5b857995eb52164e))
+
 ### [0.0.10](https://github.com/rhobs/monitoring-stack-operator/tree/0.0.10) (2022-06-01)
 
 ### ⚠ BREAKING CHANGES
