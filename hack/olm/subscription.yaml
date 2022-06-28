@@ -12,4 +12,3 @@ spec:
   name: observability-operator
   source: observability-operator
   sourceNamespace: openshift-marketplace
-  startingCSV: observability-operator.v0.0.10
