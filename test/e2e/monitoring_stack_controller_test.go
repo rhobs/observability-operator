@@ -185,7 +185,6 @@ func reconcileStack(t *testing.T) {
 }
 
 func reconcileRevertsManualChanges(t *testing.T) {
-	t.Skip("Skipping revert-test, see https://github.com/rhobs/observability-operator/issues/142")
 	ms := newMonitoringStack(t, "revert-test")
 	ms.Spec.LogLevel = "debug"
 	ms.Spec.Retention = "1h"

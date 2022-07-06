@@ -1,10 +1,9 @@
-
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.7.0
+    controller-gen.kubebuilder.io/version: v0.9.2
   creationTimestamp: null
   name: prometheuses.monitoring.coreos.com
 spec:
@@ -80,6 +79,7 @@ spec:
                 required:
                 - key
                 type: object
+                x-kubernetes-map-type: atomic
               additionalAlertRelabelConfigs:
                 description: 'AdditionalAlertRelabelConfigs allows specifying a key
                   of a Secret containing additional Prometheus alert relabel configurations.
@@ -107,6 +107,7 @@ spec:
                 required:
                 - key
                 type: object
+                x-kubernetes-map-type: atomic
               additionalScrapeConfigs:
                 description: 'AdditionalScrapeConfigs allows specifying a key of a
                   Secret containing additional Prometheus scrape configurations. Scrape
@@ -134,6 +135,7 @@ spec:
                 required:
                 - key
                 type: object
+                x-kubernetes-map-type: atomic
               affinity:
                 description: If specified, the pod's scheduling constraints.
                 properties:
@@ -236,6 +238,7 @@ spec:
                                     type: object
                                   type: array
                               type: object
+                              x-kubernetes-map-type: atomic
                             weight:
                               description: Weight associated with matching the corresponding
                                 nodeSelectorTerm, in the range 1-100.
@@ -336,10 +339,12 @@ spec:
                                     type: object
                                   type: array
                               type: object
+                              x-kubernetes-map-type: atomic
                             type: array
                         required:
                         - nodeSelectorTerms
                         type: object
+                        x-kubernetes-map-type: atomic
                     type: object
                   podAffinity:
                     description: Describes pod affinity scheduling rules (e.g. co-locate
@@ -416,6 +421,7 @@ spec:
                                         The requirements are ANDed.
                                       type: object
                                   type: object
+                                  x-kubernetes-map-type: atomic
                                 namespaceSelector:
                                   description: A label query over the set of namespaces
                                     that the term applies to. The term is applied
@@ -474,6 +480,7 @@ spec:
                                         The requirements are ANDed.
                                       type: object
                                   type: object
+                                  x-kubernetes-map-type: atomic
                                 namespaces:
                                   description: namespaces specifies a static list
                                     of namespace names that the term applies to. The
@@ -572,6 +579,7 @@ spec:
                                     requirements are ANDed.
                                   type: object
                               type: object
+                              x-kubernetes-map-type: atomic
                             namespaceSelector:
                               description: A label query over the set of namespaces
                                 that the term applies to. The term is applied to the
@@ -625,6 +633,7 @@ spec:
                                     requirements are ANDed.
                                   type: object
                               type: object
+                              x-kubernetes-map-type: atomic
                             namespaces:
                               description: namespaces specifies a static list of namespace
                                 names that the term applies to. The term is applied
@@ -725,6 +734,7 @@ spec:
                                         The requirements are ANDed.
                                       type: object
                                   type: object
+                                  x-kubernetes-map-type: atomic
                                 namespaceSelector:
                                   description: A label query over the set of namespaces
                                     that the term applies to. The term is applied
@@ -783,6 +793,7 @@ spec:
                                         The requirements are ANDed.
                                       type: object
                                   type: object
+                                  x-kubernetes-map-type: atomic
                                 namespaces:
                                   description: namespaces specifies a static list
                                     of namespace names that the term applies to. The
@@ -881,6 +892,7 @@ spec:
                                     requirements are ANDed.
                                   type: object
                               type: object
+                              x-kubernetes-map-type: atomic
                             namespaceSelector:
                               description: A label query over the set of namespaces
                                 that the term applies to. The term is applied to the
@@ -934,6 +946,7 @@ spec:
                                     requirements are ANDed.
                                   type: object
                               type: object
+                              x-kubernetes-map-type: atomic
                             namespaces:
                               description: namespaces specifies a static list of namespace
                                 names that the term applies to. The term is applied
@@ -998,6 +1011,7 @@ spec:
                               required:
                               - key
                               type: object
+                              x-kubernetes-map-type: atomic
                             type:
                               description: Set the authentication type. Defaults to
                                 Bearer, Basic will cause an error
@@ -1057,6 +1071,7 @@ spec:
                                   required:
                                   - key
                                   type: object
+                                  x-kubernetes-map-type: atomic
                                 secret:
                                   description: Secret containing data to use for the
                                     targets.
@@ -1078,6 +1093,7 @@ spec:
                                   required:
                                   - key
                                   type: object
+                                  x-kubernetes-map-type: atomic
                               type: object
                             caFile:
                               description: Path to the CA cert in the Prometheus container
@@ -1107,6 +1123,7 @@ spec:
                                   required:
                                   - key
                                   type: object
+                                  x-kubernetes-map-type: atomic
                                 secret:
                                   description: Secret containing data to use for the
                                     targets.
@@ -1128,6 +1145,7 @@ spec:
                                   required:
                                   - key
                                   type: object
+                                  x-kubernetes-map-type: atomic
                               type: object
                             certFile:
                               description: Path to the client cert file in the Prometheus
@@ -1160,6 +1178,7 @@ spec:
                               required:
                               - key
                               type: object
+                              x-kubernetes-map-type: atomic
                             serverName:
                               description: Used to verify the hostname for the targets.
                               type: string
@@ -1206,6 +1225,7 @@ spec:
                         required:
                         - key
                         type: object
+                        x-kubernetes-map-type: atomic
                       credentialsFile:
                         description: File to read a secret from, mutually exclusive
                           with Credentials (from SafeAuthorization)
@@ -1238,6 +1258,7 @@ spec:
                         required:
                         - key
                         type: object
+                        x-kubernetes-map-type: atomic
                       username:
                         description: The secret in the service monitor namespace that
                           contains the username for authentication.
@@ -1257,6 +1278,7 @@ spec:
                         required:
                         - key
                         type: object
+                        x-kubernetes-map-type: atomic
                     type: object
                   bearerToken:
                     description: Bearer token for accessing apiserver.
@@ -1294,6 +1316,7 @@ spec:
                             required:
                             - key
                             type: object
+                            x-kubernetes-map-type: atomic
                           secret:
                             description: Secret containing data to use for the targets.
                             properties:
@@ -1313,6 +1336,7 @@ spec:
                             required:
                             - key
                             type: object
+                            x-kubernetes-map-type: atomic
                         type: object
                       caFile:
                         description: Path to the CA cert in the Prometheus container
@@ -1341,6 +1365,7 @@ spec:
                             required:
                             - key
                             type: object
+                            x-kubernetes-map-type: atomic
                           secret:
                             description: Secret containing data to use for the targets.
                             properties:
@@ -1360,6 +1385,7 @@ spec:
                             required:
                             - key
                             type: object
+                            x-kubernetes-map-type: atomic
                         type: object
                       certFile:
                         description: Path to the client cert file in the Prometheus
@@ -1391,6 +1417,7 @@ spec:
                         required:
                         - key
                         type: object
+                        x-kubernetes-map-type: atomic
                       serverName:
                         description: Used to verify the hostname for the targets.
                         type: string
@@ -1505,6 +1532,7 @@ spec:
                                 required:
                                 - key
                                 type: object
+                                x-kubernetes-map-type: atomic
                               fieldRef:
                                 description: 'Selects a field of the pod: supports
                                   metadata.name, metadata.namespace, `metadata.labels[''<KEY>'']`,
@@ -1523,6 +1551,7 @@ spec:
                                 required:
                                 - fieldPath
                                 type: object
+                                x-kubernetes-map-type: atomic
                               resourceFieldRef:
                                 description: 'Selects a resource of the container:
                                   only resources limits and requests (limits.cpu,
@@ -1548,6 +1577,7 @@ spec:
                                 required:
                                 - resource
                                 type: object
+                                x-kubernetes-map-type: atomic
                               secretKeyRef:
                                 description: Selects a key of a secret in the pod's
                                   namespace
@@ -1569,6 +1599,7 @@ spec:
                                 required:
                                 - key
                                 type: object
+                                x-kubernetes-map-type: atomic
                             type: object
                         required:
                         - name
@@ -1599,6 +1630,7 @@ spec:
                                   defined
                                 type: boolean
                             type: object
+                            x-kubernetes-map-type: atomic
                           prefix:
                             description: An optional identifier to prepend to each
                               key in the ConfigMap. Must be a C_IDENTIFIER.
@@ -1615,6 +1647,7 @@ spec:
                                 description: Specify whether the Secret must be defined
                                 type: boolean
                             type: object
+                            x-kubernetes-map-type: atomic
                         type: object
                       type: array
                     image:
@@ -2709,8 +2742,8 @@ spec:
                 description: "EnforcedNamespaceLabel If set, a label will be added
                   to \n 1. all user-metrics (created by `ServiceMonitor`, `PodMonitor`
                   and `Probe` objects) and 2. in all `PrometheusRule` objects (except
-                  the ones excluded in `prometheusRulesExcludedFromEnforce`) to    *
-                  alerting & recording rules and    * the metrics used in their expressions
+                  the ones excluded in `prometheusRulesExcludedFromEnforce`) to *
+                  alerting & recording rules and * the metrics used in their expressions
                   (`expr`). \n Label name is this field's value. Label value is the
                   namespace of the created object (mentioned above)."
                 type: string
@@ -2833,6 +2866,7 @@ spec:
                         TODO: Add other useful fields. apiVersion, kind, uid?'
                       type: string
                   type: object
+                  x-kubernetes-map-type: atomic
                 type: array
               initContainers:
                 description: 'InitContainers allows adding initContainers to the pod
@@ -2923,6 +2957,7 @@ spec:
                                 required:
                                 - key
                                 type: object
+                                x-kubernetes-map-type: atomic
                               fieldRef:
                                 description: 'Selects a field of the pod: supports
                                   metadata.name, metadata.namespace, `metadata.labels[''<KEY>'']`,
@@ -2941,6 +2976,7 @@ spec:
                                 required:
                                 - fieldPath
                                 type: object
+                                x-kubernetes-map-type: atomic
                               resourceFieldRef:
                                 description: 'Selects a resource of the container:
                                   only resources limits and requests (limits.cpu,
@@ -2966,6 +3002,7 @@ spec:
                                 required:
                                 - resource
                                 type: object
+                                x-kubernetes-map-type: atomic
                               secretKeyRef:
                                 description: Selects a key of a secret in the pod's
                                   namespace
@@ -2987,6 +3024,7 @@ spec:
                                 required:
                                 - key
                                 type: object
+                                x-kubernetes-map-type: atomic
                             type: object
                         required:
                         - name
@@ -3017,6 +3055,7 @@ spec:
                                   defined
                                 type: boolean
                             type: object
+                            x-kubernetes-map-type: atomic
                           prefix:
                             description: An optional identifier to prepend to each
                               key in the ConfigMap. Must be a C_IDENTIFIER.
@@ -3033,6 +3072,7 @@ spec:
                                 description: Specify whether the Secret must be defined
                                 type: boolean
                             type: object
+                            x-kubernetes-map-type: atomic
                         type: object
                       type: array
                     image:
@@ -4182,6 +4222,7 @@ spec:
                       are ANDed.
                     type: object
                 type: object
+                x-kubernetes-map-type: atomic
               podMonitorSelector:
                 description: '*Experimental* PodMonitors to be selected for target
                   discovery. *Deprecated:* if neither this nor serviceMonitorSelector
@@ -4228,6 +4269,7 @@ spec:
                       are ANDed.
                     type: object
                 type: object
+                x-kubernetes-map-type: atomic
               portName:
                 description: Port name used for the pods and governing service. This
                   defaults to web
@@ -4280,6 +4322,7 @@ spec:
                       are ANDed.
                     type: object
                 type: object
+                x-kubernetes-map-type: atomic
               probeSelector:
                 description: '*Experimental* Probes to be selected for target discovery.'
                 properties:
@@ -4324,6 +4367,7 @@ spec:
                       are ANDed.
                     type: object
                 type: object
+                x-kubernetes-map-type: atomic
               prometheusExternalLabelName:
                 description: Name of Prometheus external label used to denote Prometheus
                   instance name. Defaults to the value of `prometheus`. External label
@@ -4416,6 +4460,7 @@ spec:
                           required:
                           - key
                           type: object
+                          x-kubernetes-map-type: atomic
                         credentialsFile:
                           description: File to read a secret from, mutually exclusive
                             with Credentials (from SafeAuthorization)
@@ -4447,6 +4492,7 @@ spec:
                           required:
                           - key
                           type: object
+                          x-kubernetes-map-type: atomic
                         username:
                           description: The secret in the service monitor namespace
                             that contains the username for authentication.
@@ -4466,6 +4512,7 @@ spec:
                           required:
                           - key
                           type: object
+                          x-kubernetes-map-type: atomic
                       type: object
                     bearerToken:
                       description: Bearer token for remote read.
@@ -4514,6 +4561,7 @@ spec:
                               required:
                               - key
                               type: object
+                              x-kubernetes-map-type: atomic
                             secret:
                               description: Secret containing data to use for the targets.
                               properties:
@@ -4533,6 +4581,7 @@ spec:
                               required:
                               - key
                               type: object
+                              x-kubernetes-map-type: atomic
                           type: object
                         clientSecret:
                           description: The secret containing the OAuth2 client secret
@@ -4552,6 +4601,7 @@ spec:
                           required:
                           - key
                           type: object
+                          x-kubernetes-map-type: atomic
                         endpointParams:
                           additionalProperties:
                             type: string
@@ -4614,6 +4664,7 @@ spec:
                               required:
                               - key
                               type: object
+                              x-kubernetes-map-type: atomic
                             secret:
                               description: Secret containing data to use for the targets.
                               properties:
@@ -4633,6 +4684,7 @@ spec:
                               required:
                               - key
                               type: object
+                              x-kubernetes-map-type: atomic
                           type: object
                         caFile:
                           description: Path to the CA cert in the Prometheus container
@@ -4661,6 +4713,7 @@ spec:
                               required:
                               - key
                               type: object
+                              x-kubernetes-map-type: atomic
                             secret:
                               description: Secret containing data to use for the targets.
                               properties:
@@ -4680,6 +4733,7 @@ spec:
                               required:
                               - key
                               type: object
+                              x-kubernetes-map-type: atomic
                           type: object
                         certFile:
                           description: Path to the client cert file in the Prometheus
@@ -4711,6 +4765,7 @@ spec:
                           required:
                           - key
                           type: object
+                          x-kubernetes-map-type: atomic
                         serverName:
                           description: Used to verify the hostname for the targets.
                           type: string
@@ -4750,6 +4805,7 @@ spec:
                           required:
                           - key
                           type: object
+                          x-kubernetes-map-type: atomic
                         credentialsFile:
                           description: File to read a secret from, mutually exclusive
                             with Credentials (from SafeAuthorization)
@@ -4781,6 +4837,7 @@ spec:
                           required:
                           - key
                           type: object
+                          x-kubernetes-map-type: atomic
                         username:
                           description: The secret in the service monitor namespace
                             that contains the username for authentication.
@@ -4800,6 +4857,7 @@ spec:
                           required:
                           - key
                           type: object
+                          x-kubernetes-map-type: atomic
                       type: object
                     bearerToken:
                       description: Bearer token for remote write.
@@ -4862,6 +4920,7 @@ spec:
                               required:
                               - key
                               type: object
+                              x-kubernetes-map-type: atomic
                             secret:
                               description: Secret containing data to use for the targets.
                               properties:
@@ -4881,6 +4940,7 @@ spec:
                               required:
                               - key
                               type: object
+                              x-kubernetes-map-type: atomic
                           type: object
                         clientSecret:
                           description: The secret containing the OAuth2 client secret
@@ -4900,6 +4960,7 @@ spec:
                           required:
                           - key
                           type: object
+                          x-kubernetes-map-type: atomic
                         endpointParams:
                           additionalProperties:
                             type: string
@@ -4996,6 +5057,7 @@ spec:
                           required:
                           - key
                           type: object
+                          x-kubernetes-map-type: atomic
                         profile:
                           description: Profile is the named AWS profile used to authenticate.
                           type: string
@@ -5025,6 +5087,7 @@ spec:
                           required:
                           - key
                           type: object
+                          x-kubernetes-map-type: atomic
                       type: object
                     tlsConfig:
                       description: TLS Config to use for remote write.
@@ -5052,6 +5115,7 @@ spec:
                               required:
                               - key
                               type: object
+                              x-kubernetes-map-type: atomic
                             secret:
                               description: Secret containing data to use for the targets.
                               properties:
@@ -5071,6 +5135,7 @@ spec:
                               required:
                               - key
                               type: object
+                              x-kubernetes-map-type: atomic
                           type: object
                         caFile:
                           description: Path to the CA cert in the Prometheus container
@@ -5099,6 +5164,7 @@ spec:
                               required:
                               - key
                               type: object
+                              x-kubernetes-map-type: atomic
                             secret:
                               description: Secret containing data to use for the targets.
                               properties:
@@ -5118,6 +5184,7 @@ spec:
                               required:
                               - key
                               type: object
+                              x-kubernetes-map-type: atomic
                           type: object
                         certFile:
                           description: Path to the client cert file in the Prometheus
@@ -5149,6 +5216,7 @@ spec:
                           required:
                           - key
                           type: object
+                          x-kubernetes-map-type: atomic
                         serverName:
                           description: Used to verify the hostname for the targets.
                           type: string
@@ -5319,6 +5387,7 @@ spec:
                       are ANDed.
                     type: object
                 type: object
+                x-kubernetes-map-type: atomic
               ruleSelector:
                 description: A selector to select which PrometheusRules to mount for
                   loading alerting/recording rules from. Until (excluding) Prometheus
@@ -5368,6 +5437,7 @@ spec:
                       are ANDed.
                     type: object
                 type: object
+                x-kubernetes-map-type: atomic
               rules:
                 description: /--rules.*/ command-line arguments.
                 properties:
@@ -5619,6 +5689,7 @@ spec:
                       are ANDed.
                     type: object
                 type: object
+                x-kubernetes-map-type: atomic
               serviceMonitorSelector:
                 description: ServiceMonitors to be selected for target discovery.
                   *Deprecated:* if neither this nor podMonitorSelector are specified,
@@ -5665,6 +5736,7 @@ spec:
                       are ANDed.
                     type: object
                 type: object
+                x-kubernetes-map-type: atomic
               sha:
                 description: 'SHA of Prometheus container image to be deployed. Defaults
                   to the value of `version`. Similar to a tag, but the SHA explicitly
@@ -5789,6 +5861,7 @@ spec:
                                 - kind
                                 - name
                                 type: object
+                                x-kubernetes-map-type: atomic
                               dataSourceRef:
                                 description: 'Specifies the object from which to populate
                                   the volume with data, if a non-empty volume is desired.
@@ -5805,13 +5878,13 @@ spec:
                                   automatically if one of them is empty and the other
                                   is non-empty. There are two important differences
                                   between DataSource and DataSourceRef: * While DataSource
-                                  only allows two specific types of objects, DataSourceRef   allows
-                                  any non-core object, as well as PersistentVolumeClaim
+                                  only allows two specific types of objects, DataSourceRef
+                                  allows any non-core object, as well as PersistentVolumeClaim
                                   objects. * While DataSource ignores disallowed values
-                                  (dropping them), DataSourceRef   preserves all values,
-                                  and generates an error if a disallowed value is   specified.
-                                  (Alpha) Using this field requires the AnyVolumeDataSource
-                                  feature gate to be enabled.'
+                                  (dropping them), DataSourceRef preserves all values,
+                                  and generates an error if a disallowed value is
+                                  specified. (Alpha) Using this field requires the
+                                  AnyVolumeDataSource feature gate to be enabled.'
                                 properties:
                                   apiGroup:
                                     description: APIGroup is the group for the resource
@@ -5832,6 +5905,7 @@ spec:
                                 - kind
                                 - name
                                 type: object
+                                x-kubernetes-map-type: atomic
                               resources:
                                 description: 'Resources represents the minimum resources
                                   the volume should have. If RecoverVolumeExpansionFailure
@@ -5913,6 +5987,7 @@ spec:
                                       The requirements are ANDed.
                                     type: object
                                 type: object
+                                x-kubernetes-map-type: atomic
                               storageClassName:
                                 description: 'Name of the StorageClass required by
                                   the claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1'
@@ -6012,6 +6087,7 @@ spec:
                             - kind
                             - name
                             type: object
+                            x-kubernetes-map-type: atomic
                           dataSourceRef:
                             description: 'Specifies the object from which to populate
                               the volume with data, if a non-empty volume is desired.
@@ -6028,11 +6104,11 @@ spec:
                               and the other is non-empty. There are two important
                               differences between DataSource and DataSourceRef: *
                               While DataSource only allows two specific types of objects,
-                              DataSourceRef   allows any non-core object, as well
-                              as PersistentVolumeClaim objects. * While DataSource
-                              ignores disallowed values (dropping them), DataSourceRef   preserves
+                              DataSourceRef allows any non-core object, as well as
+                              PersistentVolumeClaim objects. * While DataSource ignores
+                              disallowed values (dropping them), DataSourceRef preserves
                               all values, and generates an error if a disallowed value
-                              is   specified. (Alpha) Using this field requires the
+                              is specified. (Alpha) Using this field requires the
                               AnyVolumeDataSource feature gate to be enabled.'
                             properties:
                               apiGroup:
@@ -6051,6 +6127,7 @@ spec:
                             - kind
                             - name
                             type: object
+                            x-kubernetes-map-type: atomic
                           resources:
                             description: 'Resources represents the minimum resources
                               the volume should have. If RecoverVolumeExpansionFailure
@@ -6129,6 +6206,7 @@ spec:
                                   contains only "value". The requirements are ANDed.
                                 type: object
                             type: object
+                            x-kubernetes-map-type: atomic
                           storageClassName:
                             description: 'Name of the StorageClass required by the
                               claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1'
@@ -6282,6 +6360,7 @@ spec:
                             required:
                             - key
                             type: object
+                            x-kubernetes-map-type: atomic
                           secret:
                             description: Secret containing data to use for the targets.
                             properties:
@@ -6301,6 +6380,7 @@ spec:
                             required:
                             - key
                             type: object
+                            x-kubernetes-map-type: atomic
                         type: object
                       caFile:
                         description: Path to the CA cert in the Prometheus container
@@ -6329,6 +6409,7 @@ spec:
                             required:
                             - key
                             type: object
+                            x-kubernetes-map-type: atomic
                           secret:
                             description: Secret containing data to use for the targets.
                             properties:
@@ -6348,6 +6429,7 @@ spec:
                             required:
                             - key
                             type: object
+                            x-kubernetes-map-type: atomic
                         type: object
                       certFile:
                         description: Path to the client cert file in the Prometheus
@@ -6379,6 +6461,7 @@ spec:
                         required:
                         - key
                         type: object
+                        x-kubernetes-map-type: atomic
                       serverName:
                         description: Used to verify the hostname for the targets.
                         type: string
@@ -6435,6 +6518,7 @@ spec:
                     required:
                     - key
                     type: object
+                    x-kubernetes-map-type: atomic
                   objectStorageConfigFile:
                     description: ObjectStorageConfigFile specifies the path of the
                       object storage configuration file. When used alongside with
@@ -6506,6 +6590,7 @@ spec:
                     required:
                     - key
                     type: object
+                    x-kubernetes-map-type: atomic
                   tracingConfigFile:
                     description: TracingConfig specifies the path of the tracing configuration
                       file. When used alongside with TracingConfig, TracingConfigFile
@@ -6650,6 +6735,7 @@ spec:
                             only "value". The requirements are ANDed.
                           type: object
                       type: object
+                      x-kubernetes-map-type: atomic
                     maxSkew:
                       description: 'MaxSkew describes the degree to which pods may
                         be unevenly distributed. When `whenUnsatisfiable=DoNotSchedule`,
@@ -6678,10 +6764,10 @@ spec:
                       description: 'WhenUnsatisfiable indicates how to deal with a
                         pod if it doesn''t satisfy the spread constraint. - DoNotSchedule
                         (default) tells the scheduler not to schedule it. - ScheduleAnyway
-                        tells the scheduler to schedule the pod in any location,   but
+                        tells the scheduler to schedule the pod in any location, but
                         giving higher precedence to topologies that would help reduce
-                        the   skew. A constraint is considered "Unsatisfiable" for
-                        an incoming pod if and only if every possible node assignment
+                        the skew. A constraint is considered "Unsatisfiable" for an
+                        incoming pod if and only if every possible node assignment
                         for that pod would violate "MaxSkew" on some topology. For
                         example, in a 3-zone cluster, MaxSkew is set to 1, and pods
                         with the same labelSelector spread as 3/1/1: | zone1 | zone2
@@ -6869,6 +6955,7 @@ spec:
                                 TODO: Add other useful fields. apiVersion, kind, uid?'
                               type: string
                           type: object
+                          x-kubernetes-map-type: atomic
                         user:
                           description: 'Optional: User is the rados user name, default
                             is admin More info: https://examples.k8s.io/volumes/cephfs/README.md#how-to-use-it'
@@ -6900,6 +6987,7 @@ spec:
                                 TODO: Add other useful fields. apiVersion, kind, uid?'
                               type: string
                           type: object
+                          x-kubernetes-map-type: atomic
                         volumeID:
                           description: 'volume id used to identify the volume in cinder.
                             More info: https://examples.k8s.io/mysql-cinder-pd/README.md'
@@ -6971,6 +7059,7 @@ spec:
                             be defined
                           type: boolean
                       type: object
+                      x-kubernetes-map-type: atomic
                     csi:
                       description: CSI (Container Storage Interface) represents ephemeral
                         storage that is handled by certain external CSI drivers (Beta
@@ -7001,6 +7090,7 @@ spec:
                                 TODO: Add other useful fields. apiVersion, kind, uid?'
                               type: string
                           type: object
+                          x-kubernetes-map-type: atomic
                         readOnly:
                           description: Specifies a read-only configuration for the
                             volume. Defaults to false (read/write).
@@ -7054,6 +7144,7 @@ spec:
                                 required:
                                 - fieldPath
                                 type: object
+                                x-kubernetes-map-type: atomic
                               mode:
                                 description: 'Optional: mode bits used to set permissions
                                   on this file, must be an octal value between 0000
@@ -7097,6 +7188,7 @@ spec:
                                 required:
                                 - resource
                                 type: object
+                                x-kubernetes-map-type: atomic
                             required:
                             - path
                             type: object
@@ -7133,18 +7225,17 @@ spec:
                         pod starts, and deleted when the pod is removed. \n Use this
                         if: a) the volume is only needed while the pod runs, b) features
                         of normal volumes like restoring from snapshot or capacity
-                        \   tracking are needed, c) the storage driver is specified
-                        through a storage class, and d) the storage driver supports
-                        dynamic volume provisioning through    a PersistentVolumeClaim
-                        (see EphemeralVolumeSource for more    information on the
-                        connection between this volume type    and PersistentVolumeClaim).
-                        \n Use PersistentVolumeClaim or one of the vendor-specific
-                        APIs for volumes that persist for longer than the lifecycle
-                        of an individual pod. \n Use CSI for light-weight local ephemeral
-                        volumes if the CSI driver is meant to be used that way - see
-                        the documentation of the driver for more information. \n A
-                        pod can use both types of ephemeral volumes and persistent
-                        volumes at the same time."
+                        tracking are needed, c) the storage driver is specified through
+                        a storage class, and d) the storage driver supports dynamic
+                        volume provisioning through a PersistentVolumeClaim (see EphemeralVolumeSource
+                        for more information on the connection between this volume
+                        type and PersistentVolumeClaim). \n Use PersistentVolumeClaim
+                        or one of the vendor-specific APIs for volumes that persist
+                        for longer than the lifecycle of an individual pod. \n Use
+                        CSI for light-weight local ephemeral volumes if the CSI driver
+                        is meant to be used that way - see the documentation of the
+                        driver for more information. \n A pod can use both types of
+                        ephemeral volumes and persistent volumes at the same time."
                       properties:
                         volumeClaimTemplate:
                           description: "Will be used to create a stand-alone PVC to
@@ -7214,6 +7305,7 @@ spec:
                                   - kind
                                   - name
                                   type: object
+                                  x-kubernetes-map-type: atomic
                                 dataSourceRef:
                                   description: 'Specifies the object from which to
                                     populate the volume with data, if a non-empty
@@ -7232,13 +7324,13 @@ spec:
                                     other is non-empty. There are two important differences
                                     between DataSource and DataSourceRef: * While
                                     DataSource only allows two specific types of objects,
-                                    DataSourceRef   allows any non-core object, as
-                                    well as PersistentVolumeClaim objects. * While
-                                    DataSource ignores disallowed values (dropping
-                                    them), DataSourceRef   preserves all values, and
-                                    generates an error if a disallowed value is   specified.
-                                    (Alpha) Using this field requires the AnyVolumeDataSource
-                                    feature gate to be enabled.'
+                                    DataSourceRef allows any non-core object, as well
+                                    as PersistentVolumeClaim objects. * While DataSource
+                                    ignores disallowed values (dropping them), DataSourceRef
+                                    preserves all values, and generates an error if
+                                    a disallowed value is specified. (Alpha) Using
+                                    this field requires the AnyVolumeDataSource feature
+                                    gate to be enabled.'
                                   properties:
                                     apiGroup:
                                       description: APIGroup is the group for the resource
@@ -7259,6 +7351,7 @@ spec:
                                   - kind
                                   - name
                                   type: object
+                                  x-kubernetes-map-type: atomic
                                 resources:
                                   description: 'Resources represents the minimum resources
                                     the volume should have. If RecoverVolumeExpansionFailure
@@ -7343,6 +7436,7 @@ spec:
                                         The requirements are ANDed.
                                       type: object
                                   type: object
+                                  x-kubernetes-map-type: atomic
                                 storageClassName:
                                   description: 'Name of the StorageClass required
                                     by the claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1'
@@ -7429,6 +7523,7 @@ spec:
                                 TODO: Add other useful fields. apiVersion, kind, uid?'
                               type: string
                           type: object
+                          x-kubernetes-map-type: atomic
                       required:
                       - driver
                       type: object
@@ -7602,6 +7697,7 @@ spec:
                                 TODO: Add other useful fields. apiVersion, kind, uid?'
                               type: string
                           type: object
+                          x-kubernetes-map-type: atomic
                         targetPortal:
                           description: iSCSI Target Portal. The Portal is either an
                             IP or ip_addr:port if the port is other than default (typically
@@ -7770,6 +7866,7 @@ spec:
                                       its keys must be defined
                                     type: boolean
                                 type: object
+                                x-kubernetes-map-type: atomic
                               downwardAPI:
                                 description: information about the downwardAPI data
                                   to project
@@ -7799,6 +7896,7 @@ spec:
                                           required:
                                           - fieldPath
                                           type: object
+                                          x-kubernetes-map-type: atomic
                                         mode:
                                           description: 'Optional: mode bits used to
                                             set permissions on this file, must be
@@ -7847,6 +7945,7 @@ spec:
                                           required:
                                           - resource
                                           type: object
+                                          x-kubernetes-map-type: atomic
                                       required:
                                       - path
                                       type: object
@@ -7911,6 +8010,7 @@ spec:
                                       key must be defined
                                     type: boolean
                                 type: object
+                                x-kubernetes-map-type: atomic
                               serviceAccountToken:
                                 description: information about the serviceAccountToken
                                   data to project
@@ -8026,6 +8126,7 @@ spec:
                                 TODO: Add other useful fields. apiVersion, kind, uid?'
                               type: string
                           type: object
+                          x-kubernetes-map-type: atomic
                         user:
                           description: 'The rados user name. Default is admin. More
                             info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it'
@@ -8064,6 +8165,7 @@ spec:
                                 TODO: Add other useful fields. apiVersion, kind, uid?'
                               type: string
                           type: object
+                          x-kubernetes-map-type: atomic
                         sslEnabled:
                           description: Flag to enable/disable SSL communication with
                             Gateway, default false
@@ -8177,6 +8279,7 @@ spec:
                                 TODO: Add other useful fields. apiVersion, kind, uid?'
                               type: string
                           type: object
+                          x-kubernetes-map-type: atomic
                         volumeName:
                           description: VolumeName is the human-readable name of the
                             StorageOS volume.  Volume names are only unique within
@@ -8256,6 +8359,7 @@ spec:
                             required:
                             - key
                             type: object
+                            x-kubernetes-map-type: atomic
                           secret:
                             description: Secret containing data to use for the targets.
                             properties:
@@ -8275,6 +8379,7 @@ spec:
                             required:
                             - key
                             type: object
+                            x-kubernetes-map-type: atomic
                         type: object
                       cipherSuites:
                         description: 'List of supported cipher suites for TLS versions
@@ -8307,6 +8412,7 @@ spec:
                             required:
                             - key
                             type: object
+                            x-kubernetes-map-type: atomic
                           secret:
                             description: Secret containing data to use for the targets.
                             properties:
@@ -8326,6 +8432,7 @@ spec:
                             required:
                             - key
                             type: object
+                            x-kubernetes-map-type: atomic
                         type: object
                       clientAuthType:
                         description: 'Server policy for client authentication. Maps
@@ -8357,6 +8464,7 @@ spec:
                         required:
                         - key
                         type: object
+                        x-kubernetes-map-type: atomic
                       maxVersion:
                         description: Maximum TLS version that is acceptable. Defaults
                           to TLS13.
@@ -8490,9 +8598,3 @@ spec:
     storage: true
     subresources:
       status: {}
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []
