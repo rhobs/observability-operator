@@ -11,7 +11,7 @@ CONTROLLER_GEN=$(TOOLS_DIR)/controller-gen
 CONTROLLER_GEN_VERSION= v0.9.2
 
 KUSTOMIZE=$(TOOLS_DIR)/kustomize
-KUSTOMIZE_VERSION= v3.9.4
+KUSTOMIZE_VERSION= v4.5.2
 
 OPERATOR_SDK = $(TOOLS_DIR)/operator-sdk
 OPERATOR_SDK_VERSION = v1.13.0
@@ -81,12 +81,7 @@ $(KUSTOMIZE) kustomize: $(TOOLS_DIR)
 	@{ \
 		set -ex ;\
 		[[ -f $(KUSTOMIZE) ]] && exit 0 ;\
-		TMP_DIR=$$(mktemp -d) ;\
-		cd $$TMP_DIR ;\
-		go mod init tmp ;\
-		echo "Downloading kustomize" ;\
-		GOBIN=$(TOOLS_DIR) go get sigs.k8s.io/kustomize/kustomize/v3@$(KUSTOMIZE_VERSION) ;\
-		rm -rf $$TMP_DIR ;\
+		GOBIN=$(TOOLS_DIR) go install sigs.k8s.io/kustomize/kustomize/v4@$(KUSTOMIZE_VERSION) ;\
 	}
 
 .PHONY: operator-sdk
