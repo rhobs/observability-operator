@@ -71,11 +71,16 @@ runs:
         kubectl create -k deploy/crds/kubernetes
         kubectl wait --for=condition=Established crds --all --timeout=300s
 
+        # NOTE: workaround for https://github.com/rhobs/observability-operator/issues/170
+        # use of --index-image below is a workaround for an OLM registry bug:
+        # https://github.com/operator-framework/operator-registry/issues/984
+
         ./tmp/bin/operator-sdk run bundle \
           local-registry:30000/observability-operator-bundle:0.0.0-ci \
           --install-mode AllNamespaces \
           --namespace operators \
-          --skip-tls
+          --skip-tls \
+          --index-image=quay.io/operator-framework/opm:v1.23.0
 
         kubectl rollout status deployment observability-operator -n operators
 
