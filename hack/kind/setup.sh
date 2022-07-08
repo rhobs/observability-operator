@@ -77,11 +77,23 @@ setup_cluster() {
   kubectl wait --for=condition=Ready pods --all --all-namespaces --timeout=300s
 }
 
+install_kubectl() {
+    if ! command -v kubectl &> /dev/null; then
+    info "kubectl not found, attempting to install"
+    mkdir -p tmp/bin
+    curl -o tmp/bin/kubectl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+    chmod +x tmp/bin/kubectl
+    export PATH="$(pwd)/tmp/bin/:$PATH"
+fi
+
+}
+
 main() {
   ## NOTE: all paths are relative to the root of the project
   cd "$PROJECT_ROOT_DIR"
-  mkdir -p tmp/logs $(dirname $KUBECONFIG)
+  mkdir -p tmp/logs "$(dirname $KUBECONFIG)"
 
+  install_kubectl
   setup_cluster
   label_infra_node
   setup_olm
