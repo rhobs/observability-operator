@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.12](https://github.com/rhobs/monitoring-stack-operator/tree/v0.0.12) (2022-07-08)
+
+### Bug Fixes
+
+* **olm:** fix error when subscribing due to missing index image ([#167](https://github.com/rhobs/monitoring-stack-operator/issues/167)) ([b7186d8](https://github.com/rhobs/monitoring-stack-operator/commit/b7186d87a490e6b195de0fc46fd8c993cbf60657))
+* set resources for OO and P-O ([8658ccf](https://github.com/rhobs/monitoring-stack-operator/commit/8658ccfee334e7e1e9a3a361f54cce22227e92ab)), closes [#166](https://github.com/rhobs/monitoring-stack-operator/issues/166)
+
 ### [0.0.11](https://github.com/rhobs/monitoring-stack-operator/commit/) (2022-06-17)
 
 
