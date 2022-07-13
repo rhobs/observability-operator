@@ -96,6 +96,9 @@ type PrometheusConfig struct {
 	// Define ExternalLabels for prometheus
 	// +optional
 	ExternalLabels map[string]string `json:"externalLabels,omitempty"`
+	// Enable Prometheus to be used as a receiver for the Prometheus remote write protocol. Defaults to the value of `false`.
+	// +optional
+	EnableRemoteWriteReceiver bool `json:"enableRemoteWriteReceiver,omitempty"`
 }
 
 // NamespaceSelector is a selector for selecting either all namespaces or a
