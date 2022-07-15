@@ -150,6 +150,13 @@ Define prometheus config
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>enableRemoteWriteReceiver</b></td>
+        <td>boolean</td>
+        <td>
+          Enable Prometheus to be used as a receiver for the Prometheus remote write protocol. Defaults to the value of `false`.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>externalLabels</b></td>
         <td>map[string]string</td>
         <td>

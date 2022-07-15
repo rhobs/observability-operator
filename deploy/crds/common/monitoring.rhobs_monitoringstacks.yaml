@@ -49,6 +49,10 @@ spec:
                   replicas: 2
                 description: Define prometheus config
                 properties:
+                  enableRemoteWriteReceiver:
+                    description: Enable Prometheus to be used as a receiver for the
+                      Prometheus remote write protocol. Defaults to the value of `false`.
+                    type: boolean
                   externalLabels:
                     additionalProperties:
                       type: string
