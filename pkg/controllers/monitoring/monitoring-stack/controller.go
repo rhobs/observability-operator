@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	policyv1 "k8s.io/api/policy/v1"
@@ -88,24 +89,24 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 		instanceSelectorValue: split[1],
 		grafanaDSWatchCreated: false,
 	}
-
 	// We only want to trigger a reconciliation when the generation
 	// of a child changes. Until we need to update our the status for our own objects,
 	// we can save CPU cycles by avoiding reconciliations triggered by
-	// child status changes.
-	p := predicate.GenerationChangedPredicate{}
+	// child status changes. The only exception is Prometheus resources, where we want to
+	// be notified about changes in their status.
+	generationChanged := builder.WithPredicates(predicate.GenerationChangedPredicate{})
 
 	ctrl, err := ctrl.NewControllerManagedBy(mgr).
 		WithLogger(ctrl.Log).
 		For(&stack.MonitoringStack{}).
-		Owns(&monv1.Prometheus{}).WithEventFilter(p).
-		Owns(&monv1.Alertmanager{}).WithEventFilter(p).
-		Owns(&v1.Service{}).WithEventFilter(p).
-		Owns(&v1.ServiceAccount{}).WithEventFilter(p).
-		Owns(&rbacv1.Role{}).WithEventFilter(p).
-		Owns(&rbacv1.RoleBinding{}).WithEventFilter(p).
-		Owns(&monv1.ServiceMonitor{}).WithEventFilter(p).
-		Owns(&policyv1.PodDisruptionBudget{}).WithEventFilter(p).
+		Owns(&monv1.Prometheus{}, builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})).
+		Owns(&monv1.Alertmanager{}, generationChanged).
+		Owns(&v1.Service{}, generationChanged).
+		Owns(&v1.ServiceAccount{}, generationChanged).
+		Owns(&rbacv1.Role{}, generationChanged).
+		Owns(&rbacv1.RoleBinding{}, generationChanged).
+		Owns(&monv1.ServiceMonitor{}, generationChanged).
+		Owns(&policyv1.PodDisruptionBudget{}, generationChanged).
 		Build(r)
 
 	if err != nil {
@@ -123,6 +124,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		// retry since some error has occured
 		return ctrl.Result{}, err
 	}
+
 	if ms == nil {
 		// no such monitoring stack, so stop here
 		return ctrl.Result{}, nil
@@ -143,8 +145,33 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return ctrl.Result{RequeueAfter: 2 * time.Second}, nil
 		}
 		if err != nil {
-			return ctrl.Result{}, err
+			return r.updateStatus(ctx, req, ms, err)
 		}
+	}
+
+	return r.updateStatus(ctx, req, ms, nil)
+}
+
+func (r *reconciler) updateStatus(ctx context.Context, req ctrl.Request, ms *stack.MonitoringStack, recError error) (ctrl.Result, error) {
+	var prom monv1.Prometheus
+	key := client.ObjectKey{
+		Name:      ms.Name,
+		Namespace: ms.Namespace,
+	}
+	err := r.k8sClient.Get(ctx, key, &prom)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return ctrl.Result{RequeueAfter: 2 * time.Second}, nil
+		}
+		return ctrl.Result{}, err
+	}
+	ms.Status.Conditions = updateConditions(ms.Status.Conditions, prom.Status.Conditions, ms.Generation, recError)
+	err = r.k8sClient.Status().Update(ctx, ms)
+	if err != nil {
+		if errors.IsConflict(err) {
+			return ctrl.Result{RequeueAfter: 2 * time.Second}, nil
+		}
+		return ctrl.Result{}, err
 	}
 	return ctrl.Result{}, nil
 }

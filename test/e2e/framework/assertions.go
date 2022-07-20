@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/prometheus/prometheus/promql"
+	"github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/instrumentation-tools/promq/prom"
@@ -252,4 +253,37 @@ func (f *Framework) AssertNoReconcileErrors(t *testing.T) {
 			`{__name__="controller_runtime_reconcile_errors_total", controller="monitoringstack"}`:  0,
 			`{__name__="controller_runtime_reconcile_errors_total", controller="thanosquerier"}`:    0,
 		})
+}
+
+func (f *Framework) GetStackWhenAvailable(t *testing.T, name, namespace string) v1alpha1.MonitoringStack {
+	var ms v1alpha1.MonitoringStack
+	key := types.NamespacedName{
+		Name:      name,
+		Namespace: namespace,
+	}
+	err := wait.Poll(5*time.Second, wait.ForeverTestTimeout, func() (bool, error) {
+		err := f.K8sClient.Get(context.Background(), key, &ms)
+		if err != nil {
+			return false, nil
+		}
+		availableC := getConditionByType(ms.Status.Conditions, v1alpha1.AvailableCondition)
+		if availableC != nil && availableC.Status == v1alpha1.ConditionTrue {
+			return true, nil
+		}
+		return false, nil
+	})
+
+	if err == wait.ErrWaitTimeout {
+		t.Fatal(fmt.Errorf("resource %s/%s was not available", namespace, name))
+	}
+	return ms
+}
+
+func getConditionByType(conditions []v1alpha1.Condition, ctype v1alpha1.ConditionType) *v1alpha1.Condition {
+	for _, c := range conditions {
+		if c.Type == ctype {
+			return &c
+		}
+	}
+	return nil
 }
