@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.13](https://github.com/rhobs/monitoring-stack-operator/tree/v0.0.13) (2022-07-21)
+
+
+### Features
+
+* Add option to pass EnableRemoteWriteReceiver to Prometheus CR ([37c777e](https://github.com/rhobs/monitoring-stack-operator/commit/37c777e9bca860abcee3d36f9148da3d9f4aa47a))
+* Add status attribute to the MonitoringStack CRD ([#143](https://github.com/rhobs/monitoring-stack-operator/issues/143)) ([bcda150](https://github.com/rhobs/monitoring-stack-operator/commit/bcda15013a034dd646c8f7b94ceb17ebcd96c6dc))
+
 ### [0.0.12](https://github.com/rhobs/monitoring-stack-operator/tree/v0.0.12) (2022-07-08)
 
 ### Bug Fixes
