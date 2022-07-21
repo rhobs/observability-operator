@@ -94,9 +94,11 @@ generate-deepcopy: $(CONTROLLER_GEN)
 .PHONY: generate
 generate: generate-crds generate-deepcopy generate-kustomize generate-prometheus-rules docs
 
-operator: generate
-	go build -o ./tmp/operator ./cmd/operator/...
+.PHONY: operator
+operator: generate build
 
+build:
+	go build -o ./tmp/operator ./cmd/operator/...
 
 .PHONY: operator-image
 operator-image: generate

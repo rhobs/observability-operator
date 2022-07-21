@@ -69,6 +69,8 @@ jobs:
 
       - run: make --always-make generate && git diff --exit-code
 
+      - run: make --always-make bundle && git diff --exit-code
+
   tool-versions:
     runs-on: ubuntu-latest
     name: Validate tools cache
