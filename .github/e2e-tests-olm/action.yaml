@@ -61,7 +61,7 @@ runs:
 
     - name: Publish images
       shell: bash
-      run: make operator-push bundle-push IMAGE_BASE="local-registry:30000/observability-operator" VERSION=0.0.0-ci
+      run: make operator-push bundle-push PUSH_OPTIONS=--tls-verify=false IMAGE_BASE="local-registry:30000/observability-operator" VERSION=0.0.0-ci
 
     - name: Deploy the operator
       shell: bash

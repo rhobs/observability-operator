@@ -8,6 +8,7 @@ IMAGE_BASE ?= observability-operator
 
 VERSION ?= $(shell cat VERSION)
 OPERATOR_IMG = $(IMAGE_BASE):$(VERSION)
+CONTAINER_RUNTIME := $(shell command -v podman 2> /dev/null || echo docker)
 
 # running `make` builds the operator (default target)
 all: operator
@@ -102,11 +103,11 @@ build:
 
 .PHONY: operator-image
 operator-image: generate
-	docker build -f build/Dockerfile . -t $(OPERATOR_IMG)
+	$(CONTAINER_RUNTIME) build -f build/Dockerfile . -t $(OPERATOR_IMG)
 
 .PHONY: operator-push
 operator-push:
-	docker push ${OPERATOR_IMG}
+	$(CONTAINER_RUNTIME) push $(PUSH_OPTIONS) ${OPERATOR_IMG}
 
 .PHONY: test-e2e
 test-e2e:
@@ -155,11 +156,11 @@ bundle: $(KUSTOMIZE) $(OPERATOR_SDK) generate
 
 .PHONY: bundle-image
 bundle-image: bundle ## Build the bundle image.
-	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
+	$(CONTAINER_RUNTIME) build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
 
 .PHONY: bundle-push
 bundle-push: ## Build the bundle image.
-	docker push $(BUNDLE_IMG)
+	$(CONTAINER_RUNTIME) push $(PUSH_OPTIONS) $(BUNDLE_IMG)
 
 # A comma-separated list of bundle images e.g.
 # make catalog-build BUNDLE_IMGS=example.com/operator-bundle:v0.1.0,example.com/operator-bundle:v0.2.0).
@@ -194,19 +195,19 @@ endif
 .PHONY: catalog-image
 catalog-image: $(OPM)
 	$(OPM) index add \
-	 	--container-tool docker \
+	 	--container-tool $(CONTAINER_RUNTIME) \
 		--mode semver \
 		--tag $(CATALOG_IMG) \
 		--bundles $(BUNDLE_IMGS) $(FROM_INDEX_OPT)
 	# tag the catalog img:version as latest so that continious release
 	# is possible by refering to latest tag instead of a version
-	docker tag $(CATALOG_IMG) $(CATALOG_IMG_LATEST)
+	$(CONTAINER_RUNTIME) tag $(CATALOG_IMG) $(CATALOG_IMG_LATEST)
 
 # Push the catalog image.
 .PHONY: catalog-push
 catalog-push: ## Push a catalog image.
-	docker push $(CATALOG_IMG)
-	docker push $(CATALOG_IMG_LATEST)
+	$(CONTAINER_RUNTIME) push $(PUSH_OPTIONS) $(CATALOG_IMG)
+	$(CONTAINER_RUNTIME) push $(PUSH_OPTIONS) $(CATALOG_IMG_LATEST)
 
 .PHONY: release
 release: operator-image operator-push bundle-image bundle-push catalog-image catalog-push
