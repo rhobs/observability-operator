@@ -72,6 +72,10 @@ type MonitoringStackSpec struct {
 	// +optional
 	// +kubebuilder:default={replicas: 2}
 	PrometheusConfig *PrometheusConfig `json:"prometheusConfig,omitempty"`
+
+	// Define Alertmanager config
+	// +optional
+	AlertmanagerConfig *AlertmanagerConfig `json:"alertmanagerConfig,omitempty"`
 }
 
 // MonitoringStackStatus defines the observed state of MonitoringStack.
@@ -166,6 +170,12 @@ type PrometheusConfig struct {
 	// Enable Prometheus to be used as a receiver for the Prometheus remote write protocol. Defaults to the value of `false`.
 	// +optional
 	EnableRemoteWriteReceiver bool `json:"enableRemoteWriteReceiver,omitempty"`
+}
+
+type AlertmanagerConfig struct {
+	// Disables Alertmanager deployment
+	// +optional
+	DisableAlertmanager bool `json:"disableAlertmanager,omitempty"`
 }
 
 // NamespaceSelector is a selector for selecting either all namespaces or a

@@ -6,6 +6,7 @@ import (
 
 	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 
@@ -41,27 +42,57 @@ func defaultReconciler(component client.Object, ms *stack.MonitoringStack) recon
 	}
 }
 
-func stackComponentReconcilers(ms *stack.MonitoringStack, instanceSelectorKey string, instanceSelectorValue string) []reconcileFunction {
-	prometheusRBACResourceName := ms.Name + "-prometheus"
+func removeReconciler(component client.Object, ms *stack.MonitoringStack) reconcileFunction {
+	return func(ctx context.Context, c client.Client, _ *runtime.Scheme) error {
+		if err := c.Delete(ctx, component); err != nil {
+			// object may have already been removed
+			if errors.IsNotFound(err) {
+				return nil
+			}
+			return err
+		}
+		return nil
+	}
+}
+
+func alertManagerObjects(ms *stack.MonitoringStack, instanceSelectorKey string, instanceSelectorValue string) []client.Object {
 	alertmanagerRBACResourceName := ms.Name + "-alertmanager"
 	rbacVerbs := []string{"get", "list", "watch"}
+	return []client.Object{
+		newServiceAccount(alertmanagerRBACResourceName, ms.Namespace),
+		newAlertManagerRole(ms, alertmanagerRBACResourceName, rbacVerbs),
+		newRoleBinding(ms, alertmanagerRBACResourceName),
+		newAlertmanager(ms, alertmanagerRBACResourceName, instanceSelectorKey, instanceSelectorValue),
+		newAlertmanagerService(ms, instanceSelectorKey, instanceSelectorValue),
+		newAlertmanagerPDB(ms, instanceSelectorKey, instanceSelectorValue),
+	}
+}
+
+func stackComponentReconcilers(ms *stack.MonitoringStack, instanceSelectorKey string, instanceSelectorValue string) []reconcileFunction {
+	prometheusRBACResourceName := ms.Name + "-prometheus"
+	rbacVerbs := []string{"get", "list", "watch"}
 	additionalScrapeConfigsSecretName := ms.Name + "-prometheus-additional-scrape-configs"
-	return []reconcileFunction{
+
+	reconcileFunctions := []reconcileFunction{
 		defaultReconciler(newServiceAccount(prometheusRBACResourceName, ms.Namespace), ms),
 		defaultReconciler(newPrometheusRole(ms, prometheusRBACResourceName, rbacVerbs), ms),
 		defaultReconciler(newRoleBinding(ms, prometheusRBACResourceName), ms),
 		defaultReconciler(newAdditionalScrapeConfigsSecret(ms, additionalScrapeConfigsSecretName), ms),
-		defaultReconciler(newServiceAccount(alertmanagerRBACResourceName, ms.Namespace), ms),
-		defaultReconciler(newAlertManagerRole(ms, alertmanagerRBACResourceName, rbacVerbs), ms),
-		defaultReconciler(newRoleBinding(ms, alertmanagerRBACResourceName), ms),
-		defaultReconciler(newAlertmanager(ms, alertmanagerRBACResourceName, instanceSelectorKey, instanceSelectorValue), ms),
-		defaultReconciler(newAlertmanagerService(ms, instanceSelectorKey, instanceSelectorValue), ms),
-		defaultReconciler(newAlertmanagerPDB(ms, instanceSelectorKey, instanceSelectorValue), ms),
 		defaultReconciler(newPrometheus(ms, prometheusRBACResourceName, additionalScrapeConfigsSecretName, instanceSelectorKey, instanceSelectorValue), ms),
 		defaultReconciler(newPrometheusService(ms, instanceSelectorKey, instanceSelectorValue), ms),
 		defaultReconciler(newThanosSidecarService(ms, instanceSelectorKey, instanceSelectorValue), ms),
 		prometheusPDBReconciler(newPrometheusPDB(ms, instanceSelectorKey, instanceSelectorValue), ms),
 	}
+
+	for _, amObj := range alertManagerObjects(ms, instanceSelectorKey, instanceSelectorValue) {
+		if ms.Spec.AlertmanagerConfig.DisableAlertmanager {
+			reconcileFunctions = append(reconcileFunctions, removeReconciler(amObj, ms))
+		} else {
+			reconcileFunctions = append(reconcileFunctions, defaultReconciler(amObj, ms))
+		}
+	}
+
+	return reconcileFunctions
 }
 
 func newPrometheusRole(ms *stack.MonitoringStack, rbacResourceName string, rbacVerbs []string) *rbacv1.Role {
