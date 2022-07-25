@@ -14,6 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/instrumentation-tools/promq/prom"
 
+	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -277,6 +278,24 @@ func (f *Framework) GetStackWhenAvailable(t *testing.T, name, namespace string) 
 		t.Fatal(fmt.Errorf("resource %s/%s was not available", namespace, name))
 	}
 	return ms
+}
+
+func (f *Framework) AssertAlertmanagerAbsent(t *testing.T, name, namespace string) {
+	var am monv1.Alertmanager
+	key := types.NamespacedName{
+		Name:      name,
+		Namespace: namespace,
+	}
+	err := wait.Poll(5*time.Second, wait.ForeverTestTimeout, func() (bool, error) {
+		err := f.K8sClient.Get(context.Background(), key, &am)
+		if errors.IsNotFound(err) {
+			return true, nil
+		}
+		return false, nil
+	})
+	if err == wait.ErrWaitTimeout {
+		t.Fatal(fmt.Errorf("alertmanager %s/%s is present when expected to be absent", namespace, name))
+	}
 }
 
 func getConditionByType(conditions []v1alpha1.Condition, ctype v1alpha1.ConditionType) *v1alpha1.Condition {
