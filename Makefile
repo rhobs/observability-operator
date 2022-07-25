@@ -98,6 +98,7 @@ generate: generate-crds generate-deepcopy generate-kustomize generate-prometheus
 .PHONY: operator
 operator: generate build
 
+.PHONY: build
 build:
 	go build -o ./tmp/operator ./cmd/operator/...
 
