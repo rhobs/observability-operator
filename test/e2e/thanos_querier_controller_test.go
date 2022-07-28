@@ -168,7 +168,7 @@ func waitForServiceDeletion(name string) error {
 func newThanosStackCombo(t *testing.T, name string) (*msov1.ThanosQuerier, *msov1.MonitoringStack) {
 	labels := map[string]string{"stack": "mso-e2e"}
 	tq := ensureLabels(newThanosQuerier(t, name, labels), labels)
-	ms := ensureLabels(newMonitoringStack(t, name, false), labels)
+	ms := ensureLabels(newMonitoringStack(t, name), labels)
 	return tq.(*msov1.ThanosQuerier), ms.(*msov1.MonitoringStack)
 }
 func ensureLabels(obj client.Object, wantLabels map[string]string) client.Object {

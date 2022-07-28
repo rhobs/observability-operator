@@ -280,7 +280,7 @@ func (f *Framework) GetStackWhenAvailable(t *testing.T, name, namespace string) 
 	return ms
 }
 
-func (f *Framework) AssertAlertmanagerRemoved(t *testing.T, name, namespace string) {
+func (f *Framework) AssertAlertmanagerAbsent(t *testing.T, name, namespace string) {
 	var am monv1.Alertmanager
 	key := types.NamespacedName{
 		Name:      name,
@@ -294,7 +294,7 @@ func (f *Framework) AssertAlertmanagerRemoved(t *testing.T, name, namespace stri
 		return false, nil
 	})
 	if err == wait.ErrWaitTimeout {
-		t.Fatal(fmt.Errorf("alertmanager %s/%s was not removed", namespace, name))
+		t.Fatal(fmt.Errorf("alertmanager %s/%s is present when expected to be absent", namespace, name))
 	}
 }
 

@@ -157,7 +157,7 @@ Define Alertmanager config
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>disableAlertmanager</b></td>
+        <td><b>disabled</b></td>
         <td>boolean</td>
         <td>
           Disables Alertmanager deployment<br/>

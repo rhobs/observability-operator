@@ -85,7 +85,7 @@ func stackComponentReconcilers(ms *stack.MonitoringStack, instanceSelectorKey st
 	}
 
 	for _, amObj := range alertManagerObjects(ms, instanceSelectorKey, instanceSelectorValue) {
-		if ms.Spec.AlertmanagerConfig.DisableAlertmanager {
+		if ms.Spec.AlertmanagerConfig.Disabled {
 			reconcileFunctions = append(reconcileFunctions, removeReconciler(amObj, ms))
 		} else {
 			reconcileFunctions = append(reconcileFunctions, defaultReconciler(amObj, ms))
@@ -218,23 +218,25 @@ func newPrometheus(
 			Retention:             ms.Spec.Retention,
 			RuleSelector:          prometheusSelector,
 			RuleNamespaceSelector: nil,
-
-			Alerting: &monv1.AlertingSpec{
-				Alertmanagers: []monv1.AlertmanagerEndpoints{
-					{
-						APIVersion: "v2",
-						Name:       ms.Name + "-alertmanager",
-						Namespace:  ms.Namespace,
-						Scheme:     "http",
-						Port:       intstr.FromString("web"),
-					},
-				},
-			},
 			Thanos: &monv1.ThanosSpec{
 				BaseImage: stringPtr("quay.io/thanos/thanos"),
 				Version:   stringPtr("v0.24.0"),
 			},
 		},
+	}
+
+	if !ms.Spec.AlertmanagerConfig.Disabled {
+		prometheus.Spec.Alerting = &monv1.AlertingSpec{
+			Alertmanagers: []monv1.AlertmanagerEndpoints{
+				{
+					APIVersion: "v2",
+					Name:       ms.Name + "-alertmanager",
+					Namespace:  ms.Namespace,
+					Scheme:     "http",
+					Port:       intstr.FromString("web"),
+				},
+			},
+		}
 	}
 
 	return prometheus

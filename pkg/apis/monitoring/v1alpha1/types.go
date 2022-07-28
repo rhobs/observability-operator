@@ -175,7 +175,7 @@ type PrometheusConfig struct {
 type AlertmanagerConfig struct {
 	// Disables Alertmanager deployment
 	// +optional
-	DisableAlertmanager bool `json:"disableAlertmanager,omitempty"`
+	Disabled bool `json:"disabled,omitempty"`
 }
 
 // NamespaceSelector is a selector for selecting either all namespaces or a

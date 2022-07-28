@@ -38,7 +38,7 @@ spec:
               alertmanagerConfig:
                 description: Define Alertmanager config
                 properties:
-                  disableAlertmanager:
+                  disabled:
                     description: Disables Alertmanager deployment
                     type: boolean
                 type: object

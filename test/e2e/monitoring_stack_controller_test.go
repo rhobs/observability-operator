@@ -104,7 +104,7 @@ func TestMonitoringStackController(t *testing.T) {
 }
 
 func emptyStackCreatesPrometheus(t *testing.T) {
-	ms := newMonitoringStack(t, "empty-stack", false)
+	ms := newMonitoringStack(t, "empty-stack")
 	err := f.K8sClient.Create(context.Background(), ms)
 	assert.NilError(t, err, "failed to create a monitoring stack")
 
@@ -141,7 +141,7 @@ func promConfigDefaultsAreApplied(t *testing.T) {
 
 		t.Run(tt.name, func(t *testing.T) {
 			t.Log(tt.name)
-			ms := newMonitoringStack(t, tt.name, false)
+			ms := newMonitoringStack(t, tt.name)
 			ms.Spec.PrometheusConfig = tt.config
 
 			err := f.K8sClient.Create(context.Background(), ms)
@@ -162,7 +162,7 @@ func intPtr(i int32) *int32 {
 }
 
 func reconcileStack(t *testing.T) {
-	ms := newMonitoringStack(t, "reconcile-test", false)
+	ms := newMonitoringStack(t, "reconcile-test")
 	ms.Spec.LogLevel = "debug"
 	ms.Spec.Retention = "1h"
 	ms.Spec.ResourceSelector = &metav1.LabelSelector{
@@ -214,7 +214,7 @@ func getConditionByType(conditions []stack.Condition, ctype stack.ConditionType)
 }
 
 func reconcileRevertsManualChanges(t *testing.T) {
-	ms := newMonitoringStack(t, "revert-test", false)
+	ms := newMonitoringStack(t, "revert-test")
 	ms.Spec.LogLevel = "debug"
 	ms.Spec.Retention = "1h"
 	ms.Spec.ResourceSelector = &metav1.LabelSelector{
@@ -271,14 +271,14 @@ func validateStackLogLevel(t *testing.T) {
 		"Info",
 		"Debug",
 	}
-	ms := newMonitoringStack(t, "invalid-loglevel-stack", false)
+	ms := newMonitoringStack(t, "invalid-loglevel-stack")
 	for _, v := range invalidLogLevels {
 		ms.Spec.LogLevel = stack.LogLevel(v)
 		err := f.K8sClient.Create(context.Background(), ms)
 		assert.ErrorContains(t, err, `spec.logLevel: Unsupported value`)
 	}
 
-	validMS := newMonitoringStack(t, "valid-loglevel", false)
+	validMS := newMonitoringStack(t, "valid-loglevel")
 	validMS.Spec.LogLevel = "debug"
 	err := f.K8sClient.Create(context.Background(), validMS)
 	assert.NilError(t, err, `debug is a valid loglevel`)
@@ -295,14 +295,14 @@ func validateStackRetention(t *testing.T) {
 		"100d   ",
 	}
 
-	ms := newMonitoringStack(t, "invalid-retention", false)
+	ms := newMonitoringStack(t, "invalid-retention")
 	for _, v := range invalidRetention {
 		ms.Spec.Retention = v
 		err := f.K8sClient.Create(context.Background(), ms)
 		assert.ErrorContains(t, err, `spec.retention: Invalid value`)
 	}
 
-	validMS := newMonitoringStack(t, "valid-retention", false)
+	validMS := newMonitoringStack(t, "valid-retention")
 	validMS.Spec.Retention = "100h"
 
 	err := f.K8sClient.Create(context.Background(), validMS)
@@ -314,7 +314,7 @@ func singlePrometheusReplicaHasNoPDB(t *testing.T) {
 
 	// Initially, ensure that pdb is created by default for the default stack.
 	// This should later be removed when replicas is set to 1
-	ms := newMonitoringStack(t, "single-replica", false)
+	ms := newMonitoringStack(t, "single-replica")
 
 	err := f.K8sClient.Create(context.Background(), ms)
 	assert.NilError(t, err, "failed to create a monitoring stack")
@@ -338,7 +338,7 @@ func singlePrometheusReplicaHasNoPDB(t *testing.T) {
 }
 
 func assertPrometheusScrapesItself(t *testing.T) {
-	ms := newMonitoringStack(t, "self-scrape", false)
+	ms := newMonitoringStack(t, "self-scrape")
 	err := f.K8sClient.Create(context.Background(), ms)
 	assert.NilError(t, err)
 	f.AssertStatefulsetReady("prometheus-self-scrape", e2eTestNamespace, framework.WithTimeout(5*time.Minute))(t)
@@ -388,16 +388,18 @@ func assertPrometheusScrapesItself(t *testing.T) {
 }
 
 func assertAlertmanagerNotDeployed(t *testing.T) {
-	ms := newMonitoringStack(t, "no-alertmanager", true)
+	ms := newMonitoringStack(t, "no-alertmanager", func(ms *stack.MonitoringStack) {
+		ms.Spec.AlertmanagerConfig.Disabled = true
+	})
 	if err := f.K8sClient.Create(context.Background(), ms); err != nil {
 		t.Fatal(err)
 	}
 	_ = f.GetStackWhenAvailable(t, ms.Name, ms.Namespace)
-	f.AssertAlertmanagerRemoved(t, ms.Name, ms.Namespace)
+	f.AssertAlertmanagerAbsent(t, ms.Name, ms.Namespace)
 }
 
 func assertAlertmanagerDeployedAndRemoved(t *testing.T) {
-	ms := newMonitoringStack(t, "alertmanager-deployed-and-removed", false)
+	ms := newMonitoringStack(t, "alertmanager-deployed-and-removed")
 	if err := f.K8sClient.Create(context.Background(), ms); err != nil {
 		t.Fatal(err)
 	}
@@ -407,15 +409,15 @@ func assertAlertmanagerDeployedAndRemoved(t *testing.T) {
 	err := f.K8sClient.Get(context.Background(), key, &am)
 	assert.NilError(t, err)
 
-	updatedMS.Spec.AlertmanagerConfig.DisableAlertmanager = true
+	updatedMS.Spec.AlertmanagerConfig.Disabled = true
 	err = f.K8sClient.Update(context.Background(), &updatedMS)
 	assert.NilError(t, err)
 
-	f.AssertAlertmanagerRemoved(t, updatedMS.Name, updatedMS.Namespace)
+	f.AssertAlertmanagerAbsent(t, updatedMS.Name, updatedMS.Namespace)
 }
 
 func assertAlertmanagerCreated(t *testing.T, name string) {
-	ms := newMonitoringStack(t, name, false)
+	ms := newMonitoringStack(t, name)
 	if err := f.K8sClient.Create(context.Background(), ms); err != nil {
 		t.Fatal(err)
 	}
@@ -447,7 +449,7 @@ func assertAlertmanagersAreResilientToDisruption(t *testing.T, pods []corev1.Pod
 }
 
 func assertAlertmanagerReceivesAlerts(t *testing.T) {
-	ms := newMonitoringStack(t, "alerting", false)
+	ms := newMonitoringStack(t, "alerting")
 	if err := f.K8sClient.Create(context.Background(), ms); err != nil {
 		t.Fatal(err)
 	}
@@ -545,17 +547,15 @@ func newAlerts(t *testing.T) *monv1.PrometheusRule {
 	return rule
 }
 
-func newMonitoringStack(t *testing.T, name string, disableAlertManager bool) *stack.MonitoringStack {
+func newMonitoringStack(t *testing.T, name string, options ...func(*stack.MonitoringStack)) *stack.MonitoringStack {
 	ms := &stack.MonitoringStack{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: e2eTestNamespace,
 		},
-		Spec: stack.MonitoringStackSpec{
-			AlertmanagerConfig: &stack.AlertmanagerConfig{
-				DisableAlertmanager: disableAlertManager,
-			},
-		},
+	}
+	for _, opt := range options {
+		opt(ms)
 	}
 	f.CleanUp(t, func() {
 		f.K8sClient.Delete(context.Background(), ms)
