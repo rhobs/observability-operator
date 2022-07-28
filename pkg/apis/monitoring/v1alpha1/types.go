@@ -173,7 +173,7 @@ type PrometheusConfig struct {
 }
 
 type AlertmanagerConfig struct {
-	// Disables Alertmanager deployment
+	// Disables the deployment of Alertmanager.
 	// +optional
 	Disabled bool `json:"disabled,omitempty"`
 }

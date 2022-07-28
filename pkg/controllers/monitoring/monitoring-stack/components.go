@@ -85,7 +85,7 @@ func stackComponentReconcilers(ms *stack.MonitoringStack, instanceSelectorKey st
 	}
 
 	for _, amObj := range alertManagerObjects(ms, instanceSelectorKey, instanceSelectorValue) {
-		if ms.Spec.AlertmanagerConfig.Disabled {
+		if ms.Spec.AlertmanagerConfig != nil && ms.Spec.AlertmanagerConfig.Disabled {
 			reconcileFunctions = append(reconcileFunctions, removeReconciler(amObj, ms))
 		} else {
 			reconcileFunctions = append(reconcileFunctions, defaultReconciler(amObj, ms))
@@ -225,7 +225,7 @@ func newPrometheus(
 		},
 	}
 
-	if !ms.Spec.AlertmanagerConfig.Disabled {
+	if ms.Spec.AlertmanagerConfig == nil || !ms.Spec.AlertmanagerConfig.Disabled {
 		prometheus.Spec.Alerting = &monv1.AlertingSpec{
 			Alertmanagers: []monv1.AlertmanagerEndpoints{
 				{

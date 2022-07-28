@@ -40,7 +40,7 @@ spec:
                 description: Define Alertmanager config
                 properties:
                   disabled:
-                    description: Disables Alertmanager deployment
+                    description: Disables the deployment of Alertmanager.
                     type: boolean
                 type: object
               logLevel:

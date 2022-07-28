@@ -160,7 +160,7 @@ Define Alertmanager config
         <td><b>disabled</b></td>
         <td>boolean</td>
         <td>
-          Disables Alertmanager deployment<br/>
+          Disables the deployment of Alertmanager.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
