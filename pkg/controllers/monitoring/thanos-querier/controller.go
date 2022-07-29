@@ -30,7 +30,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -105,14 +104,9 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{RequeueAfter: 10 * time.Second}, err
 	}
 
-	components := thanosComponents(querier, sidecarServices)
-	componentLabels := map[string]string{
-		"app.kubernetes.io/instance":   querier.Name,
-		"app.kubernetes.io/part-of":    "ThanosQuerier",
-		"app.kubernetes.io/managed-by": "observability-operator",
-	}
-	for _, c := range components {
-		err := r.reconcileComponent(ctx, querier, ensureLabels(c, componentLabels))
+	reconcilers := thanosComponentReconcilers(querier, sidecarServices)
+	for _, reconciler := range reconcilers {
+		err := reconciler(ctx, r, r.scheme)
 		// handle creation / updation errors that can happen due to a stale cache by
 		// retrying after some time.
 		if apierrors.IsAlreadyExists(err) || apierrors.IsConflict(err) {
@@ -187,34 +181,4 @@ func (r reconciler) findQueriersForMonitoringStack(ms client.Object) []reconcile
 		}
 	}
 	return requests
-}
-
-// Create an object after setting the owner reference to the passed
-// ThanosQueriers.
-// Uses server-side-apply.
-func (r reconciler) reconcileComponent(ctx context.Context, thanos *msoapi.ThanosQuerier, component client.Object) error {
-	if thanos.Namespace == component.GetNamespace() {
-		if err := controllerutil.SetControllerReference(thanos, component, r.scheme); err != nil {
-			return err
-		}
-	}
-
-	if err := r.Patch(ctx, component, client.Apply, client.ForceOwnership, client.FieldOwner("thanos-querier-controller")); err != nil {
-		return err
-	}
-	return nil
-}
-
-func ensureLabels(obj client.Object, wantLabels map[string]string) client.Object {
-	existingLabels := obj.GetLabels()
-	if existingLabels == nil {
-		obj.SetLabels(wantLabels)
-		return obj
-	}
-	for name, val := range wantLabels {
-		if _, ok := existingLabels[name]; !ok {
-			existingLabels[name] = val
-		}
-	}
-	return obj
 }
