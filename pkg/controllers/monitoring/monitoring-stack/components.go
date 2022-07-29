@@ -81,11 +81,16 @@ func stackComponentReconcilers(ms *stack.MonitoringStack, instanceSelectorKey st
 		defaultReconciler(newPrometheus(ms, prometheusRBACResourceName, additionalScrapeConfigsSecretName, instanceSelectorKey, instanceSelectorValue), ms),
 		defaultReconciler(newPrometheusService(ms, instanceSelectorKey, instanceSelectorValue), ms),
 		defaultReconciler(newThanosSidecarService(ms, instanceSelectorKey, instanceSelectorValue), ms),
-		prometheusPDBReconciler(newPrometheusPDB(ms, instanceSelectorKey, instanceSelectorValue), ms),
+	}
+	promPDB := newPrometheusPDB(ms, instanceSelectorKey, instanceSelectorValue)
+	if *ms.Spec.PrometheusConfig.Replicas <= 1 {
+		reconcileFunctions = append(reconcileFunctions, removeReconciler(promPDB, ms))
+	} else {
+		reconcileFunctions = append(reconcileFunctions, defaultReconciler(promPDB, ms))
 	}
 
 	for _, amObj := range alertManagerObjects(ms, instanceSelectorKey, instanceSelectorValue) {
-		if ms.Spec.AlertmanagerConfig != nil && ms.Spec.AlertmanagerConfig.Disabled {
+		if ms.Spec.AlertmanagerConfig.Disabled {
 			reconcileFunctions = append(reconcileFunctions, removeReconciler(amObj, ms))
 		} else {
 			reconcileFunctions = append(reconcileFunctions, defaultReconciler(amObj, ms))
@@ -225,7 +230,7 @@ func newPrometheus(
 		},
 	}
 
-	if ms.Spec.AlertmanagerConfig == nil || !ms.Spec.AlertmanagerConfig.Disabled {
+	if !ms.Spec.AlertmanagerConfig.Disabled {
 		prometheus.Spec.Alerting = &monv1.AlertingSpec{
 			Alertmanagers: []monv1.AlertmanagerEndpoints{
 				{
@@ -466,19 +471,6 @@ func newPrometheusPDB(ms *stack.MonitoringStack, instanceSelectorKey string, ins
 				MatchLabels: selector,
 			},
 		},
-	}
-}
-
-func prometheusPDBReconciler(component client.Object, ms *stack.MonitoringStack) reconcileFunction {
-	if *ms.Spec.PrometheusConfig.Replicas <= 1 {
-		return func(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
-			if err := c.Delete(ctx, component); client.IgnoreNotFound(err) != nil {
-				return err
-			}
-			return nil
-		}
-	} else {
-		return defaultReconciler(component, ms)
 	}
 }
 

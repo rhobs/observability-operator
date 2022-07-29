@@ -75,7 +75,7 @@ type MonitoringStackSpec struct {
 
 	// Define Alertmanager config
 	// +optional
-	AlertmanagerConfig *AlertmanagerConfig `json:"alertmanagerConfig,omitempty"`
+	AlertmanagerConfig AlertmanagerConfig `json:"alertmanagerConfig,omitempty"`
 }
 
 // MonitoringStackStatus defines the observed state of MonitoringStack.
