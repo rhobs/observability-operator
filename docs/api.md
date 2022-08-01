@@ -86,6 +86,15 @@ MonitoringStackSpec is the specification for desired Monitoring Stack
         </tr>
     </thead>
     <tbody><tr>
+        <td><b><a href="#monitoringstackspecalertmanagerconfig">alertmanagerConfig</a></b></td>
+        <td>object</td>
+        <td>
+          Define Alertmanager config<br/>
+          <br/>
+            <i>Default</i>: map[disabled:false]<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>logLevel</b></td>
         <td>enum</td>
         <td>
@@ -127,6 +136,35 @@ MonitoringStackSpec is the specification for desired Monitoring Stack
           Time duration to retain data for. Default is '120h', and must match the regular expression `[0-9]+(ms|s|m|h|d|w|y)` (milliseconds seconds minutes hours days weeks years).<br/>
           <br/>
             <i>Default</i>: 120h<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.alertmanagerConfig
+<sup><sup>[↩ Parent](#monitoringstackspec)</sup></sup>
+
+
+
+Define Alertmanager config
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>disabled</b></td>
+        <td>boolean</td>
+        <td>
+          Disables the deployment of Alertmanager.<br/>
+          <br/>
+            <i>Default</i>: false<br/>
         </td>
         <td>false</td>
       </tr></tbody>
