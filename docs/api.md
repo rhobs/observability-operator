@@ -90,6 +90,8 @@ MonitoringStackSpec is the specification for desired Monitoring Stack
         <td>object</td>
         <td>
           Define Alertmanager config<br/>
+          <br/>
+            <i>Default</i>: map[disabled:false]<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -161,6 +163,8 @@ Define Alertmanager config
         <td>boolean</td>
         <td>
           Disables the deployment of Alertmanager.<br/>
+          <br/>
+            <i>Default</i>: false<br/>
         </td>
         <td>false</td>
       </tr></tbody>

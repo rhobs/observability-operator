@@ -42,7 +42,7 @@ func defaultReconciler(component client.Object, ms *stack.MonitoringStack) recon
 	}
 }
 
-func removeReconciler(component client.Object, ms *stack.MonitoringStack) reconcileFunction {
+func deleteReconciler(component client.Object, ms *stack.MonitoringStack) reconcileFunction {
 	return func(ctx context.Context, c client.Client, _ *runtime.Scheme) error {
 		if err := c.Delete(ctx, component); err != nil {
 			// object may have already been removed
@@ -84,14 +84,14 @@ func stackComponentReconcilers(ms *stack.MonitoringStack, instanceSelectorKey st
 	}
 	promPDB := newPrometheusPDB(ms, instanceSelectorKey, instanceSelectorValue)
 	if *ms.Spec.PrometheusConfig.Replicas <= 1 {
-		reconcileFunctions = append(reconcileFunctions, removeReconciler(promPDB, ms))
+		reconcileFunctions = append(reconcileFunctions, deleteReconciler(promPDB, ms))
 	} else {
 		reconcileFunctions = append(reconcileFunctions, defaultReconciler(promPDB, ms))
 	}
 
 	for _, amObj := range alertManagerObjects(ms, instanceSelectorKey, instanceSelectorValue) {
 		if ms.Spec.AlertmanagerConfig.Disabled {
-			reconcileFunctions = append(reconcileFunctions, removeReconciler(amObj, ms))
+			reconcileFunctions = append(reconcileFunctions, deleteReconciler(amObj, ms))
 		} else {
 			reconcileFunctions = append(reconcileFunctions, defaultReconciler(amObj, ms))
 		}

@@ -75,6 +75,7 @@ type MonitoringStackSpec struct {
 
 	// Define Alertmanager config
 	// +optional
+	// +kubebuilder:default={disabled: false}
 	AlertmanagerConfig AlertmanagerConfig `json:"alertmanagerConfig,omitempty"`
 }
 
@@ -175,6 +176,7 @@ type PrometheusConfig struct {
 type AlertmanagerConfig struct {
 	// Disables the deployment of Alertmanager.
 	// +optional
+	// +kubebuilder:default=false
 	Disabled bool `json:"disabled,omitempty"`
 }
 
