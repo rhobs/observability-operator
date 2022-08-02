@@ -3,6 +3,7 @@ package operator
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	stackctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/monitoring-stack"
 	tqctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/thanos-querier"
@@ -22,10 +23,11 @@ type Operator struct {
 	manager manager.Manager
 }
 
-func New(metricsAddr string) (*Operator, error) {
+func New(metricsAddr, healthProbeAddr string) (*Operator, error) {
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:             NewScheme(),
-		MetricsBindAddress: metricsAddr,
+		Scheme:                 NewScheme(),
+		MetricsBindAddress:     metricsAddr,
+		HealthProbeBindAddress: healthProbeAddr,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to create manager: %w", err)
@@ -37,6 +39,11 @@ func New(metricsAddr string) (*Operator, error) {
 
 	if err := tqctrl.RegisterWithManager(mgr); err != nil {
 		return nil, fmt.Errorf("unable to register the thanos querier controller with the manager: %w", err)
+	}
+
+	ok := func(_ *http.Request) error { return nil }
+	if err := mgr.AddHealthzCheck("health probe", ok); err != nil {
+		return nil, fmt.Errorf("unable to add health probe: %w", err)
 	}
 
 	return &Operator{
