@@ -50,7 +50,7 @@ func main() {
 		"namespace", namespace,
 		"metrics-bind-address", metricsAddr)
 
-	op, err := operator.New(metricsAddr)
+	op, err := operator.New(metricsAddr, ":9090")
 	if err != nil {
 		setupLog.Error(err, "cannot create a new operator")
 		os.Exit(1)

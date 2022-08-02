@@ -13,3 +13,5 @@ spec:
   ports:
   - name: metrics
     port: 8080
+  - name: healthz
+    port: 9090
