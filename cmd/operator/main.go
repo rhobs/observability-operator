@@ -29,14 +29,16 @@ import (
 
 func main() {
 	var (
-		namespace   string
-		metricsAddr string
+		namespace       string
+		metricsAddr     string
+		healthProbeAddr string
 
 		setupLog = ctrl.Log.WithName("setup")
 	)
 
 	flag.StringVar(&namespace, "namespace", "default", "The namespace in which the operator runs")
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
+	flag.StringVar(&healthProbeAddr, "health-probe-bind-address", ":8081", "The address the health probe endpoint binds to.")
 	opts := zap.Options{
 		Development: true,
 		TimeEncoder: zapcore.RFC3339TimeEncoder,
@@ -50,7 +52,7 @@ func main() {
 		"namespace", namespace,
 		"metrics-bind-address", metricsAddr)
 
-	op, err := operator.New(metricsAddr)
+	op, err := operator.New(metricsAddr, healthProbeAddr)
 	if err != nil {
 		setupLog.Error(err, "cannot create a new operator")
 		os.Exit(1)

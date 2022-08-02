@@ -341,7 +341,15 @@ spec:
                       fieldPath: metadata.namespace
                 image: observability-operator:0.0.13
                 imagePullPolicy: IfNotPresent
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: 8081
                 name: operator
+                readinessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: 8081
                 resources:
                   limits:
                     cpu: 50m
