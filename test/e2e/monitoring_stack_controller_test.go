@@ -88,6 +88,13 @@ func TestMonitoringStackController(t *testing.T) {
 				assertAlertmanagersAreOnDifferentNodes(t, pods)
 				assertAlertmanagersAreResilientToDisruption(t, pods)
 			},
+		}, {
+			name:     "Alertmanager disabled",
+			scenario: assertAlertmanagerNotDeployed,
+		},
+		{
+			name:     "Alertmanager deployed and removed",
+			scenario: assertAlertmanagerDeployedAndRemoved,
 		},
 	}
 
@@ -380,6 +387,35 @@ func assertPrometheusScrapesItself(t *testing.T) {
 	}
 }
 
+func assertAlertmanagerNotDeployed(t *testing.T) {
+	ms := newMonitoringStack(t, "no-alertmanager", func(ms *stack.MonitoringStack) {
+		ms.Spec.AlertmanagerConfig.Disabled = true
+	})
+	if err := f.K8sClient.Create(context.Background(), ms); err != nil {
+		t.Fatal(err)
+	}
+	_ = f.GetStackWhenAvailable(t, ms.Name, ms.Namespace)
+	f.AssertAlertmanagerAbsent(t, ms.Name, ms.Namespace)
+}
+
+func assertAlertmanagerDeployedAndRemoved(t *testing.T) {
+	ms := newMonitoringStack(t, "alertmanager-deployed-and-removed")
+	if err := f.K8sClient.Create(context.Background(), ms); err != nil {
+		t.Fatal(err)
+	}
+	updatedMS := f.GetStackWhenAvailable(t, ms.Name, ms.Namespace)
+	var am monv1.Alertmanager
+	key := types.NamespacedName{Name: ms.Name, Namespace: ms.Namespace}
+	err := f.K8sClient.Get(context.Background(), key, &am)
+	assert.NilError(t, err)
+
+	updatedMS.Spec.AlertmanagerConfig.Disabled = true
+	err = f.K8sClient.Update(context.Background(), &updatedMS)
+	assert.NilError(t, err)
+
+	f.AssertAlertmanagerAbsent(t, updatedMS.Name, updatedMS.Namespace)
+}
+
 func assertAlertmanagerCreated(t *testing.T, name string) {
 	ms := newMonitoringStack(t, name)
 	if err := f.K8sClient.Create(context.Background(), ms); err != nil {
@@ -511,12 +547,15 @@ func newAlerts(t *testing.T) *monv1.PrometheusRule {
 	return rule
 }
 
-func newMonitoringStack(t *testing.T, name string) *stack.MonitoringStack {
+func newMonitoringStack(t *testing.T, name string, options ...func(*stack.MonitoringStack)) *stack.MonitoringStack {
 	ms := &stack.MonitoringStack{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: e2eTestNamespace,
 		},
+	}
+	for _, opt := range options {
+		opt(ms)
 	}
 	f.CleanUp(t, func() {
 		f.K8sClient.Delete(context.Background(), ms)

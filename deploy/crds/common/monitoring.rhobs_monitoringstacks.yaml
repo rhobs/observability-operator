@@ -36,6 +36,16 @@ spec:
             description: MonitoringStackSpec is the specification for desired Monitoring
               Stack
             properties:
+              alertmanagerConfig:
+                default:
+                  disabled: false
+                description: Define Alertmanager config
+                properties:
+                  disabled:
+                    default: false
+                    description: Disables the deployment of Alertmanager.
+                    type: boolean
+                type: object
               logLevel:
                 default: info
                 description: Loglevel set log levels of configured components
