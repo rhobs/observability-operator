@@ -45,5 +45,13 @@ spec:
             requests:
               cpu: 100m
               memory: 150Mi
+          readinessProbe:
+             httpGet:
+               path: /healthz
+               port: 8081
+          livenessProbe:
+             httpGet:
+               path: /healthz
+               port: 8081
       serviceAccountName: observability-operator-sa
       terminationGracePeriodSeconds: 30
