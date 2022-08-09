@@ -10,16 +10,21 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
+// This interface is used by the resourceManagers to reconicle the resources they
+// watch. If any component needs special treatment in the reconcile loop, create
+// a new type that implements this interface.
 type Reconciler interface {
 	Reconcile(ctx context.Context, c client.Client, scheme *runtime.Scheme) error
 }
 
-type UpdateReconciler struct {
+// Updater simply updates a resource by setting a controller reference
+// for resourceOwner and calling Patch on it.
+type Updater struct {
 	resourceOwner metav1.Object
 	resource      client.Object
 }
 
-func (r UpdateReconciler) Reconcile(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
+func (r Updater) Reconcile(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 	if r.resourceOwner.GetNamespace() == r.resource.GetNamespace() {
 		if err := controllerutil.SetControllerReference(r.resourceOwner, r.resource, scheme); err != nil {
 			return err
@@ -32,32 +37,34 @@ func (r UpdateReconciler) Reconcile(ctx context.Context, c client.Client, scheme
 	return nil
 }
 
-func NewUpdateReconciler(r client.Object, c metav1.Object) UpdateReconciler {
-	return UpdateReconciler{
-		resourceOwner: c,
-		resource:      r,
+func NewUpdater(resource client.Object, owner metav1.Object) Updater {
+	return Updater{
+		resourceOwner: owner,
+		resource:      resource,
 	}
 }
 
-type DeleteReconciler struct {
+// Deleter deletes a resource and ignores NotFound errors.
+type Deleter struct {
 	resource client.Object
 }
 
-func (r DeleteReconciler) Reconcile(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
+func (r Deleter) Reconcile(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 	if err := c.Delete(ctx, r.resource); client.IgnoreNotFound(err) != nil {
 		return err
 	}
 	return nil
 }
 
-func NewDeleteReconciler(r client.Object) DeleteReconciler {
-	return DeleteReconciler{resource: r}
+func NewDeleter(r client.Object) Deleter {
+	return Deleter{resource: r}
 }
 
-func NewOptionalResourceReconciler(r client.Object, c metav1.Object, cond bool) Reconciler {
+// NewOptionalUpdater ensures that a resource is present or absent depending on the `cond` value (true: present).
+func NewOptionalUpdater(r client.Object, c metav1.Object, cond bool) Reconciler {
 	if cond {
-		return NewUpdateReconciler(r, c)
+		return NewUpdater(r, c)
 	} else {
-		return NewDeleteReconciler(r)
+		return NewDeleter(r)
 	}
 }

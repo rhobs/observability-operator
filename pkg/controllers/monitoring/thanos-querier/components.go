@@ -16,10 +16,10 @@ import (
 func thanosComponentReconcilers(thanos *msoapi.ThanosQuerier, sidecarUrls []string) []reconciler.Reconciler {
 	name := "thanos-querier-" + thanos.Name
 	return []reconciler.Reconciler{
-		reconciler.NewUpdateReconciler(newServiceAccount(name, thanos.Namespace), thanos),
-		reconciler.NewUpdateReconciler(newThanosQuerierDeployment(name, thanos, sidecarUrls), thanos),
-		reconciler.NewUpdateReconciler(newService(name, thanos.Namespace), thanos),
-		reconciler.NewUpdateReconciler(newServiceMonitor(name, thanos.Namespace), thanos),
+		reconciler.NewUpdater(newServiceAccount(name, thanos.Namespace), thanos),
+		reconciler.NewUpdater(newThanosQuerierDeployment(name, thanos, sidecarUrls), thanos),
+		reconciler.NewUpdater(newService(name, thanos.Namespace), thanos),
+		reconciler.NewUpdater(newServiceMonitor(name, thanos.Namespace), thanos),
 	}
 }
 
