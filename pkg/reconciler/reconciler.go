@@ -15,18 +15,18 @@ type Reconciler interface {
 }
 
 type UpdateReconciler struct {
-	controller metav1.Object
-	resource   client.Object
+	resourceOwner metav1.Object
+	resource      client.Object
 }
 
 func (r UpdateReconciler) Reconcile(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
-	if r.controller.GetNamespace() == r.resource.GetNamespace() {
-		if err := controllerutil.SetControllerReference(r.controller, r.resource, scheme); err != nil {
+	if r.resourceOwner.GetNamespace() == r.resource.GetNamespace() {
+		if err := controllerutil.SetControllerReference(r.resourceOwner, r.resource, scheme); err != nil {
 			return err
 		}
 	}
 
-	if err := c.Patch(ctx, r.resource, client.Apply, client.ForceOwnership, client.FieldOwner(fmt.Sprintf("%s/%s", r.controller.GetNamespace(), r.controller.GetName()))); err != nil {
+	if err := c.Patch(ctx, r.resource, client.Apply, client.ForceOwnership, client.FieldOwner(fmt.Sprintf("%s/%s", r.resourceOwner.GetNamespace(), r.resourceOwner.GetName()))); err != nil {
 		return err
 	}
 	return nil
@@ -34,8 +34,8 @@ func (r UpdateReconciler) Reconcile(ctx context.Context, c client.Client, scheme
 
 func NewUpdateReconciler(r client.Object, c metav1.Object) UpdateReconciler {
 	return UpdateReconciler{
-		controller: c,
-		resource:   r,
+		resourceOwner: c,
+		resource:      r,
 	}
 }
 
