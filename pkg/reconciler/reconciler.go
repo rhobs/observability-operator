@@ -54,22 +54,10 @@ func NewDeleteReconciler(r client.Object) DeleteReconciler {
 	return DeleteReconciler{resource: r}
 }
 
-type OptionalResourceReconciler struct {
-	r Reconciler
-}
-
-func (r OptionalResourceReconciler) Reconcile(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
-	return r.r.Reconcile(ctx, c, scheme)
-}
-
-func NewOptionalResourceReconciler(r client.Object, c metav1.Object, cond bool) OptionalResourceReconciler {
+func NewOptionalResourceReconciler(r client.Object, c metav1.Object, cond bool) Reconciler {
 	if cond {
-		return OptionalResourceReconciler{
-			r: NewUpdateReconciler(r, c),
-		}
+		return NewUpdateReconciler(r, c)
 	} else {
-		return OptionalResourceReconciler{
-			r: NewDeleteReconciler(r),
-		}
+		return NewDeleteReconciler(r)
 	}
 }
