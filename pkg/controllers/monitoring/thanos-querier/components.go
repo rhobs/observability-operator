@@ -3,24 +3,23 @@ package thanos_querier
 import (
 	"fmt"
 
+	"github.com/rhobs/observability-operator/pkg/reconciler"
+
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	msoapi "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type components []client.Object
-
-func thanosComponents(thanos *msoapi.ThanosQuerier, sidecarUrls []string) components {
+func thanosComponentReconcilers(thanos *msoapi.ThanosQuerier, sidecarUrls []string) []reconciler.Reconciler {
 	name := "thanos-querier-" + thanos.Name
-	return []client.Object{
-		newServiceAccount(name, thanos.Namespace),
-		newThanosQuerierDeployment(name, thanos, sidecarUrls),
-		newService(name, thanos.Namespace),
-		newServiceMonitor(name, thanos.Namespace),
+	return []reconciler.Reconciler{
+		reconciler.NewUpdater(newServiceAccount(name, thanos.Namespace), thanos),
+		reconciler.NewUpdater(newThanosQuerierDeployment(name, thanos, sidecarUrls), thanos),
+		reconciler.NewUpdater(newService(name, thanos.Namespace), thanos),
+		reconciler.NewUpdater(newServiceMonitor(name, thanos.Namespace), thanos),
 	}
 }
 
@@ -49,9 +48,7 @@ func newThanosQuerierDeployment(name string, spec *msoapi.ThanosQuerier, sidecar
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: spec.Namespace,
-			Labels: map[string]string{
-				"app.kubernetes.io/instance": name,
-			},
+			Labels:    componentLabels(name),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: func(i int32) *int32 { return &i }(1),
@@ -64,9 +61,7 @@ func newThanosQuerierDeployment(name string, spec *msoapi.ThanosQuerier, sidecar
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      name,
 					Namespace: spec.Namespace,
-					Labels: map[string]string{
-						"app.kubernetes.io/instance": name,
-					},
+					Labels:    componentLabels(name),
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -142,9 +137,7 @@ func newServiceMonitor(name string, namespace string) *monv1.ServiceMonitor {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
-			Labels: map[string]string{
-				"app.kubernetes.io/instance": name,
-			},
+			Labels:    componentLabels(name),
 		},
 		Spec: monv1.ServiceMonitorSpec{
 			Endpoints: []monv1.Endpoint{
@@ -159,5 +152,13 @@ func newServiceMonitor(name string, namespace string) *monv1.ServiceMonitor {
 				},
 			},
 		},
+	}
+}
+
+func componentLabels(querierName string) map[string]string {
+	return map[string]string{
+		"app.kubernetes.io/instance":   querierName,
+		"app.kubernetes.io/part-of":    "ThanosQuerier",
+		"app.kubernetes.io/managed-by": "observability-operator",
 	}
 }

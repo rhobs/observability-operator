@@ -42,7 +42,7 @@ import (
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 )
 
-type reconciler struct {
+type resourceManager struct {
 	k8sClient             client.Client
 	scheme                *runtime.Scheme
 	logger                logr.Logger
@@ -81,7 +81,7 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 		return fmt.Errorf("invalid InstanceSelector: %s", opts.InstanceSelector)
 	}
 
-	r := &reconciler{
+	rm := &resourceManager{
 		k8sClient:             mgr.GetClient(),
 		scheme:                mgr.GetScheme(),
 		logger:                ctrl.Log.WithName("observability-operator"),
@@ -107,19 +107,19 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 		Owns(&rbacv1.RoleBinding{}, generationChanged).
 		Owns(&monv1.ServiceMonitor{}, generationChanged).
 		Owns(&policyv1.PodDisruptionBudget{}, generationChanged).
-		Build(r)
+		Build(rm)
 
 	if err != nil {
 		return err
 	}
-	r.controller = ctrl
+	rm.controller = ctrl
 	return nil
 }
 
-func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := r.logger.WithValues("stack", req.NamespacedName)
+func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	logger := rm.logger.WithValues("stack", req.NamespacedName)
 	logger.Info("Reconciling monitoring stack")
-	ms, err := r.getStack(ctx, req)
+	ms, err := rm.getStack(ctx, req)
 	if err != nil {
 		// retry since some error has occured
 		return ctrl.Result{}, err
@@ -135,9 +135,9 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, nil
 	}
 
-	reconcilers := stackComponentReconcilers(ms, r.instanceSelectorKey, r.instanceSelectorValue)
+	reconcilers := stackComponentReconcilers(ms, rm.instanceSelectorKey, rm.instanceSelectorValue)
 	for _, reconciler := range reconcilers {
-		err := reconciler(ctx, r.k8sClient, r.scheme)
+		err := reconciler.Reconcile(ctx, rm.k8sClient, rm.scheme)
 		// handle create / update errors that can happen due to a stale cache by
 		// retrying after some time.
 		if errors.IsAlreadyExists(err) || errors.IsConflict(err) {
@@ -145,20 +145,20 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return ctrl.Result{RequeueAfter: 2 * time.Second}, nil
 		}
 		if err != nil {
-			return r.updateStatus(ctx, req, ms, err)
+			return rm.updateStatus(ctx, req, ms, err)
 		}
 	}
 
-	return r.updateStatus(ctx, req, ms, nil)
+	return rm.updateStatus(ctx, req, ms, nil)
 }
 
-func (r *reconciler) updateStatus(ctx context.Context, req ctrl.Request, ms *stack.MonitoringStack, recError error) (ctrl.Result, error) {
+func (rm resourceManager) updateStatus(ctx context.Context, req ctrl.Request, ms *stack.MonitoringStack, recError error) (ctrl.Result, error) {
 	var prom monv1.Prometheus
 	key := client.ObjectKey{
 		Name:      ms.Name,
 		Namespace: ms.Namespace,
 	}
-	err := r.k8sClient.Get(ctx, key, &prom)
+	err := rm.k8sClient.Get(ctx, key, &prom)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return ctrl.Result{RequeueAfter: 2 * time.Second}, nil
@@ -166,7 +166,7 @@ func (r *reconciler) updateStatus(ctx context.Context, req ctrl.Request, ms *sta
 		return ctrl.Result{}, err
 	}
 	ms.Status.Conditions = updateConditions(ms.Status.Conditions, prom.Status.Conditions, ms.Generation, recError)
-	err = r.k8sClient.Status().Update(ctx, ms)
+	err = rm.k8sClient.Status().Update(ctx, ms)
 	if err != nil {
 		if errors.IsConflict(err) {
 			return ctrl.Result{RequeueAfter: 2 * time.Second}, nil
@@ -176,12 +176,12 @@ func (r *reconciler) updateStatus(ctx context.Context, req ctrl.Request, ms *sta
 	return ctrl.Result{}, nil
 }
 
-func (r *reconciler) getStack(ctx context.Context, req ctrl.Request) (*stack.MonitoringStack, error) {
-	logger := r.logger.WithValues("stack", req.NamespacedName)
+func (rm resourceManager) getStack(ctx context.Context, req ctrl.Request) (*stack.MonitoringStack, error) {
+	logger := rm.logger.WithValues("stack", req.NamespacedName)
 
 	ms := stack.MonitoringStack{}
 
-	if err := r.k8sClient.Get(ctx, req.NamespacedName, &ms); err != nil {
+	if err := rm.k8sClient.Get(ctx, req.NamespacedName, &ms); err != nil {
 		if errors.IsNotFound(err) {
 			logger.V(3).Info("stack could not be found; may be marked for deletion")
 			return nil, nil

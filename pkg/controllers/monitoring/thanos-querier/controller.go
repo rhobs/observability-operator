@@ -30,7 +30,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -39,7 +38,7 @@ import (
 	"github.com/go-logr/logr"
 )
 
-type reconciler struct {
+type resourceManager struct {
 	client.Client
 	scheme *runtime.Scheme
 	logger logr.Logger
@@ -65,7 +64,7 @@ type reconciler struct {
 // RegisterWithManager registers the controller with Manager
 func RegisterWithManager(mgr ctrl.Manager) error {
 	logger := ctrl.Log.WithName("thanos-querier")
-	r := &reconciler{
+	rm := &resourceManager{
 		Client: mgr.GetClient(),
 		scheme: mgr.GetScheme(),
 		logger: logger,
@@ -79,18 +78,18 @@ func RegisterWithManager(mgr ctrl.Manager) error {
 		Owns(&corev1.Service{}).WithEventFilter(p).
 		Watches(
 			&source.Kind{Type: &msoapi.MonitoringStack{}},
-			handler.EnqueueRequestsFromMapFunc(r.findQueriersForMonitoringStack),
+			handler.EnqueueRequestsFromMapFunc(rm.findQueriersForMonitoringStack),
 			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{}),
 		).
-		Complete(r)
+		Complete(rm)
 }
 
-func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := r.logger.WithValues("querier", req.NamespacedName)
+func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	logger := rm.logger.WithValues("querier", req.NamespacedName)
 	logger.Info("Reconciling Thanos Querier")
 
 	querier := &msoapi.ThanosQuerier{}
-	err := r.Get(ctx, req.NamespacedName, querier)
+	err := rm.Get(ctx, req.NamespacedName, querier)
 	if apierrors.IsNotFound(err) {
 		return ctrl.Result{}, nil
 	}
@@ -98,21 +97,16 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, err
 	}
 
-	sidecarServices, err := r.findSidecarServices(ctx, querier)
+	sidecarServices, err := rm.findSidecarServices(ctx, querier)
 	if client.IgnoreNotFound(err) != nil {
 		// we encountered an error other then NotFound, don't try to delete
 		// resources for this querier and reschedule reconcile
 		return ctrl.Result{RequeueAfter: 10 * time.Second}, err
 	}
 
-	components := thanosComponents(querier, sidecarServices)
-	componentLabels := map[string]string{
-		"app.kubernetes.io/instance":   querier.Name,
-		"app.kubernetes.io/part-of":    "ThanosQuerier",
-		"app.kubernetes.io/managed-by": "observability-operator",
-	}
-	for _, c := range components {
-		err := r.reconcileComponent(ctx, querier, ensureLabels(c, componentLabels))
+	reconcilers := thanosComponentReconcilers(querier, sidecarServices)
+	for _, reconciler := range reconcilers {
+		err := reconciler.Reconcile(ctx, rm, rm.scheme)
 		// handle creation / updation errors that can happen due to a stale cache by
 		// retrying after some time.
 		if apierrors.IsAlreadyExists(err) || apierrors.IsConflict(err) {
@@ -128,8 +122,8 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 // Given a ThanosQuerier object, find the matching MonitoringStacks, extract the
 // sidecar service and return a list of urls for those sidecar services.
-func (r reconciler) findSidecarServices(ctx context.Context, tQuerier *msoapi.ThanosQuerier) ([]string, error) {
-	logger := r.logger.WithValues("selector", tQuerier.Spec.Selector)
+func (rm resourceManager) findSidecarServices(ctx context.Context, tQuerier *msoapi.ThanosQuerier) ([]string, error) {
+	logger := rm.logger.WithValues("selector", tQuerier.Spec.Selector)
 
 	msList := &msoapi.MonitoringStackList{}
 	selector, _ := metav1.LabelSelectorAsSelector(&tQuerier.Spec.Selector)
@@ -138,7 +132,7 @@ func (r reconciler) findSidecarServices(ctx context.Context, tQuerier *msoapi.Th
 	}
 
 	var sidecarUrls []string
-	if err := r.List(ctx, msList, opts...); err != nil {
+	if err := rm.List(ctx, msList, opts...); err != nil {
 		logger.Info("Couldn't find any MonitoringStack")
 		return sidecarUrls, err
 	}
@@ -160,11 +154,11 @@ func getEndpointUrl(serviceName string, namespace string) string {
 
 // Find all ThanosQueriers, whose Selector fits the given MonitoringStack and
 // return a list of reconcile requests, one for each ThanosQuerier.
-func (r reconciler) findQueriersForMonitoringStack(ms client.Object) []reconcile.Request {
-	logger := r.logger.WithValues("Monitoring Stack", ms.GetNamespace()+"/"+ms.GetName())
+func (rm resourceManager) findQueriersForMonitoringStack(ms client.Object) []reconcile.Request {
+	logger := rm.logger.WithValues("Monitoring Stack", ms.GetNamespace()+"/"+ms.GetName())
 	logger.Info("watched MonitoringStack changed, checking for matching querier")
 	queriers := &msoapi.ThanosQuerierList{}
-	err := r.List(context.TODO(), queriers, &client.ListOptions{})
+	err := rm.List(context.TODO(), queriers, &client.ListOptions{})
 	if err != nil {
 		logger.Error(err, "Failed to list Thanosqueriers")
 		return []reconcile.Request{}
@@ -187,34 +181,4 @@ func (r reconciler) findQueriersForMonitoringStack(ms client.Object) []reconcile
 		}
 	}
 	return requests
-}
-
-// Create an object after setting the owner reference to the passed
-// ThanosQueriers.
-// Uses server-side-apply.
-func (r reconciler) reconcileComponent(ctx context.Context, thanos *msoapi.ThanosQuerier, component client.Object) error {
-	if thanos.Namespace == component.GetNamespace() {
-		if err := controllerutil.SetControllerReference(thanos, component, r.scheme); err != nil {
-			return err
-		}
-	}
-
-	if err := r.Patch(ctx, component, client.Apply, client.ForceOwnership, client.FieldOwner("thanos-querier-controller")); err != nil {
-		return err
-	}
-	return nil
-}
-
-func ensureLabels(obj client.Object, wantLabels map[string]string) client.Object {
-	existingLabels := obj.GetLabels()
-	if existingLabels == nil {
-		obj.SetLabels(wantLabels)
-		return obj
-	}
-	for name, val := range wantLabels {
-		if _, ok := existingLabels[name]; !ok {
-			existingLabels[name] = val
-		}
-	}
-	return obj
 }
