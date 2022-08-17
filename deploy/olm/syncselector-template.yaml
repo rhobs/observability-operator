@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: selectorsyncset-template
+
+parameters:
+  - name: REGISTRY_IMG
+    required: true
+    value: quay.io/rhobs/observability-operator-catalog
+  - name: CHANNEL
+    value: development
+    required: true
+  - name: IMAGE_DIGEST
+    required: true
+    value: eee088e78ecbaafdc572188398ceb463e63c365f1023a0301742be2a8e0e4c29
+
+objects:
+  - apiVersion: hive.openshift.io/v1
+    kind: SelectorSyncSet
+    metadata:
+      name: observability-operator
+    spec:
+      clusterDeploymentSelector:
+        matchLabels:
+          api.openshift.com/addon-reference-addon: 'true'
+      resourceApplyMode: Sync
+      resources:
+        - apiVersion: v1
+          kind: Namespace
+          metadata:
+            annotations:
+              openshift.io/node-selector: ''
+            name: openshift-observability-operator
+        - apiVersion: operators.coreos.com/v1alpha1
+          kind: CatalogSource
+          metadata:
+            name: observability-operator-catalog
+            namespace: openshift-observability-operator
+          spec:
+            displayName: Red Hat Observability Operator
+            image: ${REGISTRY_IMG}@${IMAGE_DIGEST}
+            publisher: OSD Red Hat Addons
+            sourceType: grpc
+        - apiVersion: operators.coreos.com/v1alpha2
+          kind: OperatorGroup
+          metadata:
+            name: observability-operator-og
+            namespace: openshift-observability-operator
+        - apiVersion: operators.coreos.com/v1alpha1
+          kind: Subscription
+          metadata:
+            name: observability-operator
+            namespace: openshift-observability-operator
+          spec:
+            channel: ${CHANNEL}
+            name: observability-operator
+            source: observability-operator-catalog
+            sourceNamespace: openshift-observability-operator
