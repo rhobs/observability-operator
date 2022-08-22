@@ -15,6 +15,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -24,30 +25,32 @@ const AlertmanagerUserFSGroupID = 65535
 
 func stackComponentReconcilers(ms *stack.MonitoringStack, instanceSelectorKey string, instanceSelectorValue string) []reconciler.Reconciler {
 	prometheusRBACResourceName := ms.Name + "-prometheus"
-	alertmanagerRBACResourceName := ms.Name + "-alertmanager"
 	rbacVerbs := []string{"get", "list", "watch"}
 	additionalScrapeConfigsSecretName := ms.Name + "-prometheus-additional-scrape-configs"
+
+	alertmanagerRBACResourceName := ms.Name + "-alertmanager"
+	deployAlertmanager := !ms.Spec.AlertmanagerConfig.Disabled
+
 	return []reconciler.Reconciler{
 		reconciler.NewUpdater(newServiceAccount(prometheusRBACResourceName, ms.Namespace), ms),
 		reconciler.NewUpdater(newPrometheusRole(ms, prometheusRBACResourceName, rbacVerbs), ms),
 		reconciler.NewUpdater(newRoleBinding(ms, prometheusRBACResourceName), ms),
 		reconciler.NewUpdater(newAdditionalScrapeConfigsSecret(ms, additionalScrapeConfigsSecretName), ms),
-		reconciler.NewUpdater(newServiceAccount(alertmanagerRBACResourceName, ms.Namespace), ms),
-		reconciler.NewOptionalUpdater(newAlertManagerRole(ms, alertmanagerRBACResourceName, rbacVerbs), ms,
-			!ms.Spec.AlertmanagerConfig.Disabled),
-		reconciler.NewOptionalUpdater(newRoleBinding(ms, alertmanagerRBACResourceName), ms,
-			!ms.Spec.AlertmanagerConfig.Disabled),
-		reconciler.NewOptionalUpdater(newAlertmanager(ms, alertmanagerRBACResourceName, instanceSelectorKey, instanceSelectorValue), ms,
-			!ms.Spec.AlertmanagerConfig.Disabled),
-		reconciler.NewOptionalUpdater(newAlertmanagerService(ms, instanceSelectorKey, instanceSelectorValue), ms,
-			!ms.Spec.AlertmanagerConfig.Disabled),
-		reconciler.NewOptionalUpdater(newAlertmanagerPDB(ms, instanceSelectorKey, instanceSelectorValue), ms,
-			!ms.Spec.AlertmanagerConfig.Disabled),
 		reconciler.NewUpdater(newPrometheus(ms, prometheusRBACResourceName, additionalScrapeConfigsSecretName, instanceSelectorKey, instanceSelectorValue), ms),
 		reconciler.NewUpdater(newPrometheusService(ms, instanceSelectorKey, instanceSelectorValue), ms),
 		reconciler.NewUpdater(newThanosSidecarService(ms, instanceSelectorKey, instanceSelectorValue), ms),
 		reconciler.NewOptionalUpdater(newPrometheusPDB(ms, instanceSelectorKey, instanceSelectorValue), ms,
 			*ms.Spec.PrometheusConfig.Replicas > 1),
+
+		// Alertmanager
+		reconciler.NewOptionalUpdater(newServiceAccount(alertmanagerRBACResourceName, ms.Namespace), ms, deployAlertmanager),
+		reconciler.NewOptionalUpdater(newAlertmanagerRole(ms, alertmanagerRBACResourceName, rbacVerbs), ms, deployAlertmanager),
+		reconciler.NewOptionalUpdater(newRoleBinding(ms, alertmanagerRBACResourceName), ms, deployAlertmanager),
+		reconciler.NewOptionalUpdater(
+			newAlertmanager(ms, alertmanagerRBACResourceName, instanceSelectorKey, instanceSelectorValue),
+			ms, deployAlertmanager),
+		reconciler.NewOptionalUpdater(newAlertmanagerService(ms, instanceSelectorKey, instanceSelectorValue), ms, deployAlertmanager),
+		reconciler.NewOptionalUpdater(newAlertmanagerPDB(ms, instanceSelectorKey, instanceSelectorValue), ms, deployAlertmanager),
 	}
 }
 
@@ -108,6 +111,9 @@ func newPrometheus(
 	}
 
 	config := ms.Spec.PrometheusConfig
+	// NOTE: using hash due to upstream PO bug - 4944
+	tlsSecretName := ms.PrometheusHash() + "-tls"
+	skipValidation := `tls_config: { insecure_skip_verify: true, }`
 
 	prometheus := &monv1.Prometheus{
 		TypeMeta: metav1.TypeMeta{
@@ -122,6 +128,17 @@ func newPrometheus(
 
 		Spec: monv1.PrometheusSpec{
 			CommonPrometheusFields: monv1.CommonPrometheusFields{
+				Containers: []v1.Container{{
+					Name: "thanos-sidecar",
+					Args: []string{
+						"sidecar",
+						"--prometheus.url=https://localhost:9090/",
+						"--prometheus.http-client", skipValidation,
+						"--grpc-address=:10901",
+						"--http-address=:10902",
+						"--log.level=debug",
+					},
+				}},
 				Replicas: config.Replicas,
 
 				PodMetadata: &monv1.EmbeddedObjectMetadata{
@@ -170,6 +187,9 @@ func newPrometheus(
 				RemoteWrite:               config.RemoteWrite,
 				ExternalLabels:            config.ExternalLabels,
 				EnableRemoteWriteReceiver: config.EnableRemoteWriteReceiver,
+				Secrets:                   []string{tlsSecretName},
+				Web: &monv1.PrometheusWebSpec{
+					TLSConfig: webTLSConfigForServiceCA(tlsSecretName)},
 			},
 			Retention:             ms.Spec.Retention,
 			RuleSelector:          prometheusSelector,
@@ -196,6 +216,22 @@ func newPrometheus(
 	}
 
 	return prometheus
+}
+
+func webTLSConfigForServiceCA(secret string) *monv1.WebTLSConfig {
+
+	return &monv1.WebTLSConfig{
+		Cert: monv1.SecretOrConfigMap{
+			Secret: &corev1.SecretKeySelector{
+				LocalObjectReference: v1.LocalObjectReference{Name: secret},
+				Key:                  "tls.crt", // set by service-ca operator
+			},
+		},
+		KeySecret: corev1.SecretKeySelector{
+			LocalObjectReference: v1.LocalObjectReference{Name: secret},
+			Key:                  "tls.key",
+		},
+	}
 }
 
 func storageForPVC(pvc *corev1.PersistentVolumeClaimSpec) *monv1.StorageSpec {
@@ -242,7 +278,11 @@ func newRoleBinding(ms *stack.MonitoringStack, rbacResourceName string) *rbacv1.
 }
 
 func newPrometheusService(ms *stack.MonitoringStack, instanceSelectorKey string, instanceSelectorValue string) *corev1.Service {
-	name := ms.Name + "-prometheus"
+	name := ms.PrometheusName()
+
+	// NOTE: workaround for PO bug: https://github.com/prometheus-operator/prometheus-operator/issues/4944
+	tlsSecretName := ms.PrometheusHash() + "-tls"
+
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),
@@ -252,6 +292,9 @@ func newPrometheusService(ms *stack.MonitoringStack, instanceSelectorKey string,
 			Name:      name,
 			Namespace: ms.Namespace,
 			Labels:    objectLabels(name, ms.Name, instanceSelectorKey, instanceSelectorValue),
+			Annotations: map[string]string{
+				"service.beta.openshift.io/serving-cert-secret-name": tlsSecretName,
+			},
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: podLabels("prometheus", ms.Name),
@@ -268,6 +311,8 @@ func newPrometheusService(ms *stack.MonitoringStack, instanceSelectorKey string,
 
 func newThanosSidecarService(ms *stack.MonitoringStack, instanceSelectorKey string, instanceSelectorValue string) *corev1.Service {
 	name := ms.Name + "-thanos-sidecar"
+	// NOTE: workaround for PO bug: https://github.com/prometheus-operator/prometheus-operator/issues/4944
+	tlsSecretName := ms.PrometheusHash() + "-tls"
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),
@@ -277,6 +322,9 @@ func newThanosSidecarService(ms *stack.MonitoringStack, instanceSelectorKey stri
 			Name:      name,
 			Namespace: ms.Namespace,
 			Labels:    objectLabels(name, ms.Name, instanceSelectorKey, instanceSelectorValue),
+			Annotations: map[string]string{
+				"service.beta.openshift.io/serving-cert-secret-name": tlsSecretName,
+			},
 		},
 		Spec: corev1.ServiceSpec{
 
@@ -312,6 +360,9 @@ func newAdditionalScrapeConfigsSecret(ms *stack.MonitoringStack, name string) *c
 			AdditionalScrapeConfigsSelfScrapeKey: `
 - job_name: prometheus-self
   honor_labels: true
+  scheme: https
+  tls_config:
+    insecure_skip_verify: true
   relabel_configs:
   - action: keep
     source_labels:
@@ -345,7 +396,9 @@ func newAdditionalScrapeConfigsSecret(ms *stack.MonitoringStack, name string) *c
   scrape_interval: 30s
   scrape_timeout: 10s
   metrics_path: /metrics
-  scheme: http
+  scheme: https
+  tls_config:
+    insecure_skip_verify: true
   follow_redirects: true
   relabel_configs:
   - source_labels:

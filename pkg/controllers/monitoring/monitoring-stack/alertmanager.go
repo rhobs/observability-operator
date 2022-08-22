@@ -24,6 +24,7 @@ func newAlertmanager(
 		resourceSelector = &metav1.LabelSelector{}
 	}
 	replicas := int32(2)
+	tlsSecretName := ms.AlertmanagerHash() + "-tls"
 
 	return &monv1.Alertmanager{
 		TypeMeta: metav1.TypeMeta{
@@ -72,12 +73,17 @@ func newAlertmanager(
 				RunAsNonRoot: pointer.Bool(true),
 				RunAsUser:    pointer.Int64(AlertmanagerUserFSGroupID),
 			},
+
+			Secrets: []string{tlsSecretName},
+			Web: &monv1.AlertmanagerWebSpec{
+				TLSConfig: webTLSConfigForServiceCA(tlsSecretName)},
 		},
 	}
 }
 
 func newAlertmanagerService(ms *stack.MonitoringStack, instanceSelectorKey string, instanceSelectorValue string) *corev1.Service {
-	name := ms.Name + "-alertmanager"
+	name := ms.AlertmanagerName()
+	tlsSecretName := ms.AlertmanagerHash() + "-tls"
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),
@@ -87,6 +93,9 @@ func newAlertmanagerService(ms *stack.MonitoringStack, instanceSelectorKey strin
 			Name:      name,
 			Namespace: ms.Namespace,
 			Labels:    objectLabels(name, ms.Name, instanceSelectorKey, instanceSelectorValue),
+			Annotations: map[string]string{
+				"service.beta.openshift.io/serving-cert-secret-name": tlsSecretName,
+			},
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: podLabels("alertmanager", ms.Name),
@@ -102,7 +111,7 @@ func newAlertmanagerService(ms *stack.MonitoringStack, instanceSelectorKey strin
 }
 
 func newAlertmanagerPDB(ms *stack.MonitoringStack, instanceSelectorKey string, instanceSelectorValue string) *policyv1.PodDisruptionBudget {
-	name := ms.Name + "-alertmanager"
+	name := ms.AlertmanagerName()
 	selector := podLabels("alertmanager", ms.Name)
 
 	return &policyv1.PodDisruptionBudget{
@@ -127,7 +136,7 @@ func newAlertmanagerPDB(ms *stack.MonitoringStack, instanceSelectorKey string, i
 	}
 }
 
-func newAlertManagerRole(ms *stack.MonitoringStack, rbacResourceName string, rbacVerbs []string) *rbacv1.Role {
+func newAlertmanagerRole(ms *stack.MonitoringStack, rbacResourceName string, rbacVerbs []string) *rbacv1.Role {
 	return &rbacv1.Role{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: rbacv1.SchemeGroupVersion.String(),

@@ -5,6 +5,9 @@
 package v1alpha1
 
 import (
+	"crypto/sha1"
+	"fmt"
+
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -247,4 +250,26 @@ type ThanosQuerierSpec struct {
 // ThanosQuerierStatus defines the observed state of ThanosQuerier.
 // It should always be reconstructable from the state of the cluster and/or outside world.
 type ThanosQuerierStatus struct {
+}
+
+func (ms MonitoringStack) AlertmanagerName() string {
+	return ms.Name + "-alertmanager"
+}
+func (ms MonitoringStack) AlertmanagerHash() string {
+
+	return "am-" + shortHash(ms.AlertmanagerName())
+}
+
+func (ms MonitoringStack) PrometheusName() string {
+	return ms.Name + "-prometheus"
+}
+
+func (ms MonitoringStack) PrometheusHash() string {
+	return "prom-" + shortHash(ms.PrometheusName())
+}
+
+func shortHash(x string) string {
+	h := sha1.New()
+	hash := fmt.Sprintf("%x", h.Sum([]byte(x)))
+	return hash[:8]
 }

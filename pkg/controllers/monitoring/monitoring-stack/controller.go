@@ -97,7 +97,6 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 	generationChanged := builder.WithPredicates(predicate.GenerationChangedPredicate{})
 
 	ctrl, err := ctrl.NewControllerManagedBy(mgr).
-		WithLogger(ctrl.Log).
 		For(&stack.MonitoringStack{}).
 		Owns(&monv1.Prometheus{}, builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})).
 		Owns(&monv1.Alertmanager{}, generationChanged).

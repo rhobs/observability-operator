@@ -183,6 +183,9 @@ spec:
                       - key
                       type: object
                       x-kubernetes-map-type: atomic
+                    enableHttp2:
+                      description: Whether to enable HTTP2.
+                      type: boolean
                     followRedirects:
                       description: FollowRedirects configures whether scrape requests
                         follow HTTP 3xx redirects.
@@ -212,15 +215,27 @@ spec:
                           action:
                             default: replace
                             description: Action to perform based on regex matching.
-                              Default is 'replace'
+                              Default is 'replace'. uppercase and lowercase actions
+                              require Prometheus >= 2.36.
                             enum:
                             - replace
+                            - Replace
                             - keep
+                            - Keep
                             - drop
+                            - Drop
                             - hashmod
+                            - HashMod
                             - labelmap
+                            - LabelMap
                             - labeldrop
+                            - LabelDrop
                             - labelkeep
+                            - LabelKeep
+                            - lowercase
+                            - Lowercase
+                            - uppercase
+                            - Uppercase
                             type: string
                           modulus:
                             description: Modulus to take of the hash of the source
@@ -354,7 +369,8 @@ spec:
                       description: Optional HTTP URL parameters
                       type: object
                     path:
-                      description: HTTP path to scrape for metrics.
+                      description: HTTP path to scrape for metrics. If empty, Prometheus
+                        uses the default value (e.g. `/metrics`).
                       type: string
                     port:
                       description: Name of the pod port this endpoint refers to. Mutually
@@ -379,15 +395,27 @@ spec:
                           action:
                             default: replace
                             description: Action to perform based on regex matching.
-                              Default is 'replace'
+                              Default is 'replace'. uppercase and lowercase actions
+                              require Prometheus >= 2.36.
                             enum:
                             - replace
+                            - Replace
                             - keep
+                            - Keep
                             - drop
+                            - Drop
                             - hashmod
+                            - HashMod
                             - labelmap
+                            - LabelMap
                             - labeldrop
+                            - LabelDrop
                             - labelkeep
+                            - LabelKeep
+                            - lowercase
+                            - Lowercase
+                            - uppercase
+                            - Uppercase
                             type: string
                           modulus:
                             description: Modulus to take of the hash of the source
