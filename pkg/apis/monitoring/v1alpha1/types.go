@@ -96,10 +96,9 @@ type ConditionStatus string
 type ConditionType string
 
 const (
-	ConditionTrue     ConditionStatus = "True"
-	ConditionDegraded ConditionStatus = "Degraded"
-	ConditionFalse    ConditionStatus = "False"
-	ConditionUnknown  ConditionStatus = "Unknown"
+	ConditionTrue    ConditionStatus = "True"
+	ConditionFalse   ConditionStatus = "False"
+	ConditionUnknown ConditionStatus = "Unknown"
 
 	ReconciledCondition ConditionType = "Reconciled"
 	AvailableCondition  ConditionType = "Available"
