@@ -165,13 +165,13 @@ func TestUpdateConditions(t *testing.T) {
 			expectedResults: []v1alpha1.Condition{
 				{
 					Type:               v1alpha1.AvailableCondition,
-					Status:             v1alpha1.ConditionDegraded,
+					Status:             v1alpha1.ConditionFalse,
 					ObservedGeneration: 1,
-					Reason:             PrometheusNotAvailable,
+					Reason:             PrometheusDegraded,
 				},
 				{
 					Type:               v1alpha1.ReconciledCondition,
-					Status:             v1alpha1.ConditionDegraded,
+					Status:             v1alpha1.ConditionFalse,
 					ObservedGeneration: 1,
 					Reason:             PrometheusNotReconciled,
 				}},

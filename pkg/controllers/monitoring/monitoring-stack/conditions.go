@@ -14,6 +14,7 @@ const (
 	FailedToReconcileReason        = "FailedToReconcile"
 	PrometheusNotAvailable         = "PrometheusNotAvailable"
 	PrometheusNotReconciled        = "PrometheusNotReconciled"
+	PrometheusDegraded             = "PrometheusDegraded"
 	CannotReadPrometheusConditions = "Cannot read Prometheus status conditions"
 	AvailableMessage               = "Monitoring Stack is available"
 	SuccessfullyReconciledMessage  = "Monitoring Stack is successfully reconciled"
@@ -75,7 +76,11 @@ func updateAvailable(ac v1alpha1.Condition, prometheusConditions []monv1.Prometh
 
 	if prometheusAvailable.Status != monv1.PrometheusConditionTrue {
 		ac.Status = prometheusStatusToMSStatus(prometheusAvailable.Status)
-		ac.Reason = PrometheusNotAvailable
+		if prometheusAvailable.Status == monv1.PrometheusConditionDegraded {
+			ac.Reason = PrometheusDegraded
+		} else {
+			ac.Reason = PrometheusNotAvailable
+		}
 		ac.Message = prometheusAvailable.Message
 		return ac
 	}
@@ -128,8 +133,10 @@ func getPrometheusCondition(prometheusConditions []monv1.PrometheusCondition, t 
 
 func prometheusStatusToMSStatus(ps monv1.PrometheusConditionStatus) v1alpha1.ConditionStatus {
 	switch ps {
+	// Prometheus "Available" condition with status "Degraded" is reported as "Available" condition
+	// with status false
 	case monv1.PrometheusConditionDegraded:
-		return v1alpha1.ConditionDegraded
+		return v1alpha1.ConditionFalse
 	case monv1.PrometheusConditionTrue:
 		return v1alpha1.ConditionTrue
 	case monv1.PrometheusConditionFalse:
