@@ -114,15 +114,15 @@ jobs:
       - name: Build Bundle Image
         run: make bundle-image
 
-  e2e-tests-olm:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
+  # e2e-tests-olm:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
 
-      - name: Import common environment variables
-        run: cat ".github/env" >> $GITHUB_ENV
+  #     - name: Import common environment variables
+  #       run: cat ".github/env" >> $GITHUB_ENV
 
-      - name: e2e tests through OLM
-        uses: ./.github/e2e-tests-olm
-        with:
-          go-version: ${{ env.go-version }}
+  #     - name: e2e tests through OLM
+  #       uses: ./.github/e2e-tests-olm
+  #       with:
+  #         go-version: ${{ env.go-version }}
