@@ -8,6 +8,7 @@ IMAGE_BASE ?= observability-operator
 
 VERSION ?= $(shell cat VERSION)
 OPERATOR_IMG = $(IMAGE_BASE):$(VERSION)
+OPERATOR_BUNDLE=observability-operator.v$(VERSION)
 CONTAINER_RUNTIME := $(shell command -v podman 2> /dev/null || echo docker)
 
 # running `make` builds the operator (default target)
@@ -163,12 +164,6 @@ bundle-image: bundle ## Build the bundle image.
 bundle-push: ## Build the bundle image.
 	$(CONTAINER_RUNTIME) push $(PUSH_OPTIONS) $(BUNDLE_IMG)
 
-# A comma-separated list of bundle images e.g.
-# make catalog-build BUNDLE_IMGS=example.com/operator-bundle:v0.1.0,example.com/operator-bundle:v0.2.0).
-#
-# NOTE: These images MUST exist in a registry and be pull-able.
-BUNDLE_IMGS ?= $(BUNDLE_IMG)
-
 # The image tag given to the resulting catalog image
 CATALOG_IMG ?= $(IMAGE_BASE)-catalog:$(VERSION)
 
@@ -177,29 +172,19 @@ CATALOG_IMG ?= $(IMAGE_BASE)-catalog:$(VERSION)
 CATALOG_IMG_LATEST ?= $(IMAGE_BASE)-catalog:latest
 
 
-# mark release as first by setting FIRST_OLM_RELEASE to true. This results in a
-# root catalog image  (i.e. no previous catalog images/ --from-index)
-FIRST_OLM_RELEASE ?= false
-
-# Set CATALOG_BASE_IMG to an existing catalog image tag to add $BUNDLE_IMGS to
-# that image except for FIRST_OLM_RELEASE
-ifeq ($(FIRST_OLM_RELEASE), false)
-FROM_INDEX_OPT := --from-index $(CATALOG_IMG_LATEST)
-endif
-
 # Build a catalog image by adding bundle images to an empty catalog using the
 # operator package manager tool, 'opm'.
-#
-# NOTE: This recipe invokes 'opm' in 'semver' bundle add mode. For more information
-# on add modes, see:
-# https://github.com/operator-framework/community-operators/blob/7f1438c/docs/packaging-operator.md#updating-your-existing-operator
 .PHONY: catalog-image
 catalog-image: $(OPM)
-	$(OPM) index add \
-	 	--container-tool $(CONTAINER_RUNTIME) \
-		--mode semver \
-		--tag $(CATALOG_IMG) \
-		--bundles $(BUNDLE_IMGS) $(FROM_INDEX_OPT)
+	$(OPM) render $(BUNDLE_IMG) \
+		--output=yaml  >> olm/observability-operator-index/index.yaml
+	./olm/update-channels.sh $(CHANNELS) $(OPERATOR_BUNDLE)
+	$(OPM) validate ./olm/observability-operator-index
+
+	$(CONTAINER_RUNTIME) build \
+		-f olm/observability-operator-index.Dockerfile \
+		-t $(CATALOG_IMG)
+
 	# tag the catalog img:version as latest so that continious release
 	# is possible by refering to latest tag instead of a version
 	$(CONTAINER_RUNTIME) tag $(CATALOG_IMG) $(CATALOG_IMG_LATEST)

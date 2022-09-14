@@ -33,3 +33,11 @@ jobs:
           quay_login: ${{ secrets.QUAY_LOGIN }}
           quay_token: ${{ secrets.QUAY_TOKEN }}
           go-version: ${{ env.go-version }}
+
+      - name: Publish tag
+        id: publish_tag
+        run: |
+          git config user.name rhobs-release-bot
+          git config user.email release-bot@monitoring.rhobs.io
+          git tag -a "$(cat VERSION)" -m "$(cat VERSION) release candidate"
+          git push --follow-tags

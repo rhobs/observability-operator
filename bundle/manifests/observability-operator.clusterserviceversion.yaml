@@ -39,7 +39,7 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    operators.operatorframework.io/builder: operator-sdk-v1.12.0+git
+    operators.operatorframework.io/builder: operator-sdk-v1.23.0
     operators.operatorframework.io/project_layout: unknown
   name: observability-operator.v0.0.13
   namespace: placeholder
@@ -308,7 +308,11 @@ spec:
           - use
         serviceAccountName: observability-operator-sa
       deployments:
-      - name: observability-operator
+      - label:
+          app.kubernetes.io/component: operator
+          app.kubernetes.io/name: observability-operator
+          app.kubernetes.io/version: 0.0.1
+        name: observability-operator
         spec:
           replicas: 1
           selector:
@@ -366,7 +370,12 @@ spec:
                 runAsNonRoot: true
               serviceAccountName: observability-operator-sa
               terminationGracePeriodSeconds: 30
-      - name: observability-operator-prometheus-operator
+      - label:
+          app.kubernetes.io/component: controller
+          app.kubernetes.io/name: prometheus-operator
+          app.kubernetes.io/part-of: observability-operator
+          app.kubernetes.io/version: 0.57.0
+        name: observability-operator-prometheus-operator
         spec:
           replicas: 1
           selector:
