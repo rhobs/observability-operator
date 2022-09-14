@@ -19,7 +19,7 @@ jobs:
           go-version: ${{ env.go-version }}
 
   publish-olm-development:
-    if: "!startsWith(github.event.head_commit.message, 'chore(release):')"
+    if: "!startsWith(github.event.head_commit.message, 'chore(release):') && !startsWith(github.event.head_commit.message, 'ci(bot): update catalog image')"
     runs-on: ubuntu-latest
     environment: quay
     needs:
@@ -83,16 +83,15 @@ jobs:
           go-version: ${{ env.go-version }}
 
       - name: Generate release notes
+        id: release_notes
         run: |
           # Create the release notes for the Github release
           git config user.name rhobs-release-bot
           git config user.email release-bot@monitoring.rhobs.io
-          npx standard-version -i RELEASE_BODY.md --release-as $(cat VERSION) --skip.commit
+          npx standard-version -i RELEASE_BODY.md  \
+            --release-as $(cat VERSION) \
+            --skip.commit
 
-      - name: Publish tag
-        id: publish_tag
-        run: |
-          git push --follow-tags
           echo ::set-output name=tag_name::$(git describe HEAD --abbrev=0)
 
       - name: Create Github release
@@ -100,8 +99,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.REPOSITORY_PUSH_TOKEN }}
         with:
-          release_name: ${{ steps.publish_tag.outputs.tag_name }}
-          tag_name: ${{ steps.publish_tag.outputs.tag_name }}
+          release_name: ${{ steps.release_notes.outputs.tag_name }}
+          tag_name: ${{ steps.release_notes.outputs.tag_name }}
           body_path: RELEASE_BODY.md
           # We always generate pre-releases and mark them as releases manually
           prerelease: true
