@@ -22,8 +22,8 @@ jobs:
     if: "!startsWith(github.event.head_commit.message, 'chore(release):') && !startsWith(github.event.head_commit.message, 'ci(bot): update catalog image')"
     runs-on: ubuntu-latest
     environment: quay
-    needs:
-      - e2e-tests-olm
+    # needs:
+    #   - e2e-tests-olm
     steps:
       - uses: actions/checkout@v2
         with:
@@ -59,8 +59,8 @@ jobs:
           quay_token: ${{ secrets.QUAY_TOKEN }}
 
   create-github-prerelease:
-    needs:
-      - e2e-tests-olm
+    # needs:
+    #   - e2e-tests-olm
     runs-on: ubuntu-latest
     if: "startsWith(github.event.head_commit.message, 'chore(release):')"
     steps:
