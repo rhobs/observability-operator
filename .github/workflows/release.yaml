@@ -58,6 +58,12 @@ jobs:
           quay_login: ${{ secrets.QUAY_LOGIN }}
           quay_token: ${{ secrets.QUAY_TOKEN }}
 
+      - name: Push catalog index changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.REPOSITORY_PUSH_TOKEN }}
+          branch: ${{ github.ref }}
+
   create-github-prerelease:
     # needs:
     #   - e2e-tests-olm
