@@ -49,21 +49,26 @@ runs:
     shell: bash
     run: make bundle-push
 
+  - name: Git merge olm-catalog branch
+      git config user.name rhobs-release-bot
+      git config user.email release-bot@monitoring.rhobs.io
+
+      git fetch origin olm-catalog:olm-catalog
+      git branch -a
+      git merge olm-catalog -m "merge olm-catalog branch"
+
   - name: Build Catalog Image
     shell: bash
     run: |
       make catalog-image
 
-      # NOTE: add the index.yaml only if the catalog could be built sucessfully
-      git config user.name rhobs-release-bot
-      git config user.email release-bot@monitoring.rhobs.io
-
-      git add olm/observability-operator-index/index.yaml
+      # NOTE: add a commit only if the catalog could be built sucessfully
+      git add olm/
       git commit -m "ci(bot): update catalog image"
 
   - name: Publish catalog image
     shell: bash
     run: |
       make catalog-push
-      # update main only if catalog could be successfully published
-      git push origin HEAD:main
+      # update olm-catalog only if catalog could be successfully published
+      git push origin HEAD:olm-catalog

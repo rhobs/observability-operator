@@ -43,10 +43,4 @@ jobs:
           git config user.name rhobs-release-bot
           git config user.email release-bot@monitoring.rhobs.io
           git tag -a "$(cat VERSION)" -m "$(cat VERSION) release candidate"
-
-      - name: Push changes
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.REPOSITORY_PUSH_TOKEN }}
-          branch: ${{ github.ref }}
-          tags: true
+          git push --follow-tags
