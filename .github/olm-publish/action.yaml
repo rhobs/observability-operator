@@ -14,6 +14,8 @@ runs:
   using: composite
   steps:
   - uses: actions/checkout@v2
+    with:
+      fetch-depth: 0
 
   - name: Setup Go environment
     uses: actions/setup-go@v3
@@ -33,6 +35,18 @@ runs:
       username: ${{ inputs.quay_login }}
       password: ${{ inputs.quay_token }}
 
+  - name: Git merge olm-catalog branch
+    shell: bash
+    run: |
+      git config user.name rhobs-release-bot
+      git config user.email release-bot@monitoring.rhobs.io
+
+      # NOTE: uses strategy-option=ours as bundle created for a release using
+      # make initiate-release conflicts with the previous bundle created for
+      # development branch, so the version in main takes precedence over the
+      # one in olm-catalog branch
+      git merge -Xours origin/olm-catalog  -m "ci: merge olm-catalog branch"
+
   - name: Build Operator Image
     shell: bash
     run: make operator-image
@@ -49,10 +63,20 @@ runs:
     shell: bash
     run: make bundle-push
 
+
   - name: Build Catalog Image
     shell: bash
-    run: make catalog-image FIRST_OLM_RELEASE=true
+    run: |
+      make catalog-image
+
+      # NOTE: add a commit only if the catalog can built sucessfully
+      git add bundle/ olm/
+      git commit -m "ci(bot): update catalog image"
 
   - name: Publish catalog image
     shell: bash
-    run: make catalog-push
+    run: |
+      make catalog-push
+
+      # update olm-catalog only if catalog could be successfully published
+      git push origin HEAD:olm-catalog
