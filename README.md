@@ -28,6 +28,16 @@ Refer `Running the Operator in Kind `below to run the operator in Kubernetes.
 
 In order to contribute to this project, make sure you have go 1.17 on your local machine.
 
+### Dependencies
+
+The build system assumes the following binaries are in the `PATH`:
+
+```
+make git go npm
+```
+
+Please make sure to install the relevant packages.
+
 ### Commit message convention
 
 Commit messages need to comply to the [Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/) and should be structured as follows:
