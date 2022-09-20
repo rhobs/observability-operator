@@ -10,7 +10,7 @@ kind: Kustomization
 images:
 - name: observability-operator
   newName: observability-operator
-  newTag: 0.0.13
+  newTag: 0.0.14
 
 patches:
 - patch: |-
