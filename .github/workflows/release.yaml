@@ -58,6 +58,12 @@ jobs:
           quay_login: ${{ secrets.QUAY_LOGIN }}
           quay_token: ${{ secrets.QUAY_TOKEN }}
 
+      - name: Push catalog index changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.REPOSITORY_PUSH_TOKEN }}
+          branch: olm-catalog
+
   create-github-prerelease:
     needs:
       - e2e-tests-olm
@@ -87,11 +93,16 @@ jobs:
           # Create the release notes for the Github release
           git config user.name rhobs-release-bot
           git config user.email release-bot@monitoring.rhobs.io
-          npx standard-version -i RELEASE_BODY.md --release-as $(cat VERSION) --skip.commit
+          npx standard-version -i RELEASE_BODY.md  \
+            --release-as $(cat VERSION) \
+            --skip.commit
 
       - name: Publish tag
         id: publish_tag
         run: |
+          # NOTE tag is created by standard-version and points to the
+          # chore(release): commit as opposed to pointing to the commit added
+          # to olm-catalog branch after images are built and pushed
           git push --follow-tags
           echo ::set-output name=tag_name::$(git describe HEAD --abbrev=0)
 
@@ -103,5 +114,5 @@ jobs:
           release_name: ${{ steps.publish_tag.outputs.tag_name }}
           tag_name: ${{ steps.publish_tag.outputs.tag_name }}
           body_path: RELEASE_BODY.md
-          # We always generate pre-releases and mark them as releases manually
+          # NOTE: We always generate pre-releases and mark them as releases manually
           prerelease: true

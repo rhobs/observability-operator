@@ -11,7 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     environment: quay
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.REPOSITORY_PUSH_TOKEN }}
 
       - name: Import common environment variables
         run: cat ".github/env" >> $GITHUB_ENV
@@ -22,7 +26,7 @@ jobs:
           version="$(cat VERSION)-rc"
           echo "::set-output name=version::$version"
 
-      - name: publish
+      - name: publish catalog
         uses: ./.github/olm-publish
         env:
           IMAGE_BASE: ${{ secrets.IMAGE_BASE }}
