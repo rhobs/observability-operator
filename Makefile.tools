@@ -72,10 +72,6 @@ $(GOLANGCI_LINT) golangci-lint: $(TOOLS_DIR)
 		GOBIN=$(TOOLS_DIR) go install github.com/golangci/golangci-lint/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION) ;\
 	}
 
-# NOTE: kustomize does not support `go install` hence this workaround to install
-# it by creating an tmp module and using go get to download the precise version
-# needed for the project
-# see: https://github.com/kubernetes-sigs/kustomize/issues/3618
 .PHONY: kustomize
 $(KUSTOMIZE) kustomize: $(TOOLS_DIR)
 	@{ \
@@ -88,7 +84,11 @@ $(KUSTOMIZE) kustomize: $(TOOLS_DIR)
 $(OPERATOR_SDK) operator-sdk: $(TOOLS_DIR)
 	@{ \
 		set -ex ;\
-		[[ -f $(OPERATOR_SDK) ]] && exit 0 ;\
+		[[ -f $(OPERATOR_SDK) ]] && \
+		[[ $(shell $(OPERATOR_SDK) version | awk '{print $$3}' | tr -d ,) = $(OPERATOR_SDK_VERSION) ]] && { \
+			echo "sdk up to date"; \
+			exit 0 ;\
+		}; \
 		OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) && \
 		curl -sSLo $(OPERATOR_SDK) https://github.com/operator-framework/operator-sdk/releases/download/$(OPERATOR_SDK_VERSION)/operator-sdk_$${OS}_$${ARCH} ;\
 		chmod +x $(OPERATOR_SDK) ;\
