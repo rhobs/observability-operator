@@ -145,35 +145,32 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			return ctrl.Result{RequeueAfter: 2 * time.Second}, nil
 		}
 		if err != nil {
-			return rm.updateStatus(ctx, req, ms, err)
+			return rm.updateStatus(ctx, req, ms, err), err
 		}
 	}
 
-	return rm.updateStatus(ctx, req, ms, nil)
+	return rm.updateStatus(ctx, req, ms, nil), nil
 }
 
-func (rm resourceManager) updateStatus(ctx context.Context, req ctrl.Request, ms *stack.MonitoringStack, recError error) (ctrl.Result, error) {
+func (rm resourceManager) updateStatus(ctx context.Context, req ctrl.Request, ms *stack.MonitoringStack, recError error) ctrl.Result {
 	var prom monv1.Prometheus
+	logger := rm.logger.WithValues("stack", req.NamespacedName)
 	key := client.ObjectKey{
 		Name:      ms.Name,
 		Namespace: ms.Namespace,
 	}
 	err := rm.k8sClient.Get(ctx, key, &prom)
 	if err != nil {
-		if errors.IsNotFound(err) {
-			return ctrl.Result{RequeueAfter: 2 * time.Second}, nil
-		}
-		return ctrl.Result{}, err
+		logger.Info("Failed to get prometheus object", "err", err)
+		return ctrl.Result{RequeueAfter: 2 * time.Second}
 	}
 	ms.Status.Conditions = updateConditions(ms.Status.Conditions, prom.Status.Conditions, ms.Generation, recError)
 	err = rm.k8sClient.Status().Update(ctx, ms)
 	if err != nil {
-		if errors.IsConflict(err) {
-			return ctrl.Result{RequeueAfter: 2 * time.Second}, nil
-		}
-		return ctrl.Result{}, err
+		logger.Info("Failed to update status", "err", err)
+		return ctrl.Result{RequeueAfter: 2 * time.Second}
 	}
-	return ctrl.Result{}, nil
+	return ctrl.Result{}
 }
 
 func (rm resourceManager) getStack(ctx context.Context, req ctrl.Request) (*stack.MonitoringStack, error) {
