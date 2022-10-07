@@ -1,11 +1,11 @@
 ---
 resources:
  - ../common
- - monitoring.coreos.com_alertmanagerconfigs.yaml
- - monitoring.coreos.com_alertmanagers.yaml
- - monitoring.coreos.com_podmonitors.yaml
- - monitoring.coreos.com_probes.yaml
- - monitoring.coreos.com_prometheuses.yaml
- - monitoring.coreos.com_prometheusrules.yaml
- - monitoring.coreos.com_servicemonitors.yaml
- - monitoring.coreos.com_thanosrulers.yaml
+ - monitoring.rhobs_alertmanagerconfigs.yaml
+ - monitoring.rhobs_alertmanagers.yaml
+ - monitoring.rhobs_podmonitors.yaml
+ - monitoring.rhobs_probes.yaml
+ - monitoring.rhobs_prometheuses.yaml
+ - monitoring.rhobs_prometheusrules.yaml
+ - monitoring.rhobs_servicemonitors.yaml
+ - monitoring.rhobs_thanosrulers.yaml

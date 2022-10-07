@@ -1,4 +1,4 @@
-local rules = import 'github.com/prometheus-operator/prometheus-operator/jsonnet/mixin/alerts.jsonnet';
+local rules = import 'github.com/rhobs/obo-prometheus-operator/jsonnet/mixin/alerts.jsonnet';
 
 {
   _commonLabels:: {

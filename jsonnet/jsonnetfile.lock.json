@@ -24,7 +24,7 @@
     {
       "source": {
         "git": {
-          "remote": "https://github.com/prometheus-operator/prometheus-operator.git",
+          "remote": "https://github.com/rhobs/obo-prometheus-operator.git",
           "subdir": "jsonnet/mixin"
         }
       },

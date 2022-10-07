@@ -20,7 +20,7 @@ OPM=$(TOOLS_DIR)/opm
 OPM_VERSION = v1.26.1
 
 GOLANGCI_LINT=$(TOOLS_DIR)/golangci-lint
-GOLANGCI_LINT_VERSION = v1.45.2
+GOLANGCI_LINT_VERSION = v1.50.0
 
 ## NOTE: promq does not have any releases, so we use a fake version starting with v0.0.1
 # thus to upgrade/invalidate the github cache, increment the value
@@ -36,7 +36,7 @@ CRDOC_VERSION = v0.5.2
 
 # jsonnet related tools and dependencies
 JSONNET = $(TOOLS_DIR)/jsonnet
-JSONNET_VERSION = v0.17.0
+JSONNET_VERSION = v0.18.0
 
 JSONNETFMT = $(TOOLS_DIR)/jsonnetfmt
 JSONNETFMT_VERSION = v0.17.0
@@ -145,7 +145,7 @@ $(JSONNET) jsonnet: $(TOOLS_DIR)
 	@{ \
 		set -ex ;\
 		[[ -f $(JSONNET) ]] && exit 0 ;\
-		GOBIN=$(TOOLS_DIR) go install github.com/google/go-jsonnet/cmd/jsonnet@latest ;\
+		GOBIN=$(TOOLS_DIR) go install github.com/google/go-jsonnet/cmd/jsonnet@$(JSONNET_VERSION) ;\
 	}
 
 

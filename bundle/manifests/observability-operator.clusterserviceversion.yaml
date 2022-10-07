@@ -47,12 +47,36 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
+    - kind: AlertmanagerConfig
+      name: alertmanagerconfigs.monitoring.rhobs
+      version: v1alpha1
+    - kind: Alertmanager
+      name: alertmanagers.monitoring.rhobs
+      version: v1
     - kind: MonitoringStack
       name: monitoringstacks.monitoring.rhobs
       version: v1alpha1
+    - kind: PodMonitor
+      name: podmonitors.monitoring.rhobs
+      version: v1
+    - kind: Probe
+      name: probes.monitoring.rhobs
+      version: v1
+    - kind: Prometheus
+      name: prometheuses.monitoring.rhobs
+      version: v1
+    - kind: PrometheusRule
+      name: prometheusrules.monitoring.rhobs
+      version: v1
+    - kind: ServiceMonitor
+      name: servicemonitors.monitoring.rhobs
+      version: v1
     - kind: ThanosQuerier
       name: thanosqueriers.monitoring.rhobs
       version: v1alpha1
+    - kind: ThanosRuler
+      name: thanosrulers.monitoring.rhobs
+      version: v1
   description: Observability operator to manage Monitoring, Logging, Tracing for easier
     observability.
   displayName: Observability Operator
@@ -64,7 +88,7 @@ spec:
       clusterPermissions:
       - rules:
         - apiGroups:
-          - monitoring.coreos.com
+          - monitoring.rhobs
           resources:
           - alertmanagers
           - alertmanagers/finalizers
@@ -143,7 +167,7 @@ spec:
           - securitycontextconstraints
           verbs:
           - use
-        serviceAccountName: observability-operator-prometheus-operator
+        serviceAccountName: obo-prometheus-operator
       - rules:
         - apiGroups:
           - ""
@@ -201,21 +225,10 @@ spec:
           - list
           - watch
         - apiGroups:
-          - monitoring.coreos.com
+          - monitoring.rhobs
           resources:
           - alertmanagers
           - prometheuses
-          - servicemonitors
-          verbs:
-          - create
-          - delete
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - monitoring.coreos.com
-          resources:
           - servicemonitors
           verbs:
           - create
@@ -249,6 +262,17 @@ spec:
           verbs:
           - get
           - update
+        - apiGroups:
+          - monitoring.rhobs
+          resources:
+          - servicemonitors
+          verbs:
+          - create
+          - delete
+          - list
+          - patch
+          - update
+          - watch
         - apiGroups:
           - monitoring.rhobs
           resources:
@@ -308,6 +332,69 @@ spec:
           - use
         serviceAccountName: observability-operator-sa
       deployments:
+      - label:
+          app.kubernetes.io/component: controller
+          app.kubernetes.io/name: prometheus-operator
+          app.kubernetes.io/part-of: observability-operator
+          app.kubernetes.io/version: 0.59.2-rhobs1
+        name: obo-prometheus-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app.kubernetes.io/component: controller
+              app.kubernetes.io/name: prometheus-operator
+              app.kubernetes.io/part-of: observability-operator
+          strategy: {}
+          template:
+            metadata:
+              annotations:
+                kubectl.kubernetes.io/default-container: prometheus-operator
+                target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
+              labels:
+                app.kubernetes.io/component: controller
+                app.kubernetes.io/name: prometheus-operator
+                app.kubernetes.io/part-of: observability-operator
+                app.kubernetes.io/version: 0.59.2-rhobs1
+            spec:
+              affinity:
+                nodeAffinity:
+                  preferredDuringSchedulingIgnoredDuringExecution:
+                  - preference:
+                      matchExpressions:
+                      - key: node-role.kubernetes.io/infra
+                        operator: Exists
+                    weight: 1
+              automountServiceAccountToken: true
+              containers:
+              - args:
+                - --prometheus-config-reloader=quay.io/rhobs/obo-prometheus-config-reloader:v0.59.2-rhobs1
+                - --prometheus-instance-selector=app.kubernetes.io/managed-by=observability-operator
+                - --alertmanager-instance-selector=app.kubernetes.io/managed-by=observability-operator
+                - --thanos-ruler-instance-selector=app.kubernetes.io/managed-by=observability-operator
+                image: quay.io/rhobs/obo-prometheus-operator:v0.59.2-rhobs1
+                name: prometheus-operator
+                ports:
+                - containerPort: 8080
+                  name: http
+                resources:
+                  limits:
+                    cpu: 100m
+                    memory: 500Mi
+                  requests:
+                    cpu: 5m
+                    memory: 150Mi
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                    - ALL
+                  readOnlyRootFilesystem: true
+                terminationMessagePolicy: FallbackToLogsOnError
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 65534
+              serviceAccountName: obo-prometheus-operator
       - label:
           app.kubernetes.io/component: operator
           app.kubernetes.io/name: observability-operator
@@ -370,69 +457,6 @@ spec:
                 runAsNonRoot: true
               serviceAccountName: observability-operator-sa
               terminationGracePeriodSeconds: 30
-      - label:
-          app.kubernetes.io/component: controller
-          app.kubernetes.io/name: prometheus-operator
-          app.kubernetes.io/part-of: observability-operator
-          app.kubernetes.io/version: 0.57.0
-        name: observability-operator-prometheus-operator
-        spec:
-          replicas: 1
-          selector:
-            matchLabels:
-              app.kubernetes.io/component: controller
-              app.kubernetes.io/name: prometheus-operator
-              app.kubernetes.io/part-of: observability-operator
-          strategy: {}
-          template:
-            metadata:
-              annotations:
-                kubectl.kubernetes.io/default-container: prometheus-operator
-                target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
-              labels:
-                app.kubernetes.io/component: controller
-                app.kubernetes.io/name: prometheus-operator
-                app.kubernetes.io/part-of: observability-operator
-                app.kubernetes.io/version: 0.57.0
-            spec:
-              affinity:
-                nodeAffinity:
-                  preferredDuringSchedulingIgnoredDuringExecution:
-                  - preference:
-                      matchExpressions:
-                      - key: node-role.kubernetes.io/infra
-                        operator: Exists
-                    weight: 1
-              automountServiceAccountToken: true
-              containers:
-              - args:
-                - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.57.0
-                - --prometheus-instance-selector=app.kubernetes.io/managed-by=observability-operator
-                - --alertmanager-instance-selector=app.kubernetes.io/managed-by=observability-operator
-                - --thanos-ruler-instance-selector=app.kubernetes.io/managed-by=observability-operator
-                image: quay.io/prometheus-operator/prometheus-operator:v0.57.0
-                name: prometheus-operator
-                ports:
-                - containerPort: 8080
-                  name: http
-                resources:
-                  limits:
-                    cpu: 100m
-                    memory: 500Mi
-                  requests:
-                    cpu: 5m
-                    memory: 150Mi
-                securityContext:
-                  allowPrivilegeEscalation: false
-                  capabilities:
-                    drop:
-                    - ALL
-                  readOnlyRootFilesystem: true
-                terminationMessagePolicy: FallbackToLogsOnError
-              securityContext:
-                runAsNonRoot: true
-                runAsUser: 65534
-              serviceAccountName: observability-operator-prometheus-operator
     strategy: deployment
   installModes:
   - supported: false
