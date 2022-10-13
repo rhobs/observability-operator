@@ -5,8 +5,8 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/resource"
 
-	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	v1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	monv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
+	v1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
 	"gotest.tools/v3/assert"
 	corev1 "k8s.io/api/core/v1"
 )

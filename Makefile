@@ -68,7 +68,7 @@ docs: $(CRDOC)
 .PHONY: generate-prom-op-crds
 generate-prom-operator-crds: $(CONTROLLER_GEN)
 	$(CONTROLLER_GEN) crd \
-		paths=github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/... \
+		paths=github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/... \
 		output:dir=. \
 		output:crd:dir=./deploy/crds/kubernetes
 

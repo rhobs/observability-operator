@@ -25,14 +25,20 @@ type Updater struct {
 }
 
 func (r Updater) Reconcile(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
+
 	if r.resourceOwner.GetNamespace() == r.resource.GetNamespace() {
 		if err := controllerutil.SetControllerReference(r.resourceOwner, r.resource, scheme); err != nil {
-			return err
+			return fmt.Errorf("%s/%s (%s): updater failed to set owner reference: %w",
+				r.resource.GetNamespace(), r.resource.GetName(),
+				r.resource.GetObjectKind().GroupVersionKind().String(), err)
 		}
 	}
 
-	if err := c.Patch(ctx, r.resource, client.Apply, client.ForceOwnership, client.FieldOwner(fmt.Sprintf("%s/%s", r.resourceOwner.GetNamespace(), r.resourceOwner.GetName()))); err != nil {
-		return err
+	owner := fmt.Sprintf("%s/%s", r.resourceOwner.GetNamespace(), r.resourceOwner.GetName())
+	if err := c.Patch(ctx, r.resource, client.Apply, client.ForceOwnership, client.FieldOwner(owner)); err != nil {
+		return fmt.Errorf("%s/%s (%s): updater failed to patch: %w",
+			r.resource.GetNamespace(), r.resource.GetName(),
+			r.resource.GetObjectKind().GroupVersionKind().String(), err)
 	}
 	return nil
 }
@@ -51,7 +57,9 @@ type Deleter struct {
 
 func (r Deleter) Reconcile(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 	if err := c.Delete(ctx, r.resource); client.IgnoreNotFound(err) != nil {
-		return err
+		return fmt.Errorf("%s/%s (%s): deleter failed to delete: %w",
+			r.resource.GetNamespace(), r.resource.GetName(),
+			r.resource.GetObjectKind().GroupVersionKind().String(), err)
 	}
 	return nil
 }
