@@ -41,7 +41,7 @@ metadata:
     capabilities: Basic Install
     operators.operatorframework.io/builder: operator-sdk-v1.24.0
     operators.operatorframework.io/project_layout: unknown
-  name: observability-operator.v0.0.14
+  name: observability-operator.v0.0.15
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -430,7 +430,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.namespace
-                image: observability-operator:0.0.14
+                image: observability-operator:0.0.15
                 imagePullPolicy: IfNotPresent
                 livenessProbe:
                   httpGet:
@@ -485,4 +485,4 @@ spec:
   maturity: alpha
   provider:
     name: Red Hat
-  version: 0.0.14
+  version: 0.0.15
