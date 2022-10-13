@@ -14,7 +14,7 @@ KUSTOMIZE=$(TOOLS_DIR)/kustomize
 KUSTOMIZE_VERSION= v4.5.2
 
 OPERATOR_SDK = $(TOOLS_DIR)/operator-sdk
-OPERATOR_SDK_VERSION = v1.23.0
+OPERATOR_SDK_VERSION = v1.24.0
 
 OPM=$(TOOLS_DIR)/opm
 OPM_VERSION = v1.26.1
@@ -88,7 +88,11 @@ $(KUSTOMIZE) kustomize: $(TOOLS_DIR)
 $(OPERATOR_SDK) operator-sdk: $(TOOLS_DIR)
 	@{ \
 		set -ex ;\
-		[[ -f $(OPERATOR_SDK) ]] && exit 0 ;\
+		[[ -f $(OPERATOR_SDK) ]] && \
+		[[ "$(shell $(OPERATOR_SDK) version | awk '{print $$3}' | tr -d ,)" == $(OPERATOR_SDK_VERSION) ]] && { \
+			echo "operator-sdk up to date" ;\
+			exit 0 ;\
+		} ;\
 		OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) && \
 		curl -sSLo $(OPERATOR_SDK) https://github.com/operator-framework/operator-sdk/releases/download/$(OPERATOR_SDK_VERSION)/operator-sdk_$${OS}_$${ARCH} ;\
 		chmod +x $(OPERATOR_SDK) ;\
