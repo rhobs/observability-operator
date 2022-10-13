@@ -7,7 +7,7 @@ import (
 
 	"github.com/rhobs/observability-operator/test/e2e/framework"
 
-	v1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	v1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,9 +40,9 @@ func TestPrometheusOperatorForNonOwnedResources(t *testing.T) {
 		{
 			name: "Operator should create Prometheus Operator CRDs",
 			scenario: func(t *testing.T) {
-				f.AssertResourceEventuallyExists("prometheuses.monitoring.coreos.com", "", &apiextensionsv1.CustomResourceDefinition{})(t)
-				f.AssertResourceEventuallyExists("alertmanagers.monitoring.coreos.com", "", &apiextensionsv1.CustomResourceDefinition{})(t)
-				f.AssertResourceEventuallyExists("thanosrulers.monitoring.coreos.com", "", &apiextensionsv1.CustomResourceDefinition{})(t)
+				f.AssertResourceEventuallyExists("prometheuses.monitoring.rhobs", "", &apiextensionsv1.CustomResourceDefinition{})(t)
+				f.AssertResourceEventuallyExists("alertmanagers.monitoring.rhobs", "", &apiextensionsv1.CustomResourceDefinition{})(t)
+				f.AssertResourceEventuallyExists("thanosrulers.monitoring.rhobs", "", &apiextensionsv1.CustomResourceDefinition{})(t)
 			},
 		},
 		{

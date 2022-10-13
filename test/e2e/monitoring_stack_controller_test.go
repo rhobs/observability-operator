@@ -25,7 +25,7 @@ import (
 	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 	monitoringstack "github.com/rhobs/observability-operator/pkg/controllers/monitoring/monitoring-stack"
 
-	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	monv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
 
 	"gotest.tools/v3/assert"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -44,7 +44,7 @@ func assertCRDExists(t *testing.T, crds ...string) {
 
 func TestMonitoringStackController(t *testing.T) {
 	assertCRDExists(t,
-		"prometheuses.monitoring.coreos.com",
+		"prometheuses.monitoring.rhobs",
 		"monitoringstacks.monitoring.rhobs",
 	)
 

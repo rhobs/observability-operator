@@ -59,7 +59,7 @@ type resourceManager struct {
 //+kubebuilder:rbac:groups=core,resources=services;serviceaccounts,verbs=list;watch;create;update;patch;delete
 
 // RBAC for managing Prometheus Operator CRs
-//+kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors,verbs=list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=monitoring.rhobs,resources=servicemonitors,verbs=list;watch;create;update;patch;delete
 
 // RegisterWithManager registers the controller with Manager
 func RegisterWithManager(mgr ctrl.Manager) error {

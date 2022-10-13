@@ -3,7 +3,7 @@ package monitoringstack
 import (
 	"testing"
 
-	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	monv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 	"gotest.tools/v3/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
