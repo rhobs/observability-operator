@@ -14,7 +14,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
 - name: observability-operator
-  newTag: 0.0.14
+  newTag: 0.0.15
 namespace: operators
 
 patches:

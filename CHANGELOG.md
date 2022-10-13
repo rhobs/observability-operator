@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.15](https://github.com/rhobs/monitoring-stack-operator/tree/v0.0.15) (2022-10-13)
+
+
+### Features
+
+### ⚠ BREAKING CHANGES
+* Switches from using platform Prometheus Operator to a forked PO based on 0.60.0  ([c1f534a](https://github.com/rhobs/monitoring-stack-operator/commit/c1f534a15b71c948c3c821af671207d1ac4f25f3))
+
+
 ### [0.0.14](https://github.com/rhobs/monitoring-stack-operator/commit/) (2022-09-20)
 
 
