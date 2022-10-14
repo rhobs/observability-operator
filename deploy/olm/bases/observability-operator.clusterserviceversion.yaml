@@ -4,6 +4,7 @@ metadata:
   annotations:
     alm-examples: '[]'
     capabilities: Basic Install
+    operators.operatorframework.io/internal-objects: '["prometheuses.monitoring.rhobs","alertmanager.monitoring.rhobs"]'
   name: observability-operator.v0.0.0
   namespace: placeholder
 spec:
