@@ -170,6 +170,17 @@ spec:
         serviceAccountName: obo-prometheus-operator
       - rules:
         - apiGroups:
+          - security.openshift.io
+          resourceNames:
+          - nonroot-v2
+          - nonroot
+          resources:
+          - securitycontextconstraints
+          verbs:
+          - use
+        serviceAccountName: obo-prometheus-operator-admission-webhook
+      - rules:
+        - apiGroups:
           - ""
           resources:
           - endpoints
@@ -396,6 +407,61 @@ spec:
                 runAsUser: 65534
               serviceAccountName: obo-prometheus-operator
       - label:
+          app.kubernetes.io/name: prometheus-operator-admission-webhook
+          app.kubernetes.io/part-of: observability-operator
+          app.kubernetes.io/version: 0.60.0-rhobs1
+        name: obo-prometheus-operator-admission-webhook
+        spec:
+          replicas: 2
+          selector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus-operator-admission-webhook
+              app.kubernetes.io/part-of: observability-operator
+          strategy: {}
+          template:
+            metadata:
+              annotations:
+                kubectl.kubernetes.io/default-container: prometheus-operator-admission-webhook
+              labels:
+                app.kubernetes.io/name: prometheus-operator-admission-webhook
+                app.kubernetes.io/part-of: observability-operator
+                app.kubernetes.io/version: 0.60.0-rhobs1
+            spec:
+              affinity:
+                nodeAffinity:
+                  preferredDuringSchedulingIgnoredDuringExecution:
+                  - preference:
+                      matchExpressions:
+                      - key: node-role.kubernetes.io/infra
+                        operator: Exists
+                    weight: 1
+              automountServiceAccountToken: false
+              containers:
+              - args:
+                - --web.enable-tls=true
+                - --web.cert-file=/tmp/k8s-webhook-server/serving-certs/tls.crt
+                - --web.key-file=/tmp/k8s-webhook-server/serving-certs/tls.key
+                image: quay.io/rhobs/obo-admission-webhook:v0.60.0-rhobs1
+                name: prometheus-operator-admission-webhook
+                ports:
+                - containerPort: 8443
+                  name: https
+                resources:
+                  limits:
+                    cpu: 200m
+                    memory: 200Mi
+                  requests:
+                    cpu: 50m
+                    memory: 50Mi
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
+                terminationMessagePolicy: FallbackToLogsOnError
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 65534
+              serviceAccountName: obo-prometheus-operator-admission-webhook
+      - label:
           app.kubernetes.io/component: operator
           app.kubernetes.io/name: observability-operator
           app.kubernetes.io/version: 0.0.1
@@ -486,3 +552,48 @@ spec:
   provider:
     name: Red Hat
   version: 0.0.15
+  webhookdefinitions:
+  - admissionReviewVersions:
+    - v1
+    containerPort: 8443
+    deploymentName: obo-prometheus-operator-admission-webhook
+    failurePolicy: Ignore
+    generateName: alertmanagerconfigs.monitoring.rhobs
+    rules:
+    - apiGroups:
+      - monitoring.rhobs
+      apiVersions:
+      - v1alpha1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - alertmanagerconfigs
+      scope: Namespaced
+    sideEffects: None
+    targetPort: https
+    timeoutSeconds: 5
+    type: ValidatingAdmissionWebhook
+    webhookPath: /admission-alertmanagerconfigs/validate
+  - admissionReviewVersions:
+    - v1
+    containerPort: 8443
+    deploymentName: obo-prometheus-operator-admission-webhook
+    failurePolicy: Ignore
+    generateName: prometheusrules.monitoring.rhobs
+    rules:
+    - apiGroups:
+      - monitoring.rhobs
+      apiVersions:
+      - v1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - prometheusrules
+      scope: Namespaced
+    sideEffects: None
+    targetPort: https
+    timeoutSeconds: 5
+    type: ValidatingAdmissionWebhook
+    webhookPath: /admission-prometheusrules/validate
