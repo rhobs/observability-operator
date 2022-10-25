@@ -1,0 +1,18 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/component: admission-webhook
+    app.kubernetes.io/name: prometheus-operator-admission-webhook
+    app.kubernetes.io/version: 0.60.0-rhobs1
+  name: prometheus-operator-admission-webhook
+rules:
+- apiGroups:
+  - security.openshift.io
+  resourceNames:
+    - nonroot-v2
+    - nonroot
+  resources:
+    - securitycontextconstraints
+  verbs:
+    - use

@@ -1,0 +1,16 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: admission-webhook
+    app.kubernetes.io/name: prometheus-operator-admission-webhook
+    app.kubernetes.io/version: 0.60.0-rhobs1
+  name: prometheus-operator-admission-webhook
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus-operator-admission-webhook
+subjects:
+- kind: ServiceAccount
+  name: prometheus-operator-admission-webhook
+  namespace: default
