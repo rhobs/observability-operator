@@ -40,6 +40,11 @@ metadata:
       ]
     capabilities: Basic Install
     operators.operatorframework.io/builder: operator-sdk-v1.24.0
+    operators.operatorframework.io/internal-objects: |-
+      [
+        "prometheuses.monitoring.rhobs", "alertmanagers.monitoring.rhobs",
+        "thanosrulers.monitoring.rhobs"
+      ]
     operators.operatorframework.io/project_layout: unknown
   name: observability-operator.v0.0.15
   namespace: placeholder
