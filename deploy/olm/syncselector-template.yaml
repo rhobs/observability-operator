@@ -22,7 +22,7 @@ objects:
     spec:
       clusterDeploymentSelector:
         matchLabels:
-          api.openshift.com/addon-reference-addon: 'true'
+          api.openshift.com/managed: "true"
       resourceApplyMode: Sync
       resources:
         - apiVersion: v1
