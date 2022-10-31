@@ -24,7 +24,7 @@ jobs:
         id: version
         run: |
           version="$(cat VERSION)-rc"
-          echo "::set-output name=version::$version"
+          echo "{version}={$version}" >> $GITHUB_OUTPUT
 
       - name: publish catalog
         uses: ./.github/olm-publish
