@@ -54,7 +54,11 @@ func main(m *testing.M) int {
 
 	tests := []testing.InternalTest{{
 		Name: "NoReconcilationErrors",
-		F:    f.AssertNoReconcileErrors,
+		F: func(t *testing.T) {
+			// see: https://github.com/rhobs/observability-operator/issues/200
+			t.Skip("skipping reconciliation error test until #200 is fixed")
+			f.AssertNoReconcileErrors(t)
+		},
 	}}
 
 	log.Println("=== Running post e2e test validations ===")

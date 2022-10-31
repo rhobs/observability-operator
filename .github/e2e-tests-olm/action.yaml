@@ -48,111 +48,20 @@ runs:
         # Expose the registry to the host so that we can build and push the image
         echo "127.0.0.1 local-registry" | sudo tee -a /etc/hosts
 
-    - name: Build images
+    - name: Run e2e script
       shell: bash
-      run: make operator-image bundle bundle-image IMAGE_BASE="local-registry:30000/observability-operator" VERSION=0.0.0-ci
-
-    - name: Wait for cluster to finish bootstraping
-      shell: bash
-      run: |
-        kubectl wait --for=condition=Ready pods --all --all-namespaces --timeout=300s
-        kubectl cluster-info
-        kubectl get pods -A
-
-    - name: Publish images
-      shell: bash
-      run: make operator-push bundle-push PUSH_OPTIONS=--tls-verify=false IMAGE_BASE="local-registry:30000/observability-operator" VERSION=0.0.0-ci
-
-    - name: Deploy the operator
-      shell: bash
-      run: |
-        # TODO: build a kubernetes-specific bundle to avoid doing this
-        kubectl label nodes -l node-role.kubernetes.io/control-plane="" node-role.kubernetes.io/infra=""
-        kubectl create -k deploy/crds/kubernetes
-        kubectl wait --for=condition=Established crds --all --timeout=300s
-
-        ./tmp/bin/operator-sdk run bundle \
-          local-registry:30000/observability-operator-bundle:0.0.0-ci \
-          --install-mode AllNamespaces \
-          --namespace operators \
-          --skip-tls
-
-        kubectl rollout status deployment observability-operator -n operators
-
-    - name: Expose operator metrics endpoint
-      shell: bash
-      run: |
-        kubectl apply -n operators -f hack/kind/operator-metrics-service.yaml
-        sleep 2
-
-        # wait for the service to create an endpoint
-        while ! kubectl get -n operators ep  operator-metrics-service && [[ "$i" -le 5 ]]; do
-            (( i++ ))
-            echo " - $i ... repeat "
-            sleep 2
-        done
-
-    - name: Assert no reconciliation errors before running the test
-      shell: bash
-      run: |
-        # assert there are no reconciliation errors before running test
-        # give operator some time to start before collecting the metrics
-        sleep 5
-        ./tmp/bin/promq -t http://localhost:30001/metrics  \
-          -q 'controller_runtime_reconcile_errors_total' -o yaml
-
-        reconcile_errors=$( ./tmp/bin/promq \
-          -t http://localhost:30001/metrics  -o yaml \
-          -q 'sum(controller_runtime_reconcile_errors_total)' \
-          | tr -d ' ' | grep ^v: | cut -f2  -d: )
-
-        echo "Reconcile errors before running tests: $reconcile_errors"
-
-        if [[ "$reconcile_errors" -ne 0 ]]; then
-          kubectl logs -n operators deploy/observability-operator
-          echo ================================================================
-          echo "Expecting 0 reconcile errors but found $reconcile_errors"
-          exit 1
-        fi
-
-    - name: Run tests
-      shell: bash
-      run: go test -v -failfast ./test/e2e/... --retain=true
-
-    - name: Print operator logs and reconcile stats
-      shell: bash
-      run: |
-        kubectl logs -n operators deploy/observability-operator
-        echo ================================================================
-
-        ./tmp/bin/promq -t http://localhost:30001/metrics  \
-          -q 'controller_runtime_reconcile_errors_total'
-
-    - name: Assert that there are no reconciliation errors
-      shell: bash
-      run: |
-        reconcile_errors=$( ./tmp/bin/promq \
-          -t http://localhost:30001/metrics  -o yaml \
-          -q 'sum(controller_runtime_reconcile_errors_total)' \
-          | tr -d ' ' | grep ^v: | cut -f2  -d: )
-
-        echo "Reconcile errors after test run: $reconcile_errors"
-        if [[ "$reconcile_errors" -ne 0 ]]; then
-          echo "Found $reconcile_errors reconciliation errors"
-          exit 1
-        fi
+      run: ./test/run-e2e.sh --ci
 
     - name: Capture cluster state
       if: always()
       shell: bash
       run: |
-        # Output operator logs
-        kubectl logs -n operators deploy/observability-operator
         # Capture apiserver state
         oc adm inspect node --dest-dir cluster-state || true
         oc adm inspect -A statefulset --dest-dir cluster-state || true
         oc adm inspect -A deployment --dest-dir cluster-state || true
         oc adm inspect -A ns --dest-dir cluster-state || true
+        cp -r tmp/e2e cluster-state/ || true
 
     - name: Archive production artifacts
       if: always()
