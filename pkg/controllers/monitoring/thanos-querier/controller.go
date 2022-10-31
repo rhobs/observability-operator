@@ -104,7 +104,7 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{RequeueAfter: 10 * time.Second}, err
 	}
 
-	reconcilers := thanosComponentReconcilers(querier, sidecarServices)
+	reconcilers := thanosComponentReconcilers(querier, sidecarServices, logger)
 	for _, reconciler := range reconcilers {
 		err := reconciler.Reconcile(ctx, rm, rm.scheme)
 		// handle creation / updation errors that can happen due to a stale cache by
