@@ -46,7 +46,7 @@ jobs:
         run: |
           npx standard-version --skip.commit --skip.tag --skip.changelog
           version="$(cat VERSION)-$(date +%y%m%d%H%M%S)"
-          echo "::set-output name=version::$version"
+          echo "{version}={$version}" >> $GITHUB_OUTPUT
 
       - name: Publish
         uses: ./.github/olm-publish
