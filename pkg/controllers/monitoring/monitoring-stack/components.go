@@ -3,6 +3,7 @@ package monitoringstack
 import (
 	"reflect"
 
+	"github.com/go-logr/logr"
 	"github.com/rhobs/observability-operator/pkg/reconciler"
 
 	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
@@ -22,32 +23,39 @@ const AdditionalScrapeConfigsSelfScrapeKey = "self-scrape-config"
 const PrometheusUserFSGroupID = 65534
 const AlertmanagerUserFSGroupID = 65535
 
-func stackComponentReconcilers(ms *stack.MonitoringStack, instanceSelectorKey string, instanceSelectorValue string) []reconciler.Reconciler {
-	prometheusRBACResourceName := ms.Name + "-prometheus"
-	alertmanagerRBACResourceName := ms.Name + "-alertmanager"
+func stackComponentReconcilers(
+	ms *stack.MonitoringStack,
+	instanceSelectorKey, instanceSelectorValue string,
+	logger logr.Logger) []reconciler.Reconciler {
+
+	prometheusName := ms.Name + "-prometheus"
+	alertmanagerName := ms.Name + "-alertmanager"
+
 	rbacVerbs := []string{"get", "list", "watch"}
 	additionalScrapeConfigsSecretName := ms.Name + "-prometheus-additional-scrape-configs"
+
 	return []reconciler.Reconciler{
-		reconciler.NewUpdater(newServiceAccount(prometheusRBACResourceName, ms.Namespace), ms),
-		reconciler.NewUpdater(newPrometheusRole(ms, prometheusRBACResourceName, rbacVerbs), ms),
-		reconciler.NewUpdater(newRoleBinding(ms, prometheusRBACResourceName), ms),
-		reconciler.NewUpdater(newAdditionalScrapeConfigsSecret(ms, additionalScrapeConfigsSecretName), ms),
-		reconciler.NewUpdater(newServiceAccount(alertmanagerRBACResourceName, ms.Namespace), ms),
-		reconciler.NewOptionalUpdater(newAlertManagerRole(ms, alertmanagerRBACResourceName, rbacVerbs), ms,
-			!ms.Spec.AlertmanagerConfig.Disabled),
-		reconciler.NewOptionalUpdater(newRoleBinding(ms, alertmanagerRBACResourceName), ms,
-			!ms.Spec.AlertmanagerConfig.Disabled),
-		reconciler.NewOptionalUpdater(newAlertmanager(ms, alertmanagerRBACResourceName, instanceSelectorKey, instanceSelectorValue), ms,
-			!ms.Spec.AlertmanagerConfig.Disabled),
-		reconciler.NewOptionalUpdater(newAlertmanagerService(ms, instanceSelectorKey, instanceSelectorValue), ms,
-			!ms.Spec.AlertmanagerConfig.Disabled),
-		reconciler.NewOptionalUpdater(newAlertmanagerPDB(ms, instanceSelectorKey, instanceSelectorValue), ms,
-			!ms.Spec.AlertmanagerConfig.Disabled),
-		reconciler.NewUpdater(newPrometheus(ms, prometheusRBACResourceName, additionalScrapeConfigsSecretName, instanceSelectorKey, instanceSelectorValue), ms),
-		reconciler.NewUpdater(newPrometheusService(ms, instanceSelectorKey, instanceSelectorValue), ms),
-		reconciler.NewUpdater(newThanosSidecarService(ms, instanceSelectorKey, instanceSelectorValue), ms),
-		reconciler.NewOptionalUpdater(newPrometheusPDB(ms, instanceSelectorKey, instanceSelectorValue), ms,
+		reconciler.NewUpdater(newPrometheusRole(ms, prometheusName, rbacVerbs), ms, logger),
+		reconciler.NewUpdater(newServiceAccount(prometheusName, ms.Namespace), ms, logger),
+		reconciler.NewUpdater(newRoleBinding(ms, prometheusName), ms, logger),
+		reconciler.NewUpdater(newAdditionalScrapeConfigsSecret(ms, additionalScrapeConfigsSecretName), ms, logger),
+		reconciler.NewOptionalUpdater(newPrometheusPDB(ms, instanceSelectorKey, instanceSelectorValue), ms, logger,
 			*ms.Spec.PrometheusConfig.Replicas > 1),
+		reconciler.NewUpdater(newPrometheus(ms, prometheusName, additionalScrapeConfigsSecretName, instanceSelectorKey, instanceSelectorValue), ms, logger),
+		reconciler.NewUpdater(newPrometheusService(ms, instanceSelectorKey, instanceSelectorValue), ms, logger),
+		reconciler.NewUpdater(newThanosSidecarService(ms, instanceSelectorKey, instanceSelectorValue), ms, logger),
+		// Alertmanager
+		reconciler.NewOptionalUpdater(newAlertmanagerRole(ms, alertmanagerName, rbacVerbs), ms, logger,
+			!ms.Spec.AlertmanagerConfig.Disabled),
+		reconciler.NewOptionalUpdater(newRoleBinding(ms, alertmanagerName), ms, logger,
+			!ms.Spec.AlertmanagerConfig.Disabled),
+		reconciler.NewUpdater(newServiceAccount(alertmanagerName, ms.Namespace), ms, logger),
+		reconciler.NewOptionalUpdater(newAlertmanagerPDB(ms, instanceSelectorKey, instanceSelectorValue), ms, logger,
+			!ms.Spec.AlertmanagerConfig.Disabled),
+		reconciler.NewOptionalUpdater(newAlertmanager(ms, alertmanagerName, instanceSelectorKey, instanceSelectorValue), ms, logger,
+			!ms.Spec.AlertmanagerConfig.Disabled),
+		reconciler.NewOptionalUpdater(newAlertmanagerService(ms, instanceSelectorKey, instanceSelectorValue), ms, logger,
+			!ms.Spec.AlertmanagerConfig.Disabled),
 	}
 }
 

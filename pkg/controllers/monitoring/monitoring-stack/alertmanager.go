@@ -127,7 +127,7 @@ func newAlertmanagerPDB(ms *stack.MonitoringStack, instanceSelectorKey string, i
 	}
 }
 
-func newAlertManagerRole(ms *stack.MonitoringStack, rbacResourceName string, rbacVerbs []string) *rbacv1.Role {
+func newAlertmanagerRole(ms *stack.MonitoringStack, rbacResourceName string, rbacVerbs []string) *rbacv1.Role {
 	return &rbacv1.Role{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: rbacv1.SchemeGroupVersion.String(),

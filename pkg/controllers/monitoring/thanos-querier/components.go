@@ -3,6 +3,7 @@ package thanos_querier
 import (
 	"fmt"
 
+	"github.com/go-logr/logr"
 	"github.com/rhobs/observability-operator/pkg/reconciler"
 
 	monv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
@@ -13,13 +14,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func thanosComponentReconcilers(thanos *msoapi.ThanosQuerier, sidecarUrls []string) []reconciler.Reconciler {
+func thanosComponentReconcilers(thanos *msoapi.ThanosQuerier, sidecarUrls []string, l logr.Logger) []reconciler.Reconciler {
 	name := "thanos-querier-" + thanos.Name
 	return []reconciler.Reconciler{
-		reconciler.NewUpdater(newServiceAccount(name, thanos.Namespace), thanos),
-		reconciler.NewUpdater(newThanosQuerierDeployment(name, thanos, sidecarUrls), thanos),
-		reconciler.NewUpdater(newService(name, thanos.Namespace), thanos),
-		reconciler.NewUpdater(newServiceMonitor(name, thanos.Namespace), thanos),
+		reconciler.NewUpdater(newServiceAccount(name, thanos.Namespace), thanos, l),
+		reconciler.NewUpdater(newThanosQuerierDeployment(name, thanos, sidecarUrls), thanos, l),
+		reconciler.NewUpdater(newService(name, thanos.Namespace), thanos, l),
+		reconciler.NewUpdater(newServiceMonitor(name, thanos.Namespace), thanos, l),
 	}
 }
 
