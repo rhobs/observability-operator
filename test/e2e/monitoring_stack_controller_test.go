@@ -18,8 +18,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"k8s.io/apimachinery/pkg/util/wait"
-
 	"github.com/google/go-cmp/cmp"
 
 	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
@@ -245,7 +243,7 @@ func reconcileRevertsManualChanges(t *testing.T) {
 	err = f.K8sClient.Update(context.Background(), modified)
 	assert.NilError(t, err, "failed to update a prometheus")
 
-	err = wait.Poll(5*time.Second, time.Minute, func() (bool, error) {
+	err = f.Poll(func() (bool, error) {
 		reconciled := monv1.Prometheus{}
 		key := types.NamespacedName{Name: ms.Name, Namespace: ms.Namespace}
 
@@ -345,7 +343,7 @@ func assertPrometheusScrapesItself(t *testing.T) {
 
 	stopChan := make(chan struct{})
 	defer close(stopChan)
-	if err := wait.Poll(5*time.Second, 2*time.Minute, func() (bool, error) {
+	if err := f.Poll(func() (bool, error) {
 		err = f.StartServicePortForward("self-scrape-prometheus", e2eTestNamespace, "9090", stopChan)
 		return err == nil, nil
 	}); err != nil {
@@ -357,7 +355,7 @@ func assertPrometheusScrapesItself(t *testing.T) {
 		"prometheus_build_info":   2, // scrapes from both endpoints
 		"alertmanager_build_info": 2,
 	}
-	if err := wait.Poll(5*time.Second, 5*time.Minute, func() (bool, error) {
+	if err := f.Poll(func() (bool, error) {
 		correct := 0
 		for query, value := range expectedResults {
 			result, err := promClient.Query(query)
@@ -382,7 +380,7 @@ func assertPrometheusScrapesItself(t *testing.T) {
 		}
 
 		return correct == len(expectedResults), nil
-	}); err != nil {
+	}, framework.WithTimeout(5*time.Minute)); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -421,7 +419,7 @@ func assertAlertmanagerCreated(t *testing.T, name string) {
 	if err := f.K8sClient.Create(context.Background(), ms); err != nil {
 		t.Fatal(err)
 	}
-	f.AssertStatefulsetReady("alertmanager-"+name, e2eTestNamespace, framework.WithTimeout(2*time.Minute))(t)
+	f.AssertStatefulsetReady("alertmanager-"+name, e2eTestNamespace)(t)
 }
 
 func assertAlertmanagersAreOnDifferentNodes(t *testing.T, pods []corev1.Pod) {
@@ -462,14 +460,14 @@ func assertAlertmanagerReceivesAlerts(t *testing.T) {
 
 	stopChan := make(chan struct{})
 	defer close(stopChan)
-	if err := wait.Poll(5*time.Second, 5*time.Minute, func() (bool, error) {
+	if err := f.Poll(func() (bool, error) {
 		err := f.StartServicePortForward("alerting-alertmanager", e2eTestNamespace, "9093", stopChan)
 		return err == nil, nil
-	}); err != nil {
+	}, framework.WithTimeout(5*time.Minute)); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := wait.Poll(5*time.Second, 5*time.Minute, func() (bool, error) {
+	if err := f.Poll(func() (bool, error) {
 		alerts, err := getAlertmanagerAlerts()
 		if err != nil {
 			return false, nil
@@ -488,7 +486,7 @@ func assertAlertmanagerReceivesAlerts(t *testing.T) {
 		}
 
 		return true, fmt.Errorf("wrong alert firing, got %s, want %s", alerts[0].Labels["alertname"], "AlwaysOn")
-	}); err != nil {
+	}, framework.WithTimeout(5*time.Minute)); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -559,14 +557,16 @@ func newMonitoringStack(t *testing.T, name string, options ...func(*stack.Monito
 	}
 	f.CleanUp(t, func() {
 		f.K8sClient.Delete(context.Background(), ms)
-		waitForStackDeletion(name)
+		if err := waitForStackDeletion(name); err != nil {
+			t.Errorf("Failed to delete monitoring stack: %s %s", name, err)
+		}
 	})
 
 	return ms
 }
 
 func waitForStackDeletion(name string) error {
-	return wait.Poll(5*time.Second, wait.ForeverTestTimeout, func() (bool, error) {
+	return f.Poll(func() (bool, error) {
 		key := types.NamespacedName{Name: name, Namespace: e2eTestNamespace}
 		var ms stack.MonitoringStack
 		err := f.K8sClient.Get(context.Background(), key, &ms)
