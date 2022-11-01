@@ -12,7 +12,7 @@ jobs:
     environment: quay
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
           token: ${{ secrets.REPOSITORY_PUSH_TOKEN }}
@@ -24,7 +24,7 @@ jobs:
         id: version
         run: |
           version="$(cat VERSION)-rc"
-          echo "{version}={$version}" >> $GITHUB_OUTPUT
+          echo "version=$version" >> $GITHUB_OUTPUT
 
       - name: publish catalog
         uses: ./.github/olm-publish

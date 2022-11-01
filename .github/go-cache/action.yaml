@@ -5,9 +5,9 @@ runs:
   steps:
     - name: Get branch name
       id: branch-name
-      uses: tj-actions/branch-names@v5
+      uses: tj-actions/branch-names@v6
 
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       with:
         path: |
           ~/.cache/go-build

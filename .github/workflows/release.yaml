@@ -8,7 +8,7 @@ jobs:
   e2e-tests-olm:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Import common environment variables
         run: cat ".github/env" >> $GITHUB_ENV
@@ -25,7 +25,7 @@ jobs:
     needs:
       - e2e-tests-olm
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
@@ -46,7 +46,7 @@ jobs:
         run: |
           npx standard-version --skip.commit --skip.tag --skip.changelog
           version="$(cat VERSION)-$(date +%y%m%d%H%M%S)"
-          echo "{version}={$version}" >> $GITHUB_OUTPUT
+          echo "version=$version" >> $GITHUB_OUTPUT
 
       - name: Publish
         uses: ./.github/olm-publish
@@ -71,7 +71,7 @@ jobs:
     if: "startsWith(github.event.head_commit.message, 'chore(release):')"
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
           token: ${{ secrets.REPOSITORY_PUSH_TOKEN }}
@@ -84,7 +84,7 @@ jobs:
       # Therefore, we first need to setup Go so that we can install the
       # controller-gen binary.
       - name: Setup Go environment
-        uses: actions/setup-go@v2.1.4
+        uses: actions/setup-go@v3
         with:
           go-version: ${{ env.go-version }}
 
@@ -104,7 +104,7 @@ jobs:
           # chore(release): commit as opposed to pointing to the commit added
           # to olm-catalog branch after images are built and pushed
           git push --follow-tags
-          echo ::set-output name=tag_name::$(git describe HEAD --abbrev=0)
+          echo "tag_name=$(git describe HEAD --abbrev=0)" >> $GITHUB_OUTPUT
 
       - name: Create Github release
         uses: actions/create-release@v1

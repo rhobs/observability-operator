@@ -3,7 +3,7 @@ description: Caches develoment tools
 runs:
   using: composite
   steps:
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       id: tools-cache
       with:
         path: ./tmp/bin
