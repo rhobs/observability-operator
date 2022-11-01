@@ -21,7 +21,7 @@ const (
 	NoReason                       = "None"
 )
 
-func updateConditions(msConditions []v1alpha1.Condition, promConditions []monv1.PrometheusCondition, generation int64, recError error) []v1alpha1.Condition {
+func updateConditions(msConditions []v1alpha1.Condition, prom monv1.Prometheus, generation int64, recError error) []v1alpha1.Condition {
 	if len(msConditions) == 0 {
 		return []v1alpha1.Condition{
 			{
@@ -43,13 +43,13 @@ func updateConditions(msConditions []v1alpha1.Condition, promConditions []monv1.
 	for _, mc := range msConditions {
 		switch mc.Type {
 		case v1alpha1.AvailableCondition:
-			available := updateAvailable(mc, promConditions, generation)
+			available := updateAvailable(mc, prom, generation)
 			if !available.Equal(mc) {
 				available.LastTransitionTime = metav1.Now()
 			}
 			updatedConditions = append(updatedConditions, available)
 		case v1alpha1.ReconciledCondition:
-			reconciled := updateReconciled(mc, promConditions, generation, recError)
+			reconciled := updateReconciled(mc, prom, generation, recError)
 			if !reconciled.Equal(mc) {
 				reconciled.LastTransitionTime = metav1.Now()
 			}
@@ -62,15 +62,18 @@ func updateConditions(msConditions []v1alpha1.Condition, promConditions []monv1.
 
 // updateAvailable gets existing "Available" condition and updates its parameters
 // based on the Prometheus "Available" condition
-func updateAvailable(ac v1alpha1.Condition, prometheusConditions []monv1.PrometheusCondition, generation int64) v1alpha1.Condition {
-	ac.ObservedGeneration = generation
-
-	prometheusAvailable, err := getPrometheusCondition(prometheusConditions, monv1.PrometheusAvailable)
+func updateAvailable(ac v1alpha1.Condition, prom monv1.Prometheus, generation int64) v1alpha1.Condition {
+	prometheusAvailable, err := getPrometheusCondition(prom.Status.Conditions, monv1.PrometheusAvailable)
 
 	if err != nil {
 		ac.Status = v1alpha1.ConditionUnknown
 		ac.Reason = PrometheusNotAvailable
 		ac.Message = CannotReadPrometheusConditions
+		return ac
+	}
+	// MonitoringStack status will not be updated if there is a difference between the Prometheus generation
+	// and the Prometheus ObservedGeneration. This can occur, for example, in the case of an invalid Prometheus configuration.
+	if prometheusAvailable.ObservedGeneration != prom.Generation {
 		return ac
 	}
 
@@ -87,13 +90,13 @@ func updateAvailable(ac v1alpha1.Condition, prometheusConditions []monv1.Prometh
 	ac.Status = v1alpha1.ConditionTrue
 	ac.Reason = AvailableReason
 	ac.Message = AvailableMessage
+	ac.ObservedGeneration = generation
 	return ac
 }
 
 // updateReconciled updates "Reconciled" conditions based on the provided error value and
 // Prometheus "Reconciled" condition
-func updateReconciled(rc v1alpha1.Condition, prometheusConditions []monv1.PrometheusCondition, generation int64, err error) v1alpha1.Condition {
-	rc.ObservedGeneration = generation
+func updateReconciled(rc v1alpha1.Condition, prom monv1.Prometheus, generation int64, err error) v1alpha1.Condition {
 
 	if err != nil {
 		rc.Status = v1alpha1.ConditionFalse
@@ -101,12 +104,16 @@ func updateReconciled(rc v1alpha1.Condition, prometheusConditions []monv1.Promet
 		rc.Reason = FailedToReconcileReason
 		return rc
 	}
-	prometheusReconciled, err := getPrometheusCondition(prometheusConditions, monv1.PrometheusReconciled)
+	prometheusReconciled, err := getPrometheusCondition(prom.Status.Conditions, monv1.PrometheusReconciled)
 
 	if err != nil {
 		rc.Status = v1alpha1.ConditionUnknown
 		rc.Reason = PrometheusNotReconciled
 		rc.Message = CannotReadPrometheusConditions
+		return rc
+	}
+
+	if prometheusReconciled.ObservedGeneration != prom.Generation {
 		return rc
 	}
 
@@ -119,6 +126,7 @@ func updateReconciled(rc v1alpha1.Condition, prometheusConditions []monv1.Promet
 	rc.Status = v1alpha1.ConditionTrue
 	rc.Reason = ReconciledReason
 	rc.Message = SuccessfullyReconciledMessage
+	rc.ObservedGeneration = generation
 	return rc
 }
 
