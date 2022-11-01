@@ -96,6 +96,10 @@ func TestMonitoringStackController(t *testing.T) {
 			name:     "Alertmanager deployed and removed",
 			scenario: assertAlertmanagerDeployedAndRemoved,
 		},
+		{
+			name:     "invalid Prometheus replicas numbers",
+			scenario: validatePrometheusConfig,
+		},
 	}
 
 	for _, tc := range ts {
@@ -307,6 +311,23 @@ func validateStackRetention(t *testing.T) {
 
 	err := f.K8sClient.Create(context.Background(), validMS)
 	assert.NilError(t, err, `100h is a valid retention period`)
+}
+
+func validatePrometheusConfig(t *testing.T) {
+	invalidReplicasValues := []int32{-1, 0}
+	ms := newMonitoringStack(t, "invalid-prometheus-config")
+	for _, v := range invalidReplicasValues {
+		ms.Spec.PrometheusConfig = &stack.PrometheusConfig{
+			Replicas: &v,
+		}
+		err := f.K8sClient.Create(context.Background(), ms)
+		assert.ErrorContains(t, err, `invalid: spec.prometheusConfig.replicas`)
+	}
+
+	validN := int32(1)
+	ms.Spec.PrometheusConfig.Replicas = &validN
+	err := f.K8sClient.Create(context.Background(), ms)
+	assert.NilError(t, err, `1 is a valid replica count`)
 }
 
 func singlePrometheusReplicaHasNoPDB(t *testing.T) {
