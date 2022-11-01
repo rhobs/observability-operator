@@ -13,7 +13,7 @@ inputs:
 runs:
   using: composite
   steps:
-  - uses: actions/checkout@v2
+  - uses: actions/checkout@v3
     with:
       fetch-depth: 0
 
@@ -29,7 +29,7 @@ runs:
     uses: ./.github/tools-cache
 
   - name: Registry Login
-    uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+    uses: docker/login-action@v2
     with:
       registry: quay.io
       username: ${{ inputs.quay_login }}

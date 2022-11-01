@@ -6,23 +6,23 @@ jobs:
   commit-lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - uses: wagoid/commitlint-github-action@v4
+      - uses: wagoid/commitlint-github-action@v5
 
   github-actions-yaml-lint:
     runs-on: ubuntu-latest
     name: Github Actions yaml linter
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: reviewdog/action-actionlint@v1
 
   lint:
     runs-on: ubuntu-latest
     name: Run all lints
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Import common environment variables
         run: cat ".github/env" >> $GITHUB_ENV
@@ -50,12 +50,12 @@ jobs:
     runs-on: ubuntu-latest
     name: Generate and format
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Import common environment variables
         run: cat ".github/env" >> $GITHUB_ENV
 
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v3
         with:
           go-version: ${{ env.go-version }}
 
@@ -70,12 +70,12 @@ jobs:
     runs-on: ubuntu-latest
     name: Validate tools cache
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Import common environment variables
         run: cat ".github/env" >> $GITHUB_ENV
 
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v3
         with:
           go-version: ${{ env.go-version }}
 
@@ -90,13 +90,13 @@ jobs:
   build-bundle-image:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Import common environment variables
         run: cat ".github/env" >> $GITHUB_ENV
 
       - name: Setup Go environment
-        uses: actions/setup-go@v2.1.4
+        uses: actions/setup-go@v3
         with:
           go-version: ${{ env.go-version }}
 
@@ -112,7 +112,7 @@ jobs:
   e2e-tests-olm:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Import common environment variables
         run: cat ".github/env" >> $GITHUB_ENV
