@@ -784,6 +784,7 @@ spec:
                     description: Number of replicas/pods to deploy for a Prometheus
                       deployment.
                     format: int32
+                    minimum: 1
                     type: integer
                 type: object
               resourceSelector:

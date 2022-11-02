@@ -223,6 +223,7 @@ Define prometheus config
           <br/>
             <i>Format</i>: int32<br/>
             <i>Default</i>: 2<br/>
+            <i>Minimum</i>: 1<br/>
         </td>
         <td>false</td>
       </tr></tbody>
