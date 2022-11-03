@@ -600,12 +600,6 @@ func newMonitoringStack(t *testing.T, name string, mods ...stackMod) *stack.Moni
 	return ms
 }
 
-func namespaceSelector(s *metav1.LabelSelector) stackMod {
-	return func(ms *stack.MonitoringStack) {
-		ms.Spec.NamespaceSelector = s
-	}
-}
-
 func waitForStackDeletion(name string) error {
 	return wait.Poll(5*time.Second, wait.ForeverTestTimeout, func() (bool, error) {
 		key := types.NamespacedName{Name: name, Namespace: e2eTestNamespace}
