@@ -45,62 +45,63 @@ func assertCRDExists(t *testing.T, crds ...string) {
 func TestMonitoringStackController(t *testing.T) {
 	assertCRDExists(t,
 		"prometheuses.monitoring.rhobs",
+		"alertmanagers.monitoring.rhobs",
+		"podmonitors.monitoring.rhobs",
 		"monitoringstacks.monitoring.rhobs",
 	)
 
-	ts := []testCase{
-		{
-			name:     "Defaults are applied to Monitoring CR",
-			scenario: promConfigDefaultsAreApplied,
-		}, {
-			name:     "Empty stack spec must create a Prometheus",
-			scenario: emptyStackCreatesPrometheus,
-		}, {
-			name:     "stack spec are reflected in Prometheus",
-			scenario: reconcileStack,
-		}, {
-			name:     "invalid loglevels are rejected",
-			scenario: validateStackLogLevel,
-		}, {
-			name:     "invalid retention is rejected",
-			scenario: validateStackRetention,
-		}, {
-			name:     "Controller reverts back changes to Prometheus",
-			scenario: reconcileRevertsManualChanges,
-		}, {
-			name:     "single prometheus replica has no pdb",
-			scenario: singlePrometheusReplicaHasNoPDB,
-		}, {
-			name:     "Prometheus stacks can scrape themselves",
-			scenario: assertPrometheusScrapesItself,
-		}, {
-			name:     "Alertmanager receives alerts from the Prometheus instance",
-			scenario: assertAlertmanagerReceivesAlerts,
-		}, {
-			name: "Alertmanager runs in HA mode",
-			scenario: func(t *testing.T) {
-				stackName := "alerting"
-				assertAlertmanagerCreated(t, stackName)
-				pods, err := f.GetStatefulSetPods("alertmanager-"+stackName, e2eTestNamespace)
-				if err != nil {
-					t.Fatal(err)
-				}
-				assertAlertmanagersAreOnDifferentNodes(t, pods)
-				assertAlertmanagersAreResilientToDisruption(t, pods)
-			},
-		}, {
-			name:     "Alertmanager disabled",
-			scenario: assertAlertmanagerNotDeployed,
+	ts := []testCase{{
+		name:     "Defaults are applied to Monitoring CR",
+		scenario: promConfigDefaultsAreApplied,
+	}, {
+		name:     "Empty stack spec must create a Prometheus",
+		scenario: emptyStackCreatesPrometheus,
+	}, {
+		name:     "stack spec are reflected in Prometheus",
+		scenario: reconcileStack,
+	}, {
+		name:     "invalid loglevels are rejected",
+		scenario: validateStackLogLevel,
+	}, {
+		name:     "invalid retention is rejected",
+		scenario: validateStackRetention,
+	}, {
+		name:     "Controller reverts back changes to Prometheus",
+		scenario: reconcileRevertsManualChanges,
+	}, {
+		name:     "single prometheus replica has no pdb",
+		scenario: singlePrometheusReplicaHasNoPDB,
+	}, {
+		name:     "Prometheus stacks can scrape themselves",
+		scenario: assertPrometheusScrapesItself,
+	}, {
+		name:     "Alertmanager receives alerts from the Prometheus instance",
+		scenario: assertAlertmanagerReceivesAlerts,
+	}, {
+		name: "Alertmanager runs in HA mode",
+		scenario: func(t *testing.T) {
+			stackName := "alerting"
+			assertAlertmanagerCreated(t, stackName)
+			pods, err := f.GetStatefulSetPods("alertmanager-"+stackName, e2eTestNamespace)
+			if err != nil {
+				t.Fatal(err)
+			}
+			assertAlertmanagersAreOnDifferentNodes(t, pods)
+			assertAlertmanagersAreResilientToDisruption(t, pods)
 		},
-		{
-			name:     "Alertmanager deployed and removed",
-			scenario: assertAlertmanagerDeployedAndRemoved,
-		},
-		{
-			name:     "invalid Prometheus replicas numbers",
-			scenario: validatePrometheusConfig,
-		},
-	}
+	}, {
+		name:     "invalid Prometheus replicas numbers",
+		scenario: validatePrometheusConfig,
+	}, {
+		name:     "Alertmanager disabled",
+		scenario: assertAlertmanagerNotDeployed,
+	}, {
+		name:     "Alertmanager deployed and removed",
+		scenario: assertAlertmanagerDeployedAndRemoved,
+	}, {
+		name:     "Verify multi-namespace support",
+		scenario: namespaceSelectorTest,
+	}}
 
 	for _, tc := range ts {
 		t.Run(tc.name, tc.scenario)
@@ -568,15 +569,28 @@ func newAlerts(t *testing.T) *monv1.PrometheusRule {
 	return rule
 }
 
-func newMonitoringStack(t *testing.T, name string, options ...func(*stack.MonitoringStack)) *stack.MonitoringStack {
+type stackMod func(*stack.MonitoringStack)
+
+func msResourceSelector(labels map[string]string) stackMod {
+	return func(ms *stack.MonitoringStack) {
+		ms.Spec.ResourceSelector = &metav1.LabelSelector{MatchLabels: labels}
+	}
+}
+func msNamespaceSelector(labels map[string]string) stackMod {
+	return func(ms *stack.MonitoringStack) {
+		ms.Spec.NamespaceSelector = &metav1.LabelSelector{MatchLabels: labels}
+	}
+}
+
+func newMonitoringStack(t *testing.T, name string, mods ...stackMod) *stack.MonitoringStack {
 	ms := &stack.MonitoringStack{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: e2eTestNamespace,
 		},
 	}
-	for _, opt := range options {
-		opt(ms)
+	for _, mod := range mods {
+		mod(ms)
 	}
 	f.CleanUp(t, func() {
 		f.K8sClient.Delete(context.Background(), ms)
@@ -586,6 +600,12 @@ func newMonitoringStack(t *testing.T, name string, options ...func(*stack.Monito
 	return ms
 }
 
+func namespaceSelector(s *metav1.LabelSelector) stackMod {
+	return func(ms *stack.MonitoringStack) {
+		ms.Spec.NamespaceSelector = s
+	}
+}
+
 func waitForStackDeletion(name string) error {
 	return wait.Poll(5*time.Second, wait.ForeverTestTimeout, func() (bool, error) {
 		key := types.NamespacedName{Name: name, Namespace: e2eTestNamespace}
@@ -593,4 +613,176 @@ func waitForStackDeletion(name string) error {
 		err := f.K8sClient.Get(context.Background(), key, &ms)
 		return errors.IsNotFound(err), nil
 	})
+}
+
+func namespaceSelectorTest(t *testing.T) {
+	// as a convention
+	// add labels to ns to indicate the stack responsible for monitoring the ns
+	// resourceSelector uses both stack and an app label
+	stackName := "multi-ns"
+	nsLabels := map[string]string{"monitoring.rhobs/stack": stackName}
+	resourceLabels := map[string]string{
+		"monitoring.rhobs/stack": stackName,
+		"app":                    "demo",
+	}
+
+	ms := newMonitoringStack(t, stackName,
+		msResourceSelector(resourceLabels),
+		msNamespaceSelector(nsLabels))
+
+	err := f.K8sClient.Create(context.Background(), ms)
+	assert.NilError(t, err, "failed to create a monitoring stack")
+
+	namespaces := []string{"test-ns-1", "test-ns-2", "test-ns-3"}
+
+	for _, ns := range namespaces {
+		err := deployDemoApp(t, ns, nsLabels, resourceLabels)
+		assert.NilError(t, err, "%s: deploying demo app failed", ns)
+	}
+
+	stopChan := make(chan struct{})
+	defer close(stopChan)
+	if pollErr := wait.Poll(5*time.Second, 2*time.Minute, func() (bool, error) {
+		err := f.StartServicePortForward(ms.Name+"-prometheus", e2eTestNamespace, "9090", stopChan)
+		return err == nil, nil
+	}); pollErr != nil {
+		t.Fatal(pollErr)
+	}
+
+	promClient := framework.NewPrometheusClient("http://localhost:9090")
+	if pollErr := wait.Poll(5*time.Second, 5*time.Minute, func() (bool, error) {
+		query := `prometheus_build_info{namespace=~"test-ns-.*"}`
+		result, err := promClient.Query(query)
+		if err != nil {
+			return false, nil
+		}
+
+		if len(result.Data.Result) != len(namespaces) {
+			return false, nil
+		}
+
+		return true, nil
+	}); pollErr != nil {
+		t.Fatal(pollErr)
+	}
+}
+
+func deployDemoApp(t *testing.T, nsName string, nsLabels, resourceLabels map[string]string) error {
+
+	// now deploy a prometheus instance into test-ns
+	ns := newNamespace(t, nsName)
+	ns.SetLabels(nsLabels)
+	if err := f.K8sClient.Create(context.Background(), ns); err != nil {
+		return fmt.Errorf("failed to create namespace %s: %w", ns, err)
+	}
+
+	// deploy a pod, service, service-monitor into that namespace
+	app := newPrometheusPod(t, "prometheus", ns.Name, resourceLabels)
+	if err := f.K8sClient.Create(context.Background(), app); err != nil {
+		return fmt.Errorf("failed to create demo app %s/%s: %w", nsName, app.Name, err)
+	}
+
+	svcLabels := map[string]string{"service": app.Name}
+	svc := newService(t, app.Name, ns.Name, svcLabels, app.Labels)
+	// these are prometheus ports
+	svc.Spec.Ports = []corev1.ServicePort{{
+		Name:       "metrics",
+		Port:       9090,
+		TargetPort: intstr.FromInt(9090),
+	}}
+
+	if err := f.K8sClient.Create(context.Background(), svc); err != nil {
+		return fmt.Errorf("failed to create service for demo app %s/%s: %w", nsName, svc.Name, err)
+	}
+
+	svcMon := newServiceMonitor(t, ns.Name, "prometheus", resourceLabels, svcLabels, "metrics")
+	if err := f.K8sClient.Create(context.Background(), svcMon); err != nil {
+		return fmt.Errorf("failed to create servicemonitor for demo service %s/%s: %w", nsName, svcMon.Name, err)
+	}
+	return nil
+}
+
+func newServiceMonitor(t *testing.T, ns, name string, labels, svcLabels map[string]string, endpoint string) *monv1.ServiceMonitor {
+	svcMon := &monv1.ServiceMonitor{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: monv1.SchemeGroupVersion.String(),
+			Kind:       "ServiceMonitor",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ns,
+			Labels:    labels,
+		},
+		Spec: monv1.ServiceMonitorSpec{
+			Selector:  metav1.LabelSelector{MatchLabels: svcLabels},
+			Endpoints: []monv1.Endpoint{{Port: endpoint}},
+		},
+	}
+	f.CleanUp(t, func() { f.K8sClient.Delete(context.Background(), svcMon) })
+	return svcMon
+}
+
+func newNamespace(t *testing.T, name string) *corev1.Namespace {
+	ns := &corev1.Namespace{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "Namespace",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+	}
+
+	f.CleanUp(t, func() { f.K8sClient.Delete(context.Background(), ns) })
+	return ns
+}
+
+func newService(t *testing.T, name, namespace string, labels, selector map[string]string) *corev1.Service {
+	svc := &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "Service",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+			Labels:    labels,
+		},
+		Spec: corev1.ServiceSpec{
+			Selector: selector,
+		},
+	}
+
+	f.CleanUp(t, func() { f.K8sClient.Delete(context.Background(), svc) })
+	return svc
+}
+
+func newPrometheusPod(t *testing.T, name, ns string, labels map[string]string) *corev1.Pod {
+	pod := &corev1.Pod{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "Pod",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ns,
+			Labels:    labels,
+		},
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{{
+				Name:  "prometheus",
+				Image: "quay.io/prometheus/prometheus:v2.39.1",
+				Ports: []corev1.ContainerPort{{
+					Name:          "metrics",
+					ContainerPort: 9090,
+				}},
+			}},
+		},
+	}
+	pod.Labels["app.kubernetes.io/name"] = name
+
+	f.CleanUp(t, func() {
+		f.K8sClient.Delete(context.Background(), pod)
+	})
+	return pod
 }

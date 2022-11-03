@@ -126,6 +126,11 @@ func (in *MonitoringStackSpec) DeepCopyInto(out *MonitoringStackSpec) {
 		*out = new(v1.LabelSelector)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.NamespaceSelector != nil {
+		in, out := &in.NamespaceSelector, &out.NamespaceSelector
+		*out = new(v1.LabelSelector)
+		(*in).DeepCopyInto(*out)
+	}
 	in.Resources.DeepCopyInto(&out.Resources)
 	if in.PrometheusConfig != nil {
 		in, out := &in.PrometheusConfig, &out.PrometheusConfig

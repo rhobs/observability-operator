@@ -58,6 +58,10 @@ type MonitoringStackSpec struct {
 	// +optional
 	ResourceSelector *metav1.LabelSelector `json:"resourceSelector,omitempty"`
 
+	// Namespace selector for Monitoring Stack Resources.
+	// +optional
+	NamespaceSelector *metav1.LabelSelector `json:"namespaceSelector,omitempty"`
+
 	// Time duration to retain data for. Default is '120h',
 	// and must match the regular expression `[0-9]+(ms|s|m|h|d|w|y)` (milliseconds seconds minutes hours days weeks years).
 	// +kubebuilder:default="120h"

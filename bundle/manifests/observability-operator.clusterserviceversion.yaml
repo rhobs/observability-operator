@@ -15,6 +15,11 @@ metadata:
           },
           "spec": {
             "logLevel": "debug",
+            "namespaceSelector": {
+              "matchLabels": {
+                "monitoring.rhobs/stack": "sample-monitoring-stack"
+              }
+            },
             "resourceSelector": {
               "matchLabels": {
                 "system": "foo"
