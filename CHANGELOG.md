@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.16](https://github.com/rhobs/monitoring-stack-operator/tree/v0.0.16) (2022-11-02)
+
+### Features
+
+* deploy admission webhook 8cc57d7
+
+
+### Bug Fixes
+
+* hide internal CRDs from OLM UI 5c0f013
+* release workflow broken due to invalid syntax 7ad0d8a
+* target management clusters in SSS ([#207](https://github.com/rhobs/monitoring-stack-operator/issues/207)) b660849
+* update stack status only if Prometheus generation is different 270ec28
+* validate Prometheus replicas number  cbb95f3
+
 ### [0.0.15](https://github.com/rhobs/monitoring-stack-operator/tree/v0.0.15) (2022-10-13)
 
 
