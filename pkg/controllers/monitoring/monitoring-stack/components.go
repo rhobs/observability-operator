@@ -35,13 +35,13 @@ func stackComponentReconcilers(ms *stack.MonitoringStack, instanceSelectorKey st
 
 		// create clusterrole if there is a nsSelector otherwise delete any that was created earlier
 		reconciler.NewOptionalUpdater(newClusterRoleBinding(ms, prometheusName), ms, hasNsSelector),
-		reconciler.NewOptionalUpdater(newRoleBinding(ms, prometheusName), ms, !hasNsSelector),
+		reconciler.NewOptionalUpdater(newRoleBindingForRoleType(ms, prometheusName, "ClusterRole"), ms, !hasNsSelector),
 
 		reconciler.NewUpdater(newAdditionalScrapeConfigsSecret(ms, additionalScrapeConfigsSecretName), ms),
 		reconciler.NewUpdater(newServiceAccount(alertmanagerName, ms.Namespace), ms),
 		reconciler.NewOptionalUpdater(newAlertManagerRole(ms, alertmanagerName, rbacVerbs), ms,
 			!ms.Spec.AlertmanagerConfig.Disabled),
-		reconciler.NewOptionalUpdater(newRoleBinding(ms, alertmanagerName), ms,
+		reconciler.NewOptionalUpdater(newRoleBindingForRoleType(ms, alertmanagerName, "Role"), ms,
 			!ms.Spec.AlertmanagerConfig.Disabled),
 		reconciler.NewOptionalUpdater(newAlertmanager(ms, alertmanagerName, instanceSelectorKey, instanceSelectorValue), ms,
 			!ms.Spec.AlertmanagerConfig.Disabled),
@@ -215,7 +215,7 @@ func storageForPVC(pvc *corev1.PersistentVolumeClaimSpec) *monv1.StorageSpec {
 	}
 }
 
-func newRoleBinding(ms *stack.MonitoringStack, rbacResourceName string) *rbacv1.RoleBinding {
+func newRoleBindingForRoleType(ms *stack.MonitoringStack, rbacResourceName, roleType string) *rbacv1.RoleBinding {
 	roleBinding := &rbacv1.RoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: rbacv1.SchemeGroupVersion.String(),
@@ -233,12 +233,13 @@ func newRoleBinding(ms *stack.MonitoringStack, rbacResourceName string) *rbacv1.
 		}},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: rbacv1.SchemeGroupVersion.Group,
-			Kind:     "Role",
+			Kind:     roleType,
 			Name:     rbacResourceName,
 		},
 	}
 	return roleBinding
 }
+
 func newClusterRoleBinding(ms *stack.MonitoringStack, rbacResourceName string) *rbacv1.ClusterRoleBinding {
 	roleBinding := &rbacv1.ClusterRoleBinding{
 		TypeMeta: metav1.TypeMeta{
