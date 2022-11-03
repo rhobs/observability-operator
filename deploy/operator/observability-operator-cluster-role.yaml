@@ -148,7 +148,7 @@ rules:
 - apiGroups:
   - rbac.authorization.k8s.io
   resources:
-  - clusterolebindings
+  - clusterrolebindings
   - clusterroles
   - rolebindings
   - roles
