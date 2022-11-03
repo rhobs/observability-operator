@@ -22,7 +22,7 @@ metadata:
             },
             "resourceSelector": {
               "matchLabels": {
-                "system": "foo"
+                "app": "demo"
               }
             },
             "retention": "1d"
@@ -333,6 +333,8 @@ spec:
         - apiGroups:
           - rbac.authorization.k8s.io
           resources:
+          - clusterolebindings
+          - clusterroles
           - rolebindings
           - roles
           verbs:
