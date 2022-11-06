@@ -47,6 +47,7 @@ func TestMonitoringStackController(t *testing.T) {
 		"prometheuses.monitoring.rhobs",
 		"alertmanagers.monitoring.rhobs",
 		"podmonitors.monitoring.rhobs",
+		"servicemonitors.monitoring.rhobs",
 		"monitoringstacks.monitoring.rhobs",
 	)
 
