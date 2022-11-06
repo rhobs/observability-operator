@@ -784,10 +784,7 @@ func newPrometheusPod(t *testing.T, name, ns string) *corev1.Pod {
 			}},
 		},
 	}
-	pod.Labels["app.kubernetes.io/name"] = name
 
-	f.CleanUp(t, func() {
-		f.K8sClient.Delete(context.Background(), pod)
-	})
+	f.CleanUp(t, func() { f.K8sClient.Delete(context.Background(), pod) })
 	return pod
 }
