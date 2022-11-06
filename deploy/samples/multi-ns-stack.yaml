@@ -7,11 +7,9 @@ metadata:
 spec:
   logLevel: debug
   retention: 2h
-
   resourceSelector:
     matchLabels:
       app: demo
-
   namespaceSelector:
     matchLabels:
       monitoring.rhobs/stack: multi-ns

@@ -10,7 +10,3 @@ spec:
   resourceSelector:
     matchLabels:
       app: demo
-
-  namespaceSelector:
-    matchLabels:
-      monitoring.rhobs/stack: sample-monitoring-stack
