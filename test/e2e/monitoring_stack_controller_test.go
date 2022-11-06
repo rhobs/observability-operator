@@ -609,10 +609,12 @@ func waitForStackDeletion(name string) error {
 	})
 }
 
+// tests if namespace selector is able to monitor resources from multiple
+// namespaces
 func namespaceSelectorTest(t *testing.T) {
-	// as a convention
-	// add labels to ns to indicate the stack responsible for monitoring the ns
-	// resourceSelector uses both stack and an app label
+	// as a convention, add labels to ns to indicate the stack responsible for
+	// monitoring the namespaces
+	// while resourceSelector uses both stack and an app label
 	stackName := "multi-ns"
 	nsLabels := map[string]string{"monitoring.rhobs/stack": stackName}
 	resourceLabels := map[string]string{
@@ -661,9 +663,11 @@ func namespaceSelectorTest(t *testing.T) {
 	}
 }
 
+// Deploys a prometheus instance and a service pointing to the prometheus's port - 9090
+// and a service-monitor to nsName namespace. nsLabels are applied to the namespace
+// so that it can be monitored. resourceLabels are applied to the service monitor
 func deployDemoApp(t *testing.T, nsName string, nsLabels, resourceLabels map[string]string) error {
 
-	// now deploy a prometheus instance into test-ns
 	ns := newNamespace(t, nsName)
 	ns.SetLabels(nsLabels)
 	if err := f.K8sClient.Create(context.Background(), ns); err != nil {
@@ -671,13 +675,16 @@ func deployDemoApp(t *testing.T, nsName string, nsLabels, resourceLabels map[str
 	}
 
 	// deploy a pod, service, service-monitor into that namespace
-	app := newPrometheusPod(t, "prometheus", ns.Name, resourceLabels)
-	if err := f.K8sClient.Create(context.Background(), app); err != nil {
-		return fmt.Errorf("failed to create demo app %s/%s: %w", nsName, app.Name, err)
+	prom := newPrometheusPod(t, "prometheus", ns.Name)
+	if err := f.K8sClient.Create(context.Background(), prom); err != nil {
+		return fmt.Errorf("failed to create demo app %s/%s: %w", nsName, prom.Name, err)
 	}
 
-	svcLabels := map[string]string{"service": app.Name}
-	svc := newService(t, app.Name, ns.Name, svcLabels, app.Labels)
+	svcLabels := map[string]string{
+		"app.kubernetes.io/name":    prom.Name,
+		"app.kubernetes.io/part-of": "prometheus",
+	}
+	svc := newService(t, prom.Name, ns.Name, svcLabels, prom.Labels)
 	// these are prometheus ports
 	svc.Spec.Ports = []corev1.ServicePort{{
 		Name:       "metrics",
@@ -696,7 +703,7 @@ func deployDemoApp(t *testing.T, nsName string, nsLabels, resourceLabels map[str
 	return nil
 }
 
-func newServiceMonitor(t *testing.T, ns, name string, labels, svcLabels map[string]string, endpoint string) *monv1.ServiceMonitor {
+func newServiceMonitor(t *testing.T, ns, name string, stackSelector, serviceSelector map[string]string, endpoint string) *monv1.ServiceMonitor {
 	svcMon := &monv1.ServiceMonitor{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: monv1.SchemeGroupVersion.String(),
@@ -705,10 +712,10 @@ func newServiceMonitor(t *testing.T, ns, name string, labels, svcLabels map[stri
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: ns,
-			Labels:    labels,
+			Labels:    stackSelector,
 		},
 		Spec: monv1.ServiceMonitorSpec{
-			Selector:  metav1.LabelSelector{MatchLabels: svcLabels},
+			Selector:  metav1.LabelSelector{MatchLabels: serviceSelector},
 			Endpoints: []monv1.Endpoint{{Port: endpoint}},
 		},
 	}
@@ -751,7 +758,7 @@ func newService(t *testing.T, name, namespace string, labels, selector map[strin
 	return svc
 }
 
-func newPrometheusPod(t *testing.T, name, ns string, labels map[string]string) *corev1.Pod {
+func newPrometheusPod(t *testing.T, name, ns string) *corev1.Pod {
 	pod := &corev1.Pod{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),
@@ -760,7 +767,10 @@ func newPrometheusPod(t *testing.T, name, ns string, labels map[string]string) *
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: ns,
-			Labels:    labels,
+			Labels: map[string]string{
+				"app.kubernetes.io/name":    "prometheus",
+				"app.kubernetes.io/version": "2.39.1",
+			},
 		},
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{{

@@ -33,7 +33,7 @@ func stackComponentReconcilers(ms *stack.MonitoringStack, instanceSelectorKey st
 		reconciler.NewUpdater(newServiceAccount(prometheusName, ms.Namespace), ms),
 		reconciler.NewUpdater(newPrometheusRole(ms, prometheusName, rbacVerbs), ms),
 
-		// create clusterrole if there is a nsSelector otherwise delete any that was created earlier
+		// create clusterrolebinding if nsSelector's present otherwise a rolebinding
 		reconciler.NewOptionalUpdater(newClusterRoleBinding(ms, prometheusName), ms, hasNsSelector),
 		reconciler.NewOptionalUpdater(newRoleBindingForRoleType(ms, prometheusName, "ClusterRole"), ms, !hasNsSelector),
 
