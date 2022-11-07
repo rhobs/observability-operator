@@ -610,8 +610,8 @@ func waitForStackDeletion(name string) error {
 	})
 }
 
-// tests if namespace selector is able to monitor resources from multiple
-// namespaces
+// tests if a stack with a namespace selector is able to monitor
+// resources from multiple namespaces
 func namespaceSelectorTest(t *testing.T) {
 	// as a convention, add labels to ns to indicate the stack responsible for
 	// monitoring the namespaces
