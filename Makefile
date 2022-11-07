@@ -176,6 +176,9 @@ CATALOG_IMG ?= $(IMAGE_BASE)-catalog:$(VERSION)
 # a single image which keeps updating there by allowing auto upgrades
 CATALOG_IMG_LATEST ?= $(IMAGE_BASE)-catalog:latest
 
+# The git short-hash of the most recent commit in the repository, which will 
+# be used for image tag association against the built catalog image
+CATALOG_IMG_SHA=$(shell git rev-parse --short=8 HEAD)
 
 # mark release as first by setting FIRST_OLM_RELEASE to true. This results in a
 # root catalog image  (i.e. no previous catalog images/ --from-index)
@@ -203,12 +206,14 @@ catalog-image: $(OPM)
 	# tag the catalog img:version as latest so that continious release
 	# is possible by refering to latest tag instead of a version
 	$(CONTAINER_RUNTIME) tag $(CATALOG_IMG) $(CATALOG_IMG_LATEST)
+	$(CONTAINER_RUNTIME) tag $(CATALOG_IMG) $(CATALOG_IMG_SHA)
 
 # Push the catalog image.
 .PHONY: catalog-push
 catalog-push: ## Push a catalog image.
 	$(CONTAINER_RUNTIME) push $(PUSH_OPTIONS) $(CATALOG_IMG)
 	$(CONTAINER_RUNTIME) push $(PUSH_OPTIONS) $(CATALOG_IMG_LATEST)
+	$(CONTAINER_RUNTIME) push $(PUSH_OPTIONS) $(CATALOG_IMG_SHA)
 
 .PHONY: release
 release: operator-image operator-push bundle-image bundle-push catalog-image catalog-push
