@@ -59,6 +59,7 @@ type MonitoringStackSpec struct {
 	ResourceSelector *metav1.LabelSelector `json:"resourceSelector,omitempty"`
 
 	// Namespace selector for Monitoring Stack Resources.
+	// If left empty the Monitoring Stack will only match resources in the namespace it was created in.
 	// +optional
 	NamespaceSelector *metav1.LabelSelector `json:"namespaceSelector,omitempty"`
 
