@@ -108,7 +108,7 @@ MonitoringStackSpec is the specification for desired Monitoring Stack
         <td><b><a href="#monitoringstackspecnamespaceselector">namespaceSelector</a></b></td>
         <td>object</td>
         <td>
-          Namespace selector for Monitoring Stack Resources.<br/>
+          Namespace selector for Monitoring Stack Resources. If left empty the Monitoring Stack will only match resources in the namespace it was created in.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -183,7 +183,7 @@ Define Alertmanager config
 
 
 
-Namespace selector for Monitoring Stack Resources.
+Namespace selector for Monitoring Stack Resources. If left empty the Monitoring Stack will only match resources in the namespace it was created in.
 
 <table>
     <thead>

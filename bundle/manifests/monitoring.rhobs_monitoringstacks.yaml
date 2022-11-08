@@ -54,7 +54,9 @@ spec:
                 - warning
                 type: string
               namespaceSelector:
-                description: Namespace selector for Monitoring Stack Resources.
+                description: Namespace selector for Monitoring Stack Resources. If
+                  left empty the Monitoring Stack will only match resources in the
+                  namespace it was created in.
                 properties:
                   matchExpressions:
                     description: matchExpressions is a list of label selector requirements.
