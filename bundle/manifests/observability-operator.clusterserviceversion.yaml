@@ -17,7 +17,7 @@ metadata:
             "logLevel": "debug",
             "resourceSelector": {
               "matchLabels": {
-                "system": "foo"
+                "app": "demo"
               }
             },
             "retention": "1d"
@@ -328,6 +328,8 @@ spec:
         - apiGroups:
           - rbac.authorization.k8s.io
           resources:
+          - clusterrolebindings
+          - clusterroles
           - rolebindings
           - roles
           verbs:

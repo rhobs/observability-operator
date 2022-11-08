@@ -23,62 +23,67 @@ const PrometheusUserFSGroupID = 65534
 const AlertmanagerUserFSGroupID = 65535
 
 func stackComponentReconcilers(ms *stack.MonitoringStack, instanceSelectorKey string, instanceSelectorValue string) []reconciler.Reconciler {
-	prometheusRBACResourceName := ms.Name + "-prometheus"
-	alertmanagerRBACResourceName := ms.Name + "-alertmanager"
+	prometheusName := ms.Name + "-prometheus"
+	alertmanagerName := ms.Name + "-alertmanager"
 	rbacVerbs := []string{"get", "list", "watch"}
 	additionalScrapeConfigsSecretName := ms.Name + "-prometheus-additional-scrape-configs"
+	hasNsSelector := ms.Spec.NamespaceSelector != nil
+	deployAlertmanager := !ms.Spec.AlertmanagerConfig.Disabled
+
 	return []reconciler.Reconciler{
-		reconciler.NewUpdater(newServiceAccount(prometheusRBACResourceName, ms.Namespace), ms),
-		reconciler.NewUpdater(newPrometheusRole(ms, prometheusRBACResourceName, rbacVerbs), ms),
-		reconciler.NewUpdater(newRoleBinding(ms, prometheusRBACResourceName), ms),
+		// Prometheus Deployment
+		reconciler.NewUpdater(newServiceAccount(prometheusName, ms.Namespace), ms),
+		reconciler.NewUpdater(newPrometheusClusterRole(ms, prometheusName, rbacVerbs), ms),
 		reconciler.NewUpdater(newAdditionalScrapeConfigsSecret(ms, additionalScrapeConfigsSecretName), ms),
-		reconciler.NewUpdater(newServiceAccount(alertmanagerRBACResourceName, ms.Namespace), ms),
-		reconciler.NewOptionalUpdater(newAlertManagerRole(ms, alertmanagerRBACResourceName, rbacVerbs), ms,
-			!ms.Spec.AlertmanagerConfig.Disabled),
-		reconciler.NewOptionalUpdater(newRoleBinding(ms, alertmanagerRBACResourceName), ms,
-			!ms.Spec.AlertmanagerConfig.Disabled),
-		reconciler.NewOptionalUpdater(newAlertmanager(ms, alertmanagerRBACResourceName, instanceSelectorKey, instanceSelectorValue), ms,
-			!ms.Spec.AlertmanagerConfig.Disabled),
-		reconciler.NewOptionalUpdater(newAlertmanagerService(ms, instanceSelectorKey, instanceSelectorValue), ms,
-			!ms.Spec.AlertmanagerConfig.Disabled),
-		reconciler.NewOptionalUpdater(newAlertmanagerPDB(ms, instanceSelectorKey, instanceSelectorValue), ms,
-			!ms.Spec.AlertmanagerConfig.Disabled),
-		reconciler.NewUpdater(newPrometheus(ms, prometheusRBACResourceName, additionalScrapeConfigsSecretName, instanceSelectorKey, instanceSelectorValue), ms),
+		reconciler.NewUpdater(newPrometheus(ms, prometheusName,
+			additionalScrapeConfigsSecretName,
+			instanceSelectorKey, instanceSelectorValue), ms),
 		reconciler.NewUpdater(newPrometheusService(ms, instanceSelectorKey, instanceSelectorValue), ms),
 		reconciler.NewUpdater(newThanosSidecarService(ms, instanceSelectorKey, instanceSelectorValue), ms),
 		reconciler.NewOptionalUpdater(newPrometheusPDB(ms, instanceSelectorKey, instanceSelectorValue), ms,
 			*ms.Spec.PrometheusConfig.Replicas > 1),
+
+		// Alertmanager Deployment
+		reconciler.NewOptionalUpdater(newServiceAccount(alertmanagerName, ms.Namespace), ms, deployAlertmanager),
+		// create clusterrolebinding if nsSelector's present otherwise a rolebinding
+		reconciler.NewOptionalUpdater(newClusterRoleBinding(ms, prometheusName), ms, hasNsSelector),
+		reconciler.NewOptionalUpdater(newRoleBindingForClusterRole(ms, prometheusName), ms, !hasNsSelector),
+
+		reconciler.NewOptionalUpdater(newAlertManagerClusterRole(ms, alertmanagerName, rbacVerbs), ms, deployAlertmanager),
+
+		// create clusterrolebinding if alertmanager is enabled and namespace selector is also present in MonitoringStack
+		reconciler.NewOptionalUpdater(newClusterRoleBinding(ms, alertmanagerName), ms, deployAlertmanager && hasNsSelector),
+		reconciler.NewOptionalUpdater(newRoleBindingForClusterRole(ms, alertmanagerName), ms, deployAlertmanager && !hasNsSelector),
+
+		reconciler.NewOptionalUpdater(newAlertmanager(ms, alertmanagerName, instanceSelectorKey, instanceSelectorValue), ms, deployAlertmanager),
+		reconciler.NewOptionalUpdater(newAlertmanagerService(ms, instanceSelectorKey, instanceSelectorValue), ms, deployAlertmanager),
+		reconciler.NewOptionalUpdater(newAlertmanagerPDB(ms, instanceSelectorKey, instanceSelectorValue), ms, deployAlertmanager),
 	}
 }
 
-func newPrometheusRole(ms *stack.MonitoringStack, rbacResourceName string, rbacVerbs []string) *rbacv1.Role {
-	return &rbacv1.Role{
+func newPrometheusClusterRole(ms *stack.MonitoringStack, rbacResourceName string, rbacVerbs []string) *rbacv1.ClusterRole {
+	return &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: rbacv1.SchemeGroupVersion.String(),
-			Kind:       "Role",
+			Kind:       "ClusterRole",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      rbacResourceName,
-			Namespace: ms.Namespace,
+			Name: rbacResourceName,
 		},
-		Rules: []rbacv1.PolicyRule{
-			{
-				APIGroups: []string{""},
-				Resources: []string{"services", "endpoints", "pods"},
-				Verbs:     rbacVerbs,
-			},
-			{
-				APIGroups: []string{"extensions", "networking.k8s.io"},
-				Resources: []string{"ingresses"},
-				Verbs:     rbacVerbs,
-			},
-			{
-				APIGroups:     []string{"security.openshift.io"},
-				Resources:     []string{"securitycontextconstraints"},
-				ResourceNames: []string{"nonroot", "nonroot-v2"},
-				Verbs:         []string{"use"},
-			},
-		},
+		Rules: []rbacv1.PolicyRule{{
+			APIGroups: []string{""},
+			Resources: []string{"services", "endpoints", "pods"},
+			Verbs:     rbacVerbs,
+		}, {
+			APIGroups: []string{"extensions", "networking.k8s.io"},
+			Resources: []string{"ingresses"},
+			Verbs:     rbacVerbs,
+		}, {
+			APIGroups:     []string{"security.openshift.io"},
+			Resources:     []string{"securitycontextconstraints"},
+			ResourceNames: []string{"nonroot", "nonroot-v2"},
+			Verbs:         []string{"use"},
+		}},
 	}
 }
 
@@ -136,9 +141,9 @@ func newPrometheus(
 				ServiceAccountName: rbacResourceName,
 
 				ServiceMonitorSelector:          prometheusSelector,
-				ServiceMonitorNamespaceSelector: nil,
+				ServiceMonitorNamespaceSelector: ms.Spec.NamespaceSelector,
 				PodMonitorSelector:              prometheusSelector,
-				PodMonitorNamespaceSelector:     nil,
+				PodMonitorNamespaceSelector:     ms.Spec.NamespaceSelector,
 				Affinity: &corev1.Affinity{
 					PodAntiAffinity: &corev1.PodAntiAffinity{
 						RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
@@ -173,7 +178,7 @@ func newPrometheus(
 			},
 			Retention:             ms.Spec.Retention,
 			RuleSelector:          prometheusSelector,
-			RuleNamespaceSelector: nil,
+			RuleNamespaceSelector: ms.Spec.NamespaceSelector,
 			Thanos: &monv1.ThanosSpec{
 				BaseImage: stringPtr("quay.io/thanos/thanos"),
 				Version:   stringPtr("v0.24.0"),
@@ -214,7 +219,7 @@ func storageForPVC(pvc *corev1.PersistentVolumeClaimSpec) *monv1.StorageSpec {
 	}
 }
 
-func newRoleBinding(ms *stack.MonitoringStack, rbacResourceName string) *rbacv1.RoleBinding {
+func newRoleBindingForClusterRole(ms *stack.MonitoringStack, rbacResourceName string) *rbacv1.RoleBinding {
 	roleBinding := &rbacv1.RoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: rbacv1.SchemeGroupVersion.String(),
@@ -224,17 +229,39 @@ func newRoleBinding(ms *stack.MonitoringStack, rbacResourceName string) *rbacv1.
 			Name:      rbacResourceName,
 			Namespace: ms.Namespace,
 		},
-		Subjects: []rbacv1.Subject{
-			{
-				APIGroup:  corev1.SchemeGroupVersion.Group,
-				Kind:      "ServiceAccount",
-				Name:      rbacResourceName,
-				Namespace: ms.Namespace,
-			},
-		},
+		Subjects: []rbacv1.Subject{{
+			APIGroup:  corev1.SchemeGroupVersion.Group,
+			Kind:      "ServiceAccount",
+			Name:      rbacResourceName,
+			Namespace: ms.Namespace,
+		}},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: rbacv1.SchemeGroupVersion.Group,
-			Kind:     "Role",
+			Kind:     "ClusterRole",
+			Name:     rbacResourceName,
+		},
+	}
+	return roleBinding
+}
+
+func newClusterRoleBinding(ms *stack.MonitoringStack, rbacResourceName string) *rbacv1.ClusterRoleBinding {
+	roleBinding := &rbacv1.ClusterRoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: rbacv1.SchemeGroupVersion.String(),
+			Kind:       "ClusterRoleBinding",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: rbacResourceName,
+		},
+		Subjects: []rbacv1.Subject{{
+			APIGroup:  corev1.SchemeGroupVersion.Group,
+			Kind:      "ServiceAccount",
+			Name:      rbacResourceName,
+			Namespace: ms.Namespace,
+		}},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: rbacv1.SchemeGroupVersion.Group,
+			Kind:     "ClusterRole",
 			Name:     rbacResourceName,
 		},
 	}
