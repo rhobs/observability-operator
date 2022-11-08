@@ -28,36 +28,40 @@ func stackComponentReconcilers(ms *stack.MonitoringStack, instanceSelectorKey st
 	rbacVerbs := []string{"get", "list", "watch"}
 	additionalScrapeConfigsSecretName := ms.Name + "-prometheus-additional-scrape-configs"
 	hasNsSelector := ms.Spec.NamespaceSelector != nil
+	deployAlertmanager := !ms.Spec.AlertmanagerConfig.Disabled
 
 	return []reconciler.Reconciler{
+		// Prometheus Deployment
 		reconciler.NewUpdater(newServiceAccount(prometheusName, ms.Namespace), ms),
-		reconciler.NewUpdater(newPrometheusRole(ms, prometheusName, rbacVerbs), ms),
-
-		// create clusterrolebinding if nsSelector's present otherwise a rolebinding
-		reconciler.NewOptionalUpdater(newClusterRoleBinding(ms, prometheusName), ms, hasNsSelector),
-		reconciler.NewOptionalUpdater(newRoleBindingForRoleType(ms, prometheusName, "ClusterRole"), ms, !hasNsSelector),
-
+		reconciler.NewUpdater(newPrometheusClusterRole(ms, prometheusName, rbacVerbs), ms),
 		reconciler.NewUpdater(newAdditionalScrapeConfigsSecret(ms, additionalScrapeConfigsSecretName), ms),
-		reconciler.NewUpdater(newServiceAccount(alertmanagerName, ms.Namespace), ms),
-		reconciler.NewOptionalUpdater(newAlertManagerRole(ms, alertmanagerName, rbacVerbs), ms,
-			!ms.Spec.AlertmanagerConfig.Disabled),
-		reconciler.NewOptionalUpdater(newRoleBindingForRoleType(ms, alertmanagerName, "Role"), ms,
-			!ms.Spec.AlertmanagerConfig.Disabled),
-		reconciler.NewOptionalUpdater(newAlertmanager(ms, alertmanagerName, instanceSelectorKey, instanceSelectorValue), ms,
-			!ms.Spec.AlertmanagerConfig.Disabled),
-		reconciler.NewOptionalUpdater(newAlertmanagerService(ms, instanceSelectorKey, instanceSelectorValue), ms,
-			!ms.Spec.AlertmanagerConfig.Disabled),
-		reconciler.NewOptionalUpdater(newAlertmanagerPDB(ms, instanceSelectorKey, instanceSelectorValue), ms,
-			!ms.Spec.AlertmanagerConfig.Disabled),
-		reconciler.NewUpdater(newPrometheus(ms, prometheusName, additionalScrapeConfigsSecretName, instanceSelectorKey, instanceSelectorValue), ms),
+		reconciler.NewUpdater(newPrometheus(ms, prometheusName,
+			additionalScrapeConfigsSecretName,
+			instanceSelectorKey, instanceSelectorValue), ms),
 		reconciler.NewUpdater(newPrometheusService(ms, instanceSelectorKey, instanceSelectorValue), ms),
 		reconciler.NewUpdater(newThanosSidecarService(ms, instanceSelectorKey, instanceSelectorValue), ms),
 		reconciler.NewOptionalUpdater(newPrometheusPDB(ms, instanceSelectorKey, instanceSelectorValue), ms,
 			*ms.Spec.PrometheusConfig.Replicas > 1),
+
+		// Alertmanager Deployment
+		reconciler.NewOptionalUpdater(newServiceAccount(alertmanagerName, ms.Namespace), ms, deployAlertmanager),
+		// create clusterrolebinding if nsSelector's present otherwise a rolebinding
+		reconciler.NewOptionalUpdater(newClusterRoleBinding(ms, prometheusName), ms, hasNsSelector),
+		reconciler.NewOptionalUpdater(newRoleBindingForClusterRole(ms, prometheusName), ms, !hasNsSelector),
+
+		reconciler.NewOptionalUpdater(newAlertManagerClusterRole(ms, alertmanagerName, rbacVerbs), ms, deployAlertmanager),
+
+		// create clusterrolebinding if alertmanager is enabled and namespace selector is also present in MonitoringStack
+		reconciler.NewOptionalUpdater(newClusterRoleBinding(ms, alertmanagerName), ms, deployAlertmanager && hasNsSelector),
+		reconciler.NewOptionalUpdater(newRoleBindingForClusterRole(ms, alertmanagerName), ms, deployAlertmanager && !hasNsSelector),
+
+		reconciler.NewOptionalUpdater(newAlertmanager(ms, alertmanagerName, instanceSelectorKey, instanceSelectorValue), ms, deployAlertmanager),
+		reconciler.NewOptionalUpdater(newAlertmanagerService(ms, instanceSelectorKey, instanceSelectorValue), ms, deployAlertmanager),
+		reconciler.NewOptionalUpdater(newAlertmanagerPDB(ms, instanceSelectorKey, instanceSelectorValue), ms, deployAlertmanager),
 	}
 }
 
-func newPrometheusRole(ms *stack.MonitoringStack, rbacResourceName string, rbacVerbs []string) *rbacv1.ClusterRole {
+func newPrometheusClusterRole(ms *stack.MonitoringStack, rbacResourceName string, rbacVerbs []string) *rbacv1.ClusterRole {
 	return &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: rbacv1.SchemeGroupVersion.String(),
@@ -215,7 +219,7 @@ func storageForPVC(pvc *corev1.PersistentVolumeClaimSpec) *monv1.StorageSpec {
 	}
 }
 
-func newRoleBindingForRoleType(ms *stack.MonitoringStack, rbacResourceName, roleType string) *rbacv1.RoleBinding {
+func newRoleBindingForClusterRole(ms *stack.MonitoringStack, rbacResourceName string) *rbacv1.RoleBinding {
 	roleBinding := &rbacv1.RoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: rbacv1.SchemeGroupVersion.String(),
@@ -233,7 +237,7 @@ func newRoleBindingForRoleType(ms *stack.MonitoringStack, rbacResourceName, role
 		}},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: rbacv1.SchemeGroupVersion.Group,
-			Kind:     roleType,
+			Kind:     "ClusterRole",
 			Name:     rbacResourceName,
 		},
 	}

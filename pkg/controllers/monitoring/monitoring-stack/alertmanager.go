@@ -72,6 +72,7 @@ func newAlertmanager(
 				RunAsNonRoot: pointer.Bool(true),
 				RunAsUser:    pointer.Int64(AlertmanagerUserFSGroupID),
 			},
+			AlertmanagerConfigNamespaceSelector: ms.Spec.NamespaceSelector,
 		},
 	}
 }
@@ -127,23 +128,21 @@ func newAlertmanagerPDB(ms *stack.MonitoringStack, instanceSelectorKey string, i
 	}
 }
 
-func newAlertManagerRole(ms *stack.MonitoringStack, rbacResourceName string, rbacVerbs []string) *rbacv1.Role {
-	return &rbacv1.Role{
+func newAlertManagerClusterRole(ms *stack.MonitoringStack, rbacResourceName string, rbacVerbs []string) *rbacv1.ClusterRole {
+	return &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: rbacv1.SchemeGroupVersion.String(),
-			Kind:       "Role",
+			Kind:       "ClusterRole",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rbacResourceName,
 			Namespace: ms.Namespace,
 		},
-		Rules: []rbacv1.PolicyRule{
-			{
-				APIGroups:     []string{"security.openshift.io"},
-				Resources:     []string{"securitycontextconstraints"},
-				ResourceNames: []string{"nonroot", "nonroot-v2"},
-				Verbs:         []string{"use"},
-			},
-		},
+		Rules: []rbacv1.PolicyRule{{
+			APIGroups:     []string{"security.openshift.io"},
+			Resources:     []string{"securitycontextconstraints"},
+			ResourceNames: []string{"nonroot", "nonroot-v2"},
+			Verbs:         []string{"use"},
+		}},
 	}
 }
