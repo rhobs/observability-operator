@@ -570,20 +570,20 @@ func newAlerts(t *testing.T) *monv1.PrometheusRule {
 	return rule
 }
 
-type stackMod func(*stack.MonitoringStack)
+type stackModifier func(*stack.MonitoringStack)
 
-func msResourceSelector(labels map[string]string) stackMod {
+func msResourceSelector(labels map[string]string) stackModifier {
 	return func(ms *stack.MonitoringStack) {
 		ms.Spec.ResourceSelector = &metav1.LabelSelector{MatchLabels: labels}
 	}
 }
-func msNamespaceSelector(labels map[string]string) stackMod {
+func msNamespaceSelector(labels map[string]string) stackModifier {
 	return func(ms *stack.MonitoringStack) {
 		ms.Spec.NamespaceSelector = &metav1.LabelSelector{MatchLabels: labels}
 	}
 }
 
-func newMonitoringStack(t *testing.T, name string, mods ...stackMod) *stack.MonitoringStack {
+func newMonitoringStack(t *testing.T, name string, mods ...stackModifier) *stack.MonitoringStack {
 	ms := &stack.MonitoringStack{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
