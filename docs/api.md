@@ -100,7 +100,7 @@ MonitoringStackSpec is the specification for desired Monitoring Stack
         <td>
           Loglevel set log levels of configured components<br/>
           <br/>
-            <i>Enum</i>: debug, info, warning<br/>
+            <i>Enum</i>: debug, info, warn, error<br/>
             <i>Default</i>: info<br/>
         </td>
         <td>false</td>

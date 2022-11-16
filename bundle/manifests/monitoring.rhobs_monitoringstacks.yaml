@@ -51,7 +51,8 @@ spec:
                 enum:
                 - debug
                 - info
-                - warning
+                - warn
+                - error
                 type: string
               namespaceSelector:
                 description: Namespace selector for Monitoring Stack Resources. If
