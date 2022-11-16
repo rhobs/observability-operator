@@ -34,7 +34,7 @@ type MonitoringStackList struct {
 }
 
 // Loglevel set log levels of configured components
-// +kubebuilder:validation:Enum=debug;info;warning
+// +kubebuilder:validation:Enum=debug;info;warn;error
 type LogLevel string
 
 const (
@@ -44,8 +44,11 @@ const (
 	// Info Log level
 	Info LogLevel = "info"
 
-	// Warning Log level
-	Warning LogLevel = "warning"
+	// Warn Log level
+	Warn LogLevel = "warn"
+
+	// Error Log level
+	Error LogLevel = "error"
 )
 
 // MonitoringStackSpec is the specification for desired Monitoring Stack

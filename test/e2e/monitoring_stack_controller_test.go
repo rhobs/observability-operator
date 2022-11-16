@@ -276,6 +276,7 @@ func validateStackLogLevel(t *testing.T) {
 		"xyz",
 		"Info",
 		"Debug",
+		"Warning",
 	}
 	ms := newMonitoringStack(t, "invalid-loglevel-stack")
 	for _, v := range invalidLogLevels {
