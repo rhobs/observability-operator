@@ -836,7 +836,10 @@ spec:
                     type: integer
                 type: object
               resourceSelector:
-                description: Label selector for Monitoring Stack Resources.
+                description: Label selector for Monitoring Stack Resources. Set to
+                  the empty LabelSelector to monitoring everything. Set to null to
+                  disable service discovery.
+                nullable: true
                 properties:
                   matchExpressions:
                     description: matchExpressions is a list of label selector requirements.

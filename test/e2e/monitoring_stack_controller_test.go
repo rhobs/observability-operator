@@ -30,6 +30,8 @@ import (
 	"gotest.tools/v3/assert"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 type alert struct {
@@ -43,6 +45,7 @@ func assertCRDExists(t *testing.T, crds ...string) {
 }
 
 func TestMonitoringStackController(t *testing.T) {
+	stack.AddToScheme(scheme.Scheme)
 	assertCRDExists(t,
 		"prometheuses.monitoring.rhobs",
 		"alertmanagers.monitoring.rhobs",
@@ -57,6 +60,9 @@ func TestMonitoringStackController(t *testing.T) {
 	}, {
 		name:     "Empty stack spec must create a Prometheus",
 		scenario: emptyStackCreatesPrometheus,
+	}, {
+		name:     "resource selector nil propagates to Prometheus",
+		scenario: nilResrouceSelectorPropagatesToPrometheus,
 	}, {
 		name:     "stack spec are reflected in Prometheus",
 		scenario: reconcileStack,
@@ -120,6 +126,35 @@ func emptyStackCreatesPrometheus(t *testing.T) {
 	// Creating an Empty monitoring stack must create a Prometheus with defaults applied
 	prometheus := monv1.Prometheus{}
 	f.GetResourceWithRetry(t, ms.Name, ms.Namespace, &prometheus)
+}
+
+func nilResrouceSelectorPropagatesToPrometheus(t *testing.T) {
+	ms := newMonitoringStack(t, "nil-selector")
+	err := f.K8sClient.Create(context.Background(), ms)
+	assert.NilError(t, err, "failed to create a monitoring stack")
+	f.AssertResourceEventuallyExists(ms.Name, ms.Namespace, &monv1.Prometheus{})(t)
+
+	updatedMS := &stack.MonitoringStack{}
+	f.GetResourceWithRetry(t, ms.Name, ms.Namespace, updatedMS)
+	updatedMS.Spec.ResourceSelector = nil
+	err = f.K8sClient.Update(context.Background(), updatedMS)
+	assert.NilError(t, err, "failed to patch monitoring stack with nil resource selector")
+
+	prometheus := monv1.Prometheus{}
+	err = wait.Poll(5*time.Second, wait.ForeverTestTimeout, func() (bool, error) {
+		if err := f.K8sClient.Get(context.Background(), types.NamespacedName{Name: updatedMS.Name, Namespace: updatedMS.Namespace}, &prometheus); errors.IsNotFound(err) {
+			return false, nil
+		}
+
+		if prometheus.Spec.ServiceMonitorSelector != updatedMS.Spec.ResourceSelector {
+			return false, nil
+		}
+		return true, nil
+	})
+
+	if err == wait.ErrWaitTimeout {
+		t.Fatal(fmt.Errorf("nil ResourceSelector did not propagate to Prometheus object"))
+	}
 }
 
 func promConfigDefaultsAreApplied(t *testing.T) {
@@ -374,7 +409,7 @@ func assertPrometheusScrapesItself(t *testing.T) {
 		err = f.StartServicePortForward("self-scrape-prometheus", e2eTestNamespace, "9090", stopChan)
 		return err == nil, nil
 	}); err != nil {
-		t.Fatal(err)
+		t.Fatal(fmt.Errorf("Failed to poll for port-forward: %w", err))
 	}
 
 	promClient := framework.NewPrometheusClient("http://localhost:9090")
@@ -408,7 +443,7 @@ func assertPrometheusScrapesItself(t *testing.T) {
 
 		return correct == len(expectedResults), nil
 	}); err != nil {
-		t.Fatal(err)
+		t.Fatal(fmt.Errorf("Could not query prometheus: %w", err))
 	}
 }
 
@@ -626,9 +661,16 @@ func msNamespaceSelector(labels map[string]string) stackModifier {
 
 func newMonitoringStack(t *testing.T, name string, mods ...stackModifier) *stack.MonitoringStack {
 	ms := &stack.MonitoringStack{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: stack.GroupVersion.String(),
+			Kind:       "MonitoringStack",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: e2eTestNamespace,
+		},
+		Spec: stack.MonitoringStackSpec{
+			ResourceSelector: &metav1.LabelSelector{},
 		},
 	}
 	for _, mod := range mods {

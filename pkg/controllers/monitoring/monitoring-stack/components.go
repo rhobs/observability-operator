@@ -108,9 +108,6 @@ func newPrometheus(
 	instanceSelectorValue string,
 ) *monv1.Prometheus {
 	prometheusSelector := ms.Spec.ResourceSelector
-	if prometheusSelector == nil {
-		prometheusSelector = &metav1.LabelSelector{}
-	}
 
 	config := ms.Spec.PrometheusConfig
 

@@ -15,13 +15,17 @@ const (
 	PrometheusNotAvailable         = "PrometheusNotAvailable"
 	PrometheusNotReconciled        = "PrometheusNotReconciled"
 	PrometheusDegraded             = "PrometheusDegraded"
+	ResourceSelectorIsNil          = "ResourceSelectorNil"
 	CannotReadPrometheusConditions = "Cannot read Prometheus status conditions"
 	AvailableMessage               = "Monitoring Stack is available"
 	SuccessfullyReconciledMessage  = "Monitoring Stack is successfully reconciled"
+	ResourceSelectorIsNilMessage   = "No resources will be discovered, ResourceSelector is nil"
+	ResourceDiscoveryOnMessage     = "Resource discovery is operational"
 	NoReason                       = "None"
 )
 
-func updateConditions(msConditions []v1alpha1.Condition, prom monv1.Prometheus, generation int64, recError error) []v1alpha1.Condition {
+func updateConditions(ms *v1alpha1.MonitoringStack, prom monv1.Prometheus, recError error) []v1alpha1.Condition {
+	msConditions := ms.Status.Conditions
 	if len(msConditions) == 0 {
 		return []v1alpha1.Condition{
 			{
@@ -36,8 +40,10 @@ func updateConditions(msConditions []v1alpha1.Condition, prom monv1.Prometheus, 
 				Reason:             NoReason,
 				LastTransitionTime: metav1.Now(),
 			},
+			updateResourceDiscovery(ms),
 		}
 	}
+	generation := ms.Generation
 	var updatedConditions []v1alpha1.Condition
 
 	for _, mc := range msConditions {
@@ -54,10 +60,42 @@ func updateConditions(msConditions []v1alpha1.Condition, prom monv1.Prometheus, 
 				reconciled.LastTransitionTime = metav1.Now()
 			}
 			updatedConditions = append(updatedConditions, reconciled)
+		case v1alpha1.ResourceDiscoveryCondition:
+			resourceDiscovery := updateResourceDiscovery(ms)
+			if !resourceDiscovery.Equal(mc) {
+				resourceDiscovery.LastTransitionTime = metav1.Now()
+			}
+			updatedConditions = append(updatedConditions, resourceDiscovery)
 		}
 	}
 
 	return updatedConditions
+}
+
+// updateResourceDiscovery updates the ResourceDiscoveryCondition based on the
+// ResourceSelector in the MonitorinStack spec. A ResourceSelector of nil causes
+// the condition to be false, any other value sets the condition to true
+func updateResourceDiscovery(ms *v1alpha1.MonitoringStack) v1alpha1.Condition {
+	if ms.Spec.ResourceSelector == nil {
+		return v1alpha1.Condition{
+			Type:               v1alpha1.ResourceDiscoveryCondition,
+			Status:             v1alpha1.ConditionFalse,
+			Reason:             ResourceSelectorIsNil,
+			Message:            ResourceSelectorIsNilMessage,
+			LastTransitionTime: metav1.Now(),
+			ObservedGeneration: ms.Generation,
+		}
+	} else {
+		return v1alpha1.Condition{
+			Type:               v1alpha1.ResourceDiscoveryCondition,
+			Status:             v1alpha1.ConditionTrue,
+			Reason:             NoReason,
+			Message:            ResourceDiscoveryOnMessage,
+			LastTransitionTime: metav1.Now(),
+			ObservedGeneration: ms.Generation,
+		}
+	}
+
 }
 
 // updateAvailable gets existing "Available" condition and updates its parameters
