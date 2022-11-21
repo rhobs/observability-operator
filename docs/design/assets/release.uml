@@ -1,7 +1,10 @@
 @startuml
-title Release Workflow
+'NOTE: use http://sujoyu.github.io/plantuml-previewer to render the Sequence diagram
+
+title Release Workflow for 1.2.3 release
+
 autonumber
-actor RM order 10
+actor "Release\n Manager" as RM order 10
 actor Reviewer order 20
 database Upstream order 30
 control CI order 40
@@ -10,7 +13,7 @@ database Quay order 60
 
 activate RM
 RM -> RM: make initiate-release
-RM -> Upstream: create pull-request
+RM -> Upstream: open PR ""chore(release): 1.2.3"" \n against ""main"" branch
 deactivate RM
 
 activate Upstream
@@ -18,28 +21,27 @@ Upstream -> CI: run checks, e2e
 CI -[#green]> Upstream:  pass
 deactivate Upstream
 
-actor Reviewer
-Reviewer -> Upstream: approve & merge
+Reviewer -> Upstream: approve &\n merge to main branch
 
-== candiate release prep ==
+== candidate release prep ==
 activate CI
 Upstream -> CI: release workflow (release.yaml)
 CI -> CI: run e2e
 CI -> CI: generate release notes
 CI -> CI: create GH release notes
-CI -> Upstream: git tag release and git push tag
-CI -> Upstream: publish pre release to GH
+CI -> Upstream: git tag ""v1.2.3"" and \ngit push tag ""v1.2.3""
+CI -> Upstream: publish pre-release to GH
 deactivate CI
-== candiate release prep ==
+== candidate release prep ==
 
-== candiate release  ==
+== candidate release  ==
 Upstream -> CI: start candidate release (olm-candidate.yaml)
 CI -> Publish: candidate release (olm-publish.yaml)
 CI -> Publish: run olm-publish (channels: development, candidate)
     activate Publish #FFBBBB
     Publish -> Publish: login to quay
     Publish -> Publish: merge olm-catalog branch
-    Publish -> Publish: build and
+    Publish -> Publish: build operator image
     Publish -[#red]> Quay: push operator image
     Publish -> Publish: build bundle image
     Publish -[#red]> Quay: push bundle image
@@ -53,7 +55,7 @@ CI -> Publish: run olm-publish (channels: development, candidate)
     Publish -[#red]> Quay: publish catalog-image
     Publish -> Upstream:  push catalog changes to olm-catalog branch
     deactivate Publish
-== candiate release  ==
+== candidate release  ==
 
 == stable release  ==
 RM -> Upstream: remove draft from release
@@ -67,3 +69,4 @@ CI -> Publish: run olm-publish (channels: development, candidate, stable)
     deactivate Publish
 == stable release  ==
 
+@enduml
