@@ -1,0 +1,69 @@
+@startuml
+title Release Workflow
+autonumber
+actor RM order 10
+actor Reviewer order 20
+database Upstream order 30
+control CI order 40
+participant Publish order 50
+database Quay order 60
+
+activate RM
+RM -> RM: make initiate-release
+RM -> Upstream: create pull-request
+deactivate RM
+
+activate Upstream
+Upstream -> CI: run checks, e2e
+CI -[#green]> Upstream:  pass
+deactivate Upstream
+
+actor Reviewer
+Reviewer -> Upstream: approve & merge
+
+== candiate release prep ==
+activate CI
+Upstream -> CI: release workflow (release.yaml)
+CI -> CI: run e2e
+CI -> CI: generate release notes
+CI -> CI: create GH release notes
+CI -> Upstream: git tag release and git push tag
+CI -> Upstream: publish pre release to GH
+deactivate CI
+== candiate release prep ==
+
+== candiate release  ==
+Upstream -> CI: start candidate release (olm-candidate.yaml)
+CI -> Publish: candidate release (olm-publish.yaml)
+CI -> Publish: run olm-publish (channels: development, candidate)
+    activate Publish #FFBBBB
+    Publish -> Publish: login to quay
+    Publish -> Publish: merge olm-catalog branch
+    Publish -> Publish: build and
+    Publish -[#red]> Quay: push operator image
+    Publish -> Publish: build bundle image
+    Publish -[#red]> Quay: push bundle image
+    Publish -> Publish: make catalog-image
+
+        activate Publish #lightcoral
+        Publish -> Publish: opm render <bundle-image> to olm/observability-operator-index/index.yaml
+        Publish -> Publish: olm/update-channels.sh <CHANNELS> <operator-bundle>
+        deactivate Publish
+    Publish -> Publish: git commit changes to bundle and olm dir
+    Publish -[#red]> Quay: publish catalog-image
+    Publish -> Upstream:  push catalog changes to olm-catalog branch
+    deactivate Publish
+== candiate release  ==
+
+== stable release  ==
+RM -> Upstream: remove draft from release
+Upstream -> CI: stable release (olm-stable.yaml)
+CI -> Publish: run olm-publish (channels: development, candidate, stable)
+    activate Publish #DarkSalmon
+    Publish -> Publish: olm-publish workflow
+    ...same release worflow...
+    Publish -> Quay: publish catalog-image
+    Publish -> Upstream:  push catalog changes to olm-catalog branch
+    deactivate Publish
+== stable release  ==
+
