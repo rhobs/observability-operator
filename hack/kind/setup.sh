@@ -88,6 +88,12 @@ fi
 
 }
 
+create_platform_mon_crds() {
+  kubectl create -k deploy/crds/kubernetes
+  kubectl wait --for=condition=Established crds --all --timeout=120s
+}
+
+
 main() {
   ## NOTE: all paths are relative to the root of the project
   cd "$PROJECT_ROOT_DIR"
@@ -98,6 +104,7 @@ main() {
   label_infra_node
   setup_olm
   run_registry
+  create_platform_mon_crds
 
   info "Waiting for cluster boot to complete ..."
   echo -e "      ---------------------------------- \n"

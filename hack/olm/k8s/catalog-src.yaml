@@ -1,0 +1,19 @@
+# Apply this to add a new catalog to OLM
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  annotations:
+  name: observability-operator-catalog
+  namespace: operators
+spec:
+  displayName: Observability Operator - Test
+  icon:
+    base64data: ""
+    mediatype: ""
+  image: quay.io/rhobs/observability-operator-catalog:latest
+  publisher: Sunil Thaha
+  sourceType: grpc
+  updateStrategy:
+    registryPoll:
+      interval: 1m0s
