@@ -164,7 +164,7 @@ type PrometheusConfig struct {
 	// Number of replicas/pods to deploy for a Prometheus deployment.
 	// +optional
 	// +kubebuilder:default=2
-	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Minimum=0
 	Replicas *int32 `json:"replicas,omitempty"`
 
 	// Define remote write for prometheus

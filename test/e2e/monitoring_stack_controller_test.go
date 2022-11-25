@@ -102,6 +102,9 @@ func TestMonitoringStackController(t *testing.T) {
 	}, {
 		name:     "Verify multi-namespace support",
 		scenario: namespaceSelectorTest,
+	}, {
+		name:     "Verify ability to scale down Prometheus",
+		scenario: prometheusScaleDown,
 	}}
 
 	for _, tc := range ts {
@@ -317,19 +320,17 @@ func validateStackRetention(t *testing.T) {
 }
 
 func validatePrometheusConfig(t *testing.T) {
-	invalidReplicasValues := []int32{-1, 0}
+	invalidN := int32(-1)
 	ms := newMonitoringStack(t, "invalid-prometheus-config")
-	for _, v := range invalidReplicasValues {
-		ms.Spec.PrometheusConfig = &stack.PrometheusConfig{
-			Replicas: &v,
-		}
-		err := f.K8sClient.Create(context.Background(), ms)
-		assert.ErrorContains(t, err, `invalid: spec.prometheusConfig.replicas`)
+	ms.Spec.PrometheusConfig = &stack.PrometheusConfig{
+		Replicas: &invalidN,
 	}
+	err := f.K8sClient.Create(context.Background(), ms)
+	assert.ErrorContains(t, err, `invalid: spec.prometheusConfig.replicas`)
 
 	validN := int32(1)
 	ms.Spec.PrometheusConfig.Replicas = &validN
-	err := f.K8sClient.Create(context.Background(), ms)
+	err = f.K8sClient.Create(context.Background(), ms)
 	assert.NilError(t, err, `1 is a valid replica count`)
 }
 
@@ -514,6 +515,45 @@ func assertAlertmanagerReceivesAlerts(t *testing.T) {
 		return true, fmt.Errorf("wrong alert firing, got %s, want %s", alerts[0].Labels["alertname"], "AlwaysOn")
 	}); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func prometheusScaleDown(t *testing.T) {
+	numOfRep := int32(1)
+	ms := newMonitoringStack(t, "prometheus-scale-down-test")
+	ms.Spec.PrometheusConfig = &stack.PrometheusConfig{
+		Replicas: &numOfRep,
+	}
+
+	err := f.K8sClient.Create(context.Background(), ms)
+	assert.NilError(t, err, "failed to create a monitoring stack")
+
+	prom := monv1.Prometheus{}
+	f.GetResourceWithRetry(t, ms.Name, ms.Namespace, &prom)
+
+	assert.Equal(t, prom.Status.Replicas, int32(1))
+
+	key := types.NamespacedName{Name: ms.Name, Namespace: ms.Namespace}
+	err = f.K8sClient.Get(context.Background(), key, ms)
+	assert.NilError(t, err, "failed to get a monitoring stack")
+
+	numOfRep = 0
+	ms.Spec.PrometheusConfig.Replicas = &numOfRep
+	err = f.K8sClient.Update(context.Background(), ms)
+	assert.NilError(t, err, "failed to update a monitoring stack")
+	err = wait.Poll(5*time.Second, wait.ForeverTestTimeout, func() (bool, error) {
+		if err := f.K8sClient.Get(context.Background(), key, &prom); errors.IsNotFound(err) {
+			return false, nil
+		}
+
+		if prom.Status.Replicas != 0 {
+			return false, nil
+		}
+		return true, nil
+	})
+
+	if err == wait.ErrWaitTimeout {
+		t.Fatal(fmt.Errorf("Prometheus was not scaled down"))
 	}
 }
 
