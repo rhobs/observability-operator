@@ -7,10 +7,6 @@ resources:
 - observability-operator-cluster-role-binding.yaml
 - observability-operator-service.yaml
 - observability-operator-service-monitor.yaml
-- observability-operator-rules.yaml
-- monitoring/monitoring-prometheus-rules.yaml
-- monitoring/monitoring-alertmanager-rules.yaml
-- monitoring/monitoring-prometheus-operator-rules.yaml
 
 images:
 - name: observability-operator

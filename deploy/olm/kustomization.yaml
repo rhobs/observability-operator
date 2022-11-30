@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
 - ../crds/common
 - ../dependencies
+- ../monitoring
 - ../operator
 - ../scorecard
 - ../samples

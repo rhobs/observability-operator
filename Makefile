@@ -53,9 +53,9 @@ generate-prometheus-rules: jsonnet-tools check-jq kustomize jsonnet-vendor
 		echo "Generating prometheusrule file for $$component" ;\
 		$(JSONNET) -J $(JSONNET_VENDOR) $$dir/main.jsonnet \
 			| jq .rule \
-			| $(GOJSONTOYAML) > deploy/operator/monitoring/monitoring-$$component-rules.yaml ;\
-		cd deploy/operator && \
-		$(KUSTOMIZE) edit add resource "monitoring/monitoring-$$component-rules.yaml" && cd - ;\
+			| $(GOJSONTOYAML) > deploy/monitoring/monitoring-$$component-rules.yaml ;\
+		cd deploy/monitoring && \
+		$(KUSTOMIZE) edit add resource "monitoring-$$component-rules.yaml" && cd - ;\
 	done;
 
 .PHONY: docs
