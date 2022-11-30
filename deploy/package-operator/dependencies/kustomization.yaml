@@ -1,0 +1,81 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: observability-operator
+commonAnnotations:
+  package-operator.run/phase: dependencies
+bases:
+  - ../../dependencies/
+patchesStrategicMerge:
+  - |-
+    apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      name: obo-prometheus-operator-admission-webhook
+      namespace: operators
+      labels:
+        app.kubernetes.io/name: prometheus-operator-admission-webhook
+    $patch: delete
+  - |-
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: ClusterRole
+    metadata:
+      name: obo-prometheus-operator-admission-webhook
+      namespace: operators
+      labels:
+        app.kubernetes.io/name: prometheus-operator-admission-webhook
+    $patch: delete
+  - |-
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: ClusterRoleBinding
+    metadata:
+      name: obo-prometheus-operator-admission-webhook
+      namespace: operators
+      labels:
+        app.kubernetes.io/name: prometheus-operator-admission-webhook
+    $patch: delete
+  - |-
+    apiVersion: v1
+    kind: Service
+    metadata:
+      name: obo-prometheus-operator-admission-webhook
+      namespace: operators
+      labels:
+        app.kubernetes.io/name: prometheus-operator-admission-webhook
+    $patch: delete
+  - |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: obo-prometheus-operator-admission-webhook
+      namespace: operators
+      labels:
+        app.kubernetes.io/name: prometheus-operator-admission-webhook
+    $patch: delete
+  - |-
+    apiVersion: admissionregistration.k8s.io/v1
+    kind: ValidatingWebhookConfiguration
+    metadata:
+      name: alertmanagerconfigs.monitoring.rhobs
+      namespace: operators
+      labels:
+        app.kubernetes.io/name: prometheus-operator-admission-webhook
+    $patch: delete
+  - |-
+    apiVersion: admissionregistration.k8s.io/v1
+    kind: ValidatingWebhookConfiguration
+    metadata:
+      name: obo-prometheusrules.monitoring.rhobs
+      namespace: operators
+      labels:
+        app.kubernetes.io/name: prometheus-operator-admission-webhook
+    $patch: delete
+  # patchesJson6902:
+  # - path: patches/admission-webhook-service-namespace.yaml
+  #   target:
+  #     kind: ValidatingWebhookConfiguration
+  #     name: prometheusrules.monitoring.rhobs
+  # - path: patches/admission-webhook-service-namespace.yaml
+  #   target:
+  #     kind: ValidatingWebhookConfiguration
+  #     name: alertmanagerconfigs.monitoring.rhobs
