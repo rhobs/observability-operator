@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.17](https://github.com/rhobs/monitoring-stack-operator/commit/) (2022-12-01)
+
+
+### Features
+
+* add support for watching multiple namespaces ([4bda99c](https://github.com/rhobs/monitoring-stack-operator/commit/4bda99c0c6dc4f5132dbc674abb4bf86eced4aa7))
+
+
+### Bug Fixes
+
+* number of Prometheus replicas can be ([87bd1f7](https://github.com/rhobs/monitoring-stack-operator/commit/87bd1f7141efe6da0259a71858e189895350cdc8))
+* update log levels to reflect alertmanager levels ([#221](https://github.com/rhobs/monitoring-stack-operator/issues/221)) ([b71d145](https://github.com/rhobs/monitoring-stack-operator/commit/b71d1455c352a7f71681fa6dfabead3ed200b5e0))
+
 ### [0.0.16](https://github.com/rhobs/monitoring-stack-operator/tree/v0.0.16) (2022-11-02)
 
 ### Features
