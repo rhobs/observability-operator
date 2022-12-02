@@ -1,0 +1,6 @@
+apiVersion: package-operator.run/v1alpha1
+kind: ClusterPackage
+metadata:
+  name: example
+spec:
+  image: quay.io/observability-operator/observability-operator-package:latest

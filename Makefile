@@ -53,9 +53,9 @@ generate-prometheus-rules: jsonnet-tools check-jq kustomize jsonnet-vendor
 		echo "Generating prometheusrule file for $$component" ;\
 		$(JSONNET) -J $(JSONNET_VENDOR) $$dir/main.jsonnet \
 			| jq .rule \
-			| $(GOJSONTOYAML) > deploy/operator/monitoring/monitoring-$$component-rules.yaml ;\
-		cd deploy/operator && \
-		$(KUSTOMIZE) edit add resource "monitoring/monitoring-$$component-rules.yaml" && cd - ;\
+			| $(GOJSONTOYAML) > deploy/monitoring/monitoring-$$component-rules.yaml ;\
+		cd deploy/monitoring && \
+		$(KUSTOMIZE) edit add resource "monitoring-$$component-rules.yaml" && cd - ;\
 	done;
 
 .PHONY: docs
@@ -87,14 +87,25 @@ generate-crds: $(CONTROLLER_GEN) generate-prom-op-crds
 .PHONY: generate-kustomize
 generate-kustomize: $(KUSTOMIZE)
 	cd deploy/operator && \
-		$(KUSTOMIZE) edit set image observability-operator=*:$(VERSION)
+		$(KUSTOMIZE) edit set image observability-operator=$(OPERATOR_IMG)
+
+.PHONY: generate-package-resources
+generate-package-resources: $(KUSTOMIZE) generate-kustomize
+	cd deploy/package-operator && \
+		rm -rf package/crds package/dependencies package/operator ;\
+		mkdir -p package/crds ;\
+		$(KUSTOMIZE) build crds > package/crds/resources.yaml ;\
+		mkdir -p package/dependencies ;\
+		$(KUSTOMIZE) build dependencies > package/dependencies/resources.yaml ;\
+		mkdir -p package/operator ;\
+		$(KUSTOMIZE) build operator > package/operator/resources.yaml
 
 .PHONY: generate-deepcopy
 generate-deepcopy: $(CONTROLLER_GEN)
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./pkg/apis/..."
 
 .PHONY: generate
-generate: generate-crds generate-deepcopy generate-kustomize generate-prometheus-rules docs
+generate: generate-crds generate-deepcopy generate-kustomize generate-package-resources generate-prometheus-rules docs
 
 .PHONY: operator
 operator: generate build
@@ -144,9 +155,6 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
 .PHONY: bundle
 bundle: $(KUSTOMIZE) $(OPERATOR_SDK) generate
-	cd deploy/olm && \
-		$(KUSTOMIZE) edit set image observability-operator=$(OPERATOR_IMG)
-
 	$(KUSTOMIZE) build deploy/olm | tee tmp/pre-bundle.yaml |  \
 	 	$(OPERATOR_SDK) generate bundle \
 			--overwrite \
@@ -210,6 +218,25 @@ catalog-push: catalog-tag-sha ## Push a catalog image.
 	$(CONTAINER_RUNTIME) push $(PUSH_OPTIONS) $(CATALOG_IMG)
 	$(CONTAINER_RUNTIME) push $(PUSH_OPTIONS) $(CATALOG_IMG_LATEST)
 	$(CONTAINER_RUNTIME) push $(PUSH_OPTIONS) $(CATALOG_IMG_SHA)
+
+## package-operator package
+
+# The image tag given to the resulting package image
+PACKAGE_IMG_BASE ?= $(IMAGE_BASE)-package
+PACKAGE_IMG ?= $(PACKAGE_IMG_BASE):$(VERSION)
+
+.PHONY: package
+package: generate-package-resources
+	cd deploy/package-operator && \
+		$(CONTAINER_RUNTIME) build \
+			-f package.Containerfile \
+			-t $(PACKAGE_IMG) package/
+
+.PHONY: package-push
+package-push:
+	$(CONTAINER_RUNTIME) push $(PUSH_OPTIONS) $(PACKAGE_IMG)
+
+## Release process
 
 .PHONY: release
 release: operator-image operator-push bundle-image bundle-push catalog-image catalog-push

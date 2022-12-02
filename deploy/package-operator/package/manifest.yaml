@@ -1,0 +1,22 @@
+apiVersion: manifests.package-operator.run/v1alpha1
+kind: PackageManifest
+metadata:
+  name: observability-operator
+spec:
+  scopes:
+  - Cluster
+  phases:
+  - name: crds
+  - name: dependencies
+  - name: operator
+  availabilityProbes:
+  - probes:
+    - condition:
+        type: Available
+        status: "True"
+    selector:
+      kind:
+        group: apps
+        kind: Deployment
+      selector:
+        app.kubernetes.io/name: observability-operator
