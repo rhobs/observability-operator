@@ -10,6 +10,7 @@ resources:
 
 images:
 - name: observability-operator
+  newName: observability-operator
   newTag: 0.0.17
 namespace: operators
 

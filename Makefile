@@ -92,7 +92,7 @@ generate-kustomize: $(KUSTOMIZE)
 .PHONY: generate-package-resources
 generate-package-resources: $(KUSTOMIZE) generate-kustomize
 	cd deploy/package-operator && \
-		rm -r package/crds package/dependencies package/operator ;\
+		rm -rf package/crds package/dependencies package/operator ;\
 		mkdir -p package/crds ;\
 		$(KUSTOMIZE) build crds > package/crds/resources.yaml ;\
 		mkdir -p package/dependencies ;\
@@ -155,9 +155,6 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
 .PHONY: bundle
 bundle: $(KUSTOMIZE) $(OPERATOR_SDK) generate
-	cd deploy/olm && \
-		$(KUSTOMIZE) edit set image observability-operator=$(OPERATOR_IMG)
-
 	$(KUSTOMIZE) build deploy/olm | tee tmp/pre-bundle.yaml |  \
 	 	$(OPERATOR_SDK) generate bundle \
 			--overwrite \
