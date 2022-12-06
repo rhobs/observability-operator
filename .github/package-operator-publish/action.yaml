@@ -1,0 +1,44 @@
+name: 'Publish package-operator package'
+description: 'Publishes the operator as a package-operator package'
+inputs:
+  quay_login:
+    description: "Quay login"
+    required: true
+  quay_token:
+    description: "Quay token"
+    required: true
+  go-version:
+    description: "go version"
+    required: true
+runs:
+  using: composite
+  steps:
+  - uses: actions/checkout@v3
+    with:
+      fetch-depth: 0
+
+  - name: Setup Go environment
+    uses: actions/setup-go@v3
+    with:
+      go-version: ${{ inputs.go-version }}
+
+  - name: Use go cache
+    uses: ./.github/go-cache
+
+  - name: Install tools
+    uses: ./.github/tools-cache
+
+  - name: Registry Login
+    uses: docker/login-action@v2
+    with:
+      registry: quay.io
+      username: ${{ inputs.quay_login }}
+      password: ${{ inputs.quay_token }}
+
+  - name: Generate Package image
+    shell: bash
+    run: make package
+
+  - name: Publish Package
+    shell: bash
+    run: make package-push

@@ -48,7 +48,7 @@ jobs:
           version="$(cat VERSION)-$(date +%y%m%d%H%M%S)"
           echo "version=$version" >> $GITHUB_OUTPUT
 
-      - name: Publish
+      - name: Publish OLM
         uses: ./.github/olm-publish
         env:
           IMAGE_BASE: ${{ secrets.IMAGE_BASE }}
@@ -63,6 +63,16 @@ jobs:
         with:
           github_token: ${{ secrets.REPOSITORY_PUSH_TOKEN }}
           branch: olm-catalog
+
+      - name: Publish Package
+        uses: ./.github/package-operator-publish
+        env:
+          IMAGE_BASE: ${{ secrets.IMAGE_BASE }}
+          VERSION: ${{ steps.version.outputs.version }}
+        with:
+          quay_login: ${{ secrets.QUAY_LOGIN }}
+          quay_token: ${{ secrets.QUAY_TOKEN }}
+          go-version: ${{ env.go-version }}
 
   create-github-prerelease:
     needs:

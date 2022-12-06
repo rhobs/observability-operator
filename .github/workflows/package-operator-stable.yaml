@@ -1,0 +1,28 @@
+---
+name: Publish package-operator release
+
+on:
+  release:
+    types:
+      - released
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    environment: quay
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Import common environment variables
+        run: cat ".github/env" >> "$GITHUB_ENV"
+
+      - name: publish
+        uses: ./.github/package-operator-publish
+        env:
+          IMAGE_BASE: ${{ secrets.IMAGE_BASE }}
+        with:
+          quay_login: ${{ secrets.QUAY_LOGIN }}
+          quay_token: ${{ secrets.QUAY_TOKEN }}
+          go-version: ${{ env.go-version }}

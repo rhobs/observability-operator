@@ -226,7 +226,7 @@ PACKAGE_IMG_BASE ?= $(IMAGE_BASE)-package
 PACKAGE_IMG ?= $(PACKAGE_IMG_BASE):$(VERSION)
 
 .PHONY: package
-package: generate-package-resources
+package: generate
 	cd deploy/package-operator && \
 		$(CONTAINER_RUNTIME) build \
 			-f package.Containerfile \
