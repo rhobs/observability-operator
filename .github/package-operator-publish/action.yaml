@@ -42,3 +42,11 @@ runs:
   - name: Publish Package
     shell: bash
     run: make package-push
+
+  - name: Generate Package image with kubeconfig option
+    shell: bash
+    run: make package-kubeconfig
+
+  - name: Publish Package with kubeconfig option
+    shell: bash
+    run: make package-push-kubeconfig
