@@ -1395,7 +1395,7 @@ TLS Config to use for remote write.
         <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindextlsconfigca">ca</a></b></td>
         <td>object</td>
         <td>
-          Struct containing the CA cert to use for the targets.<br/>
+          Certificate authority used when verifying server certificates.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1409,7 +1409,7 @@ TLS Config to use for remote write.
         <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindextlsconfigcert">cert</a></b></td>
         <td>object</td>
         <td>
-          Struct containing the client cert file for the targets.<br/>
+          Client certificate to present when doing client-authentication.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1456,7 +1456,7 @@ TLS Config to use for remote write.
 
 
 
-Struct containing the CA cert to use for the targets.
+Certificate authority used when verifying server certificates.
 
 <table>
     <thead>
@@ -1572,7 +1572,7 @@ Secret containing data to use for the targets.
 
 
 
-Struct containing the client cert file for the targets.
+Client certificate to present when doing client-authentication.
 
 <table>
     <thead>
