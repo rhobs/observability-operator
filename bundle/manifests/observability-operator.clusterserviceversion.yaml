@@ -354,7 +354,7 @@ spec:
           app.kubernetes.io/component: controller
           app.kubernetes.io/name: prometheus-operator
           app.kubernetes.io/part-of: observability-operator
-          app.kubernetes.io/version: 0.60.0-rhobs1
+          app.kubernetes.io/version: 0.61.1-rhobs1
         name: obo-prometheus-operator
         spec:
           replicas: 1
@@ -373,7 +373,7 @@ spec:
                 app.kubernetes.io/component: controller
                 app.kubernetes.io/name: prometheus-operator
                 app.kubernetes.io/part-of: observability-operator
-                app.kubernetes.io/version: 0.60.0-rhobs1
+                app.kubernetes.io/version: 0.61.1-rhobs1
             spec:
               affinity:
                 nodeAffinity:
@@ -386,11 +386,11 @@ spec:
               automountServiceAccountToken: true
               containers:
               - args:
-                - --prometheus-config-reloader=quay.io/rhobs/obo-prometheus-config-reloader:v0.60.0-rhobs1
+                - --prometheus-config-reloader=quay.io/rhobs/obo-prometheus-config-reloader:v0.61.1-rhobs1
                 - --prometheus-instance-selector=app.kubernetes.io/managed-by=observability-operator
                 - --alertmanager-instance-selector=app.kubernetes.io/managed-by=observability-operator
                 - --thanos-ruler-instance-selector=app.kubernetes.io/managed-by=observability-operator
-                image: quay.io/rhobs/obo-prometheus-operator:v0.60.0-rhobs1
+                image: quay.io/rhobs/obo-prometheus-operator:v0.61.1-rhobs1
                 name: prometheus-operator
                 ports:
                 - containerPort: 8080
@@ -416,7 +416,7 @@ spec:
       - label:
           app.kubernetes.io/name: prometheus-operator-admission-webhook
           app.kubernetes.io/part-of: observability-operator
-          app.kubernetes.io/version: 0.60.0-rhobs1
+          app.kubernetes.io/version: 0.61.1-rhobs1
         name: obo-prometheus-operator-admission-webhook
         spec:
           replicas: 2
@@ -424,7 +424,9 @@ spec:
             matchLabels:
               app.kubernetes.io/name: prometheus-operator-admission-webhook
               app.kubernetes.io/part-of: observability-operator
-          strategy: {}
+          strategy:
+            rollingUpdate:
+              maxUnavailable: 1
           template:
             metadata:
               annotations:
@@ -432,7 +434,7 @@ spec:
               labels:
                 app.kubernetes.io/name: prometheus-operator-admission-webhook
                 app.kubernetes.io/part-of: observability-operator
-                app.kubernetes.io/version: 0.60.0-rhobs1
+                app.kubernetes.io/version: 0.61.1-rhobs1
             spec:
               affinity:
                 nodeAffinity:
@@ -442,13 +444,22 @@ spec:
                       - key: node-role.kubernetes.io/infra
                         operator: Exists
                     weight: 1
+                podAntiAffinity:
+                  requiredDuringSchedulingIgnoredDuringExecution:
+                  - labelSelector:
+                      matchLabels:
+                        app.kubernetes.io/name: prometheus-operator-admission-webhook
+                        app.kubernetes.io/part-of: observability-operator
+                    namespaces:
+                    - default
+                    topologyKey: kubernetes.io/hostname
               automountServiceAccountToken: false
               containers:
               - args:
                 - --web.enable-tls=true
                 - --web.cert-file=/tmp/k8s-webhook-server/serving-certs/tls.crt
                 - --web.key-file=/tmp/k8s-webhook-server/serving-certs/tls.key
-                image: quay.io/rhobs/obo-admission-webhook:v0.60.0-rhobs1
+                image: quay.io/rhobs/obo-admission-webhook:v0.61.1-rhobs1
                 name: prometheus-operator-admission-webhook
                 ports:
                 - containerPort: 8443
@@ -462,6 +473,9 @@ spec:
                     memory: 50Mi
                 securityContext:
                   allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                    - ALL
                   readOnlyRootFilesystem: true
                 terminationMessagePolicy: FallbackToLogsOnError
               securityContext:
@@ -562,7 +576,7 @@ spec:
   webhookdefinitions:
   - admissionReviewVersions:
     - v1
-    containerPort: 8443
+    containerPort: 443
     deploymentName: obo-prometheus-operator-admission-webhook
     failurePolicy: Ignore
     generateName: alertmanagerconfigs.monitoring.rhobs
@@ -570,7 +584,7 @@ spec:
     - apiGroups:
       - monitoring.rhobs
       apiVersions:
-      - v1alpha1
+      - '*'
       operations:
       - CREATE
       - UPDATE
@@ -584,7 +598,7 @@ spec:
     webhookPath: /admission-alertmanagerconfigs/validate
   - admissionReviewVersions:
     - v1
-    containerPort: 8443
+    containerPort: 443
     deploymentName: obo-prometheus-operator-admission-webhook
     failurePolicy: Ignore
     generateName: prometheusrules.monitoring.rhobs
@@ -592,7 +606,7 @@ spec:
     - apiGroups:
       - monitoring.rhobs
       apiVersions:
-      - v1
+      - '*'
       operations:
       - CREATE
       - UPDATE
