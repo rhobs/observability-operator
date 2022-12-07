@@ -100,6 +100,17 @@ generate-package-resources: $(KUSTOMIZE) generate-kustomize
 		mkdir -p package/operator ;\
 		$(KUSTOMIZE) build operator > package/operator/resources.yaml
 
+.PHONY: generate-package-resources-kubeconfig
+generate-package-resources-kubeconfig: $(KUSTOMIZE) generate-kustomize generate-crds
+	cd deploy/package-operator && \
+		rm -rf package/crds package/dependencies package/operator ;\
+		mkdir -p package/crds ;\
+		$(KUSTOMIZE) build crds > package/crds/resources.yaml ;\
+		mkdir -p package/dependencies ;\
+		$(KUSTOMIZE) build dependencies-kubeconfig > package/dependencies/resources.yaml ;\
+		mkdir -p package/operator ;\
+		$(KUSTOMIZE) build operator-kubeconfig > package/operator/resources.yaml
+
 .PHONY: generate-deepcopy
 generate-deepcopy: $(CONTROLLER_GEN)
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./pkg/apis/..."
@@ -226,15 +237,26 @@ PACKAGE_IMG_BASE ?= $(IMAGE_BASE)-package
 PACKAGE_IMG ?= $(PACKAGE_IMG_BASE):$(VERSION)
 
 .PHONY: package
-package: generate-package-resources
+package: generate
 	cd deploy/package-operator && \
 		$(CONTAINER_RUNTIME) build \
 			-f package.Containerfile \
 			-t $(PACKAGE_IMG) package/
 
+.PHONY: package-kubeconfig
+package-kubeconfig: generate-package-resources-kubeconfig
+	cd deploy/package-operator && \
+		$(CONTAINER_RUNTIME) build \
+			-f package.Containerfile \
+			-t $(PACKAGE_IMG)-kubeconfig package/
+
 .PHONY: package-push
 package-push:
 	$(CONTAINER_RUNTIME) push $(PUSH_OPTIONS) $(PACKAGE_IMG)
+
+.PHONY: package-push-kubeconfig
+package-push-kubeconfig:
+	$(CONTAINER_RUNTIME) push $(PUSH_OPTIONS) $(PACKAGE_IMG)-kubeconfig
 
 ## Release process
 
