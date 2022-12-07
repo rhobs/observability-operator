@@ -133,3 +133,30 @@ patches:
               - --web.enable-tls=true
               - --web.cert-file=/tmp/k8s-webhook-server/serving-certs/tls.crt
               - --web.key-file=/tmp/k8s-webhook-server/serving-certs/tls.key
+
+  # rely on tls-certificates injected by OLM instead of mounting empty files
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: prometheus-operator-admission-webhook
+      spec:
+        template:
+          spec:
+            volumes:
+            - name: tls-certificates
+              $patch: delete
+
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: prometheus-operator-admission-webhook
+      spec:
+        template:
+          spec:
+            containers:
+            - name: prometheus-operator-admission-webhook
+              volumeMounts:
+              - name: tls-certificates
+                $patch: delete
