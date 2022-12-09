@@ -18,7 +18,7 @@ func TestPrometheusRuleWebhook(t *testing.T) {
 		name:     "Valid PrometheusRules are accepted",
 		scenario: validPrometheusRuleIsAccepted,
 	}, {
-		name:     "Valid PrometheusRules are accepted",
+		name:     "Invalid PrometheusRules are rejected",
 		scenario: invalidPrometheusRuleIsRejected,
 	}}
 
