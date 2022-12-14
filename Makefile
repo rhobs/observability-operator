@@ -195,9 +195,10 @@ CATALOG_IMG_LATEST ?= $(IMAGE_BASE)-catalog:latest
 # NOTE: This is required to enable continuous deployment to
 # staging/integration environments via app-interface (OSD-13603)
 #
-# The git short-hash of the most recent commit in the repository, which will
-# be used for image tag association against the built catalog image
-CATALOG_IMG_SHA = $(CATALOG_IMG_BASE):$(shell git rev-parse --short=8 HEAD)
+# The git short-hash of the most recent commit in the main branch.
+# This will be used to associate the catalog image with the operator code that
+# was used to build the imate.
+CATALOG_IMG_SHA = $(CATALOG_IMG_BASE):$(shell git rev-parse --short=8 main)
 
 # Build a catalog image by adding bundle images to an empty catalog using the
 # operator package manager tool, 'opm'.
@@ -216,9 +217,9 @@ catalog-image: $(OPM)
 	# is possible by refering to latest tag instead of a version
 	$(CONTAINER_RUNTIME) tag $(CATALOG_IMG) $(CATALOG_IMG_LATEST)
 
-# NOTE: This target is created to ensure that the catalog image points to the
-# SHA/commit in olm-catalog branch (instead of the commmit in main) which adds
-# the bundle and the olm catalog instead of the SHA of the checkout (code change)
+# NOTE: This target ensures that the catalog image points to the
+# commit in the main branch that was used to build the catalog image
+# In a prior version we used the commit on the olm-catalog branch to tag this.
 .PHONY: catalog-tag-sha
 catalog-tag-sha: ## Push a catalog image.
 	$(CONTAINER_RUNTIME) tag $(CATALOG_IMG) $(CATALOG_IMG_SHA)
