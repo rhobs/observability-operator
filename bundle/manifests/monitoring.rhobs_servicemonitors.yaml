@@ -30,6 +30,11 @@ spec:
             type: object
           spec:
             properties:
+              attachMetadata:
+                properties:
+                  node:
+                    type: boolean
+                type: object
               endpoints:
                 items:
                   properties:
@@ -92,6 +97,8 @@ spec:
                       type: object
                       x-kubernetes-map-type: atomic
                     enableHttp2:
+                      type: boolean
+                    filterRunning:
                       type: boolean
                     followRedirects:
                       type: boolean

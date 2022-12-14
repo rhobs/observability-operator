@@ -492,6 +492,8 @@ spec:
                           type: object
                         bearerTokenFile:
                           type: string
+                        enableHttp2:
+                          type: boolean
                         name:
                           type: string
                         namespace:
@@ -2258,6 +2260,8 @@ spec:
                       type: string
                     bearerTokenFile:
                       type: string
+                    filterExternalLabels:
+                      type: boolean
                     headers:
                       additionalProperties:
                         type: string

@@ -5,12 +5,12 @@ metadata:
   labels:
     app.kubernetes.io/name: prometheus-operator-admission-webhook
     app.kubernetes.io/part-of: observability-operator
-    app.kubernetes.io/version: 0.60.0-rhobs1
+    app.kubernetes.io/version: 0.61.1-rhobs1
   name: obo-prometheus-operator-admission-webhook
 spec:
   ports:
   - name: https
-    port: 8443
+    port: 443
     targetPort: https
   selector:
     app.kubernetes.io/name: prometheus-operator-admission-webhook

@@ -413,6 +413,15 @@ spec:
                         type: array
                     type: object
                 type: object
+              alertmanagerConfigMatcherStrategy:
+                properties:
+                  type:
+                    default: OnNamespace
+                    enum:
+                    - OnNamespace
+                    - None
+                    type: string
+                type: object
               alertmanagerConfigNamespaceSelector:
                 properties:
                   matchExpressions:

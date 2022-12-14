@@ -12,18 +12,18 @@ webhooks:
     # NOTE: the caBundle get automatically injected by OLM
     caBundle: Cg==
     service:
-      # NOTE: the name and namespace will be replaced by OLM
+      # NOTE: when changing the service, ensure the same changes are applied
+      # to prometheus-rule-validating-webhook
       name: obo-prometheus-operator-admission-webhook
       namespace: operators
       path: /admission-alertmanagerconfigs/validate
-      port: 8443
-  failurePolicy: Ignore
   name: alertmanagerconfigs.monitoring.rhobs
+  failurePolicy: Ignore
   rules:
   - apiGroups:
     - monitoring.rhobs
     apiVersions:
-    - v1alpha1
+    - '*'
     operations:
     - CREATE
     - UPDATE

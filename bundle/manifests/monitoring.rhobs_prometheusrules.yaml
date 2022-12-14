@@ -34,10 +34,14 @@ spec:
                 items:
                   properties:
                     interval:
+                      pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
                       type: string
                     name:
+                      minLength: 1
                       type: string
                     partial_response_strategy:
+                      default: ""
+                      pattern: ^(?i)(abort|warn)?$
                       type: string
                     rules:
                       items:
@@ -54,6 +58,7 @@ spec:
                             - type: string
                             x-kubernetes-int-or-string: true
                           for:
+                            pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
                             type: string
                           labels:
                             additionalProperties:
@@ -70,6 +75,9 @@ spec:
                   - rules
                   type: object
                 type: array
+                x-kubernetes-list-map-keys:
+                - name
+                x-kubernetes-list-type: map
             type: object
         required:
         - spec
