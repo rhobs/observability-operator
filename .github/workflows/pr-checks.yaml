@@ -30,9 +30,8 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: ${{ env.go-version }}
-
-      - name: Use go cache
-        uses: ./.github/go-cache
+          check-latest: true
+          cache: true
 
       - name: Use tools cache
         uses: ./.github/tools-cache
@@ -58,9 +57,8 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: ${{ env.go-version }}
-
-      - name: Use go cache
-        uses: ./.github/go-cache
+          check-latest: true
+          cache: true
 
       - run: make --always-make generate && git diff --exit-code
 
@@ -78,9 +76,8 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: ${{ env.go-version }}
-
-      - name: Use go cache
-        uses: ./.github/go-cache
+          check-latest: true
+          cache: true
 
       - name: Use tools cache
         uses: ./.github/tools-cache
@@ -99,9 +96,8 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: ${{ env.go-version }}
-
-      - name: Use go cache
-        uses: ./.github/go-cache
+          check-latest: true
+          cache: true
 
       - name: Install tools
         uses: ./.github/tools-cache

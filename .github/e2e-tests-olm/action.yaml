@@ -19,9 +19,8 @@ runs:
     - uses: actions/setup-go@v3
       with:
         go-version: ${{ inputs.go-version }}
-
-    - name: Use go cache
-      uses: ./.github/go-cache
+        check-latest: true
+        cache: true
 
     - uses: azure/setup-kubectl@v3
 

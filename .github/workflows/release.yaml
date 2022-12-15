@@ -40,6 +40,8 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: ${{ env.go-version }}
+          check-latest: true
+          cache: true
 
       - name: Set version
         id: version
@@ -97,6 +99,8 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: ${{ env.go-version }}
+          check-latest: true
+          cache: true
 
       - name: Generate release notes
         run: |
