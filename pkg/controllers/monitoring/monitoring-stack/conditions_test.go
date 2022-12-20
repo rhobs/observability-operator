@@ -9,173 +9,24 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestUpdateConditions(t *testing.T) {
-	transitionTime := metav1.Now()
-
-	tt := []struct {
-		name             string
-		msWithConditions v1alpha1.MonitoringStack
-		prometheus       monv1.Prometheus
-		recError         error
-		expectedResults  []v1alpha1.Condition
-		// flag to compare LastTransitionTime of each condition
-		sameTransitionTimes bool
-	}{
-		{
-			name: "empty conditions",
-			msWithConditions: v1alpha1.MonitoringStack{
-				Status: v1alpha1.MonitoringStackStatus{
-					Conditions: []v1alpha1.Condition{},
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Generation: 1,
-				},
-			},
-			recError:   nil,
-			prometheus: monv1.Prometheus{},
-			expectedResults: []v1alpha1.Condition{
-				{
-					Type:   v1alpha1.AvailableCondition,
-					Status: v1alpha1.ConditionUnknown,
-					Reason: NoReason,
-				},
-				{
-					Type:   v1alpha1.ReconciledCondition,
-					Status: v1alpha1.ConditionUnknown,
-					Reason: NoReason,
-				},
-				{
-					Type:               v1alpha1.ResourceDiscoveryCondition,
-					Status:             v1alpha1.ConditionFalse,
-					Reason:             ResourceSelectorIsNil,
-					Message:            ResourceSelectorIsNilMessage,
-					ObservedGeneration: 1,
-					LastTransitionTime: transitionTime,
-				},
-			},
-		},
-		{
-			name: "lastTransitionTime is updated",
-			msWithConditions: v1alpha1.MonitoringStack{
-				Status: v1alpha1.MonitoringStackStatus{
-					Conditions: []v1alpha1.Condition{
-						{
-							Type:               v1alpha1.AvailableCondition,
-							Status:             v1alpha1.ConditionTrue,
-							ObservedGeneration: 1,
-							Reason:             AvailableReason,
-							Message:            AvailableMessage,
-							LastTransitionTime: transitionTime,
-						},
-						{
-							Type:               v1alpha1.ReconciledCondition,
-							Status:             v1alpha1.ConditionTrue,
-							ObservedGeneration: 1,
-							Reason:             ReconciledReason,
-							Message:            SuccessfullyReconciledMessage,
-							LastTransitionTime: transitionTime,
-						},
-						{
-							Type:               v1alpha1.ResourceDiscoveryCondition,
-							Status:             v1alpha1.ConditionFalse,
-							Reason:             ResourceSelectorIsNil,
-							Message:            ResourceSelectorIsNilMessage,
-							ObservedGeneration: 1,
-							LastTransitionTime: transitionTime,
-						},
-					},
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Generation: 2,
-				},
-			},
-			recError: nil,
-			prometheus: monv1.Prometheus{
-				ObjectMeta: metav1.ObjectMeta{
-					Generation: 2,
-				},
-				Status: monv1.PrometheusStatus{
-					Conditions: []monv1.PrometheusCondition{
-						{
-							Type:               monv1.PrometheusAvailable,
-							Status:             monv1.PrometheusConditionTrue,
-							ObservedGeneration: 2,
-						},
-						{
-							Type:               monv1.PrometheusReconciled,
-							Status:             monv1.PrometheusConditionTrue,
-							ObservedGeneration: 2,
-						},
-					}}},
-			expectedResults: []v1alpha1.Condition{
-				{
-					Type:               v1alpha1.AvailableCondition,
-					Status:             v1alpha1.ConditionTrue,
-					ObservedGeneration: 2,
-					Reason:             AvailableReason,
-					Message:            AvailableMessage,
-					LastTransitionTime: transitionTime,
-				},
-				{
-					Type:               v1alpha1.ReconciledCondition,
-					Status:             v1alpha1.ConditionTrue,
-					ObservedGeneration: 2,
-					Reason:             ReconciledReason,
-					Message:            SuccessfullyReconciledMessage,
-					LastTransitionTime: transitionTime,
-				},
-				{
-					Type:               v1alpha1.ResourceDiscoveryCondition,
-					Status:             v1alpha1.ConditionFalse,
-					Reason:             ResourceSelectorIsNil,
-					Message:            ResourceSelectorIsNilMessage,
-					ObservedGeneration: 2,
-					LastTransitionTime: transitionTime,
-				},
-			},
-			sameTransitionTimes: false,
-		},
-	}
-
-	for _, test := range tt {
-		res := updateConditions(&test.msWithConditions, test.prometheus, test.recError)
-		for _, c := range res {
-			expectedC := getConditionByType(test.expectedResults, c.Type)
-			assert.Check(t, expectedC.Equal(c), "%s - expected:\n %v\n and got:\n %v\n", test.name, expectedC, c)
-			if test.sameTransitionTimes {
-				assert.Check(t, expectedC.LastTransitionTime.Equal(&c.LastTransitionTime))
-			} else {
-				assert.Check(t, c.LastTransitionTime.After(transitionTime.Time))
-			}
-		}
-	}
-}
-
-func getConditionByType(conditions []v1alpha1.Condition, ctype v1alpha1.ConditionType) *v1alpha1.Condition {
-	for _, c := range conditions {
-		if c.Type == ctype {
-			return &c
-		}
-	}
-	return nil
-}
-
 func TestUpdateAvailable(t *testing.T) {
 	tt := []struct {
-		name              string
-		prometheus        monv1.Prometheus
-		previousCondition v1alpha1.Condition
-		generation        int64
-		expectedResult    v1alpha1.Condition
+		name               string
+		prometheus         monv1.Prometheus
+		previousConditions []v1alpha1.Condition
+		generation         int64
+		expectedResult     v1alpha1.Condition
 	}{
 		{
 			name: "conditions not changed when Prometheus Available",
-			previousCondition: v1alpha1.Condition{
-				Type:               v1alpha1.AvailableCondition,
-				Status:             v1alpha1.ConditionTrue,
-				ObservedGeneration: 1,
-				Reason:             AvailableReason,
-				Message:            AvailableMessage,
+			previousConditions: []v1alpha1.Condition{
+				{
+					Type:               v1alpha1.AvailableCondition,
+					Status:             v1alpha1.ConditionTrue,
+					ObservedGeneration: 1,
+					Reason:             AvailableReason,
+					Message:            AvailableMessage,
+				},
 			},
 			prometheus: monv1.Prometheus{
 				ObjectMeta: metav1.ObjectMeta{
@@ -200,12 +51,14 @@ func TestUpdateAvailable(t *testing.T) {
 		},
 		{
 			name: "cannot read Prometheus conditions",
-			previousCondition: v1alpha1.Condition{
-				Type:               v1alpha1.AvailableCondition,
-				Status:             v1alpha1.ConditionTrue,
-				ObservedGeneration: 1,
-				Reason:             AvailableReason,
-				Message:            AvailableMessage,
+			previousConditions: []v1alpha1.Condition{
+				{
+					Type:               v1alpha1.AvailableCondition,
+					Status:             v1alpha1.ConditionTrue,
+					ObservedGeneration: 1,
+					Reason:             AvailableReason,
+					Message:            AvailableMessage,
+				},
 			},
 			generation: 1,
 			prometheus: monv1.Prometheus{},
@@ -219,12 +72,14 @@ func TestUpdateAvailable(t *testing.T) {
 		},
 		{
 			name: "degraded Prometheus conditions",
-			previousCondition: v1alpha1.Condition{
-				Type:               v1alpha1.AvailableCondition,
-				Status:             v1alpha1.ConditionTrue,
-				ObservedGeneration: 1,
-				Reason:             AvailableReason,
-				Message:            AvailableMessage,
+			previousConditions: []v1alpha1.Condition{
+				{
+					Type:               v1alpha1.AvailableCondition,
+					Status:             v1alpha1.ConditionTrue,
+					ObservedGeneration: 1,
+					Reason:             AvailableReason,
+					Message:            AvailableMessage,
+				},
 			},
 			generation: 1,
 			prometheus: monv1.Prometheus{
@@ -248,12 +103,14 @@ func TestUpdateAvailable(t *testing.T) {
 		},
 		{
 			name: "Prometheus observed generation is different from the Prometheus generation",
-			previousCondition: v1alpha1.Condition{
-				Type:               v1alpha1.AvailableCondition,
-				Status:             v1alpha1.ConditionTrue,
-				ObservedGeneration: 2,
-				Reason:             AvailableReason,
-				Message:            AvailableMessage,
+			previousConditions: []v1alpha1.Condition{
+				{
+					Type:               v1alpha1.AvailableCondition,
+					Status:             v1alpha1.ConditionTrue,
+					ObservedGeneration: 2,
+					Reason:             AvailableReason,
+					Message:            AvailableMessage,
+				},
 			},
 			generation: 1,
 			prometheus: monv1.Prometheus{
@@ -279,28 +136,30 @@ func TestUpdateAvailable(t *testing.T) {
 	}
 
 	for _, test := range tt {
-		res := updateAvailable(test.previousCondition, test.prometheus, test.generation)
+		res := updateAvailable(test.previousConditions, test.prometheus, test.generation)
 		assert.Check(t, test.expectedResult.Equal(res), "%s - expected:\n %v\n and got:\n %v\n", test.name, test.expectedResult, res)
 	}
 }
 
 func TestUpdateReconciled(t *testing.T) {
 	tt := []struct {
-		name              string
-		prometheus        monv1.Prometheus
-		previousCondition v1alpha1.Condition
-		generation        int64
-		recError          error
-		expectedResult    v1alpha1.Condition
+		name               string
+		prometheus         monv1.Prometheus
+		previousConditions []v1alpha1.Condition
+		generation         int64
+		recError           error
+		expectedResult     v1alpha1.Condition
 	}{
 		{
 			name: "conditions not changed when Prometheus Available",
-			previousCondition: v1alpha1.Condition{
-				Type:               v1alpha1.ReconciledCondition,
-				Status:             v1alpha1.ConditionTrue,
-				ObservedGeneration: 1,
-				Reason:             ReconciledReason,
-				Message:            SuccessfullyReconciledMessage,
+			previousConditions: []v1alpha1.Condition{
+				{
+					Type:               v1alpha1.ReconciledCondition,
+					Status:             v1alpha1.ConditionTrue,
+					ObservedGeneration: 1,
+					Reason:             ReconciledReason,
+					Message:            SuccessfullyReconciledMessage,
+				},
 			},
 			recError:   nil,
 			generation: 1,
@@ -326,12 +185,14 @@ func TestUpdateReconciled(t *testing.T) {
 		},
 		{
 			name: "cannot read Prometheus conditions",
-			previousCondition: v1alpha1.Condition{
-				Type:               v1alpha1.ReconciledCondition,
-				Status:             v1alpha1.ConditionTrue,
-				ObservedGeneration: 1,
-				Reason:             ReconciledReason,
-				Message:            SuccessfullyReconciledMessage,
+			previousConditions: []v1alpha1.Condition{
+				{
+					Type:               v1alpha1.ReconciledCondition,
+					Status:             v1alpha1.ConditionTrue,
+					ObservedGeneration: 1,
+					Reason:             ReconciledReason,
+					Message:            SuccessfullyReconciledMessage,
+				},
 			},
 			recError:   nil,
 			generation: 1,
@@ -346,12 +207,14 @@ func TestUpdateReconciled(t *testing.T) {
 		},
 		{
 			name: "degraded Prometheus conditions",
-			previousCondition: v1alpha1.Condition{
-				Type:               v1alpha1.ReconciledCondition,
-				Status:             v1alpha1.ConditionTrue,
-				ObservedGeneration: 1,
-				Reason:             ReconciledReason,
-				Message:            SuccessfullyReconciledMessage,
+			previousConditions: []v1alpha1.Condition{
+				{
+					Type:               v1alpha1.ReconciledCondition,
+					Status:             v1alpha1.ConditionTrue,
+					ObservedGeneration: 1,
+					Reason:             ReconciledReason,
+					Message:            SuccessfullyReconciledMessage,
+				},
 			},
 			recError:   nil,
 			generation: 1,
@@ -376,12 +239,14 @@ func TestUpdateReconciled(t *testing.T) {
 		},
 		{
 			name: "Prometheus observed generation is different from the Prometheus generation",
-			previousCondition: v1alpha1.Condition{
-				Type:               v1alpha1.ReconciledCondition,
-				Status:             v1alpha1.ConditionTrue,
-				ObservedGeneration: 2,
-				Reason:             ReconciledReason,
-				Message:            SuccessfullyReconciledMessage,
+			previousConditions: []v1alpha1.Condition{
+				{
+					Type:               v1alpha1.ReconciledCondition,
+					Status:             v1alpha1.ConditionTrue,
+					ObservedGeneration: 2,
+					Reason:             ReconciledReason,
+					Message:            SuccessfullyReconciledMessage,
+				},
 			},
 			recError:   nil,
 			generation: 1,
@@ -408,7 +273,7 @@ func TestUpdateReconciled(t *testing.T) {
 	}
 
 	for _, test := range tt {
-		res := updateReconciled(test.previousCondition, test.prometheus, test.generation, test.recError)
+		res := updateReconciled(test.previousConditions, test.prometheus, test.generation, test.recError)
 		assert.Check(t, test.expectedResult.Equal(res), "%s - expected:\n %v\n and got:\n %v\n", test.name, test.expectedResult, res)
 	}
 }

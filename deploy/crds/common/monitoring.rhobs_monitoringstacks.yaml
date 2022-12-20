@@ -837,8 +837,8 @@ spec:
                 type: object
               resourceSelector:
                 description: Label selector for Monitoring Stack Resources. Set to
-                  the empty LabelSelector to monitoring everything. Set to null to
-                  disable service discovery.
+                  the empty LabelSelector ({}) to monitoring everything. Set to null
+                  to disable service discovery.
                 nullable: true
                 properties:
                   matchExpressions:
