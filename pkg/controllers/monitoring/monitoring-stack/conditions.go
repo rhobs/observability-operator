@@ -15,60 +15,78 @@ const (
 	PrometheusNotAvailable         = "PrometheusNotAvailable"
 	PrometheusNotReconciled        = "PrometheusNotReconciled"
 	PrometheusDegraded             = "PrometheusDegraded"
+	ResourceSelectorIsNil          = "ResourceSelectorNil"
 	CannotReadPrometheusConditions = "Cannot read Prometheus status conditions"
 	AvailableMessage               = "Monitoring Stack is available"
 	SuccessfullyReconciledMessage  = "Monitoring Stack is successfully reconciled"
+	ResourceSelectorIsNilMessage   = "No resources will be discovered, ResourceSelector is nil"
+	ResourceDiscoveryOnMessage     = "Resource discovery is operational"
 	NoReason                       = "None"
 )
 
-func updateConditions(msConditions []v1alpha1.Condition, prom monv1.Prometheus, generation int64, recError error) []v1alpha1.Condition {
-	if len(msConditions) == 0 {
-		return []v1alpha1.Condition{
-			{
-				Type:               v1alpha1.AvailableCondition,
-				Status:             v1alpha1.ConditionUnknown,
-				Reason:             NoReason,
-				LastTransitionTime: metav1.Now(),
-			},
-			{
-				Type:               v1alpha1.ReconciledCondition,
-				Status:             v1alpha1.ConditionUnknown,
-				Reason:             NoReason,
-				LastTransitionTime: metav1.Now(),
-			},
+func updateConditions(ms *v1alpha1.MonitoringStack, prom monv1.Prometheus, recError error) []v1alpha1.Condition {
+	return []v1alpha1.Condition{
+		updateResourceDiscovery(ms),
+		updateAvailable(ms.Status.Conditions, prom, ms.Generation),
+		updateReconciled(ms.Status.Conditions, prom, ms.Generation, recError),
+	}
+}
+
+func getMSCondition(conditions []v1alpha1.Condition, t v1alpha1.ConditionType) (v1alpha1.Condition, error) {
+	for _, c := range conditions {
+		if c.Type == t {
+			return c, nil
 		}
 	}
-	var updatedConditions []v1alpha1.Condition
+	return v1alpha1.Condition{}, fmt.Errorf("condition type %v not found", t)
+}
 
-	for _, mc := range msConditions {
-		switch mc.Type {
-		case v1alpha1.AvailableCondition:
-			available := updateAvailable(mc, prom, generation)
-			if !available.Equal(mc) {
-				available.LastTransitionTime = metav1.Now()
-			}
-			updatedConditions = append(updatedConditions, available)
-		case v1alpha1.ReconciledCondition:
-			reconciled := updateReconciled(mc, prom, generation, recError)
-			if !reconciled.Equal(mc) {
-				reconciled.LastTransitionTime = metav1.Now()
-			}
-			updatedConditions = append(updatedConditions, reconciled)
+// updateResourceDiscovery updates the ResourceDiscoveryCondition based on the
+// ResourceSelector in the MonitorinStack spec. A ResourceSelector of nil causes
+// the condition to be false, any other value sets the condition to true
+func updateResourceDiscovery(ms *v1alpha1.MonitoringStack) v1alpha1.Condition {
+	if ms.Spec.ResourceSelector == nil {
+		return v1alpha1.Condition{
+			Type:               v1alpha1.ResourceDiscoveryCondition,
+			Status:             v1alpha1.ConditionFalse,
+			Reason:             ResourceSelectorIsNil,
+			Message:            ResourceSelectorIsNilMessage,
+			LastTransitionTime: metav1.Now(),
+			ObservedGeneration: ms.Generation,
+		}
+	} else {
+		return v1alpha1.Condition{
+			Type:               v1alpha1.ResourceDiscoveryCondition,
+			Status:             v1alpha1.ConditionTrue,
+			Reason:             NoReason,
+			Message:            ResourceDiscoveryOnMessage,
+			LastTransitionTime: metav1.Now(),
+			ObservedGeneration: ms.Generation,
 		}
 	}
 
-	return updatedConditions
 }
 
 // updateAvailable gets existing "Available" condition and updates its parameters
 // based on the Prometheus "Available" condition
-func updateAvailable(ac v1alpha1.Condition, prom monv1.Prometheus, generation int64) v1alpha1.Condition {
+func updateAvailable(conditions []v1alpha1.Condition, prom monv1.Prometheus, generation int64) v1alpha1.Condition {
+	ac, err := getMSCondition(conditions, v1alpha1.AvailableCondition)
+	if err != nil {
+		ac = v1alpha1.Condition{
+			Type:               v1alpha1.AvailableCondition,
+			Status:             v1alpha1.ConditionUnknown,
+			Reason:             NoReason,
+			LastTransitionTime: metav1.Now(),
+		}
+	}
+
 	prometheusAvailable, err := getPrometheusCondition(prom.Status.Conditions, monv1.PrometheusAvailable)
 
 	if err != nil {
 		ac.Status = v1alpha1.ConditionUnknown
 		ac.Reason = PrometheusNotAvailable
 		ac.Message = CannotReadPrometheusConditions
+		ac.LastTransitionTime = metav1.Now()
 		return ac
 	}
 	// MonitoringStack status will not be updated if there is a difference between the Prometheus generation
@@ -85,31 +103,43 @@ func updateAvailable(ac v1alpha1.Condition, prom monv1.Prometheus, generation in
 			ac.Reason = PrometheusNotAvailable
 		}
 		ac.Message = prometheusAvailable.Message
+		ac.LastTransitionTime = metav1.Now()
 		return ac
 	}
 	ac.Status = v1alpha1.ConditionTrue
 	ac.Reason = AvailableReason
 	ac.Message = AvailableMessage
 	ac.ObservedGeneration = generation
+	ac.LastTransitionTime = metav1.Now()
 	return ac
 }
 
 // updateReconciled updates "Reconciled" conditions based on the provided error value and
 // Prometheus "Reconciled" condition
-func updateReconciled(rc v1alpha1.Condition, prom monv1.Prometheus, generation int64, err error) v1alpha1.Condition {
-
-	if err != nil {
+func updateReconciled(conditions []v1alpha1.Condition, prom monv1.Prometheus, generation int64, reconcileErr error) v1alpha1.Condition {
+	rc, cErr := getMSCondition(conditions, v1alpha1.ReconciledCondition)
+	if cErr != nil {
+		rc = v1alpha1.Condition{
+			Type:               v1alpha1.ReconciledCondition,
+			Status:             v1alpha1.ConditionUnknown,
+			Reason:             NoReason,
+			LastTransitionTime: metav1.Now(),
+		}
+	}
+	if reconcileErr != nil {
 		rc.Status = v1alpha1.ConditionFalse
-		rc.Message = err.Error()
+		rc.Message = reconcileErr.Error()
 		rc.Reason = FailedToReconcileReason
+		rc.LastTransitionTime = metav1.Now()
 		return rc
 	}
-	prometheusReconciled, err := getPrometheusCondition(prom.Status.Conditions, monv1.PrometheusReconciled)
+	prometheusReconciled, reconcileErr := getPrometheusCondition(prom.Status.Conditions, monv1.PrometheusReconciled)
 
-	if err != nil {
+	if reconcileErr != nil {
 		rc.Status = v1alpha1.ConditionUnknown
 		rc.Reason = PrometheusNotReconciled
 		rc.Message = CannotReadPrometheusConditions
+		rc.LastTransitionTime = metav1.Now()
 		return rc
 	}
 
@@ -121,12 +151,14 @@ func updateReconciled(rc v1alpha1.Condition, prom monv1.Prometheus, generation i
 		rc.Status = prometheusStatusToMSStatus(prometheusReconciled.Status)
 		rc.Reason = PrometheusNotReconciled
 		rc.Message = prometheusReconciled.Message
+		rc.LastTransitionTime = metav1.Now()
 		return rc
 	}
 	rc.Status = v1alpha1.ConditionTrue
 	rc.Reason = ReconciledReason
 	rc.Message = SuccessfullyReconciledMessage
 	rc.ObservedGeneration = generation
+	rc.LastTransitionTime = metav1.Now()
 	return rc
 }
 

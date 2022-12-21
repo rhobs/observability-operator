@@ -124,7 +124,7 @@ MonitoringStackSpec is the specification for desired Monitoring Stack
         <td><b><a href="#monitoringstackspecresourceselector">resourceSelector</a></b></td>
         <td>object</td>
         <td>
-          Label selector for Monitoring Stack Resources.<br/>
+          Label selector for Monitoring Stack Resources. Set to the empty LabelSelector ({}) to monitoring everything. Set to null to disable service discovery.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1803,7 +1803,7 @@ RelabelConfig allows dynamic rewriting of the label set, being applied to sample
 
 
 
-Label selector for Monitoring Stack Resources.
+Label selector for Monitoring Stack Resources. Set to the empty LabelSelector ({}) to monitoring everything. Set to null to disable service discovery.
 
 <table>
     <thead>
