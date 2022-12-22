@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 set -e -u -o pipefail
 
-declare -r SCRIPT_PATH=$(readlink -f "$0")
-declare -r SCRIPT_DIR=$(cd $(dirname "$SCRIPT_PATH") && pwd)
+SCRIPT_PATH=$(readlink -f "$0")
+declare -r SCRIPT_PATH
+SCRIPT_DIR=$(cd "$(dirname "$SCRIPT_PATH")" && pwd)
+declare -r SCRIPT_DIR
 declare -r PROJECT_ROOT_DIR="$SCRIPT_DIR/../../"
 declare -r OP_NAME="obs-operator"
 
@@ -91,7 +93,7 @@ label_infra_node() {
 
 setup_olm() {
   header "Install OLM"
-  $PROJECT_ROOT_DIR/tmp/bin/operator-sdk olm install
+  "$PROJECT_ROOT_DIR"/tmp/bin/operator-sdk olm install
   line 50
 }
 

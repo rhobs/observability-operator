@@ -45,6 +45,9 @@ jobs:
       - name: jsonnet-lint
         run: make lint-jsonnet
 
+      - name: shellcheck
+        run: make lint-shell
+
   generate:
     runs-on: ubuntu-latest
     name: Generate and format
