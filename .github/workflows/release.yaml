@@ -120,12 +120,9 @@ jobs:
           echo "tag_name=$(git describe HEAD --abbrev=0)" >> $GITHUB_OUTPUT
 
       - name: Create Github release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.REPOSITORY_PUSH_TOKEN }}
+        uses: ncipollo/release-action@v1
         with:
-          release_name: ${{ steps.publish_tag.outputs.tag_name }}
-          tag_name: ${{ steps.publish_tag.outputs.tag_name }}
-          body_path: RELEASE_BODY.md
+          tag: ${{ steps.publish_tag.outputs.tag_name }}
+          bodyFile: RELEASE_BODY.md
           # NOTE: We always generate pre-releases and mark them as releases manually
           prerelease: true
