@@ -17,7 +17,7 @@ all: operator
 ## Development
 
 .PHONY: lint
-lint: lint-golang lint-jsonnet
+lint: lint-golang lint-jsonnet lint-shell
 
 .PHONY: lint-golang
 lint-golang: $(GOLANGCI_LINT)
@@ -29,6 +29,10 @@ lint-jsonnet: $(JSONNET_LINT) jsonnet-vendor
 		-o -name '*.libsonnet' -print \
 		-o -name '*.jsonnet' -print \
 	| xargs -n 1 -- $(JSONNET_LINT) -J $(JSONNET_VENDOR)
+
+.PHONY: lint-shell
+lint-shell:
+	find -name "*.sh" -print0 | xargs --null $(SHELLCHECK)
 
 .PHONY: fmt-jsonnet
 fmt-jsonnet: $(JSONNETFMT) jsonnet-vendor

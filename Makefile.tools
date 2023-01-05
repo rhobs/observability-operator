@@ -50,10 +50,13 @@ JB_VERSION = v0.4.0
 ## NOTE: gojsontoyaml does not have any releases, so we use a fake version starting with v0.0.1
 # thus to upgrade/invalidate the github cache, increment the value
 GOJSONTOYAML = $(TOOLS_DIR)/gojsontoyaml
-GOJSONTOYAML_VERSRION = 0.0.1
+GOJSONTOYAML_VERSION = 0.0.1
 
 JSONNET_VENDOR = jsonnet/vendor
 JSONNETFMT_ARGS = -n 2 --max-blank-lines 2 --string-style s --comment-style s
+
+SHELLCHECK = $(TOOLS_DIR)/shellcheck
+SHELLCHECK_VERSION = 0.9.0
 
 $(TOOLS_DIR):
 	@mkdir -p $(TOOLS_DIR)
@@ -185,6 +188,19 @@ $(GOJSONTOYAML) gojsontoyaml: $(TOOLS_DIR)
 		GOBIN=$(TOOLS_DIR) go install github.com/brancz/gojsontoyaml@latest ;\
 	}
 
+.PHONY: shellcheck
+$(SHELLCHECK) shellcheck: $(TOOLS_DIR)
+	@{ \
+		set -ex ;\
+		[[ -f $(SHELLCHECK) ]] && exit 0 ;\
+		cd $$(mktemp -d) ;\
+		curl -sSLo shellcheck-stable.tar.xz "https://github.com/koalaman/shellcheck/releases/download/stable/shellcheck-stable.linux.x86_64.tar.xz";\
+		tar -xJf shellcheck-stable.tar.xz ;\
+		cp shellcheck-stable/shellcheck $(SHELLCHECK) ;\
+		version=$(SHELLCHECK_VERSION) ;\
+		$(SHELLCHECK) -V | grep -q $${version##v} ;\
+	}
+
 .PHONY: jsonnet-tools
 jsonnet-tools: jsonnet jsonnetfmt jsonnet-lint jb gojsontoyaml
 
@@ -198,6 +214,7 @@ tools: $(CONTROLLER_GEN) \
 		$(PROMQ) \
 		$(CRDOC) \
 		$(GOLANGCI_LINT) \
+		$(SHELLCHECK) \
 		jsonnet-tools
 	@{ \
 		set -ex ;\
@@ -216,7 +233,8 @@ tools: $(CONTROLLER_GEN) \
 		echo  $$(basename $(JSONNETFMT)) $(JSONNETFMT_VERSION) >> $$tools_file ;\
 		echo  $$(basename $(JSONNET_LINT)) $(JSONNET_LINT_VERSION) >> $$tools_file ;\
 		echo  $$(basename $(JB)) $(JB_VERSION) >> $$tools_file ;\
-		echo  $$(basename $(GOJSONTOYAML)) $(GOJSONTOYAML_VERSRION) >> $$tools_file ;\
+		echo  $$(basename $(GOJSONTOYAML)) $(GOJSONTOYAML_VERSION) >> $$tools_file ;\
+		echo  $$(basename $(SHELLCHECK)) $(SHELLCHECK_VERSION) >> $$tools_file ;\
 	}
 
 .PHONY: clean-tools
@@ -236,3 +254,4 @@ validate-tools:
 	@$(JSONNETFMT) --version
 	@$(JSONNET_LINT) --version
 	@$(JB) --version
+	@$(SHELLCHECK) -V | head -n 2
