@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.18](https://github.com/rhobs/monitoring-stack-operator/commit/) (2023-01-05)
+
+
+### Features
+
+* add resourceDiscovery status condition ([#223](https://github.com/rhobs/monitoring-stack-operator/issues/223)) ([1ea726d](https://github.com/rhobs/monitoring-stack-operator/commit/1ea726d628eab88a5a72d61e14f08aea14c7078e))
+* upgrade PO to 0.61.0-rhobs1 ([#234](https://github.com/rhobs/monitoring-stack-operator/issues/234)) ([8f342e8](https://github.com/rhobs/monitoring-stack-operator/commit/8f342e8dae0c4ec50f58a3be75fa1660094002a2))
+
 ### [0.0.17](https://github.com/rhobs/monitoring-stack-operator/commit/) (2022-12-01)
 
 
