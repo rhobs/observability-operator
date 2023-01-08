@@ -7,6 +7,7 @@ include Makefile.tools
 IMAGE_BASE ?= observability-operator
 
 VERSION ?= $(shell cat VERSION)
+RELEASE_SHA ?= $(shell git rev-parse origin/main)
 OPERATOR_IMG = $(IMAGE_BASE):$(VERSION)
 OPERATOR_BUNDLE=observability-operator.v$(VERSION)
 CONTAINER_RUNTIME := $(shell command -v podman 2> /dev/null || echo docker)
@@ -195,15 +196,6 @@ CATALOG_IMG ?= $(CATALOG_IMG_BASE):$(VERSION)
 # a single image which keeps updating there by allowing auto upgrades
 CATALOG_IMG_LATEST ?= $(IMAGE_BASE)-catalog:latest
 
-
-# NOTE: This is required to enable continuous deployment to
-# staging/integration environments via app-interface (OSD-13603)
-#
-# The git short-hash of the most recent commit in the main branch.
-# This will be used to associate the catalog image with the operator code that
-# was used to build the imate.
-CATALOG_IMG_SHA = $(CATALOG_IMG_BASE):$(shell git rev-parse --short=8 main)
-
 # Build a catalog image by adding bundle images to an empty catalog using the
 # operator package manager tool, 'opm'.
 .PHONY: catalog-image
@@ -220,6 +212,14 @@ catalog-image: $(OPM)
 	# tag the catalog img:version as latest so that continious release
 	# is possible by refering to latest tag instead of a version
 	$(CONTAINER_RUNTIME) tag $(CATALOG_IMG) $(CATALOG_IMG_LATEST)
+
+# NOTE: This is required to enable continuous deployment to
+# staging/integration environments via app-interface (OSD-13603)
+#
+# The git short-hash of the most recent commit in the main branch.
+# This will be used to associate the catalog image with the operator code that
+# was used to build the imate.
+CATALOG_IMG_SHA = $(CATALOG_IMG_BASE):$(shell git rev-parse --short=8 $(RELEASE_SHA))
 
 # NOTE: This target ensures that the catalog image points to the
 # commit in the main branch that was used to build the catalog image

@@ -33,6 +33,7 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
           CHANNELS: candidate,development
           DEFAULT_CHANNEL: candidate
+          RELEASE_SHA: ${GITHUB_SHA}
         with:
           quay_login: ${{ secrets.QUAY_LOGIN }}
           quay_token: ${{ secrets.QUAY_TOKEN }}
