@@ -56,6 +56,7 @@ jobs:
           IMAGE_BASE: ${{ secrets.IMAGE_BASE }}
           VERSION: ${{ steps.version.outputs.version }}
           CHANNELS: development
+          RELEASE_SHA: ${GITHUB_SHA}
         with:
           quay_login: ${{ secrets.QUAY_LOGIN }}
           quay_token: ${{ secrets.QUAY_TOKEN }}
