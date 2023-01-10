@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.19](https://github.com/rhobs/monitoring-stack-operator/commit/) (2023-01-10)
+
+* this release only includes a change to the build process of the catalog image c188473
+
 ### [0.0.18](https://github.com/rhobs/monitoring-stack-operator/commit/) (2023-01-05)
 
 
