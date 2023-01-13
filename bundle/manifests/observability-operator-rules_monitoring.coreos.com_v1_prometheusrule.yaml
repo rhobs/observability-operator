@@ -12,7 +12,7 @@ spec:
   groups:
   - name: observability-operator.rules
     rules:
-    - alert: Observability Operator controller reconcile errors
+    - alert: ObservabilityOperatorReconcileErrors
       annotations:
         description: |
           Observability Operator controller - {{ $labels.controller }} fails to reconcile.
@@ -24,8 +24,7 @@ spec:
       for: 15m
       labels:
         severity: warning
-    - alert: Observability Operator controller reconcilation takes longer than 10
-        minutes
+    - alert: ObservabilityOperatorReconcileLongerThan10Min
       annotations:
         description: |
           Observability Operator controller reconcilation takes longer than 10 minutes for the controller - {{ $labels.controller }}.
@@ -39,7 +38,7 @@ spec:
       for: 10m
       labels:
         severity: warning
-    - alert: Observability Operator controller backlog is not being drained
+    - alert: ObservabilityOperatorBacklogNotDrained
       annotations:
         description: |
           The backlog of Observability Operator controller - {{ $labels.name }} is not getting drained; an indication that reconcile loop may be stuck

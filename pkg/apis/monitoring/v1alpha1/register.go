@@ -15,8 +15,8 @@ limitations under the License.
 */
 
 // Package v1alpha1 contains API Schema definitions for the rhobs v1alpha1 API group
-//+kubebuilder:object:generate=true
-//+groupName=monitoring.rhobs
+// +kubebuilder:object:generate=true
+// +groupName=monitoring.rhobs
 package v1alpha1
 
 import (
