@@ -18,6 +18,7 @@ declare NO_BUILDS=false
 declare SHOW_USAGE=false
 declare LOGS_DIR="tmp/e2e"
 declare OPERATORS_NS="operators"
+declare TEST_TIMEOUT="15m"
 
 
 header(){
@@ -195,7 +196,7 @@ run_e2e(){
   watch_obo_errors "$obo_error_log" &
 
   local ret=0
-  go test -v -failfast ./test/e2e/... --retain=true \
+  go test -v -failfast -timeout $TEST_TIMEOUT ./test/e2e/... --retain=true \
     tee "$LOGS_DIR/e2e.log" || ret=1
 
   # terminte both log_events
