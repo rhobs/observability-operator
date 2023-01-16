@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.20](https://github.com/rhobs/monitoring-stack-operator/commit/) (2023-01-16)
+
+
+### Features
+
+* add resource variables to SyncSelectorSet template ([#247](https://github.com/rhobs/monitoring-stack-operator/issues/247)) ([68fd127](https://github.com/rhobs/monitoring-stack-operator/commit/68fd12740504382ac9ad3431e735f69bf35f555e))
+
+
+### Bug Fixes
+
+* rename alert names to follow convention ([#246](https://github.com/rhobs/monitoring-stack-operator/issues/246)) ([c2ecb85](https://github.com/rhobs/monitoring-stack-operator/commit/c2ecb858856e68d1cf2f376b0b875410ef74d8ed))
+* use mebibytes instead of megabytes for resource defaults ([#248](https://github.com/rhobs/monitoring-stack-operator/issues/248)) ([4a62425](https://github.com/rhobs/monitoring-stack-operator/commit/4a62425726d5b941609355574d21c80919d59deb))
+
 ### [0.0.19](https://github.com/rhobs/monitoring-stack-operator/commit/) (2023-01-10)
 
 * this release only includes a change to the build process of the catalog image c188473

@@ -46,7 +46,7 @@ metadata:
         "thanosrulers.monitoring.rhobs"
       ]
     operators.operatorframework.io/project_layout: unknown
-  name: observability-operator.v0.0.19
+  name: observability-operator.v0.0.20
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -572,7 +572,7 @@ spec:
   maturity: alpha
   provider:
     name: Red Hat
-  version: 0.0.19
+  version: 0.0.20
   webhookdefinitions:
   - admissionReviewVersions:
     - v1
