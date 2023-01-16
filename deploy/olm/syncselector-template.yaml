@@ -13,6 +13,18 @@ parameters:
   - name: IMAGE_DIGEST
     required: true
     value: eee088e78ecbaafdc572188398ceb463e63c365f1023a0301742be2a8e0e4c29
+  - name: RESOURCE_LIMIT_CPU
+    required: true
+    value: 200m
+  - name: RESOURCE_REQUEST_CPU
+    required: true
+    value: 100m
+  - name: RESOURCE_LIMIT_MEMORY
+    required: true
+    value: 300Mi
+  - name: RESOURCE_REQUEST_MEMORY
+    required: true
+    value: 150m
 
 objects:
   - apiVersion: hive.openshift.io/v1
@@ -56,3 +68,11 @@ objects:
             name: observability-operator
             source: observability-operator-catalog
             sourceNamespace: openshift-observability-operator
+            config:
+              resources:
+                limits:
+                  cpu: ${RESOURCE_LIMIT_CPU}
+                  memory: ${RESOURCE_LIMIT_MEMORY}
+                requests:
+                  cpu: ${RESOURCE_REQUEST_CPU}
+                  memory: ${RESOURCE_REQUEST_MEMORY}
