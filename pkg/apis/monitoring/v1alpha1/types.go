@@ -76,7 +76,7 @@ type MonitoringStackSpec struct {
 
 	// Define resources requests and limits for Monitoring Stack Pods.
 	// +optional
-	// +kubebuilder:default={requests:{cpu: "100m", memory: "256M"}, limits:{memory: "512M", cpu: "500m"}}
+	// +kubebuilder:default={requests:{cpu: "100m", memory: "256Mi"}, limits:{memory: "512Mi", cpu: "500m"}}
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
 	// Define prometheus config

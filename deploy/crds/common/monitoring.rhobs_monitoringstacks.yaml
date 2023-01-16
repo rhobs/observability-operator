@@ -887,10 +887,10 @@ spec:
                 default:
                   limits:
                     cpu: 500m
-                    memory: 512M
+                    memory: 512Mi
                   requests:
                     cpu: 100m
-                    memory: 256M
+                    memory: 256Mi
                 description: Define resources requests and limits for Monitoring Stack
                   Pods.
                 properties:

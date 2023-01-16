@@ -133,7 +133,7 @@ MonitoringStackSpec is the specification for desired Monitoring Stack
         <td>
           Define resources requests and limits for Monitoring Stack Pods.<br/>
           <br/>
-            <i>Default</i>: map[limits:map[cpu:500m memory:512M] requests:map[cpu:100m memory:256M]]<br/>
+            <i>Default</i>: map[limits:map[cpu:500m memory:512Mi] requests:map[cpu:100m memory:256Mi]]<br/>
         </td>
         <td>false</td>
       </tr><tr>
