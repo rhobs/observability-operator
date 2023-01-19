@@ -7,7 +7,7 @@ require (
 	github.com/google/go-cmp v0.5.8
 	github.com/prometheus/common v0.32.1
 	github.com/prometheus/prometheus v1.8.2-0.20211105201321-411021ada9ab
-	github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.61.1-rhobs1
+	github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.62.0-rhobs1
 	go.uber.org/zap v1.21.0
 	gotest.tools/v3 v3.0.3
 	k8s.io/api v0.25.4
@@ -30,7 +30,6 @@ require (
 	github.com/dennwc/varint v1.0.0 // indirect
 	github.com/edsrzf/mmap-go v1.0.0 // indirect
 	github.com/emicklei/go-restful/v3 v3.8.0 // indirect
-	github.com/evanphx/json-patch v4.12.0+incompatible // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/fatih/color v1.12.0 // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
