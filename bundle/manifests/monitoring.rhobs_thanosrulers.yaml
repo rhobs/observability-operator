@@ -1166,6 +1166,13 @@ spec:
                 x-kubernetes-list-type: map
               image:
                 type: string
+              imagePullPolicy:
+                enum:
+                - ""
+                - Always
+                - Never
+                - IfNotPresent
+                type: string
               imagePullSecrets:
                 items:
                   properties:
@@ -2337,6 +2344,8 @@ spec:
                 type: object
                 x-kubernetes-map-type: atomic
               tracingConfigFile:
+                type: string
+              version:
                 type: string
               volumes:
                 items:

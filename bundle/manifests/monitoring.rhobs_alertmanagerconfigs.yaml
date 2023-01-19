@@ -2497,6 +2497,10 @@ spec:
                 type: array
               route:
                 properties:
+                  activeTimeIntervals:
+                    items:
+                      type: string
+                    type: array
                   continue:
                     type: boolean
                   groupBy:

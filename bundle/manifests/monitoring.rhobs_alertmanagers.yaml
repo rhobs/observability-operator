@@ -1339,6 +1339,13 @@ spec:
                 x-kubernetes-list-type: map
               image:
                 type: string
+              imagePullPolicy:
+                enum:
+                - ""
+                - Always
+                - Never
+                - IfNotPresent
+                type: string
               imagePullSecrets:
                 items:
                   properties:

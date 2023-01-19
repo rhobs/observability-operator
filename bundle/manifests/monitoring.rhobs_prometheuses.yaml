@@ -490,6 +490,33 @@ spec:
                             type:
                               type: string
                           type: object
+                        basicAuth:
+                          properties:
+                            password:
+                              properties:
+                                key:
+                                  type: string
+                                name:
+                                  type: string
+                                optional:
+                                  type: boolean
+                              required:
+                              - key
+                              type: object
+                              x-kubernetes-map-type: atomic
+                            username:
+                              properties:
+                                key:
+                                  type: string
+                                name:
+                                  type: string
+                                optional:
+                                  type: boolean
+                              required:
+                              - key
+                              type: object
+                              x-kubernetes-map-type: atomic
+                          type: object
                         bearerTokenFile:
                           type: string
                         enableHttp2:
@@ -1434,6 +1461,13 @@ spec:
                 type: boolean
               image:
                 type: string
+              imagePullPolicy:
+                enum:
+                - ""
+                - Always
+                - Never
+                - IfNotPresent
+                type: string
               imagePullSecrets:
                 items:
                   properties:
@@ -2125,6 +2159,10 @@ spec:
                     type: object
                 type: object
                 x-kubernetes-map-type: atomic
+              podTargetLabels:
+                items:
+                  type: string
+                type: array
               portName:
                 type: string
               priorityClassName:
