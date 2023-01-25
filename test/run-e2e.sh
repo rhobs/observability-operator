@@ -295,24 +295,11 @@ wait_for_operators_ready(){
   kubectl wait -n "$OPERATORS_NS" --for=condition=Available deploy/obo-prometheus-operator-admission-webhook --timeout=300s
 }
 
-update_cluster_mon_crds() {
-  # try replacing any installed crds; failure is often because the
-  # CRDs are absent and in that case, try creating and fail if that fails
-
-  kubectl replace -k deploy/crds/kubernetes ||
-    kubectl create -k deploy/crds/kubernetes || return 1
-
-  kubectl wait --for=condition=Established crds --all --timeout=120s
-
-  return 0
-}
-
 deploy_obo(){
   header "Build and Deploy Obo"
 
   delete_olm_subscription || true
   ensure_obo_imgpullpolicy_always_in_yaml
-  update_cluster_mon_crds
   build_bundle
   push_bundle
   run_bundle

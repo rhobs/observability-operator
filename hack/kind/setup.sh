@@ -142,14 +142,6 @@ install_kubectl() {
 
 }
 
-create_platform_mon_crds() {
-  header "Installing Monitoring CRDs"
-
-  kubectl create -k deploy/crds/kubernetes
-  kubectl wait --for=condition=Established crds --all --timeout=120s
-}
-
-
 main() {
   ## NOTE: all paths are relative to the root of the project
   cd "$PROJECT_ROOT_DIR"
@@ -162,7 +154,6 @@ main() {
   label_infra_node
   setup_olm
   run_registry
-  create_platform_mon_crds
 
   header "Waiting for cluster boot to complete ..."
   kubectl wait --for=condition=Ready pods --all --all-namespaces --timeout=300s
