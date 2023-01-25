@@ -3,6 +3,9 @@ kind: Kustomization
 
 resources:
 - ../crds/common
+- min-po-crds
+# NOTE: swap the follwoing line for the one above when the bug above is solved
+# - ../crds/kubernetes
 - ../dependencies
 - ../monitoring
 - ../operator

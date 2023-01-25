@@ -1,0 +1,22 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+# HACK: This hack to use stripped-down-crds works around the following operator-sdk
+# limitation when running a catalog (FBC) image.
+#
+# ❯ ./tmp/bin/operator-sdk run bundle <bundle-image> --install-mode AllNamespaces --namespace operators --skip-tls
+
+# INFO[0016] Creating a File-Based Catalog of the bundle <bundle-image>
+# INFO[0020] Generated a valid File-Based Catalog
+# FATA[0020] Failed to run bundle
+# : create catalog
+# : error creating registry pod: error building registry pod definition
+# : configMap error: error updating ConfigMap
+# : error creating ConfigMap
+# : ConfigMap "operator-sdk-run-bundle-config" is invalid
+# : []: Too long: must have at most 1048576 bytes
+  - https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.63.0-rhobs1/example/stripped-down-crds/all.yaml
+commonLabels:
+  app.kubernetes.io/part-of: observability-operator
