@@ -3,7 +3,7 @@
   k:: {
     prometheusrule: {
       new(name, labels, rules): {
-        apiVersion: 'monitoring.coreos.com/v1',
+        apiVersion: 'monitoring.rhobs/v1',
         kind: 'PrometheusRule',
         metadata: {
           labels: labels,

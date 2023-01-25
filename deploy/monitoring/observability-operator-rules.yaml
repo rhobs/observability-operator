@@ -1,9 +1,5 @@
 ---
-# NOTE: For PrometheusRule ObO uses platform monitoring in OpenShift
-# instead of the forked PO's CRDs. As the ObO bundle ships the forked PO's CRD,
-# these won't be available at the time OLM installs the bundle
-
-apiVersion: monitoring.coreos.com/v1
+apiVersion: monitoring.rhobs/v1
 kind: PrometheusRule
 metadata:
   labels:

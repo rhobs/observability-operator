@@ -6,7 +6,6 @@ resources:
 - observability-operator-cluster-role.yaml
 - observability-operator-cluster-role-binding.yaml
 - observability-operator-service.yaml
-- observability-operator-service-monitor.yaml
 
 images:
 - name: observability-operator
