@@ -5,6 +5,547 @@ metadata:
     alm-examples: |-
       [
         {
+          "apiVersion": "monitoring.rhobs/v1",
+          "kind": "PrometheusRule",
+          "metadata": {
+            "labels": {
+              "app.kubernetes.io/component": "operator",
+              "app.kubernetes.io/name": "observability-operator-alertmanager-rules",
+              "app.kubernetes.io/part-of": "observability-operator",
+              "prometheus": "k8s",
+              "role": "alert-rules"
+            },
+            "name": "observability-operator-alertmanager-rules"
+          },
+          "spec": {
+            "groups": [
+              {
+                "name": "alertmanager.rules",
+                "rules": [
+                  {
+                    "alert": "AlertmanagerFailedReload",
+                    "annotations": {
+                      "description": "Configuration has failed to load for {{$labels.instance}}.",
+                      "summary": "Reloading an Alertmanager configuration has failed."
+                    },
+                    "expr": "# Without max_over_time, failed scrapes could create false negatives, see\n# https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.\nmax_over_time(alertmanager_config_last_reload_successful{job=\"alertmanager\"}[5m]) == 0\n",
+                    "for": "10m",
+                    "labels": {
+                      "severity": "critical"
+                    }
+                  },
+                  {
+                    "alert": "AlertmanagerMembersInconsistent",
+                    "annotations": {
+                      "description": "Alertmanager {{$labels.instance}} has only found {{ $value }} members of the {{$labels.job}} cluster.",
+                      "summary": "A member of an Alertmanager cluster has not found all other cluster members."
+                    },
+                    "expr": "# Without max_over_time, failed scrapes could create false negatives, see\n# https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.\n  max_over_time(alertmanager_cluster_members{job=\"alertmanager\"}[5m])\n\u003c on (job) group_left\n  count by (job) (max_over_time(alertmanager_cluster_members{job=\"alertmanager\"}[5m]))\n",
+                    "for": "15m",
+                    "labels": {
+                      "severity": "critical"
+                    }
+                  },
+                  {
+                    "alert": "AlertmanagerFailedToSendAlerts",
+                    "annotations": {
+                      "description": "Alertmanager {{$labels.instance}} failed to send {{ $value | humanizePercentage }} of notifications to {{ $labels.integration }}.",
+                      "summary": "An Alertmanager instance failed to send notifications."
+                    },
+                    "expr": "(\n  rate(alertmanager_notifications_failed_total{job=\"alertmanager\"}[5m])\n/\n  rate(alertmanager_notifications_total{job=\"alertmanager\"}[5m])\n)\n\u003e 0.01\n",
+                    "for": "5m",
+                    "labels": {
+                      "severity": "warning"
+                    }
+                  },
+                  {
+                    "alert": "AlertmanagerClusterFailedToSendAlerts",
+                    "annotations": {
+                      "description": "The minimum notification failure rate to {{ $labels.integration }} sent from any instance in the {{$labels.job}} cluster is {{ $value | humanizePercentage }}.",
+                      "summary": "All Alertmanager instances in a cluster failed to send notifications to a critical integration."
+                    },
+                    "expr": "min by (job, integration) (\n  rate(alertmanager_notifications_failed_total{job=\"alertmanager\", integration=~`.*`}[5m])\n/\n  rate(alertmanager_notifications_total{job=\"alertmanager\", integration=~`.*`}[5m])\n)\n\u003e 0.01\n",
+                    "for": "5m",
+                    "labels": {
+                      "severity": "critical"
+                    }
+                  },
+                  {
+                    "alert": "AlertmanagerClusterFailedToSendAlerts",
+                    "annotations": {
+                      "description": "The minimum notification failure rate to {{ $labels.integration }} sent from any instance in the {{$labels.job}} cluster is {{ $value | humanizePercentage }}.",
+                      "summary": "All Alertmanager instances in a cluster failed to send notifications to a non-critical integration."
+                    },
+                    "expr": "min by (job, integration) (\n  rate(alertmanager_notifications_failed_total{job=\"alertmanager\", integration!~`.*`}[5m])\n/\n  rate(alertmanager_notifications_total{job=\"alertmanager\", integration!~`.*`}[5m])\n)\n\u003e 0.01\n",
+                    "for": "5m",
+                    "labels": {
+                      "severity": "warning"
+                    }
+                  },
+                  {
+                    "alert": "AlertmanagerConfigInconsistent",
+                    "annotations": {
+                      "description": "Alertmanager instances within the {{$labels.job}} cluster have different configurations.",
+                      "summary": "Alertmanager instances within the same cluster have different configurations."
+                    },
+                    "expr": "count by (job) (\n  count_values by (job) (\"config_hash\", alertmanager_config_hash{job=\"alertmanager\"})\n)\n!= 1\n",
+                    "for": "20m",
+                    "labels": {
+                      "severity": "critical"
+                    }
+                  },
+                  {
+                    "alert": "AlertmanagerClusterDown",
+                    "annotations": {
+                      "description": "{{ $value | humanizePercentage }} of Alertmanager instances within the {{$labels.job}} cluster have been up for less than half of the last 5m.",
+                      "summary": "Half or more of the Alertmanager instances within the same cluster are down."
+                    },
+                    "expr": "(\n  count by (job) (\n    avg_over_time(up{job=\"alertmanager\"}[5m]) \u003c 0.5\n  )\n/\n  count by (job) (\n    up{job=\"alertmanager\"}\n  )\n)\n\u003e= 0.5\n",
+                    "for": "5m",
+                    "labels": {
+                      "severity": "critical"
+                    }
+                  },
+                  {
+                    "alert": "AlertmanagerClusterCrashlooping",
+                    "annotations": {
+                      "description": "{{ $value | humanizePercentage }} of Alertmanager instances within the {{$labels.job}} cluster have restarted at least 5 times in the last 10m.",
+                      "summary": "Half or more of the Alertmanager instances within the same cluster are crashlooping."
+                    },
+                    "expr": "(\n  count by (job) (\n    changes(process_start_time_seconds{job=\"alertmanager\"}[10m]) \u003e 4\n  )\n/\n  count by (job) (\n    up{job=\"alertmanager\"}\n  )\n)\n\u003e= 0.5\n",
+                    "for": "5m",
+                    "labels": {
+                      "severity": "critical"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "apiVersion": "monitoring.rhobs/v1",
+          "kind": "PrometheusRule",
+          "metadata": {
+            "labels": {
+              "app.kubernetes.io/component": "operator",
+              "app.kubernetes.io/name": "observability-operator-prometheus-operator-rules",
+              "app.kubernetes.io/part-of": "observability-operator",
+              "prometheus": "k8s",
+              "role": "alert-rules"
+            },
+            "name": "observability-operator-prometheus-operator-rules"
+          },
+          "spec": {
+            "groups": [
+              {
+                "name": "prometheus-operator",
+                "rules": [
+                  {
+                    "alert": "PrometheusOperatorListErrors",
+                    "annotations": {
+                      "description": "Errors while performing List operations in controller {{$labels.controller}} in {{$labels.namespace}} namespace.",
+                      "summary": "Errors while performing list operations in controller."
+                    },
+                    "expr": "(sum by (controller,namespace) (rate(prometheus_operator_list_operations_failed_total{job=\"prometheus-operator\"}[10m])) / sum by (controller,namespace) (rate(prometheus_operator_list_operations_total{job=\"prometheus-operator\"}[10m]))) \u003e 0.4\n",
+                    "for": "15m",
+                    "labels": {
+                      "severity": "warning"
+                    }
+                  },
+                  {
+                    "alert": "PrometheusOperatorWatchErrors",
+                    "annotations": {
+                      "description": "Errors while performing watch operations in controller {{$labels.controller}} in {{$labels.namespace}} namespace.",
+                      "summary": "Errors while performing watch operations in controller."
+                    },
+                    "expr": "(sum by (controller,namespace) (rate(prometheus_operator_watch_operations_failed_total{job=\"prometheus-operator\"}[10m])) / sum by (controller,namespace) (rate(prometheus_operator_watch_operations_total{job=\"prometheus-operator\"}[10m]))) \u003e 0.4\n",
+                    "for": "15m",
+                    "labels": {
+                      "severity": "warning"
+                    }
+                  },
+                  {
+                    "alert": "PrometheusOperatorSyncFailed",
+                    "annotations": {
+                      "description": "Controller {{ $labels.controller }} in {{ $labels.namespace }} namespace fails to reconcile {{ $value }} objects.",
+                      "summary": "Last controller reconciliation failed"
+                    },
+                    "expr": "min_over_time(prometheus_operator_syncs{status=\"failed\",job=\"prometheus-operator\"}[5m]) \u003e 0\n",
+                    "for": "10m",
+                    "labels": {
+                      "severity": "warning"
+                    }
+                  },
+                  {
+                    "alert": "PrometheusOperatorReconcileErrors",
+                    "annotations": {
+                      "description": "{{ $value | humanizePercentage }} of reconciling operations failed for {{ $labels.controller }} controller in {{ $labels.namespace }} namespace.",
+                      "summary": "Errors while reconciling controller."
+                    },
+                    "expr": "(sum by (controller,namespace) (rate(prometheus_operator_reconcile_errors_total{job=\"prometheus-operator\"}[5m]))) / (sum by (controller,namespace) (rate(prometheus_operator_reconcile_operations_total{job=\"prometheus-operator\"}[5m]))) \u003e 0.1\n",
+                    "for": "10m",
+                    "labels": {
+                      "severity": "warning"
+                    }
+                  },
+                  {
+                    "alert": "PrometheusOperatorNodeLookupErrors",
+                    "annotations": {
+                      "description": "Errors while reconciling Prometheus in {{ $labels.namespace }} Namespace.",
+                      "summary": "Errors while reconciling Prometheus."
+                    },
+                    "expr": "rate(prometheus_operator_node_address_lookup_errors_total{job=\"prometheus-operator\"}[5m]) \u003e 0.1\n",
+                    "for": "10m",
+                    "labels": {
+                      "severity": "warning"
+                    }
+                  },
+                  {
+                    "alert": "PrometheusOperatorNotReady",
+                    "annotations": {
+                      "description": "Prometheus operator in {{ $labels.namespace }} namespace isn't ready to reconcile {{ $labels.controller }} resources.",
+                      "summary": "Prometheus operator not ready"
+                    },
+                    "expr": "min by(namespace, controller) (max_over_time(prometheus_operator_ready{job=\"prometheus-operator\"}[5m]) == 0)\n",
+                    "for": "5m",
+                    "labels": {
+                      "severity": "warning"
+                    }
+                  },
+                  {
+                    "alert": "PrometheusOperatorRejectedResources",
+                    "annotations": {
+                      "description": "Prometheus operator in {{ $labels.namespace }} namespace rejected {{ printf \"%0.0f\" $value }} {{ $labels.controller }}/{{ $labels.resource }} resources.",
+                      "summary": "Resources rejected by Prometheus operator"
+                    },
+                    "expr": "min_over_time(prometheus_operator_managed_resources{state=\"rejected\",job=\"prometheus-operator\"}[5m]) \u003e 0\n",
+                    "for": "5m",
+                    "labels": {
+                      "severity": "warning"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "config-reloaders",
+                "rules": [
+                  {
+                    "alert": "ConfigReloaderSidecarErrors",
+                    "annotations": {
+                      "description": "Errors encountered while the {{$labels.pod}} config-reloader sidecar attempts to sync config in {{$labels.namespace}} namespace.\nAs a result, configuration for service running in {{$labels.pod}} may be stale and cannot be updated anymore.",
+                      "summary": "config-reloader sidecar has not had a successful reload for 10m"
+                    },
+                    "expr": "max_over_time(reloader_last_reload_successful{namespace=~\".+\"}[5m]) == 0\n",
+                    "for": "10m",
+                    "labels": {
+                      "severity": "warning"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "apiVersion": "monitoring.rhobs/v1",
+          "kind": "PrometheusRule",
+          "metadata": {
+            "labels": {
+              "app.kubernetes.io/component": "operator",
+              "app.kubernetes.io/name": "observability-operator-prometheus-rules",
+              "app.kubernetes.io/part-of": "observability-operator",
+              "prometheus": "k8s",
+              "role": "alert-rules"
+            },
+            "name": "observability-operator-prometheus-rules"
+          },
+          "spec": {
+            "groups": [
+              {
+                "name": "prometheus",
+                "rules": [
+                  {
+                    "alert": "PrometheusBadConfig",
+                    "annotations": {
+                      "description": "Prometheus {{$labels.instance}} has failed to reload its configuration.",
+                      "summary": "Failed Prometheus configuration reload."
+                    },
+                    "expr": "# Without max_over_time, failed scrapes could create false negatives, see\n# https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.\nmax_over_time(prometheus_config_last_reload_successful{job=\"prometheus\"}[5m]) == 0\n",
+                    "for": "10m",
+                    "labels": {
+                      "severity": "critical"
+                    }
+                  },
+                  {
+                    "alert": "PrometheusNotificationQueueRunningFull",
+                    "annotations": {
+                      "description": "Alert notification queue of Prometheus {{$labels.instance}} is running full.",
+                      "summary": "Prometheus alert notification queue predicted to run full in less than 30m."
+                    },
+                    "expr": "# Without min_over_time, failed scrapes could create false negatives, see\n# https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.\n(\n  predict_linear(prometheus_notifications_queue_length{job=\"prometheus\"}[5m], 60 * 30)\n\u003e\n  min_over_time(prometheus_notifications_queue_capacity{job=\"prometheus\"}[5m])\n)\n",
+                    "for": "15m",
+                    "labels": {
+                      "severity": "warning"
+                    }
+                  },
+                  {
+                    "alert": "PrometheusErrorSendingAlertsToSomeAlertmanagers",
+                    "annotations": {
+                      "description": "{{ printf \"%.1f\" $value }}% errors while sending alerts from Prometheus {{$labels.instance}} to Alertmanager {{$labels.alertmanager}}.",
+                      "summary": "Prometheus has encountered more than 1% errors sending alerts to a specific Alertmanager."
+                    },
+                    "expr": "(\n  rate(prometheus_notifications_errors_total{job=\"prometheus\"}[5m])\n/\n  rate(prometheus_notifications_sent_total{job=\"prometheus\"}[5m])\n)\n* 100\n\u003e 1\n",
+                    "for": "15m",
+                    "labels": {
+                      "severity": "warning"
+                    }
+                  },
+                  {
+                    "alert": "PrometheusNotConnectedToAlertmanagers",
+                    "annotations": {
+                      "description": "Prometheus {{$labels.instance}} is not connected to any Alertmanagers.",
+                      "summary": "Prometheus is not connected to any Alertmanagers."
+                    },
+                    "expr": "# Without max_over_time, failed scrapes could create false negatives, see\n# https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.\nmax_over_time(prometheus_notifications_alertmanagers_discovered{job=\"prometheus\"}[5m]) \u003c 1\n",
+                    "for": "10m",
+                    "labels": {
+                      "severity": "warning"
+                    }
+                  },
+                  {
+                    "alert": "PrometheusTSDBReloadsFailing",
+                    "annotations": {
+                      "description": "Prometheus {{$labels.instance}} has detected {{$value | humanize}} reload failures over the last 3h.",
+                      "summary": "Prometheus has issues reloading blocks from disk."
+                    },
+                    "expr": "increase(prometheus_tsdb_reloads_failures_total{job=\"prometheus\"}[3h]) \u003e 0\n",
+                    "for": "4h",
+                    "labels": {
+                      "severity": "warning"
+                    }
+                  },
+                  {
+                    "alert": "PrometheusTSDBCompactionsFailing",
+                    "annotations": {
+                      "description": "Prometheus {{$labels.instance}} has detected {{$value | humanize}} compaction failures over the last 3h.",
+                      "summary": "Prometheus has issues compacting blocks."
+                    },
+                    "expr": "increase(prometheus_tsdb_compactions_failed_total{job=\"prometheus\"}[3h]) \u003e 0\n",
+                    "for": "4h",
+                    "labels": {
+                      "severity": "warning"
+                    }
+                  },
+                  {
+                    "alert": "PrometheusNotIngestingSamples",
+                    "annotations": {
+                      "description": "Prometheus {{$labels.instance}} is not ingesting samples.",
+                      "summary": "Prometheus is not ingesting samples."
+                    },
+                    "expr": "(\n  rate(prometheus_tsdb_head_samples_appended_total{job=\"prometheus\"}[5m]) \u003c= 0\nand\n  (\n    sum without(scrape_job) (prometheus_target_metadata_cache_entries{job=\"prometheus\"}) \u003e 0\n  or\n    sum without(rule_group) (prometheus_rule_group_rules{job=\"prometheus\"}) \u003e 0\n  )\n)\n",
+                    "for": "10m",
+                    "labels": {
+                      "severity": "warning"
+                    }
+                  },
+                  {
+                    "alert": "PrometheusDuplicateTimestamps",
+                    "annotations": {
+                      "description": "Prometheus {{$labels.instance}} is dropping {{ printf \"%.4g\" $value  }} samples/s with different values but duplicated timestamp.",
+                      "summary": "Prometheus is dropping samples with duplicate timestamps."
+                    },
+                    "expr": "rate(prometheus_target_scrapes_sample_duplicate_timestamp_total{job=\"prometheus\"}[5m]) \u003e 0\n",
+                    "for": "10m",
+                    "labels": {
+                      "severity": "warning"
+                    }
+                  },
+                  {
+                    "alert": "PrometheusOutOfOrderTimestamps",
+                    "annotations": {
+                      "description": "Prometheus {{$labels.instance}} is dropping {{ printf \"%.4g\" $value  }} samples/s with timestamps arriving out of order.",
+                      "summary": "Prometheus drops samples with out-of-order timestamps."
+                    },
+                    "expr": "rate(prometheus_target_scrapes_sample_out_of_order_total{job=\"prometheus\"}[5m]) \u003e 0\n",
+                    "for": "10m",
+                    "labels": {
+                      "severity": "warning"
+                    }
+                  },
+                  {
+                    "alert": "PrometheusRemoteStorageFailures",
+                    "annotations": {
+                      "description": "Prometheus {{$labels.instance}} failed to send {{ printf \"%.1f\" $value }}% of the samples to {{ $labels.remote_name}}:{{ $labels.url }}",
+                      "summary": "Prometheus fails to send samples to remote storage."
+                    },
+                    "expr": "(\n  (rate(prometheus_remote_storage_failed_samples_total{job=\"prometheus\"}[5m]) or rate(prometheus_remote_storage_samples_failed_total{job=\"prometheus\"}[5m]))\n/\n  (\n    (rate(prometheus_remote_storage_failed_samples_total{job=\"prometheus\"}[5m]) or rate(prometheus_remote_storage_samples_failed_total{job=\"prometheus\"}[5m]))\n  +\n    (rate(prometheus_remote_storage_succeeded_samples_total{job=\"prometheus\"}[5m]) or rate(prometheus_remote_storage_samples_total{job=\"prometheus\"}[5m]))\n  )\n)\n* 100\n\u003e 1\n",
+                    "for": "15m",
+                    "labels": {
+                      "severity": "critical"
+                    }
+                  },
+                  {
+                    "alert": "PrometheusRemoteWriteBehind",
+                    "annotations": {
+                      "description": "Prometheus {{$labels.instance}} remote write is {{ printf \"%.1f\" $value }}s behind for {{ $labels.remote_name}}:{{ $labels.url }}.",
+                      "summary": "Prometheus remote write is behind."
+                    },
+                    "expr": "# Without max_over_time, failed scrapes could create false negatives, see\n# https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.\n(\n  max_over_time(prometheus_remote_storage_highest_timestamp_in_seconds{job=\"prometheus\"}[5m])\n- ignoring(remote_name, url) group_right\n  max_over_time(prometheus_remote_storage_queue_highest_sent_timestamp_seconds{job=\"prometheus\"}[5m])\n)\n\u003e 120\n",
+                    "for": "15m",
+                    "labels": {
+                      "severity": "critical"
+                    }
+                  },
+                  {
+                    "alert": "PrometheusRemoteWriteDesiredShards",
+                    "annotations": {
+                      "description": "Prometheus {{$labels.instance}} remote write desired shards calculation wants to run {{ $value }} shards for queue {{ $labels.remote_name}}:{{ $labels.url }}, which is more than the max of {{ printf `prometheus_remote_storage_shards_max{instance=\"%s\",job=\"prometheus\"}` $labels.instance | query | first | value }}.",
+                      "summary": "Prometheus remote write desired shards calculation wants to run more than configured max shards."
+                    },
+                    "expr": "# Without max_over_time, failed scrapes could create false negatives, see\n# https://www.robustperception.io/alerting-on-gauges-in-prometheus-2-0 for details.\n(\n  max_over_time(prometheus_remote_storage_shards_desired{job=\"prometheus\"}[5m])\n\u003e\n  max_over_time(prometheus_remote_storage_shards_max{job=\"prometheus\"}[5m])\n)\n",
+                    "for": "15m",
+                    "labels": {
+                      "severity": "warning"
+                    }
+                  },
+                  {
+                    "alert": "PrometheusRuleFailures",
+                    "annotations": {
+                      "description": "Prometheus {{$labels.instance}} has failed to evaluate {{ printf \"%.0f\" $value }} rules in the last 5m.",
+                      "summary": "Prometheus is failing rule evaluations."
+                    },
+                    "expr": "increase(prometheus_rule_evaluation_failures_total{job=\"prometheus\"}[5m]) \u003e 0\n",
+                    "for": "15m",
+                    "labels": {
+                      "severity": "critical"
+                    }
+                  },
+                  {
+                    "alert": "PrometheusMissingRuleEvaluations",
+                    "annotations": {
+                      "description": "Prometheus {{$labels.instance}} has missed {{ printf \"%.0f\" $value }} rule group evaluations in the last 5m.",
+                      "summary": "Prometheus is missing rule evaluations due to slow rule group evaluation."
+                    },
+                    "expr": "increase(prometheus_rule_group_iterations_missed_total{job=\"prometheus\"}[5m]) \u003e 0\n",
+                    "for": "15m",
+                    "labels": {
+                      "severity": "warning"
+                    }
+                  },
+                  {
+                    "alert": "PrometheusTargetLimitHit",
+                    "annotations": {
+                      "description": "Prometheus {{$labels.instance}} has dropped {{ printf \"%.0f\" $value }} targets because the number of targets exceeded the configured target_limit.",
+                      "summary": "Prometheus has dropped targets because some scrape configs have exceeded the targets limit."
+                    },
+                    "expr": "increase(prometheus_target_scrape_pool_exceeded_target_limit_total{job=\"prometheus\"}[5m]) \u003e 0\n",
+                    "for": "15m",
+                    "labels": {
+                      "severity": "warning"
+                    }
+                  },
+                  {
+                    "alert": "PrometheusLabelLimitHit",
+                    "annotations": {
+                      "description": "Prometheus {{$labels.instance}} has dropped {{ printf \"%.0f\" $value }} targets because some samples exceeded the configured label_limit, label_name_length_limit or label_value_length_limit.",
+                      "summary": "Prometheus has dropped targets because some scrape configs have exceeded the labels limit."
+                    },
+                    "expr": "increase(prometheus_target_scrape_pool_exceeded_label_limits_total{job=\"prometheus\"}[5m]) \u003e 0\n",
+                    "for": "15m",
+                    "labels": {
+                      "severity": "warning"
+                    }
+                  },
+                  {
+                    "alert": "PrometheusTargetSyncFailure",
+                    "annotations": {
+                      "description": "{{ printf \"%.0f\" $value }} targets in Prometheus {{$labels.instance}} have failed to sync because invalid configuration was supplied.",
+                      "summary": "Prometheus has failed to sync targets."
+                    },
+                    "expr": "increase(prometheus_target_sync_failed_total{job=\"prometheus\"}[30m]) \u003e 0\n",
+                    "for": "5m",
+                    "labels": {
+                      "severity": "critical"
+                    }
+                  },
+                  {
+                    "alert": "PrometheusErrorSendingAlertsToAnyAlertmanager",
+                    "annotations": {
+                      "description": "{{ printf \"%.1f\" $value }}% minimum errors while sending alerts from Prometheus {{$labels.instance}} to any Alertmanager.",
+                      "summary": "Prometheus encounters more than 3% errors sending alerts to any Alertmanager."
+                    },
+                    "expr": "min without (alertmanager) (\n  rate(prometheus_notifications_errors_total{job=\"prometheus\",alertmanager!~``}[5m])\n/\n  rate(prometheus_notifications_sent_total{job=\"prometheus\",alertmanager!~``}[5m])\n)\n* 100\n\u003e 3\n",
+                    "for": "15m",
+                    "labels": {
+                      "severity": "critical"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "apiVersion": "monitoring.rhobs/v1",
+          "kind": "PrometheusRule",
+          "metadata": {
+            "labels": {
+              "app.kubernetes.io/component": "operator",
+              "app.kubernetes.io/name": "observability-operator-rules",
+              "app.kubernetes.io/part-of": "observability-operator",
+              "prometheus": "k8s",
+              "role": "alert-rules"
+            },
+            "name": "observability-operator-rules"
+          },
+          "spec": {
+            "groups": [
+              {
+                "name": "observability-operator.rules",
+                "rules": [
+                  {
+                    "alert": "ObservabilityOperatorReconcileErrors",
+                    "annotations": {
+                      "description": "Observability Operator controller - {{ $labels.controller }} fails to reconcile.\nInspect the observability-operator log for potential root causes.\n",
+                      "summary": "Observability Operator controller - {{ $labels.controller }} fails to reconcile"
+                    },
+                    "expr": "increase(controller_runtime_reconcile_errors_total{job=\"observability-operator\"}[15m]) \u003e 0\n",
+                    "for": "15m",
+                    "labels": {
+                      "severity": "warning"
+                    }
+                  },
+                  {
+                    "alert": "ObservabilityOperatorReconcileLongerThan10Min",
+                    "annotations": {
+                      "description": "Observability Operator controller reconcilation takes longer than 10 minutes for the controller - {{ $labels.controller }}.\nInspect the observability-operator log for potential root causes.\n",
+                      "summary": "Observability Operator controller - {{ $labels.controller }} reconcilation takes too long to reconcile"
+                    },
+                    "expr": "rate(controller_runtime_reconcile_time_seconds_sum{job=\"observability-operator\"}[5m]) /\nrate(controller_runtime_reconcile_time_seconds_count{job=\"observability-operator\"}[5m])\n\u003e 600\n",
+                    "for": "10m",
+                    "labels": {
+                      "severity": "warning"
+                    }
+                  },
+                  {
+                    "alert": "ObservabilityOperatorBacklogNotDrained",
+                    "annotations": {
+                      "description": "The backlog of Observability Operator controller - {{ $labels.name }} is not getting drained; an indication that reconcile loop may be stuck\nInspect the observability-operator log for potential root causes.\n",
+                      "summary": "Observability Operator controller - {{ $labels.name }} backlog is not being drained."
+                    },
+                    "expr": "rate(workqueue_depth{job=\"observability-operator\"}[15m]) \u003e 0\n",
+                    "for": "15m",
+                    "labels": {
+                      "severity": "critical"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
           "apiVersion": "monitoring.rhobs/v1alpha1",
           "kind": "MonitoringStack",
           "metadata": {
