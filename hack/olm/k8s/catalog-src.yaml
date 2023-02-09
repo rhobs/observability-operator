@@ -4,7 +4,7 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
   annotations:
-  name: observability-operator-catalog
+  name: observability-operator
   namespace: operators
 spec:
   displayName: Observability Operator - Test
