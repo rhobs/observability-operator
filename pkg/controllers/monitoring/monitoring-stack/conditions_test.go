@@ -13,6 +13,7 @@ func TestUpdateAvailable(t *testing.T) {
 	tt := []struct {
 		name               string
 		prometheus         monv1.Prometheus
+		alertmanager       *monv1.Alertmanager
 		previousConditions []v1alpha1.Condition
 		generation         int64
 		expectedResult     v1alpha1.Condition
@@ -39,7 +40,8 @@ func TestUpdateAvailable(t *testing.T) {
 							Status:             monv1.ConditionTrue,
 							ObservedGeneration: 1,
 						},
-					}}},
+					}},
+			},
 			generation: 1,
 			expectedResult: v1alpha1.Condition{
 				Type:               v1alpha1.AvailableCondition,
@@ -133,10 +135,136 @@ func TestUpdateAvailable(t *testing.T) {
 				Message:            AvailableMessage,
 			},
 		},
+		{
+			name: "cannot read Alertmanager conditions",
+			previousConditions: []v1alpha1.Condition{
+				{
+					Type:               v1alpha1.AvailableCondition,
+					Status:             v1alpha1.ConditionTrue,
+					ObservedGeneration: 1,
+					Reason:             AvailableReason,
+					Message:            AvailableMessage,
+				},
+			},
+			generation: 1,
+			prometheus: monv1.Prometheus{
+				ObjectMeta: metav1.ObjectMeta{
+					Generation: 1,
+				},
+				Status: monv1.PrometheusStatus{
+					Conditions: []monv1.Condition{
+						{
+							Type:               monv1.Available,
+							Status:             monv1.ConditionTrue,
+							ObservedGeneration: 1,
+						},
+					}},
+			},
+			alertmanager: &monv1.Alertmanager{},
+			expectedResult: v1alpha1.Condition{
+				Type:               v1alpha1.AvailableCondition,
+				Status:             v1alpha1.ConditionUnknown,
+				ObservedGeneration: 1,
+				Reason:             AlertmanagerNotAvailable,
+				Message:            CannotReadAlertmanagerConditions,
+			},
+		},
+		{
+			name: "degraded Alertmanager condition",
+			previousConditions: []v1alpha1.Condition{
+				{
+					Type:               v1alpha1.AvailableCondition,
+					Status:             v1alpha1.ConditionTrue,
+					ObservedGeneration: 1,
+					Reason:             AvailableReason,
+					Message:            AvailableMessage,
+				},
+			},
+			generation: 1,
+			prometheus: monv1.Prometheus{
+				ObjectMeta: metav1.ObjectMeta{
+					Generation: 1,
+				},
+				Status: monv1.PrometheusStatus{
+					Conditions: []monv1.Condition{
+						{
+							Type:               monv1.Available,
+							Status:             monv1.ConditionTrue,
+							ObservedGeneration: 1,
+						},
+					}},
+			},
+			alertmanager: &monv1.Alertmanager{
+				ObjectMeta: metav1.ObjectMeta{
+					Generation: 1,
+				},
+				Status: monv1.AlertmanagerStatus{
+					Conditions: []monv1.Condition{
+						{
+							Type:               monv1.Available,
+							Status:             monv1.ConditionDegraded,
+							ObservedGeneration: 1,
+						},
+					},
+				},
+			},
+			expectedResult: v1alpha1.Condition{
+				Type:               v1alpha1.AvailableCondition,
+				Status:             v1alpha1.ConditionFalse,
+				ObservedGeneration: 1,
+				Reason:             AlertmanagerDegraded,
+			},
+		},
+		{
+			name: "Alertmanager not available",
+			previousConditions: []v1alpha1.Condition{
+				{
+					Type:               v1alpha1.AvailableCondition,
+					Status:             v1alpha1.ConditionTrue,
+					ObservedGeneration: 1,
+					Reason:             AvailableReason,
+					Message:            AvailableMessage,
+				},
+			},
+			generation: 1,
+			prometheus: monv1.Prometheus{
+				ObjectMeta: metav1.ObjectMeta{
+					Generation: 1,
+				},
+				Status: monv1.PrometheusStatus{
+					Conditions: []monv1.Condition{
+						{
+							Type:               monv1.Available,
+							Status:             monv1.ConditionTrue,
+							ObservedGeneration: 1,
+						},
+					}},
+			},
+			alertmanager: &monv1.Alertmanager{
+				ObjectMeta: metav1.ObjectMeta{
+					Generation: 1,
+				},
+				Status: monv1.AlertmanagerStatus{
+					Conditions: []monv1.Condition{
+						{
+							Type:               monv1.Available,
+							Status:             monv1.ConditionFalse,
+							ObservedGeneration: 1,
+						},
+					},
+				},
+			},
+			expectedResult: v1alpha1.Condition{
+				Type:               v1alpha1.AvailableCondition,
+				Status:             v1alpha1.ConditionFalse,
+				ObservedGeneration: 1,
+				Reason:             AlertmanagerNotAvailable,
+			},
+		},
 	}
 
 	for _, test := range tt {
-		res := updateAvailable(test.previousConditions, test.prometheus, test.generation)
+		res := updateAvailable(test.previousConditions, test.prometheus, test.alertmanager, test.generation)
 		assert.Check(t, test.expectedResult.Equal(res), "%s - expected:\n %v\n and got:\n %v\n", test.name, test.expectedResult, res)
 	}
 }
@@ -145,6 +273,7 @@ func TestUpdateReconciled(t *testing.T) {
 	tt := []struct {
 		name               string
 		prometheus         monv1.Prometheus
+		alertmanager       *monv1.Alertmanager
 		previousConditions []v1alpha1.Condition
 		generation         int64
 		recError           error
@@ -270,10 +399,112 @@ func TestUpdateReconciled(t *testing.T) {
 				Message:            SuccessfullyReconciledMessage,
 			},
 		},
+		{
+			name: "cannot read Alertmanager conditions",
+			previousConditions: []v1alpha1.Condition{
+				{
+					Type:               v1alpha1.ReconciledCondition,
+					Status:             v1alpha1.ConditionTrue,
+					ObservedGeneration: 1,
+					Reason:             ReconciledReason,
+					Message:            SuccessfullyReconciledMessage,
+				},
+			},
+			generation: 1,
+			prometheus: monv1.Prometheus{
+				ObjectMeta: metav1.ObjectMeta{
+					Generation: 1,
+				},
+				Status: monv1.PrometheusStatus{
+					Conditions: []monv1.Condition{
+						{
+							Type:               monv1.Available,
+							Status:             monv1.ConditionTrue,
+							ObservedGeneration: 1,
+						},
+					}},
+			},
+			alertmanager: &monv1.Alertmanager{},
+			expectedResult: v1alpha1.Condition{
+				Type:               v1alpha1.ReconciledCondition,
+				Status:             v1alpha1.ConditionUnknown,
+				ObservedGeneration: 1,
+				Reason:             AlertmanagerNotReconciled,
+				Message:            CannotReadAlertmanagerConditions,
+			},
+		},
+		{
+			name: "degraded Alertmanager condition",
+			previousConditions: []v1alpha1.Condition{
+				{
+					Type:               v1alpha1.ReconciledCondition,
+					Status:             v1alpha1.ConditionTrue,
+					ObservedGeneration: 1,
+					Reason:             ReconciledReason,
+					Message:            SuccessfullyReconciledMessage,
+				},
+			},
+			generation: 1,
+			prometheus: monv1.Prometheus{},
+			alertmanager: &monv1.Alertmanager{
+				ObjectMeta: metav1.ObjectMeta{
+					Generation: 1,
+				},
+				Status: monv1.AlertmanagerStatus{
+					Conditions: []monv1.Condition{
+						{
+							Type:               monv1.Reconciled,
+							Status:             monv1.ConditionDegraded,
+							ObservedGeneration: 1,
+						},
+					},
+				},
+			},
+			expectedResult: v1alpha1.Condition{
+				Type:               v1alpha1.ReconciledCondition,
+				Status:             v1alpha1.ConditionFalse,
+				ObservedGeneration: 1,
+				Reason:             AlertmanagerNotReconciled,
+			},
+		},
+		{
+			name: "Alertmanager not reconciled",
+			previousConditions: []v1alpha1.Condition{
+				{
+					Type:               v1alpha1.ReconciledCondition,
+					Status:             v1alpha1.ConditionTrue,
+					ObservedGeneration: 1,
+					Reason:             AvailableReason,
+					Message:            AvailableMessage,
+				},
+			},
+			generation: 1,
+			prometheus: monv1.Prometheus{},
+			alertmanager: &monv1.Alertmanager{
+				ObjectMeta: metav1.ObjectMeta{
+					Generation: 1,
+				},
+				Status: monv1.AlertmanagerStatus{
+					Conditions: []monv1.Condition{
+						{
+							Type:               monv1.Reconciled,
+							Status:             monv1.ConditionFalse,
+							ObservedGeneration: 1,
+						},
+					},
+				},
+			},
+			expectedResult: v1alpha1.Condition{
+				Type:               v1alpha1.ReconciledCondition,
+				Status:             v1alpha1.ConditionFalse,
+				ObservedGeneration: 1,
+				Reason:             AlertmanagerNotReconciled,
+			},
+		},
 	}
 
 	for _, test := range tt {
-		res := updateReconciled(test.previousConditions, test.prometheus, test.generation, test.recError)
+		res := updateReconciled(test.previousConditions, test.prometheus, test.alertmanager, test.generation, test.recError)
 		assert.Check(t, test.expectedResult.Equal(res), "%s - expected:\n %v\n and got:\n %v\n", test.name, test.expectedResult, res)
 	}
 }

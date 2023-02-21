@@ -152,18 +152,21 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 }
 
 func (rm resourceManager) updateStatus(ctx context.Context, req ctrl.Request, ms *stack.MonitoringStack, recError error) ctrl.Result {
-	var prom monv1.Prometheus
 	logger := rm.logger.WithValues("stack", req.NamespacedName)
-	key := client.ObjectKey{
-		Name:      ms.Name,
-		Namespace: ms.Namespace,
-	}
-	err := rm.k8sClient.Get(ctx, key, &prom)
+	prom, err := rm.getPrometheus(ctx, ms)
 	if err != nil {
 		logger.Info("Failed to get prometheus object", "err", err)
 		return ctrl.Result{RequeueAfter: 2 * time.Second}
 	}
-	ms.Status.Conditions = updateConditions(ms, prom, recError)
+	var am *monv1.Alertmanager
+	if !ms.Spec.AlertmanagerConfig.Disabled {
+		am, err = rm.getAlertmanager(ctx, ms)
+		if err != nil {
+			logger.Info("Failed to get alertmanager object", "err", err)
+			return ctrl.Result{RequeueAfter: 2 * time.Second}
+		}
+	}
+	ms.Status.Conditions = updateConditions(ms, *prom, am, recError)
 	err = rm.k8sClient.Status().Update(ctx, ms)
 	if err != nil {
 		logger.Info("Failed to update status", "err", err)
@@ -187,4 +190,30 @@ func (rm resourceManager) getStack(ctx context.Context, req ctrl.Request) (*stac
 	}
 
 	return &ms, nil
+}
+
+func (rm resourceManager) getPrometheus(ctx context.Context, ms *stack.MonitoringStack) (*monv1.Prometheus, error) {
+	var prom monv1.Prometheus
+	key := client.ObjectKey{
+		Name:      ms.Name,
+		Namespace: ms.Namespace,
+	}
+	err := rm.k8sClient.Get(ctx, key, &prom)
+	if err != nil {
+		return nil, err
+	}
+	return &prom, nil
+}
+
+func (rm resourceManager) getAlertmanager(ctx context.Context, ms *stack.MonitoringStack) (*monv1.Alertmanager, error) {
+	var am monv1.Alertmanager
+	key := client.ObjectKey{
+		Name:      ms.Name,
+		Namespace: ms.Namespace,
+	}
+	err := rm.k8sClient.Get(ctx, key, &am)
+	if err != nil {
+		return nil, err
+	}
+	return &am, nil
 }
