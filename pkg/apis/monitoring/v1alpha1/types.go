@@ -58,14 +58,15 @@ type MonitoringStackSpec struct {
 	LogLevel LogLevel `json:"logLevel,omitempty"`
 
 	// Label selector for Monitoring Stack Resources.
-	// Set to the empty LabelSelector ({}) to monitoring everything.
-	// Set to null to disable service discovery.
+	// To monitor everything, set to empty map selector. E.g. resourceSelector: {}.
+	// To disable service discovery, set to null. E.g. resourceSelector:.
 	// +optional
 	// +nullable
 	ResourceSelector *metav1.LabelSelector `json:"resourceSelector"`
 
 	// Namespace selector for Monitoring Stack Resources.
-	// If left empty the Monitoring Stack will only match resources in the namespace it was created in.
+	// To monitor everything, set to empty map selector. E.g. namespaceSelector: {}.
+	// To monitor resources in the namespace where Monitoring Stack was created in, set to null. E.g. namespaceSelector:.
 	// +optional
 	NamespaceSelector *metav1.LabelSelector `json:"namespaceSelector,omitempty"`
 
