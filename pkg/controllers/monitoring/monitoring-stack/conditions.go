@@ -80,7 +80,7 @@ func updateAvailable(conditions []v1alpha1.Condition, prom monv1.Prometheus, gen
 		}
 	}
 
-	prometheusAvailable, err := getPrometheusCondition(prom.Status.Conditions, monv1.PrometheusAvailable)
+	prometheusAvailable, err := getPrometheusCondition(prom.Status.Conditions, monv1.Available)
 
 	if err != nil {
 		ac.Status = v1alpha1.ConditionUnknown
@@ -95,9 +95,9 @@ func updateAvailable(conditions []v1alpha1.Condition, prom monv1.Prometheus, gen
 		return ac
 	}
 
-	if prometheusAvailable.Status != monv1.PrometheusConditionTrue {
+	if prometheusAvailable.Status != monv1.ConditionTrue {
 		ac.Status = prometheusStatusToMSStatus(prometheusAvailable.Status)
-		if prometheusAvailable.Status == monv1.PrometheusConditionDegraded {
+		if prometheusAvailable.Status == monv1.ConditionDegraded {
 			ac.Reason = PrometheusDegraded
 		} else {
 			ac.Reason = PrometheusNotAvailable
@@ -133,7 +133,7 @@ func updateReconciled(conditions []v1alpha1.Condition, prom monv1.Prometheus, ge
 		rc.LastTransitionTime = metav1.Now()
 		return rc
 	}
-	prometheusReconciled, reconcileErr := getPrometheusCondition(prom.Status.Conditions, monv1.PrometheusReconciled)
+	prometheusReconciled, reconcileErr := getPrometheusCondition(prom.Status.Conditions, monv1.Reconciled)
 
 	if reconcileErr != nil {
 		rc.Status = v1alpha1.ConditionUnknown
@@ -147,7 +147,7 @@ func updateReconciled(conditions []v1alpha1.Condition, prom monv1.Prometheus, ge
 		return rc
 	}
 
-	if prometheusReconciled.Status != monv1.PrometheusConditionTrue {
+	if prometheusReconciled.Status != monv1.ConditionTrue {
 		rc.Status = prometheusStatusToMSStatus(prometheusReconciled.Status)
 		rc.Reason = PrometheusNotReconciled
 		rc.Message = prometheusReconciled.Message
@@ -162,7 +162,7 @@ func updateReconciled(conditions []v1alpha1.Condition, prom monv1.Prometheus, ge
 	return rc
 }
 
-func getPrometheusCondition(prometheusConditions []monv1.PrometheusCondition, t monv1.PrometheusConditionType) (*monv1.PrometheusCondition, error) {
+func getPrometheusCondition(prometheusConditions []monv1.Condition, t monv1.ConditionType) (*monv1.Condition, error) {
 	for _, c := range prometheusConditions {
 		if c.Type == t {
 			return &c, nil
@@ -171,17 +171,17 @@ func getPrometheusCondition(prometheusConditions []monv1.PrometheusCondition, t 
 	return nil, fmt.Errorf("cannot find condition %v", t)
 }
 
-func prometheusStatusToMSStatus(ps monv1.PrometheusConditionStatus) v1alpha1.ConditionStatus {
+func prometheusStatusToMSStatus(ps monv1.ConditionStatus) v1alpha1.ConditionStatus {
 	switch ps {
 	// Prometheus "Available" condition with status "Degraded" is reported as "Available" condition
 	// with status false
-	case monv1.PrometheusConditionDegraded:
+	case monv1.ConditionDegraded:
 		return v1alpha1.ConditionFalse
-	case monv1.PrometheusConditionTrue:
+	case monv1.ConditionTrue:
 		return v1alpha1.ConditionTrue
-	case monv1.PrometheusConditionFalse:
+	case monv1.ConditionFalse:
 		return v1alpha1.ConditionFalse
-	case monv1.PrometheusConditionUnknown:
+	case monv1.ConditionUnknown:
 		return v1alpha1.ConditionUnknown
 	default:
 		return v1alpha1.ConditionUnknown

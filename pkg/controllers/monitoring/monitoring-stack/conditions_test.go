@@ -33,10 +33,10 @@ func TestUpdateAvailable(t *testing.T) {
 					Generation: 1,
 				},
 				Status: monv1.PrometheusStatus{
-					Conditions: []monv1.PrometheusCondition{
+					Conditions: []monv1.Condition{
 						{
-							Type:               monv1.PrometheusAvailable,
-							Status:             monv1.PrometheusConditionTrue,
+							Type:               monv1.Available,
+							Status:             monv1.ConditionTrue,
 							ObservedGeneration: 1,
 						},
 					}}},
@@ -87,10 +87,10 @@ func TestUpdateAvailable(t *testing.T) {
 					Generation: 1,
 				},
 				Status: monv1.PrometheusStatus{
-					Conditions: []monv1.PrometheusCondition{
+					Conditions: []monv1.Condition{
 						{
-							Type:               monv1.PrometheusAvailable,
-							Status:             monv1.PrometheusConditionDegraded,
+							Type:               monv1.Available,
+							Status:             monv1.ConditionDegraded,
 							ObservedGeneration: 1,
 						},
 					}}},
@@ -118,10 +118,10 @@ func TestUpdateAvailable(t *testing.T) {
 					Generation: 3,
 				},
 				Status: monv1.PrometheusStatus{
-					Conditions: []monv1.PrometheusCondition{
+					Conditions: []monv1.Condition{
 						{
-							Type:               monv1.PrometheusAvailable,
-							Status:             monv1.PrometheusConditionFalse,
+							Type:               monv1.Available,
+							Status:             monv1.ConditionFalse,
 							ObservedGeneration: 2,
 						},
 					}}},
@@ -168,10 +168,10 @@ func TestUpdateReconciled(t *testing.T) {
 					Generation: 1,
 				},
 				Status: monv1.PrometheusStatus{
-					Conditions: []monv1.PrometheusCondition{
+					Conditions: []monv1.Condition{
 						{
-							Type:               monv1.PrometheusReconciled,
-							Status:             monv1.PrometheusConditionTrue,
+							Type:               monv1.Reconciled,
+							Status:             monv1.ConditionTrue,
 							ObservedGeneration: 1,
 						},
 					}}},
@@ -223,10 +223,10 @@ func TestUpdateReconciled(t *testing.T) {
 					Generation: 1,
 				},
 				Status: monv1.PrometheusStatus{
-					Conditions: []monv1.PrometheusCondition{
+					Conditions: []monv1.Condition{
 						{
-							Type:               monv1.PrometheusReconciled,
-							Status:             monv1.PrometheusConditionDegraded,
+							Type:               monv1.Reconciled,
+							Status:             monv1.ConditionDegraded,
 							ObservedGeneration: 1,
 						},
 					}}},
@@ -255,10 +255,10 @@ func TestUpdateReconciled(t *testing.T) {
 					Generation: 3,
 				},
 				Status: monv1.PrometheusStatus{
-					Conditions: []monv1.PrometheusCondition{
+					Conditions: []monv1.Condition{
 						{
-							Type:               monv1.PrometheusReconciled,
-							Status:             monv1.PrometheusConditionFalse,
+							Type:               monv1.Reconciled,
+							Status:             monv1.ConditionFalse,
 							ObservedGeneration: 2,
 						},
 					}}},
