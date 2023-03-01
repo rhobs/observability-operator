@@ -55,9 +55,10 @@ spec:
                 - error
                 type: string
               namespaceSelector:
-                description: Namespace selector for Monitoring Stack Resources. If
-                  left empty the Monitoring Stack will only match resources in the
-                  namespace it was created in.
+                description: 'Namespace selector for Monitoring Stack Resources. To
+                  monitor everything, set to empty map selector. E.g. namespaceSelector:
+                  {}. To monitor resources in the namespace where Monitoring Stack
+                  was created in, set to null. E.g. namespaceSelector:.'
                 properties:
                   matchExpressions:
                     description: matchExpressions is a list of label selector requirements.
@@ -835,9 +836,9 @@ spec:
                     type: integer
                 type: object
               resourceSelector:
-                description: Label selector for Monitoring Stack Resources. Set to
-                  the empty LabelSelector ({}) to monitoring everything. Set to null
-                  to disable service discovery.
+                description: 'Label selector for Monitoring Stack Resources. To monitor
+                  everything, set to empty map selector. E.g. resourceSelector: {}.
+                  To disable service discovery, set to null. E.g. resourceSelector:.'
                 nullable: true
                 properties:
                   matchExpressions:

@@ -108,7 +108,7 @@ MonitoringStackSpec is the specification for desired Monitoring Stack
         <td><b><a href="#monitoringstackspecnamespaceselector">namespaceSelector</a></b></td>
         <td>object</td>
         <td>
-          Namespace selector for Monitoring Stack Resources. If left empty the Monitoring Stack will only match resources in the namespace it was created in.<br/>
+          Namespace selector for Monitoring Stack Resources. To monitor everything, set to empty map selector. E.g. namespaceSelector: {}. To monitor resources in the namespace where Monitoring Stack was created in, set to null. E.g. namespaceSelector:.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -124,7 +124,7 @@ MonitoringStackSpec is the specification for desired Monitoring Stack
         <td><b><a href="#monitoringstackspecresourceselector">resourceSelector</a></b></td>
         <td>object</td>
         <td>
-          Label selector for Monitoring Stack Resources. Set to the empty LabelSelector ({}) to monitoring everything. Set to null to disable service discovery.<br/>
+          Label selector for Monitoring Stack Resources. To monitor everything, set to empty map selector. E.g. resourceSelector: {}. To disable service discovery, set to null. E.g. resourceSelector:.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -183,7 +183,7 @@ Define Alertmanager config
 
 
 
-Namespace selector for Monitoring Stack Resources. If left empty the Monitoring Stack will only match resources in the namespace it was created in.
+Namespace selector for Monitoring Stack Resources. To monitor everything, set to empty map selector. E.g. namespaceSelector: {}. To monitor resources in the namespace where Monitoring Stack was created in, set to null. E.g. namespaceSelector:.
 
 <table>
     <thead>
@@ -1803,7 +1803,7 @@ RelabelConfig allows dynamic rewriting of the label set, being applied to sample
 
 
 
-Label selector for Monitoring Stack Resources. Set to the empty LabelSelector ({}) to monitoring everything. Set to null to disable service discovery.
+Label selector for Monitoring Stack Resources. To monitor everything, set to empty map selector. E.g. resourceSelector: {}. To disable service discovery, set to null. E.g. resourceSelector:.
 
 <table>
     <thead>
