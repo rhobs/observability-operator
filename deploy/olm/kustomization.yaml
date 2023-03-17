@@ -2,10 +2,10 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-- ../crds/common
+- ../crds/obo
 - min-po-crds
 # NOTE: swap the follwoing line for the one above when the bug above is solved
-# - ../crds/kubernetes
+# - ../crds/rhobs-po
 - ../dependencies
 - ../monitoring
 - ../operator

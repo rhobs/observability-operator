@@ -2,7 +2,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ../common
+  - ../obo
   # the following resources are updated via the generate-prom-op-crds make
   # target
   - monitoring.rhobs_alertmanagerconfigs.yaml
