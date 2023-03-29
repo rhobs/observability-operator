@@ -191,7 +191,7 @@ run_e2e(){
 
   local obo_error_log="$LOGS_DIR/operator-errors.log"
 
-  log_events "operators" &
+  log_events "$OPERATORS_NS" &
   log_events "e2e-tests" &
   watch_obo_errors "$obo_error_log" &
 
