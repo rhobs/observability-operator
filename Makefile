@@ -11,6 +11,8 @@ RELEASE_SHA ?= $(shell git rev-parse origin/main)
 OPERATOR_IMG = $(IMAGE_BASE):$(VERSION)
 OPERATOR_BUNDLE=observability-operator.v$(VERSION)
 CONTAINER_RUNTIME := $(shell command -v podman 2> /dev/null || echo docker)
+OSD_E2E_TEST_HARNESS_IMG=$(IMAGE_BASE)-test-harness:$(VERSION)
+OSD_E2E_TEST_HARNESS_IMG_LATEST=$(IMAGE_BASE)-test-harness:latest
 
 # running `make` builds the operator (default target)
 all: operator
@@ -138,9 +140,20 @@ operator-image: generate
 operator-push:
 	$(CONTAINER_RUNTIME) push $(PUSH_OPTIONS) ${OPERATOR_IMG}
 
+.PHONY: osd-e2e-test-image
+osd-e2e-test-image: tools
+	$(CONTAINER_RUNTIME) build -f test/Dockerfile . -t $(OSD_E2E_TEST_HARNESS_IMG)
+	$(CONTAINER_RUNTIME) tag $(OSD_E2E_TEST_HARNESS_IMG) $(OSD_E2E_TEST_HARNESS_IMG_LATEST)
+
+.PHONY: osd-e2e-test-push
+osd-e2e-test-push: osd-e2e-test-image
+	$(CONTAINER_RUNTIME) push $(PUSH_OPTIONS) $(OSD_E2E_TEST_HARNESS_IMG)
+	$(CONTAINER_RUNTIME) push $(PUSH_OPTIONS) $(OSD_E2E_TEST_HARNESS_IMG_LATEST)
+
 .PHONY: test-e2e
 test-e2e:
 	go test ./test/e2e/...
+
 
 ## OLM - Bundle
 
