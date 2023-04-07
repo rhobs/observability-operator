@@ -28,6 +28,7 @@ cleanup() {
 	# shell check  ignore word splitting when using jobs -p
 	# shellcheck disable=SC2046
 	[[ -z "$(jobs -p)" ]] || kill $(jobs -p) || true
+	return 1
 }
 
 delete_olm_subscription() {

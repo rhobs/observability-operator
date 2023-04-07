@@ -12,7 +12,7 @@ declare -r PROJECT_ROOT
 source "$PROJECT_ROOT/test/lib/utils.bash"
 
 # NOTE: openshift-operators is the namespace used in subscription.yaml to install
-# obo, so this is harded coded for the test as well.
+# ObO, so this is harded coded for the test as well.
 declare -r OPERATORS_NS="openshift-operators"
 
 ### Configuration
@@ -22,25 +22,26 @@ declare SHOW_USAGE=false
 
 cleanup() {
 	# NOTE: clears trap INT
-	trap - INT
+	info "Cleaning up ocp..."
 
 	# skip cleanup if user requested help
 	$SHOW_USAGE && return 0
 	delete_obo
+	return 1
 }
 
 install_obo() {
 	header "Install ObO"
 
 	$NO_INSTALL && {
-		skip "installation of obo "
+		skip "installation of ObO "
 		return 0
 	}
 
 	# NOTE: catalog-src is added to "openshift-marketplace" namespace
 	oc apply -f ./hack/olm/catalog-src.yaml
 
-	# NOTE: obo gets installed to "openshift-operators" namespace
+	# NOTE: ObO gets installed to "openshift-operators" namespace
 	oc apply -f ./hack/olm/subscription.yaml
 
 	oc -n "$OPERATORS_NS" wait --for=condition=CatalogSourcesUnhealthy=False \
@@ -53,7 +54,7 @@ delete_obo() {
 	header "Deleting ObO subscription"
 
 	$NO_UNINSTALL && {
-		skip "uninstallation of obo"
+		skip "uninstallation of ObO"
 		return 0
 	}
 
