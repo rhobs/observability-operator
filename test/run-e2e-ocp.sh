@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e -u -o pipefail
 
-trap cleanup INT
+trap cleanup EXIT
 
 # NOTE: install ObO and run e2e against the installation
 
@@ -21,12 +21,11 @@ declare NO_UNINSTALL=false
 declare SHOW_USAGE=false
 
 cleanup() {
-	# NOTE: clears trap INT
-	trap - INT
-
 	# skip cleanup if user requested help
 	$SHOW_USAGE && return 0
-	delete_obo
+
+	delete_obo || true
+	return 0
 }
 
 install_obo() {
@@ -123,9 +122,9 @@ main() {
 	wait_for_operators_ready "$OPERATORS_NS"
 
 	local -i ret=0
-	./test/run-e2e.sh --no-deploy --ns "$OPERATORS_NS" || ret=1
-	delete_obo
+	./test/run-e2e.sh --no-deploy --ns "$OPERATORS_NS" || ret=$?
 
+	# NOTE: delete_obo will be automatically called when script exits
 	return $ret
 }
 
