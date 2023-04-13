@@ -28,6 +28,7 @@ cleanup() {
 	# shell check  ignore word splitting when using jobs -p
 	# shellcheck disable=SC2046
 	[[ -z "$(jobs -p)" ]] || kill $(jobs -p) || true
+	return 0
 }
 
 delete_olm_subscription() {
@@ -367,8 +368,8 @@ main() {
 	assert_no_reconciliation_errors pre-e2e ||
 		die "ObO has reconciliation errors before running test"
 
-	local ret=0
-	run_e2e || ret=1
+	local -i ret=0
+	run_e2e || ret=$?
 	assert_no_reconciliation_errors post-e2e || {
 		# see: https://github.com/rhobs/observability-operator/issues/200
 		skip "post-e2e reconciliation test until #200 is fixed"
