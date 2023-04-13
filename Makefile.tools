@@ -8,7 +8,7 @@ TOOLS_DIR = $(shell pwd)/tmp/bin
 # see: .github/tools-cache/action.yaml
 
 CONTROLLER_GEN=$(TOOLS_DIR)/controller-gen
-CONTROLLER_GEN_VERSION= v0.9.2
+CONTROLLER_GEN_VERSION= v0.11.3
 
 KUSTOMIZE=$(TOOLS_DIR)/kustomize
 KUSTOMIZE_VERSION= v4.5.2
