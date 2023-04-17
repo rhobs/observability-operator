@@ -1867,6 +1867,7 @@ spec:
                     type: string
                 type: object
               portName:
+                default: web
                 type: string
               priorityClassName:
                 type: string
