@@ -676,9 +676,45 @@ spec:
                                 type: string
                             type: object
                         type: object
+                      opsGenieApiKey:
+                        properties:
+                          key:
+                            type: string
+                          name:
+                            type: string
+                          optional:
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      opsGenieApiUrl:
+                        properties:
+                          key:
+                            type: string
+                          name:
+                            type: string
+                          optional:
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
                       resolveTimeout:
                         pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
                         type: string
+                      slackApiUrl:
+                        properties:
+                          key:
+                            type: string
+                          name:
+                            type: string
+                          optional:
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
                     type: object
                   name:
                     minLength: 1
@@ -2019,6 +2055,7 @@ spec:
                     type: string
                 type: object
               portName:
+                default: web
                 type: string
               priorityClassName:
                 type: string

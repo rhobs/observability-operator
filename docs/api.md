@@ -1789,7 +1789,7 @@ RelabelConfig allows dynamic rewriting of the label set, being applied to sample
         <td>
           Action to perform based on regex matching. Default is 'replace'. uppercase and lowercase actions require Prometheus >= 2.36.<br/>
           <br/>
-            <i>Enum</i>: replace, Replace, keep, Keep, drop, Drop, hashmod, HashMod, labelmap, LabelMap, labeldrop, LabelDrop, labelkeep, LabelKeep, lowercase, Lowercase, uppercase, Uppercase<br/>
+            <i>Enum</i>: replace, Replace, keep, Keep, drop, Drop, hashmod, HashMod, labelmap, LabelMap, labeldrop, LabelDrop, labelkeep, LabelKeep, lowercase, Lowercase, uppercase, Uppercase, keepequal, KeepEqual, dropequal, DropEqual<br/>
             <i>Default</i>: replace<br/>
         </td>
         <td>false</td>
