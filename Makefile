@@ -93,7 +93,9 @@ generate-crds: $(CONTROLLER_GEN) generate-prom-op-crds
 
 .PHONY: generate-kustomize
 generate-kustomize: $(KUSTOMIZE)
-	cd deploy/operator && \
+	cd deploy/olm && \
+		$(KUSTOMIZE) edit set image observability-operator=$(OPERATOR_IMG)
+	cd deploy/package-operator/operator && \
 		$(KUSTOMIZE) edit set image observability-operator=$(OPERATOR_IMG)
 
 .PHONY: generate-package-resources

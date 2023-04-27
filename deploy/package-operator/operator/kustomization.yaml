@@ -3,7 +3,8 @@ kind: Kustomization
 namespace: observability-operator
 images:
 - name: observability-operator
-  newTag: 0.0.17
+  newName: observability-operator
+  newTag: 0.0.20
 commonAnnotations:
   package-operator.run/phase: operator
 resources:
