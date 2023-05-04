@@ -46,7 +46,7 @@ metadata:
         "thanosrulers.monitoring.rhobs"
       ]
     operators.operatorframework.io/project_layout: unknown
-  name: observability-operator.v0.0.20
+  name: observability-operator.v0.0.21-230427050828
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -524,7 +524,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.namespace
-                image: observability-operator:0.0.20
+                image: quay.io/rhobs/observability-operator:0.0.21-230427050828
                 imagePullPolicy: Always
                 livenessProbe:
                   httpGet:
@@ -579,7 +579,7 @@ spec:
   maturity: alpha
   provider:
     name: Red Hat
-  version: 0.0.20
+  version: 0.0.21-230427050828
   webhookdefinitions:
   - admissionReviewVersions:
     - v1
