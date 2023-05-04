@@ -308,6 +308,13 @@ Define prometheus config
             <i>Minimum</i>: 0<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b>scrapeInterval</b></td>
+        <td>string</td>
+        <td>
+          Default interval between scrapes.<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 

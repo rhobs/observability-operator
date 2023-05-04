@@ -197,6 +197,10 @@ func newPrometheus(
 		}
 	}
 
+	if config.ScrapeInterval != nil {
+		prometheus.Spec.ScrapeInterval = *ms.Spec.PrometheusConfig.ScrapeInterval
+	}
+
 	return prometheus
 }
 
