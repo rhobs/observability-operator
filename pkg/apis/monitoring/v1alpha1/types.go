@@ -184,6 +184,9 @@ type PrometheusConfig struct {
 	// Enable Prometheus to be used as a receiver for the Prometheus remote write protocol. Defaults to the value of `false`.
 	// +optional
 	EnableRemoteWriteReceiver bool `json:"enableRemoteWriteReceiver,omitempty"`
+	// Default interval between scrapes.
+	// +optional
+	ScrapeInterval *monv1.Duration `json:"scrapeInterval,omitempty"`
 }
 
 type AlertmanagerConfig struct {
