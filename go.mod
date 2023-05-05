@@ -7,7 +7,7 @@ require (
 	github.com/google/go-cmp v0.5.9
 	github.com/prometheus/common v0.37.0
 	github.com/prometheus/prometheus v1.8.2-0.20211105201321-411021ada9ab
-	github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.64.0-rhobs1
+	github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.64.1-rhobs2
 	go.uber.org/zap v1.24.0
 	gotest.tools/v3 v3.0.3
 	k8s.io/api v0.26.1

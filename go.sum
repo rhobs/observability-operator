@@ -1171,8 +1171,8 @@ github.com/prometheus/prometheus v1.8.2-0.20211105201321-411021ada9ab/go.mod h1:
 github.com/prometheus/tsdb v0.7.1/go.mod h1:qhTCs0VvXwvX/y3TZrWD7rabWM+ijKTux40TwIPHuXU=
 github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a/go.mod h1:bCqnVzQkZxMG4s8nGwiZ5l3QUCyqpo9Y+/ZMZ9VjZe4=
 github.com/retailnext/hllpp v1.0.1-0.20180308014038-101a6d2f8b52/go.mod h1:RDpi1RftBQPUCDRw6SmxeaREsAaRKnOclghuzp/WRzc=
-github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.64.0-rhobs1 h1:Qhl93ZzAfhLZC/LQpZwgJrsWW1A0oEJvEHD4Bm6Tt3c=
-github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.64.0-rhobs1/go.mod h1:p+YsgXodntOtgwXKTpWrJzVS7QmMfZlGDG0v6Noze7s=
+github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.64.1-rhobs2 h1:zta5G8gkME+0/0rhQQs9QSU1J7BBAqqQ4gxbBzk/Ng0=
+github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.64.1-rhobs2/go.mod h1:p+YsgXodntOtgwXKTpWrJzVS7QmMfZlGDG0v6Noze7s=
 github.com/rogpeppe/fastuuid v0.0.0-20150106093220-6724a57986af/go.mod h1:XWv6SoW27p1b0cqNHllgS5HIMJraePCO15w5zCzIWYg=
 github.com/rogpeppe/fastuuid v1.2.0/go.mod h1:jVj6XXZzXRy/MSR5jhDC/2q6DgLz+nrA6LYCDYWNEvQ=
 github.com/rogpeppe/go-internal v1.1.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
