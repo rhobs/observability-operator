@@ -1,8 +1,8 @@
 # observability-operator
 
-The Observability Operator (previously known as Monitoring Stack Operator) is a
-Kubernetes operator which enables the management of Monitoring, Logging and
-Tracing stacks through Kubernetes CRDs.
+The Observability Operator is a Kubernetes operator which enables the
+management of Monitoring/Alerting stacks through Kubernetes CRDs. Eventually it
+might also cover Logging and Tracing.
 
 The project relies heavily on the [controller-runtime](https://github.com/kubernetes-sigs/controller-runtime) library.
 
@@ -83,14 +83,11 @@ Please refer to [Developer Docs](./docs/developer.md)
 
 ## Meetings
 ___
-- Regular East friendly meeting: [Thursday at 08:00 CET (Central European Time)](https://meet.google.com/gwy-vssi-hfr)
-  - [Meeting notes and Agenda](https://docs.google.com/document/d/1Iy3CRIEzsHUhtMuzCVRX-8fbmsivcu2iju1J2vN2knQ/edit?usp=meetingnotes&showmeetingnotespromo=true).
-
-- Regular West friendly meeting: [Thursday at 16:30 CET (Central European Time)](https://meet.google.com/gwy-vssi-hfr)
+- Weekly meeting: [Thursday at 08:00 CET (Central European Time)](https://meet.google.com/gwy-vssi-hfr)
   - [Meeting notes and Agenda](https://docs.google.com/document/d/1Iy3CRIEzsHUhtMuzCVRX-8fbmsivcu2iju1J2vN2knQ/edit?usp=meetingnotes&showmeetingnotespromo=true).
 
 ## Contact
 ___
-- CoreOS Slack #observability-operator-users and ping @obo-support-team.
+- Red Hat Slack #observability-operator-users and ping @obo-support-team.
 - [Mailing list](mso-users@redhat.com)
 - Github Team: @rhobs/observability-operator-maintainers
