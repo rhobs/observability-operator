@@ -18,6 +18,8 @@ import (
 // Any change to that must be reflected here as well
 const instanceSelector = "app.kubernetes.io/managed-by=observability-operator"
 
+const ObservabilityOperatorName = "observability-operator"
+
 // Operator embedds manager and exposes only the minimal set of functions
 type Operator struct {
 	manager manager.Manager

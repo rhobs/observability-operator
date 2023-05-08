@@ -13,6 +13,8 @@ import (
 
 	"github.com/rhobs/observability-operator/test/e2e/framework"
 
+	"golang.org/x/exp/slices"
+
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -24,6 +26,7 @@ import (
 
 	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 	monitoringstack "github.com/rhobs/observability-operator/pkg/controllers/monitoring/monitoring-stack"
+	operator "github.com/rhobs/observability-operator/pkg/operator"
 
 	monv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
 
@@ -111,6 +114,9 @@ func TestMonitoringStackController(t *testing.T) {
 	}, {
 		name:     "Verify ability to scale down Prometheus",
 		scenario: prometheusScaleDown,
+	}, {
+		name:     "managed fields in Prometheus object",
+		scenario: assertPrometheusManagedFields,
 	}}
 
 	for _, tc := range ts {
@@ -591,6 +597,126 @@ func prometheusScaleDown(t *testing.T) {
 		t.Fatal(fmt.Errorf("Prometheus was not scaled down"))
 	}
 }
+
+func assertPrometheusManagedFields(t *testing.T) {
+	numOfRep := int32(1)
+	ms := newMonitoringStack(t, "prometheus-managed-fields-test")
+	var scrapeInterval monv1.Duration = "2m"
+	ms.Spec.PrometheusConfig = &stack.PrometheusConfig{
+		Replicas:       &numOfRep,
+		ScrapeInterval: &scrapeInterval,
+		PersistentVolumeClaim: &corev1.PersistentVolumeClaimSpec{
+			VolumeName: "prom-store",
+		},
+		RemoteWrite: []monv1.RemoteWriteSpec{
+			{
+				Name: "sample-remote-write",
+				URL:  "https://sample-url",
+			},
+		},
+		ExternalLabels: map[string]string{
+			"key": "value",
+		},
+		EnableRemoteWriteReceiver: true,
+	}
+	ms.Spec.NamespaceSelector = &metav1.LabelSelector{
+		MatchLabels: map[string]string{
+			"label": "label-value",
+		},
+	}
+
+	err := f.K8sClient.Create(context.Background(), ms)
+	assert.NilError(t, err, "failed to create a monitoring stack")
+
+	prom := monv1.Prometheus{}
+	f.GetResourceWithRetry(t, ms.Name, ms.Namespace, &prom)
+
+	mfs := prom.GetManagedFields()
+
+	idx := slices.IndexFunc(mfs, func(mf metav1.ManagedFieldsEntry) bool {
+		return mf.Manager == operator.ObservabilityOperatorName
+	})
+
+	if idx == -1 {
+		t.Fatal(fmt.Errorf("no fields managed by observability-operator found"))
+	}
+	oboManagedFields := mfs[idx]
+	s, err := json.MarshalIndent(oboManagedFields.FieldsV1, "", "  ")
+	assert.NilError(t, err)
+
+	var objmap map[string]interface{}
+	err = json.Unmarshal(s, &objmap)
+	assert.NilError(t, err)
+	have := objmap["f:spec"]
+
+	var expected map[string]interface{}
+	_ = json.Unmarshal([]byte(oboManagedFieldsJson), &expected)
+
+	assert.DeepEqual(t, have, expected)
+}
+
+// Update this json when a new Prometheus field is set by MonitoringStack
+const oboManagedFieldsJson = `
+{
+  "f:additionalScrapeConfigs": {},
+  "f:affinity": {
+    "f:podAntiAffinity": {
+      "f:requiredDuringSchedulingIgnoredDuringExecution": {}
+    }
+  },
+  "f:alerting": {
+    "f:alertmanagers": {}
+  },
+  "f:arbitraryFSAccessThroughSMs": {},
+  "f:enableRemoteWriteReceiver": {},
+  "f:externalLabels": {
+    "f:key": {}
+  },
+  "f:logLevel": {},
+  "f:podMetadata": {
+    "f:labels": {
+      "f:app.kubernetes.io/component": {},
+      "f:app.kubernetes.io/part-of": {}
+    }
+  },
+  "f:podMonitorNamespaceSelector": {},
+  "f:podMonitorSelector": {},
+  "f:remoteWrite": {},
+  "f:replicas": {},
+  "f:resources": {},
+  "f:retention": {},
+  "f:ruleNamespaceSelector": {},
+  "f:ruleSelector": {},
+  "f:rules": {
+    "f:alert": {}
+  },
+  "f:scrapeInterval": {},
+  "f:securityContext": {
+    "f:fsGroup": {},
+    "f:runAsNonRoot": {},
+    "f:runAsUser": {}
+  },
+  "f:serviceAccountName": {},
+  "f:serviceMonitorNamespaceSelector": {},
+  "f:serviceMonitorSelector": {},
+  "f:storage": {
+    "f:volumeClaimTemplate": {
+      "f:metadata": {},
+      "f:spec": {
+        "f:resources": {},
+        "f:volumeName": {}
+      },
+      "f:status": {}
+    }
+  },
+  "f:thanos": {
+    "f:baseImage": {},
+    "f:resources": {},
+    "f:version": {}
+  },
+  "f:tsdb": {}
+}
+`
 
 func getAlertmanagerAlerts() ([]alert, error) {
 	client := http.Client{}
