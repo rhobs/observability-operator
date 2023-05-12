@@ -36,6 +36,8 @@ spec:
                     interval:
                       pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
                       type: string
+                    limit:
+                      type: integer
                     name:
                       minLength: 1
                       type: string
@@ -71,7 +73,6 @@ spec:
                       type: array
                   required:
                   - name
-                  - rules
                   type: object
                 type: array
                 x-kubernetes-list-map-keys:

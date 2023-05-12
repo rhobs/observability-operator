@@ -974,6 +974,19 @@ spec:
                           format: int32
                           type: integer
                       type: object
+                    resizePolicy:
+                      items:
+                        properties:
+                          resourceName:
+                            type: string
+                          restartPolicy:
+                            type: string
+                        required:
+                        - resourceName
+                        - restartPolicy
+                        type: object
+                      type: array
+                      x-kubernetes-list-type: atomic
                     resources:
                       properties:
                         claims:
@@ -1674,6 +1687,19 @@ spec:
                           format: int32
                           type: integer
                       type: object
+                    resizePolicy:
+                      items:
+                        properties:
+                          resourceName:
+                            type: string
+                          restartPolicy:
+                            type: string
+                        required:
+                        - resourceName
+                        - restartPolicy
+                        type: object
+                      type: array
+                      x-kubernetes-list-type: atomic
                     resources:
                       properties:
                         claims:
@@ -2396,6 +2422,54 @@ spec:
                 type: object
               routePrefix:
                 type: string
+              scrapeConfigNamespaceSelector:
+                properties:
+                  matchExpressions:
+                    items:
+                      properties:
+                        key:
+                          type: string
+                        operator:
+                          type: string
+                        values:
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - key
+                      - operator
+                      type: object
+                    type: array
+                  matchLabels:
+                    additionalProperties:
+                      type: string
+                    type: object
+                type: object
+                x-kubernetes-map-type: atomic
+              scrapeConfigSelector:
+                properties:
+                  matchExpressions:
+                    items:
+                      properties:
+                        key:
+                          type: string
+                        operator:
+                          type: string
+                        values:
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - key
+                      - operator
+                      type: object
+                    type: array
+                  matchLabels:
+                    additionalProperties:
+                      type: string
+                    type: object
+                type: object
+                x-kubernetes-map-type: atomic
               scrapeInterval:
                 default: 30s
                 pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
