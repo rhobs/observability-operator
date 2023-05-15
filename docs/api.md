@@ -506,7 +506,7 @@ resources represents the minimum resources the volume should have. If RecoverVol
         <td>
           Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
  This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. 
- This field is immutable.<br/>
+ This field is immutable. It can only be set for containers.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1945,7 +1945,7 @@ Define resources requests and limits for Monitoring Stack Pods.
         <td>
           Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
  This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. 
- This field is immutable.<br/>
+ This field is immutable. It can only be set for containers.<br/>
         </td>
         <td>false</td>
       </tr><tr>

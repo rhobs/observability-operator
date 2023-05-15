@@ -214,6 +214,9 @@ spec:
                   proxyUrl:
                     type: string
                   scheme:
+                    enum:
+                    - http
+                    - https
                     type: string
                   url:
                     type: string
