@@ -1,0 +1,54 @@
+apiVersion: monitoring.rhobs/v1
+kind: ServiceMonitor
+metadata:
+  name: federate-cmo-smon
+  namespace: federate-cmo
+  labels:
+    kubernetes.io/part-of: federate-cmo-ms
+    monitoring.rhobs/stack: federate-cmo-ms
+
+spec:
+  selector: # 👈 use the prometheus service to create a "dummy" target.
+    matchLabels:
+      app.kubernetes.io/managed-by: observability-operator
+      app.kubernetes.io/name: federate-cmo-ms-prometheus
+
+  endpoints:
+  - params:
+      'match[]': # 👈 scrape only required metrics from in-cluster prometheus
+        - '{__name__=~"container_cpu_.*", namespace="federate-cmo"}'
+        - '{__name__="container_memory_working_set_bytes", namespace="federate-cmo"}'
+
+    relabelings:
+    # 👇 relabel example
+    - targetLabel: source
+      replacement: my-openshift-cluster
+
+    # 👇 override the target's address by the prometheus-k8s service name.
+    - action: replace
+      targetLabel: __address__
+      replacement: prometheus-k8s.openshift-monitoring.svc:9091
+
+    # 👇 remove the default target labels as they aren't relevant in case of federation.
+    - action: labeldrop
+      regex: pod|namespace|service|endpoint|container
+
+    # 👇 30s interval creates 4 scrapes per minute
+    #    prometheus-k8s.svc x 2 ms-prometheus x (60s/ 30s) = 4
+    interval: 30s
+
+    # 👇 ensure that the scraped labels are preferred over target's labels.
+    honorLabels: true
+
+    port: web
+    scheme: https
+    path: "/federate"
+
+    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+
+    tlsConfig:
+      serverName: prometheus-k8s.openshift-monitoring.svc
+      ca:
+        configMap: # 👈 automatically created by serving-ca operator
+          key: service-ca.crt
+          name: openshift-service-ca.crt

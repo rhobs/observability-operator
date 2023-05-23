@@ -1,0 +1,25 @@
+apiVersion: monitoring.rhobs/v1alpha1
+kind: MonitoringStack
+metadata:
+  name: federate-cmo-ms
+  namespace: federate-cmo
+spec:
+  # 👇 Used to select the ServiceMonitor in the federate-cmo namespace
+  #    NOTE: there isn't a need for namespaceSelector
+  resourceSelector:
+    matchLabels:
+      monitoring.rhobs/stack: federate-cmo-ms
+
+  logLevel: info # 👈 use debug for verbose logs
+  retention: 3h
+
+  prometheusConfig:
+    replicas: 2  # 👈 ensures that at least one prometheus is running during upgrade
+
+  alertmanagerConfig:
+    disabled: true
+
+  resources: # 👈 ensure that you provide sufficient amount of resources
+    requests:
+      cpu: 500m
+      memory: 1Gi
