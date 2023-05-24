@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.21](https://github.com/rhobs/monitoring-stack-operator/commit/) (2023-05-23)
+
+
+### Features
+
+* add scrape interval parameter to prometheus config 40de685
+* bumpup Prometheus Operator to 0.65.1 82fc388
+
+
+### Bug Fixes
+
+* e2e test cleanup and exit code 590b339
+* field manager name for generated resources 853f04f
+* **test:** use OPERATORS_NS instead of hardcoded namespace 1cadc70
+* update correct operator version in CSV 60c7be6
+* wrong catalog sourcename in k8s subscription b7e4b57
+
 ### [0.0.20](https://github.com/rhobs/monitoring-stack-operator/commit/) (2023-01-16)
 
 
