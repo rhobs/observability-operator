@@ -40,7 +40,7 @@ spec:
   - thanos
   links:
   - name: Observability Operator
-    url: https://observability-operator.rhobs.io
+    url: https://rhobs-handbook.netlify.app/products/observability-operator
   maintainers:
   - name: Jan Fajerski
     email: jfajersk@redhat.com
