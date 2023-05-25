@@ -172,6 +172,8 @@ func newPrometheus(
 				RemoteWrite:               config.RemoteWrite,
 				ExternalLabels:            config.ExternalLabels,
 				EnableRemoteWriteReceiver: config.EnableRemoteWriteReceiver,
+				NodeSelector:              config.NodeSelector,
+				Tolerations:               config.Tolerations,
 			},
 			Retention:             ms.Spec.Retention,
 			RuleSelector:          prometheusSelector,

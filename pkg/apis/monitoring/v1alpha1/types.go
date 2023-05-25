@@ -187,6 +187,12 @@ type PrometheusConfig struct {
 	// Default interval between scrapes.
 	// +optional
 	ScrapeInterval *monv1.Duration `json:"scrapeInterval,omitempty"`
+	// Define which Nodes the Pods are scheduled on.
+	// +optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// If specified, the pod's tolerations.
+	// +optional
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 }
 
 type AlertmanagerConfig struct {
