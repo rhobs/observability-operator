@@ -193,6 +193,8 @@ bundle: $(KUSTOMIZE) $(OPERATOR_SDK) generate
 			--kustomize-dir=deploy/olm \
 			--package=observability-operator \
 		 	$(BUNDLE_METADATA_OPTS)
+	sed -e 's|<IMG_OBSERVABILITY_OPERATOR>|$(OPERATOR_IMG)|g' \
+		-i bundle/manifests/observability-operator.clusterserviceversion.yaml
 	$(OPERATOR_SDK) bundle validate ./bundle
 
 .PHONY: bundle-image
