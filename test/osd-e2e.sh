@@ -11,7 +11,7 @@ main() {
 	set -x
 	./e2e.test -test.v 2>"$TEST_RESULT_DIR/errors.log" |
 		tee "$TEST_RESULT_DIR/tests.log" |
-		./go-junit-report -set-exit-code >"$TEST_RESULT_DIR/report.xml"
+		./go-junit-report -set-exit-code >"$TEST_RESULT_DIR/junit-obo.xml"
 
 	# HACK: create an empty json file until we know what the addon-metadata
 	# should contain
