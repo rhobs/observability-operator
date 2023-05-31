@@ -1,6 +1,6 @@
 # Developer Docs
 
-In order to contribute to this project, make sure you have go 1.18 installed
+In order to contribute to this project, make sure you have go 1.20 installed
 on your local machine.
 
 ## Dependencies

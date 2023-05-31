@@ -141,6 +141,10 @@ func newPrometheus(
 				ServiceMonitorNamespaceSelector: ms.Spec.NamespaceSelector,
 				PodMonitorSelector:              prometheusSelector,
 				PodMonitorNamespaceSelector:     ms.Spec.NamespaceSelector,
+				ProbeSelector:                   prometheusSelector,
+				ProbeNamespaceSelector:          ms.Spec.NamespaceSelector,
+				ScrapeConfigSelector:            prometheusSelector,
+				ScrapeConfigNamespaceSelector:   ms.Spec.NamespaceSelector,
 				Affinity: &corev1.Affinity{
 					PodAntiAffinity: &corev1.PodAntiAffinity{
 						RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{

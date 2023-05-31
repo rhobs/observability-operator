@@ -681,6 +681,8 @@ const oboManagedFieldsJson = `
   },
   "f:podMonitorNamespaceSelector": {},
   "f:podMonitorSelector": {},
+  "f:probeNamespaceSelector": {},
+  "f:probeSelector": {},
   "f:remoteWrite": {},
   "f:replicas": {},
   "f:resources": {},
@@ -690,6 +692,8 @@ const oboManagedFieldsJson = `
   "f:rules": {
     "f:alert": {}
   },
+  "f:scrapeConfigNamespaceSelector": {},
+  "f:scrapeConfigSelector": {},
   "f:scrapeInterval": {},
   "f:securityContext": {
     "f:fsGroup": {},
