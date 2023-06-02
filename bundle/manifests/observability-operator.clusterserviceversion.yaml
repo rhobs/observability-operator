@@ -424,8 +424,6 @@ spec:
               securityContext:
                 runAsNonRoot: true
                 runAsUser: 65534
-                seccompProfile:
-                  type: RuntimeDefault
               serviceAccountName: obo-prometheus-operator
       - label:
           app.kubernetes.io/name: prometheus-operator-admission-webhook
@@ -495,8 +493,6 @@ spec:
               securityContext:
                 runAsNonRoot: true
                 runAsUser: 65534
-                seccompProfile:
-                  type: RuntimeDefault
               serviceAccountName: obo-prometheus-operator-admission-webhook
       - label:
           app.kubernetes.io/component: operator
