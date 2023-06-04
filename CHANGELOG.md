@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.22](https://github.com/rhobs/monitoring-stack-operator/commit/) (2023-06-04)
+
+
+### Features
+
+* add probe and scrapeConfig selectors a2f0897
+* make operator publishable to openshift community-catalog ([#295](https://github.com/rhobs/monitoring-stack-operator/issues/295)) 5e0f6c3
+
+
+### Bug Fixes
+
+* ensure OLM bundle installs fine all supported OpenShift Versions ([#299](https://github.com/rhobs/monitoring-stack-operator/issues/299)) e33f901
+* **test:** ensure test report follows osde2e recommendation ([#296](https://github.com/rhobs/monitoring-stack-operator/issues/296)) 6ef4b1e
+* update url link to rhobs-handbook.netlify.app ([#289](https://github.com/rhobs/monitoring-stack-operator/issues/289)) de3e98d, closes #287
+
 ### [0.0.21](https://github.com/rhobs/monitoring-stack-operator/commit/) (2023-05-23)
 
 
