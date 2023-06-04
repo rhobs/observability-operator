@@ -165,3 +165,16 @@ patches:
               volumeMounts:
               - name: tls-certificates
                 $patch: delete
+
+    # HACK: remove the RuntimeDefault from ALL deploymens until we figure out
+    # how to run the operator on all openshift version from 4.9-13. Currently the
+    # webhook fails to deploy on 4.10
+    # SEE: https://issues.redhat.com/browse/MON-3225 which should provide an actual fix
+  - patch: |-
+      - op: remove
+        path: /spec/template/spec/securityContext/seccompProfile
+    target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: '.*'
