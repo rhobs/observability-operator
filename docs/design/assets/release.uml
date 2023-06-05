@@ -58,7 +58,7 @@ CI -> Publish: run olm-publish (channels: development, candidate)
 == candidate release  ==
 
 == stable release  ==
-RM -> Upstream: remove draft from release
+RM -> Upstream: remove pre-release from release
 Upstream -> CI: stable release (olm-stable.yaml)
 CI -> Publish: run olm-publish (channels: development, candidate, stable)
     activate Publish #DarkSalmon
