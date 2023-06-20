@@ -51,6 +51,7 @@ metadata:
         "thanosrulers.monitoring.rhobs"
       ]
     operators.operatorframework.io/project_layout: unknown
+    repository: https://github.com/rhobs/observability-operator
   name: observability-operator.v0.0.22
   namespace: placeholder
 spec:
