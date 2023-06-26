@@ -53,6 +53,8 @@ objects:
             image: ${REGISTRY_IMG}@${IMAGE_DIGEST}
             publisher: OSD Red Hat Addons
             sourceType: grpc
+            grpcPodConfig:
+              securityContextConfig: restricted
         - apiVersion: operators.coreos.com/v1alpha2
           kind: OperatorGroup
           metadata:

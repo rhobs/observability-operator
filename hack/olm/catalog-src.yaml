@@ -14,6 +14,8 @@ spec:
   image: quay.io/rhobs/observability-operator-catalog:latest
   publisher: Sunil Thaha
   sourceType: grpc
+  grpcPodConfig:
+    securityContextConfig: restricted
   updateStrategy:
     registryPoll:
       interval: 1m0s
