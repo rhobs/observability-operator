@@ -9,6 +9,6 @@
     }
   ],
   "scripts": {
-    "postbump": "make bundle && git add bundle deploy/olm/kustomization.yaml deploy/operator/kustomization.yaml"
+    "postbump": "make bundle && git add bundle deploy/package-operator/operator/kustomization.yaml deploy/olm/kustomization.yaml deploy/operator/kustomization.yaml"
   }
 }

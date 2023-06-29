@@ -60,6 +60,7 @@ jobs:
         with:
           quay_login: ${{ secrets.QUAY_LOGIN }}
           quay_token: ${{ secrets.QUAY_TOKEN }}
+          go-version: ${{ env.go-version }}
 
       - name: Push catalog index changes
         uses: ad-m/github-push-action@master
@@ -127,3 +128,60 @@ jobs:
           bodyFile: RELEASE_BODY.md
           # NOTE: We always generate pre-releases and mark them as releases manually
           prerelease: true
+
+  publish-olm-candidate:
+    needs:
+      - create-github-prerelease
+    runs-on: ubuntu-latest
+    environment: quay
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.REPOSITORY_PUSH_TOKEN }}
+
+      - name: Import common environment variables
+        run: cat ".github/env" >> "$GITHUB_ENV"
+
+      - name: Setup Go environment
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ env.go-version }}
+          check-latest: true
+          cache: true
+
+      - name: Set version
+        id: version
+        run: |
+          version="$(cat VERSION)-rc"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: publish catalog
+        uses: ./.github/olm-publish
+        env:
+          IMAGE_BASE: ${{ secrets.IMAGE_BASE }}
+          VERSION: ${{ steps.version.outputs.version }}
+          CHANNELS: candidate,development
+          DEFAULT_CHANNEL: candidate
+          RELEASE_SHA: ${GITHUB_SHA}
+        with:
+          quay_login: ${{ secrets.QUAY_LOGIN }}
+          quay_token: ${{ secrets.QUAY_TOKEN }}
+          go-version: ${{ env.go-version }}
+
+      - name: Push catalog index changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.REPOSITORY_PUSH_TOKEN }}
+          branch: olm-catalog
+
+      - name: Publish Package
+        uses: ./.github/package-operator-publish
+        env:
+          IMAGE_BASE: ${{ secrets.IMAGE_BASE }}
+          VERSION: ${{ steps.version.outputs.version }}
+        with:
+          quay_login: ${{ secrets.QUAY_LOGIN }}
+          quay_token: ${{ secrets.QUAY_TOKEN }}
+          go-version: ${{ env.go-version }}
