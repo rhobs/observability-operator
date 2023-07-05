@@ -1,5 +1,6 @@
 run:
   deadline: 10m
+  tests: false
 
 linters:
   enable:

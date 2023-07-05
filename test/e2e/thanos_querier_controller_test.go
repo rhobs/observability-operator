@@ -67,10 +67,10 @@ func singleStackWithSidecar(t *testing.T) {
 	// Creating a basic combo must create a thanos deployment and a service
 	name := "thanos-querier-" + tq.Name
 	thanosDeployment := appsv1.Deployment{}
-	f.GetResourceWithRetry(t, name, tq.Namespace, &thanosDeployment)
+	f.GetResourceWithRetry(context.Background(), t, name, tq.Namespace, &thanosDeployment)
 
 	thanosService := corev1.Service{}
-	f.GetResourceWithRetry(t, name, tq.Namespace, &thanosService)
+	f.GetResourceWithRetry(context.Background(), t, name, tq.Namespace, &thanosService)
 
 	// Assert prometheus instance can be queried
 	stopChan := make(chan struct{})

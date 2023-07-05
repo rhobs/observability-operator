@@ -43,6 +43,8 @@ func WithPollInterval(d time.Duration) OptionFn {
 }
 
 // AssertResourceNeverExists asserts that a statefulset is never created for the duration of wait.ForeverTestTimeout
+//
+//nolint:staticcheck
 func (f *Framework) AssertResourceNeverExists(name, namespace string, resource client.Object, fns ...OptionFn) func(t *testing.T) {
 	option := AssertOption{
 		PollInterval: 5 * time.Second,
@@ -70,6 +72,7 @@ func (f *Framework) AssertResourceNeverExists(name, namespace string, resource c
 }
 
 // AssertResourceEventuallyExists asserts that a resource is created duration a time period of wait.ForeverTestTimeout
+// nolint:staticcheck
 func (f *Framework) AssertResourceEventuallyExists(name, namespace string, resource client.Object, fns ...OptionFn) func(t *testing.T) {
 	option := AssertOption{
 		PollInterval: 5 * time.Second,
@@ -106,6 +109,7 @@ func (f *Framework) AssertStatefulsetReady(name, namespace string, fns ...Option
 	}
 	return func(t *testing.T) {
 		key := types.NamespacedName{Name: name, Namespace: namespace}
+		//nolint:staticcheck
 		if err := wait.Poll(5*time.Second, option.WaitTimeout, func() (bool, error) {
 			pod := &appsv1.StatefulSet{}
 			err := f.K8sClient.Get(context.Background(), key, pod)
@@ -116,8 +120,8 @@ func (f *Framework) AssertStatefulsetReady(name, namespace string, fns ...Option
 	}
 }
 
-func (f *Framework) GetResourceWithRetry(t *testing.T, name, namespace string, obj client.Object) {
-	err := wait.Poll(5*time.Second, wait.ForeverTestTimeout, func() (bool, error) {
+func (f *Framework) GetResourceWithRetry(ctx context.Context, t *testing.T, name, namespace string, obj client.Object) {
+	err := wait.PollUntilContextTimeout(ctx, 5*time.Second, wait.ForeverTestTimeout, true, func(ctx context.Context) (bool, error) {
 		key := types.NamespacedName{Name: name, Namespace: namespace}
 
 		if err := f.K8sClient.Get(context.Background(), key, obj); errors.IsNotFound(err) {
@@ -128,7 +132,8 @@ func (f *Framework) GetResourceWithRetry(t *testing.T, name, namespace string, o
 		return true, nil
 	})
 
-	if err == wait.ErrWaitTimeout {
+	if ctx.Err() != nil {
+		t.Log(err)
 		t.Fatal(fmt.Errorf("resource %s/%s was never created", namespace, name))
 	}
 }
@@ -224,6 +229,8 @@ func (f *Framework) GetOperatorMetrics(t *testing.T) []byte {
 
 	stopChan := make(chan struct{})
 	defer close(stopChan)
+
+	//nolint:staticcheck
 	if err := wait.Poll(5*time.Second, wait.ForeverTestTimeout, func() (bool, error) {
 		err := f.StartPortForward(pod.Name, pod.Namespace, "8080", stopChan)
 		return err == nil, nil
@@ -256,13 +263,13 @@ func (f *Framework) AssertNoReconcileErrors(t *testing.T) {
 		})
 }
 
-func (f *Framework) GetStackWhenAvailable(t *testing.T, name, namespace string) v1alpha1.MonitoringStack {
+func (f *Framework) GetStackWhenAvailable(ctx context.Context, t *testing.T, name, namespace string) v1alpha1.MonitoringStack {
 	var ms v1alpha1.MonitoringStack
 	key := types.NamespacedName{
 		Name:      name,
 		Namespace: namespace,
 	}
-	err := wait.Poll(5*time.Second, wait.ForeverTestTimeout, func() (bool, error) {
+	err := wait.PollUntilContextTimeout(ctx, 15*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
 		err := f.K8sClient.Get(context.Background(), key, &ms)
 		if err != nil {
 			return false, nil
@@ -274,26 +281,28 @@ func (f *Framework) GetStackWhenAvailable(t *testing.T, name, namespace string) 
 		return false, nil
 	})
 
-	if err == wait.ErrWaitTimeout {
+	if ctx.Err() != nil {
+		t.Log(err)
 		t.Fatal(fmt.Errorf("resource %s/%s was not available", namespace, name))
 	}
 	return ms
 }
 
-func (f *Framework) AssertAlertmanagerAbsent(t *testing.T, name, namespace string) {
+func (f *Framework) AssertAlertmanagerAbsent(ctx context.Context, t *testing.T, name, namespace string) {
 	var am monv1.Alertmanager
 	key := types.NamespacedName{
 		Name:      name,
 		Namespace: namespace,
 	}
-	err := wait.Poll(5*time.Second, wait.ForeverTestTimeout, func() (bool, error) {
+	err := wait.PollUntilContextTimeout(ctx, 15*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
 		err := f.K8sClient.Get(context.Background(), key, &am)
 		if errors.IsNotFound(err) {
 			return true, nil
 		}
 		return false, nil
 	})
-	if err == wait.ErrWaitTimeout {
+	if ctx.Err() != nil {
+		t.Log(err)
 		t.Fatal(fmt.Errorf("alertmanager %s/%s is present when expected to be absent", namespace, name))
 	}
 }

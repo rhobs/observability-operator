@@ -131,7 +131,7 @@ func emptyStackCreatesPrometheus(t *testing.T) {
 
 	// Creating an Empty monitoring stack must create a Prometheus with defaults applied
 	prometheus := monv1.Prometheus{}
-	f.GetResourceWithRetry(t, ms.Name, ms.Namespace, &prometheus)
+	f.GetResourceWithRetry(context.Background(), t, ms.Name, ms.Namespace, &prometheus)
 }
 
 func nilResrouceSelectorPropagatesToPrometheus(t *testing.T) {
@@ -141,7 +141,7 @@ func nilResrouceSelectorPropagatesToPrometheus(t *testing.T) {
 	f.AssertResourceEventuallyExists(ms.Name, ms.Namespace, &monv1.Prometheus{})(t)
 
 	updatedMS := &stack.MonitoringStack{}
-	f.GetResourceWithRetry(t, ms.Name, ms.Namespace, updatedMS)
+	f.GetResourceWithRetry(context.Background(), t, ms.Name, ms.Namespace, updatedMS)
 	updatedMS.Spec.ResourceSelector = nil
 	err = f.K8sClient.Update(context.Background(), updatedMS)
 	assert.NilError(t, err, "failed to patch monitoring stack with nil resource selector")
@@ -198,7 +198,7 @@ func promConfigDefaultsAreApplied(t *testing.T) {
 			assert.NilError(t, err, "failed to create a monitoring stack")
 
 			created := stack.MonitoringStack{}
-			f.GetResourceWithRetry(t, ms.Name, ms.Namespace, &created)
+			f.GetResourceWithRetry(context.Background(), t, ms.Name, ms.Namespace, &created)
 
 			assert.Equal(t, tt.expected, *created.Spec.PrometheusConfig.Replicas)
 		})
@@ -227,7 +227,7 @@ func reconcileStack(t *testing.T) {
 
 	// Creating an Empty monitoring stack must create a Prometheus with defaults applied
 	generated := monv1.Prometheus{}
-	f.GetResourceWithRetry(t, ms.Name, ms.Namespace, &generated)
+	f.GetResourceWithRetry(context.Background(), t, ms.Name, ms.Namespace, &generated)
 
 	expected := monv1.PrometheusSpec{
 		Retention: ms.Spec.Retention,
@@ -241,7 +241,7 @@ func reconcileStack(t *testing.T) {
 	assert.Equal(t, expected.LogLevel, generated.Spec.LogLevel)
 	assert.Equal(t, expected.Retention, generated.Spec.Retention)
 
-	availableMs := f.GetStackWhenAvailable(t, ms.Name, ms.Namespace)
+	availableMs := f.GetStackWhenAvailable(context.Background(), t, ms.Name, ms.Namespace)
 	availableC := getConditionByType(availableMs.Status.Conditions, stack.AvailableCondition)
 	assertCondition(t, availableC, monitoringstack.AvailableReason, stack.AvailableCondition, availableMs)
 	reconciledC := getConditionByType(availableMs.Status.Conditions, stack.ReconciledCondition)
@@ -279,7 +279,7 @@ func reconcileRevertsManualChanges(t *testing.T) {
 
 	// Creating an Empty monitoring stack must create a Prometheus with defaults applied
 	generated := monv1.Prometheus{}
-	f.GetResourceWithRetry(t, ms.Name, ms.Namespace, &generated)
+	f.GetResourceWithRetry(context.Background(), t, ms.Name, ms.Namespace, &generated)
 
 	// update the prometheus created by monitoring-stack controller
 
@@ -460,8 +460,8 @@ func assertAlertmanagerNotDeployed(t *testing.T) {
 	if err := f.K8sClient.Create(context.Background(), ms); err != nil {
 		t.Fatal(err)
 	}
-	_ = f.GetStackWhenAvailable(t, ms.Name, ms.Namespace)
-	f.AssertAlertmanagerAbsent(t, ms.Name, ms.Namespace)
+	_ = f.GetStackWhenAvailable(context.Background(), t, ms.Name, ms.Namespace)
+	f.AssertAlertmanagerAbsent(context.Background(), t, ms.Name, ms.Namespace)
 }
 
 func assertAlertmanagerDeployedAndRemoved(t *testing.T) {
@@ -469,7 +469,7 @@ func assertAlertmanagerDeployedAndRemoved(t *testing.T) {
 	if err := f.K8sClient.Create(context.Background(), ms); err != nil {
 		t.Fatal(err)
 	}
-	updatedMS := f.GetStackWhenAvailable(t, ms.Name, ms.Namespace)
+	updatedMS := f.GetStackWhenAvailable(context.Background(), t, ms.Name, ms.Namespace)
 	var am monv1.Alertmanager
 	key := types.NamespacedName{Name: ms.Name, Namespace: ms.Namespace}
 	err := f.K8sClient.Get(context.Background(), key, &am)
@@ -479,7 +479,7 @@ func assertAlertmanagerDeployedAndRemoved(t *testing.T) {
 	err = f.K8sClient.Update(context.Background(), &updatedMS)
 	assert.NilError(t, err)
 
-	f.AssertAlertmanagerAbsent(t, updatedMS.Name, updatedMS.Namespace)
+	f.AssertAlertmanagerAbsent(context.Background(), t, updatedMS.Name, updatedMS.Namespace)
 }
 
 func assertAlertmanagerCreated(t *testing.T, name string) {
@@ -570,7 +570,7 @@ func prometheusScaleDown(t *testing.T) {
 	assert.NilError(t, err, "failed to create a monitoring stack")
 
 	prom := monv1.Prometheus{}
-	f.GetResourceWithRetry(t, ms.Name, ms.Namespace, &prom)
+	f.GetResourceWithRetry(context.Background(), t, ms.Name, ms.Namespace, &prom)
 
 	assert.Equal(t, prom.Status.Replicas, int32(1))
 
@@ -629,7 +629,7 @@ func assertPrometheusManagedFields(t *testing.T) {
 	assert.NilError(t, err, "failed to create a monitoring stack")
 
 	prom := monv1.Prometheus{}
-	f.GetResourceWithRetry(t, ms.Name, ms.Namespace, &prom)
+	f.GetResourceWithRetry(context.Background(), t, ms.Name, ms.Namespace, &prom)
 
 	mfs := prom.GetManagedFields()
 
@@ -739,6 +739,8 @@ func getAlertmanagerAlerts() ([]alert, error) {
 }
 
 func newAlerts(t *testing.T) *monv1.PrometheusRule {
+	durationTenSec := monv1.Duration("10s")
+	durationOneSec := monv1.Duration("1s")
 	rule := &monv1.PrometheusRule{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: monv1.SchemeGroupVersion.String(),
@@ -752,17 +754,17 @@ func newAlerts(t *testing.T) *monv1.PrometheusRule {
 			Groups: []monv1.RuleGroup{
 				{
 					Name:     "Test",
-					Interval: "10s",
+					Interval: &durationTenSec,
 					Rules: []monv1.Rule{
 						{
 							Alert: "AlwaysOn",
 							Expr:  intstr.FromString("vector(1)"),
-							For:   "1s",
+							For:   &durationOneSec,
 						},
 						{
 							Alert: "NeverOn",
 							Expr:  intstr.FromString("vector(1) == 0"),
-							For:   "1s",
+							For:   &durationOneSec,
 						},
 					},
 				},
