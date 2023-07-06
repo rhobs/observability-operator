@@ -2352,6 +2352,8 @@ spec:
                       type: string
                     filterExternalLabels:
                       type: boolean
+                    followRedirects:
+                      type: boolean
                     headers:
                       additionalProperties:
                         type: string
@@ -2662,6 +2664,8 @@ spec:
                       pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
                       type: string
                     sendExemplars:
+                      type: boolean
+                    sendNativeHistograms:
                       type: boolean
                     sigv4:
                       properties:
@@ -3683,6 +3687,117 @@ spec:
                   - whenUnsatisfiable
                   type: object
                 type: array
+              tracingConfig:
+                properties:
+                  clientType:
+                    enum:
+                    - http
+                    - grpc
+                    type: string
+                  compression:
+                    enum:
+                    - gzip
+                    type: string
+                  endpoint:
+                    minLength: 1
+                    type: string
+                  headers:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  insecure:
+                    type: boolean
+                  samplingFraction:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                  timeout:
+                    pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
+                    type: string
+                  tlsConfig:
+                    properties:
+                      ca:
+                        properties:
+                          configMap:
+                            properties:
+                              key:
+                                type: string
+                              name:
+                                type: string
+                              optional:
+                                type: boolean
+                            required:
+                            - key
+                            type: object
+                            x-kubernetes-map-type: atomic
+                          secret:
+                            properties:
+                              key:
+                                type: string
+                              name:
+                                type: string
+                              optional:
+                                type: boolean
+                            required:
+                            - key
+                            type: object
+                            x-kubernetes-map-type: atomic
+                        type: object
+                      caFile:
+                        type: string
+                      cert:
+                        properties:
+                          configMap:
+                            properties:
+                              key:
+                                type: string
+                              name:
+                                type: string
+                              optional:
+                                type: boolean
+                            required:
+                            - key
+                            type: object
+                            x-kubernetes-map-type: atomic
+                          secret:
+                            properties:
+                              key:
+                                type: string
+                              name:
+                                type: string
+                              optional:
+                                type: boolean
+                            required:
+                            - key
+                            type: object
+                            x-kubernetes-map-type: atomic
+                        type: object
+                      certFile:
+                        type: string
+                      insecureSkipVerify:
+                        type: boolean
+                      keyFile:
+                        type: string
+                      keySecret:
+                        properties:
+                          key:
+                            type: string
+                          name:
+                            type: string
+                          optional:
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      serverName:
+                        type: string
+                    type: object
+                required:
+                - endpoint
+                type: object
               tsdb:
                 properties:
                   outOfOrderTimeWindow:

@@ -33,7 +33,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/go-logr/logr"
 )
@@ -77,7 +76,7 @@ func RegisterWithManager(mgr ctrl.Manager) error {
 		Owns(&corev1.ServiceAccount{}).WithEventFilter(p).
 		Owns(&corev1.Service{}).WithEventFilter(p).
 		Watches(
-			&source.Kind{Type: &msoapi.MonitoringStack{}},
+			&msoapi.MonitoringStack{},
 			handler.EnqueueRequestsFromMapFunc(rm.findQueriersForMonitoringStack),
 			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{}),
 		).
@@ -154,11 +153,11 @@ func getEndpointUrl(serviceName string, namespace string) string {
 
 // Find all ThanosQueriers, whose Selector fits the given MonitoringStack and
 // return a list of reconcile requests, one for each ThanosQuerier.
-func (rm resourceManager) findQueriersForMonitoringStack(ms client.Object) []reconcile.Request {
+func (rm resourceManager) findQueriersForMonitoringStack(ctx context.Context, ms client.Object) []reconcile.Request {
 	logger := rm.logger.WithValues("Monitoring Stack", ms.GetNamespace()+"/"+ms.GetName())
 	logger.Info("watched MonitoringStack changed, checking for matching querier")
 	queriers := &msoapi.ThanosQuerierList{}
-	err := rm.List(context.TODO(), queriers, &client.ListOptions{})
+	err := rm.List(ctx, queriers, &client.ListOptions{})
 	if err != nil {
 		logger.Error(err, "Failed to list Thanosqueriers")
 		return []reconcile.Request{}

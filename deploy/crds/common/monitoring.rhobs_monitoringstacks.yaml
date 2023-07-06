@@ -261,7 +261,7 @@ spec:
                               compute resources required. If Requests is omitted for
                               a container, it defaults to Limits if that is explicitly
                               specified, otherwise to an implementation-defined value.
-                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                              Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                             type: object
                         type: object
                       selector:
@@ -332,7 +332,9 @@ spec:
                         samples from Prometheus to a remote endpoint.
                       properties:
                         authorization:
-                          description: Authorization section for remote write
+                          description: "Authorization section for the URL. \n It requires
+                            Prometheus >= v2.26.0. \n Cannot be set at the same time
+                            as `sigv4`, `basicAuth`, or `oauth2`."
                           properties:
                             credentials:
                               description: The secret's key that contains the credentials
@@ -365,7 +367,9 @@ spec:
                               type: string
                           type: object
                         basicAuth:
-                          description: BasicAuth for the URL.
+                          description: "BasicAuth configuration for the URL. \n Cannot
+                            be set at the same time as `sigv4`, `authorization`, or
+                            `oauth2`."
                           properties:
                             password:
                               description: The secret in the service monitor namespace
@@ -411,18 +415,22 @@ spec:
                               x-kubernetes-map-type: atomic
                           type: object
                         bearerToken:
-                          description: Bearer token for remote write.
+                          description: "*Warning: this field shouldn't used because
+                            the token value appears in clear-text. Prefer using `authorization`.*
+                            \n *Deprecated: this will be removed in a future release.*"
                           type: string
                         bearerTokenFile:
-                          description: File to read bearer token for remote write.
+                          description: "File from which to read bearer token for the
+                            URL. \n *Deprecated: this will be removed in a future
+                            release. Prefer using `authorization`.*"
                           type: string
                         headers:
                           additionalProperties:
                             type: string
-                          description: Custom HTTP headers to be sent along with each
-                            remote write request. Be aware that headers that are set
-                            by Prometheus itself can't be overwritten. Only valid
-                            in Prometheus versions 2.25.0 and newer.
+                          description: "Custom HTTP headers to be sent along with
+                            each remote write request. Be aware that headers that
+                            are set by Prometheus itself can't be overwritten. \n
+                            It requires Prometheus >= v2.25.0."
                           type: object
                         metadataConfig:
                           description: MetadataConfig configures the sending of series
@@ -439,14 +447,15 @@ spec:
                               type: string
                           type: object
                         name:
-                          description: The name of the remote write queue, it must
+                          description: "The name of the remote write queue, it must
                             be unique if specified. The name is used in metrics and
-                            logging in order to differentiate queues. Only valid in
-                            Prometheus versions 2.15.0 and newer.
+                            logging in order to differentiate queues. \n It requires
+                            Prometheus >= v2.15.0."
                           type: string
                         oauth2:
-                          description: OAuth2 for the URL. Only valid in Prometheus
-                            versions 2.27.0 and newer.
+                          description: "OAuth2 configuration for the URL. \n It requires
+                            Prometheus >= v2.27.0. \n Cannot be set at the same time
+                            as `sigv4`, `authorization`, or `basicAuth`."
                           properties:
                             clientId:
                               description: The secret or configmap containing the
@@ -585,18 +594,24 @@ spec:
                           pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
                           type: string
                         sendExemplars:
-                          description: Enables sending of exemplars over remote write.
+                          description: "Enables sending of exemplars over remote write.
                             Note that exemplar-storage itself must be enabled using
-                            the enableFeature option for exemplars to be scraped in
-                            the first place.  Only valid in Prometheus versions 2.27.0
-                            and newer.
+                            the `spec.enableFeature` option for exemplars to be scraped
+                            in the first place. \n It requires Prometheus >= v2.27.0."
+                          type: boolean
+                        sendNativeHistograms:
+                          description: "Enables sending of native histograms, also
+                            known as sparse histograms over remote write. \n It requires
+                            Prometheus >= v2.40.0."
                           type: boolean
                         sigv4:
-                          description: Sigv4 allows to configures AWS's Signature
-                            Verification 4
+                          description: "Sigv4 allows to configures AWS's Signature
+                            Verification 4 for the URL. \n It requires Prometheus
+                            >= v2.26.0. \n Cannot be set at the same time as `authorization`,
+                            `basicAuth`, or `oauth2`."
                           properties:
                             accessKey:
-                              description: AccessKey is the AWS API key. If blank,
+                              description: AccessKey is the AWS API key. If not specified,
                                 the environment variable `AWS_ACCESS_KEY_ID` is used.
                               properties:
                                 key:
@@ -629,9 +644,9 @@ spec:
                                 authenticate.
                               type: string
                             secretKey:
-                              description: SecretKey is the AWS API secret. If blank,
-                                the environment variable `AWS_SECRET_ACCESS_KEY` is
-                                used.
+                              description: SecretKey is the AWS API secret. If not
+                                specified, the environment variable `AWS_SECRET_ACCESS_KEY`
+                                is used.
                               properties:
                                 key:
                                   description: The key of the secret to select from.  Must
@@ -652,7 +667,7 @@ spec:
                               x-kubernetes-map-type: atomic
                           type: object
                         tlsConfig:
-                          description: TLS Config to use for remote write.
+                          description: TLS Config to use for the URL.
                           properties:
                             ca:
                               description: Certificate authority used when verifying
@@ -984,7 +999,8 @@ spec:
                     description: 'Requests describes the minimum amount of compute
                       resources required. If Requests is omitted for a container,
                       it defaults to Limits if that is explicitly specified, otherwise
-                      to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                      to an implementation-defined value. Requests cannot exceed Limits.
+                      More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                     type: object
                 type: object
               retention:
