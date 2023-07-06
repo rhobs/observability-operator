@@ -42,6 +42,7 @@ func invalidPrometheusRuleIsRejected(t *testing.T) {
 }
 
 func newSinglePrometheusRule(t *testing.T, name, expr string) *monv1.PrometheusRule {
+	durationFifteenMinutes := monv1.Duration("15m")
 	rule := &monv1.PrometheusRule{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -53,7 +54,7 @@ func newSinglePrometheusRule(t *testing.T, name, expr string) *monv1.PrometheusR
 				Rules: []monv1.Rule{{
 					Alert: "alert name",
 					Expr:  intstr.FromString(expr),
-					For:   "15m",
+					For:   &durationFifteenMinutes,
 				}},
 			}},
 		},
