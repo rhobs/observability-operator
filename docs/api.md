@@ -520,7 +520,7 @@ resources represents the minimum resources the volume should have. If RecoverVol
         <td><b>requests</b></td>
         <td>map[string]int or string</td>
         <td>
-          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -656,35 +656,41 @@ RemoteWriteSpec defines the configuration to write samples from Prometheus to a 
         <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexauthorization">authorization</a></b></td>
         <td>object</td>
         <td>
-          Authorization section for remote write<br/>
+          Authorization section for the URL. 
+ It requires Prometheus >= v2.26.0. 
+ Cannot be set at the same time as `sigv4`, `basicAuth`, or `oauth2`.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexbasicauth">basicAuth</a></b></td>
         <td>object</td>
         <td>
-          BasicAuth for the URL.<br/>
+          BasicAuth configuration for the URL. 
+ Cannot be set at the same time as `sigv4`, `authorization`, or `oauth2`.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>bearerToken</b></td>
         <td>string</td>
         <td>
-          Bearer token for remote write.<br/>
+          *Warning: this field shouldn't used because the token value appears in clear-text. Prefer using `authorization`.* 
+ *Deprecated: this will be removed in a future release.*<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>bearerTokenFile</b></td>
         <td>string</td>
         <td>
-          File to read bearer token for remote write.<br/>
+          File from which to read bearer token for the URL. 
+ *Deprecated: this will be removed in a future release. Prefer using `authorization`.*<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>headers</b></td>
         <td>map[string]string</td>
         <td>
-          Custom HTTP headers to be sent along with each remote write request. Be aware that headers that are set by Prometheus itself can't be overwritten. Only valid in Prometheus versions 2.25.0 and newer.<br/>
+          Custom HTTP headers to be sent along with each remote write request. Be aware that headers that are set by Prometheus itself can't be overwritten. 
+ It requires Prometheus >= v2.25.0.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -698,14 +704,17 @@ RemoteWriteSpec defines the configuration to write samples from Prometheus to a 
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          The name of the remote write queue, it must be unique if specified. The name is used in metrics and logging in order to differentiate queues. Only valid in Prometheus versions 2.15.0 and newer.<br/>
+          The name of the remote write queue, it must be unique if specified. The name is used in metrics and logging in order to differentiate queues. 
+ It requires Prometheus >= v2.15.0.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexoauth2">oauth2</a></b></td>
         <td>object</td>
         <td>
-          OAuth2 for the URL. Only valid in Prometheus versions 2.27.0 and newer.<br/>
+          OAuth2 configuration for the URL. 
+ It requires Prometheus >= v2.27.0. 
+ Cannot be set at the same time as `sigv4`, `authorization`, or `basicAuth`.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -733,21 +742,32 @@ RemoteWriteSpec defines the configuration to write samples from Prometheus to a 
         <td><b>sendExemplars</b></td>
         <td>boolean</td>
         <td>
-          Enables sending of exemplars over remote write. Note that exemplar-storage itself must be enabled using the enableFeature option for exemplars to be scraped in the first place.  Only valid in Prometheus versions 2.27.0 and newer.<br/>
+          Enables sending of exemplars over remote write. Note that exemplar-storage itself must be enabled using the `spec.enableFeature` option for exemplars to be scraped in the first place. 
+ It requires Prometheus >= v2.27.0.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>sendNativeHistograms</b></td>
+        <td>boolean</td>
+        <td>
+          Enables sending of native histograms, also known as sparse histograms over remote write. 
+ It requires Prometheus >= v2.40.0.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexsigv4">sigv4</a></b></td>
         <td>object</td>
         <td>
-          Sigv4 allows to configures AWS's Signature Verification 4<br/>
+          Sigv4 allows to configures AWS's Signature Verification 4 for the URL. 
+ It requires Prometheus >= v2.26.0. 
+ Cannot be set at the same time as `authorization`, `basicAuth`, or `oauth2`.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindextlsconfig">tlsConfig</a></b></td>
         <td>object</td>
         <td>
-          TLS Config to use for remote write.<br/>
+          TLS Config to use for the URL.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -766,7 +786,9 @@ RemoteWriteSpec defines the configuration to write samples from Prometheus to a 
 
 
 
-Authorization section for remote write
+Authorization section for the URL. 
+ It requires Prometheus >= v2.26.0. 
+ Cannot be set at the same time as `sigv4`, `basicAuth`, or `oauth2`.
 
 <table>
     <thead>
@@ -848,7 +870,8 @@ The secret's key that contains the credentials of the request
 
 
 
-BasicAuth for the URL.
+BasicAuth configuration for the URL. 
+ Cannot be set at the same time as `sigv4`, `authorization`, or `oauth2`.
 
 <table>
     <thead>
@@ -998,7 +1021,9 @@ MetadataConfig configures the sending of series metadata to the remote storage.
 
 
 
-OAuth2 for the URL. Only valid in Prometheus versions 2.27.0 and newer.
+OAuth2 configuration for the URL. 
+ It requires Prometheus >= v2.27.0. 
+ Cannot be set at the same time as `sigv4`, `authorization`, or `basicAuth`.
 
 <table>
     <thead>
@@ -1293,7 +1318,9 @@ QueueConfig allows tuning of the remote write queue parameters.
 
 
 
-Sigv4 allows to configures AWS's Signature Verification 4
+Sigv4 allows to configures AWS's Signature Verification 4 for the URL. 
+ It requires Prometheus >= v2.26.0. 
+ Cannot be set at the same time as `authorization`, `basicAuth`, or `oauth2`.
 
 <table>
     <thead>
@@ -1308,7 +1335,7 @@ Sigv4 allows to configures AWS's Signature Verification 4
         <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexsigv4accesskey">accessKey</a></b></td>
         <td>object</td>
         <td>
-          AccessKey is the AWS API key. If blank, the environment variable `AWS_ACCESS_KEY_ID` is used.<br/>
+          AccessKey is the AWS API key. If not specified, the environment variable `AWS_ACCESS_KEY_ID` is used.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1336,7 +1363,7 @@ Sigv4 allows to configures AWS's Signature Verification 4
         <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexsigv4secretkey">secretKey</a></b></td>
         <td>object</td>
         <td>
-          SecretKey is the AWS API secret. If blank, the environment variable `AWS_SECRET_ACCESS_KEY` is used.<br/>
+          SecretKey is the AWS API secret. If not specified, the environment variable `AWS_SECRET_ACCESS_KEY` is used.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1348,7 +1375,7 @@ Sigv4 allows to configures AWS's Signature Verification 4
 
 
 
-AccessKey is the AWS API key. If blank, the environment variable `AWS_ACCESS_KEY_ID` is used.
+AccessKey is the AWS API key. If not specified, the environment variable `AWS_ACCESS_KEY_ID` is used.
 
 <table>
     <thead>
@@ -1389,7 +1416,7 @@ AccessKey is the AWS API key. If blank, the environment variable `AWS_ACCESS_KEY
 
 
 
-SecretKey is the AWS API secret. If blank, the environment variable `AWS_SECRET_ACCESS_KEY` is used.
+SecretKey is the AWS API secret. If not specified, the environment variable `AWS_SECRET_ACCESS_KEY` is used.
 
 <table>
     <thead>
@@ -1430,7 +1457,7 @@ SecretKey is the AWS API secret. If blank, the environment variable `AWS_SECRET_
 
 
 
-TLS Config to use for remote write.
+TLS Config to use for the URL.
 
 <table>
     <thead>
@@ -1959,7 +1986,7 @@ Define resources requests and limits for Monitoring Stack Pods.
         <td><b>requests</b></td>
         <td>map[string]int or string</td>
         <td>
-          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
       </tr></tbody>

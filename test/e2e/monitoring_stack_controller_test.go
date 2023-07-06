@@ -739,6 +739,8 @@ func getAlertmanagerAlerts() ([]alert, error) {
 }
 
 func newAlerts(t *testing.T) *monv1.PrometheusRule {
+	durationTenSec := monv1.Duration("10s")
+	durationOneSec := monv1.Duration("1s")
 	rule := &monv1.PrometheusRule{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: monv1.SchemeGroupVersion.String(),
@@ -752,17 +754,17 @@ func newAlerts(t *testing.T) *monv1.PrometheusRule {
 			Groups: []monv1.RuleGroup{
 				{
 					Name:     "Test",
-					Interval: "10s",
+					Interval: &durationTenSec,
 					Rules: []monv1.Rule{
 						{
 							Alert: "AlwaysOn",
 							Expr:  intstr.FromString("vector(1)"),
-							For:   "1s",
+							For:   &durationOneSec,
 						},
 						{
 							Alert: "NeverOn",
 							Expr:  intstr.FromString("vector(1) == 0"),
-							For:   "1s",
+							For:   &durationOneSec,
 						},
 					},
 				},
