@@ -262,9 +262,13 @@ func (f *Framework) GetStackWhenAvailable(t *testing.T, name, namespace string) 
 		Name:      name,
 		Namespace: namespace,
 	}
+	var lastErr error
+
 	err := wait.Poll(5*time.Second, wait.ForeverTestTimeout, func() (bool, error) {
+		lastErr = nil
 		err := f.K8sClient.Get(context.Background(), key, &ms)
 		if err != nil {
+			lastErr = err
 			return false, nil
 		}
 		availableC := getConditionByType(ms.Status.Conditions, v1alpha1.AvailableCondition)
@@ -275,7 +279,7 @@ func (f *Framework) GetStackWhenAvailable(t *testing.T, name, namespace string) 
 	})
 
 	if err == wait.ErrWaitTimeout {
-		t.Fatal(fmt.Errorf("resource %s/%s was not available", namespace, name))
+		t.Fatal(fmt.Errorf("MonitoringStack %s/%s was not available - err: %w |  %v", namespace, name, lastErr, ms.Status.Conditions))
 	}
 	return ms
 }
