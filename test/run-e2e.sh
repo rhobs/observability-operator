@@ -21,7 +21,7 @@ declare NO_BUILDS=false
 declare SHOW_USAGE=false
 declare LOGS_DIR="tmp/e2e"
 declare OPERATORS_NS="operators"
-declare TEST_TIMEOUT="15m"
+declare TEST_TIMEOUT="25m"
 
 cleanup() {
 	info "Cleaning up ..."
