@@ -53,6 +53,7 @@ func (f *Framework) AssertResourceNeverExists(name, namespace string, resource c
 	}
 
 	return func(t *testing.T) {
+		t.Helper()
 		if err := wait.Poll(option.PollInterval, option.WaitTimeout, func() (done bool, err error) {
 			key := types.NamespacedName{
 				Name:      name,
@@ -80,6 +81,7 @@ func (f *Framework) AssertResourceEventuallyExists(name, namespace string, resou
 	}
 
 	return func(t *testing.T) {
+		t.Helper()
 		if err := wait.Poll(option.PollInterval, option.WaitTimeout, func() (done bool, err error) {
 			key := types.NamespacedName{
 				Name:      name,
@@ -105,6 +107,7 @@ func (f *Framework) AssertStatefulsetReady(name, namespace string, fns ...Option
 		fn(&option)
 	}
 	return func(t *testing.T) {
+		t.Helper()
 		key := types.NamespacedName{Name: name, Namespace: namespace}
 		if err := wait.Poll(5*time.Second, option.WaitTimeout, func() (bool, error) {
 			pod := &appsv1.StatefulSet{}
@@ -117,6 +120,7 @@ func (f *Framework) AssertStatefulsetReady(name, namespace string, fns ...Option
 }
 
 func (f *Framework) GetResourceWithRetry(t *testing.T, name, namespace string, obj client.Object) {
+	t.Helper()
 	err := wait.Poll(5*time.Second, wait.ForeverTestTimeout, func() (bool, error) {
 		key := types.NamespacedName{Name: name, Namespace: namespace}
 
@@ -134,6 +138,7 @@ func (f *Framework) GetResourceWithRetry(t *testing.T, name, namespace string, o
 }
 
 func assertPromQL(t *testing.T, metrics []byte, query string, expected map[string]float64) {
+	t.Helper()
 
 	now := time.Now()
 	points, err := prom.ParseTextData(metrics, now)
@@ -190,6 +195,7 @@ func assertPromQL(t *testing.T, metrics []byte, query string, expected map[strin
 // GetOperatorPod gets the operator pod assuming the operator is deployed in
 // "operators" namespace.
 func (f *Framework) GetOperatorPod(t *testing.T) *v1.Pod {
+	t.Helper()
 
 	// get the operator deployment
 	operator := appsv1.Deployment{}
@@ -220,6 +226,7 @@ func (f *Framework) GetOperatorPod(t *testing.T) *v1.Pod {
 }
 
 func (f *Framework) GetOperatorMetrics(t *testing.T) []byte {
+	t.Helper()
 	pod := f.GetOperatorPod(t)
 
 	stopChan := make(chan struct{})
@@ -246,6 +253,7 @@ func (f *Framework) GetOperatorMetrics(t *testing.T) []byte {
 
 // AssertNoReconcileErrors asserts that there are no reconcilation errors
 func (f *Framework) AssertNoReconcileErrors(t *testing.T) {
+	t.Helper()
 	metrics := f.GetOperatorMetrics(t)
 	assertPromQL(t, metrics,
 		`controller_runtime_reconcile_errors_total`,
@@ -257,6 +265,7 @@ func (f *Framework) AssertNoReconcileErrors(t *testing.T) {
 }
 
 func (f *Framework) GetStackWhenAvailable(t *testing.T, name, namespace string) v1alpha1.MonitoringStack {
+	t.Helper()
 	var ms v1alpha1.MonitoringStack
 	key := types.NamespacedName{
 		Name:      name,
@@ -285,6 +294,7 @@ func (f *Framework) GetStackWhenAvailable(t *testing.T, name, namespace string) 
 }
 
 func (f *Framework) AssertAlertmanagerAbsent(t *testing.T, name, namespace string) {
+	t.Helper()
 	var am monv1.Alertmanager
 	key := types.NamespacedName{
 		Name:      name,
