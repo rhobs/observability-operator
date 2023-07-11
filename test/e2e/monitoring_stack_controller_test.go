@@ -61,9 +61,6 @@ func TestMonitoringStackController(t *testing.T) {
 		name:     "Defaults are applied to Monitoring CR",
 		scenario: promConfigDefaultsAreApplied,
 	}, {
-		name:     "Alertmanager disabled",
-		scenario: assertAlertmanagerNotDeployed,
-	}, {
 		name:     "Empty stack spec must create a Prometheus",
 		scenario: emptyStackCreatesPrometheus,
 	}, {
@@ -117,6 +114,9 @@ func TestMonitoringStackController(t *testing.T) {
 	}, {
 		name:     "managed fields in Prometheus object",
 		scenario: assertPrometheusManagedFields,
+	}, {
+		name:     "Alertmanager disabled",
+		scenario: assertAlertmanagerNotDeployed,
 	}}
 
 	for _, tc := range ts {
