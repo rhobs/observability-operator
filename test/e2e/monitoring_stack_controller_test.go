@@ -61,6 +61,9 @@ func TestMonitoringStackController(t *testing.T) {
 		name:     "Defaults are applied to Monitoring CR",
 		scenario: promConfigDefaultsAreApplied,
 	}, {
+		name:     "Alertmanager disabled",
+		scenario: assertAlertmanagerNotDeployed,
+	}, {
 		name:     "Empty stack spec must create a Prometheus",
 		scenario: emptyStackCreatesPrometheus,
 	}, {
@@ -102,9 +105,6 @@ func TestMonitoringStackController(t *testing.T) {
 	}, {
 		name:     "invalid Prometheus replicas numbers",
 		scenario: validatePrometheusConfig,
-	}, {
-		name:     "Alertmanager disabled",
-		scenario: assertAlertmanagerNotDeployed,
 	}, {
 		name:     "Alertmanager deployed and removed",
 		scenario: assertAlertmanagerDeployedAndRemoved,
@@ -454,7 +454,7 @@ func assertPrometheusScrapesItself(t *testing.T) {
 }
 
 func assertAlertmanagerNotDeployed(t *testing.T) {
-	ms := newMonitoringStack(t, "no-alertmanager", func(ms *stack.MonitoringStack) {
+	ms := newMonitoringStack(t, "no-am", func(ms *stack.MonitoringStack) {
 		ms.Spec.AlertmanagerConfig.Disabled = true
 	})
 	if err := f.K8sClient.Create(context.Background(), ms); err != nil {
