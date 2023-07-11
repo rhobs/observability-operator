@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.23](https://github.com/rhobs/monitoring-stack-operator/commit/) (2023-07-11)
+
+
+### Bug Fixes
+
+* add repo details to bundle ([#303](https://github.com/rhobs/monitoring-stack-operator/issues/303)) ([687e0cb](https://github.com/rhobs/monitoring-stack-operator/commit/687e0cbb50421b3f74fbeb32e40e56b321e5af9e))
+* broken release candidate workflow ([#306](https://github.com/rhobs/monitoring-stack-operator/issues/306)) ([56f9e2c](https://github.com/rhobs/monitoring-stack-operator/commit/56f9e2c03638aa88908d1d223cb2ae5e981fc9cf))
+* **doc:** use right terminology in release doc ([f65d0d2](https://github.com/rhobs/monitoring-stack-operator/commit/f65d0d248207a89e7a6bc72e5b235fd1c95c0c38))
+* make catalogsource compatible with restricted SCC enforcement ([d0d4c74](https://github.com/rhobs/monitoring-stack-operator/commit/d0d4c748eb7426815525f5e283dbd190175c6d21))
+
 ### [0.0.22](https://github.com/rhobs/monitoring-stack-operator/commit/) (2023-06-04)
 
 
