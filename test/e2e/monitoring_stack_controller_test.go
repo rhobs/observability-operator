@@ -149,7 +149,7 @@ func nilResrouceSelectorPropagatesToPrometheus(t *testing.T) {
 	assert.NilError(t, err, "failed to patch monitoring stack with nil resource selector")
 
 	prometheus := monv1.Prometheus{}
-	err = wait.Poll(5*time.Second, wait.ForeverTestTimeout, func() (bool, error) {
+	err = wait.Poll(5*time.Second, framework.CustomForeverTestTimeout, func() (bool, error) {
 		if err := f.K8sClient.Get(context.Background(), types.NamespacedName{Name: updatedMS.Name, Namespace: updatedMS.Namespace}, &prometheus); errors.IsNotFound(err) {
 			return false, nil
 		}
@@ -584,7 +584,7 @@ func prometheusScaleDown(t *testing.T) {
 	ms.Spec.PrometheusConfig.Replicas = &numOfRep
 	err = f.K8sClient.Update(context.Background(), ms)
 	assert.NilError(t, err, "failed to update a monitoring stack")
-	err = wait.Poll(5*time.Second, wait.ForeverTestTimeout, func() (bool, error) {
+	err = wait.Poll(5*time.Second, framework.CustomForeverTestTimeout, func() (bool, error) {
 		if err := f.K8sClient.Get(context.Background(), key, &prom); errors.IsNotFound(err) {
 			return false, nil
 		}
@@ -819,7 +819,7 @@ func newMonitoringStack(t *testing.T, name string, mods ...stackModifier) *stack
 }
 
 func waitForStackDeletion(name string) error {
-	return wait.Poll(5*time.Second, wait.ForeverTestTimeout, func() (bool, error) {
+	return wait.Poll(5*time.Second, framework.CustomForeverTestTimeout, func() (bool, error) {
 		key := types.NamespacedName{Name: name, Namespace: e2eTestNamespace}
 		var ms stack.MonitoringStack
 		err := f.K8sClient.Get(context.Background(), key, &ms)
