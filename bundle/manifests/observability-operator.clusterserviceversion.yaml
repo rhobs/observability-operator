@@ -421,7 +421,7 @@ spec:
               automountServiceAccountToken: true
               containers:
               - args:
-                - --prometheus-config-reloader=quay.io/rhobs/obo-prometheus-config-reloader:v0.65.1-rhobs1
+                - --prometheus-config-reloader=quay.io/rhobs/obo-prometheus-config-reloader:v0.66.0-rhobs1
                 - --prometheus-instance-selector=app.kubernetes.io/managed-by=observability-operator
                 - --alertmanager-instance-selector=app.kubernetes.io/managed-by=observability-operator
                 - --thanos-ruler-instance-selector=app.kubernetes.io/managed-by=observability-operator
