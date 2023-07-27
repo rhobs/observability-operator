@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.24](https://github.com/rhobs/monitoring-stack-operator/commit/) (2023-07-27)
+
+
+### Bug Fixes
+
+* enforce scheduling registry pod onto infra nodes ([#313](https://github.com/rhobs/monitoring-stack-operator/issues/313)) ([23a60b4](https://github.com/rhobs/monitoring-stack-operator/commit/23a60b4789520c3c9087c1987a28fa1d637578b7))
+
 ### [0.0.23](https://github.com/rhobs/monitoring-stack-operator/commit/) (2023-07-11)
 
 
