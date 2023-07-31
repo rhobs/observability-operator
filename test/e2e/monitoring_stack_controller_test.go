@@ -22,6 +22,8 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/wait"
 
+	"k8s.io/utils/pointer"
+
 	"github.com/google/go-cmp/cmp"
 
 	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
@@ -861,7 +863,7 @@ func namespaceSelectorTest(t *testing.T) {
 
 	promClient := framework.NewPrometheusClient("http://localhost:9090")
 	if pollErr := wait.Poll(5*time.Second, 5*time.Minute, func() (bool, error) {
-		query := `prometheus_build_info{namespace=~"test-ns-.*"}`
+		query := `version{pod="prometheus-example-app",namespace=~"test-ns-.*"}`
 		result, err := promClient.Query(query)
 		if err != nil {
 			return false, nil
@@ -889,7 +891,7 @@ func deployDemoApp(t *testing.T, nsName string, nsLabels, resourceLabels map[str
 	}
 
 	// deploy a pod, service, service-monitor into that namespace
-	prom := newPrometheusPod(t, "prometheus", ns.Name)
+	prom := newPrometheusExampleAppPod(t, "prometheus-example-app", ns.Name)
 	if err := f.K8sClient.Create(context.Background(), prom); err != nil {
 		return fmt.Errorf("failed to create demo app %s/%s: %w", nsName, prom.Name, err)
 	}
@@ -902,15 +904,15 @@ func deployDemoApp(t *testing.T, nsName string, nsLabels, resourceLabels map[str
 	// these are prometheus ports
 	svc.Spec.Ports = []corev1.ServicePort{{
 		Name:       "metrics",
-		Port:       9090,
-		TargetPort: intstr.FromInt(9090),
+		Port:       8080,
+		TargetPort: intstr.FromInt(8080),
 	}}
 
 	if err := f.K8sClient.Create(context.Background(), svc); err != nil {
 		return fmt.Errorf("failed to create service for demo app %s/%s: %w", nsName, svc.Name, err)
 	}
 
-	svcMon := newServiceMonitor(t, ns.Name, "prometheus", resourceLabels, svcLabels, "metrics")
+	svcMon := newServiceMonitor(t, ns.Name, "prometheus-example-app", resourceLabels, svcLabels, "metrics")
 	if err := f.K8sClient.Create(context.Background(), svcMon); err != nil {
 		return fmt.Errorf("failed to create servicemonitor for demo service %s/%s: %w", nsName, svcMon.Name, err)
 	}
@@ -972,7 +974,7 @@ func newService(t *testing.T, name, namespace string, labels, selector map[strin
 	return svc
 }
 
-func newPrometheusPod(t *testing.T, name, ns string) *corev1.Pod {
+func newPrometheusExampleAppPod(t *testing.T, name, ns string) *corev1.Pod {
 	pod := &corev1.Pod{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),
@@ -983,16 +985,35 @@ func newPrometheusPod(t *testing.T, name, ns string) *corev1.Pod {
 			Namespace: ns,
 			Labels: map[string]string{
 				"app.kubernetes.io/name":    "prometheus",
-				"app.kubernetes.io/version": "2.39.1",
+				"app.kubernetes.io/version": "multiarch-v0.4.1",
 			},
 		},
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{{
-				Name:  "prometheus",
-				Image: "quay.io/prometheus/prometheus:v2.39.1",
+				Name: "prometheus-example-app",
+				// This image is rebuild of the `prometheus-example-app` available on GitHub:
+				// https://github.com/brancz/prometheus-example-app
+
+				// The rebuild includes multi-arch support, as indicated by the link:
+				// https://quay.io/repository/openshifttest/prometheus-example-app/manifest/sha256:382dc349f82d730b834515e402b48a9c7e2965d0efbc42388bd254f424f6193e
+
+				// Additionally, this image is accessible on an OCP disconnected cluster,
+				// allowing tests to be run in that environment.
+				Image: "quay.io/openshifttest/prometheus-example-app@sha256:382dc349f82d730b834515e402b48a9c7e2965d0efbc42388bd254f424f6193e",
+				SecurityContext: &corev1.SecurityContext{
+					AllowPrivilegeEscalation: pointer.Bool(false),
+					SeccompProfile: &corev1.SeccompProfile{
+						Type: "RuntimeDefault",
+					},
+					Capabilities: &corev1.Capabilities{
+						Drop: []corev1.Capability{
+							"ALL",
+						},
+					},
+				},
 				Ports: []corev1.ContainerPort{{
 					Name:          "metrics",
-					ContainerPort: 9090,
+					ContainerPort: 8080,
 				}},
 			}},
 		},
