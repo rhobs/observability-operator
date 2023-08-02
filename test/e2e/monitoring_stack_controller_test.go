@@ -906,8 +906,8 @@ func deployDemoApp(t *testing.T, nsName string, nsLabels, resourceLabels map[str
 	// these are prometheus ports
 	svc.Spec.Ports = []corev1.ServicePort{{
 		Name:       "metrics",
-		Port:       8080,
-		TargetPort: intstr.FromInt(8080),
+		Port:       9090,
+		TargetPort: intstr.FromInt(9090),
 	}}
 
 	if err := f.K8sClient.Create(context.Background(), svc); err != nil {
@@ -1015,7 +1015,7 @@ func newPrometheusExampleAppPod(t *testing.T, name, ns string) *corev1.Pod {
 				},
 				Ports: []corev1.ContainerPort{{
 					Name:          "metrics",
-					ContainerPort: 8080,
+					ContainerPort: 9090,
 				}},
 			}},
 		},
