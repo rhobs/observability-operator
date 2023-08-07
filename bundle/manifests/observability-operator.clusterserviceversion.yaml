@@ -448,6 +448,10 @@ spec:
                 runAsNonRoot: true
                 runAsUser: 65534
               serviceAccountName: obo-prometheus-operator
+              tolerations:
+              - effect: NoSchedule
+                key: node-role.kubernetes.io/infra
+                operator: Exists
       - label:
           app.kubernetes.io/name: prometheus-operator-admission-webhook
           app.kubernetes.io/part-of: observability-operator
@@ -517,6 +521,10 @@ spec:
                 runAsNonRoot: true
                 runAsUser: 65534
               serviceAccountName: obo-prometheus-operator-admission-webhook
+              tolerations:
+              - effect: NoSchedule
+                key: node-role.kubernetes.io/infra
+                operator: Exists
       - label:
           app.kubernetes.io/component: operator
           app.kubernetes.io/name: observability-operator
@@ -579,6 +587,10 @@ spec:
                 runAsNonRoot: true
               serviceAccountName: observability-operator-sa
               terminationGracePeriodSeconds: 30
+              tolerations:
+              - effect: NoSchedule
+                key: node-role.kubernetes.io/infra
+                operator: Exists
     strategy: deployment
   installModes:
   - supported: false

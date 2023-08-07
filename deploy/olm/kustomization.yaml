@@ -31,6 +31,10 @@ patches:
                   - key: node-role.kubernetes.io/infra
                     operator: Exists
                 weight: 1
+          tolerations:
+          - effect: NoSchedule
+            key: node-role.kubernetes.io/infra
+            operator: Exists
   target:
     group: apps
     kind: Deployment
