@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.25](https://github.com/rhobs/monitoring-stack-operator/commit/) (2023-08-07)
+
+
+### Bug Fixes
+
+* add node tolerations to deployments ([#321](https://github.com/rhobs/monitoring-stack-operator/issues/321)) ([d0ba3a9](https://github.com/rhobs/monitoring-stack-operator/commit/d0ba3a92fbdb8e82033102f1302b31115d3448c8))
+* test case multi-namespace_support ([#312](https://github.com/rhobs/monitoring-stack-operator/issues/312)) ([6c09f46](https://github.com/rhobs/monitoring-stack-operator/commit/6c09f466c76790909b768f97b950b56af4b05608))
+
 ### [0.0.24](https://github.com/rhobs/monitoring-stack-operator/commit/) (2023-07-27)
 
 
