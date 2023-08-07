@@ -4,7 +4,7 @@ import (
 	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -68,9 +68,9 @@ func newAlertmanager(
 				},
 			},
 			SecurityContext: &corev1.PodSecurityContext{
-				FSGroup:      pointer.Int64(AlertmanagerUserFSGroupID),
-				RunAsNonRoot: pointer.Bool(true),
-				RunAsUser:    pointer.Int64(AlertmanagerUserFSGroupID),
+				FSGroup:      ptr.To(AlertmanagerUserFSGroupID),
+				RunAsNonRoot: ptr.To(true),
+				RunAsUser:    ptr.To(AlertmanagerUserFSGroupID),
 			},
 			AlertmanagerConfigNamespaceSelector: ms.Spec.NamespaceSelector,
 		},

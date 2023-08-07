@@ -22,7 +22,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/wait"
 
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	"github.com/google/go-cmp/cmp"
 
@@ -1001,7 +1001,7 @@ func newPrometheusExampleAppPod(t *testing.T, name, ns string) *corev1.Pod {
 				// allowing tests to be run in that environment.
 				Image: "quay.io/openshifttest/prometheus-example-app@sha256:382dc349f82d730b834515e402b48a9c7e2965d0efbc42388bd254f424f6193e",
 				SecurityContext: &corev1.SecurityContext{
-					AllowPrivilegeEscalation: pointer.Bool(false),
+					AllowPrivilegeEscalation: ptr.To(false),
 					SeccompProfile: &corev1.SeccompProfile{
 						Type: "RuntimeDefault",
 					},

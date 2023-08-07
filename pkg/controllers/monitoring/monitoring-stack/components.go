@@ -8,7 +8,7 @@ import (
 	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	monv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
 	policyv1 "k8s.io/api/policy/v1"
@@ -19,8 +19,8 @@ import (
 )
 
 const AdditionalScrapeConfigsSelfScrapeKey = "self-scrape-config"
-const PrometheusUserFSGroupID = 65534
-const AlertmanagerUserFSGroupID = 65535
+const PrometheusUserFSGroupID = int64(65534)
+const AlertmanagerUserFSGroupID = int64(65535)
 
 func stackComponentReconcilers(ms *stack.MonitoringStack, instanceSelectorKey string, instanceSelectorValue string) []reconciler.Reconciler {
 	prometheusName := ms.Name + "-prometheus"
@@ -169,9 +169,9 @@ func newPrometheus(
 				},
 				Storage: storageForPVC(config.PersistentVolumeClaim),
 				SecurityContext: &corev1.PodSecurityContext{
-					FSGroup:      pointer.Int64(PrometheusUserFSGroupID),
-					RunAsNonRoot: pointer.Bool(true),
-					RunAsUser:    pointer.Int64(PrometheusUserFSGroupID),
+					FSGroup:      ptr.To(PrometheusUserFSGroupID),
+					RunAsNonRoot: ptr.To(true),
+					RunAsUser:    ptr.To(PrometheusUserFSGroupID),
 				},
 				RemoteWrite:               config.RemoteWrite,
 				ExternalLabels:            config.ExternalLabels,
