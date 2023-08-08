@@ -116,9 +116,6 @@ func TestMonitoringStackController(t *testing.T) {
 		name:     "Verify ability to scale down Prometheus",
 		scenario: prometheusScaleDown,
 	}, {
-		name:     "Verify ability to scale down Prometheus",
-		scenario: prometheusScaleDown,
-	}, {
 		name:     "managed fields in Prometheus object",
 		scenario: assertPrometheusManagedFields,
 	}}
