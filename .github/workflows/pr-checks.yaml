@@ -27,7 +27,7 @@ jobs:
       - name: Import common environment variables
         run: cat ".github/env" >> $GITHUB_ENV
 
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
           go-version: ${{ env.go-version }}
           check-latest: true
@@ -57,7 +57,7 @@ jobs:
       - name: Import common environment variables
         run: cat ".github/env" >> $GITHUB_ENV
 
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
           go-version: ${{ env.go-version }}
           check-latest: true
@@ -76,7 +76,7 @@ jobs:
       - name: Import common environment variables
         run: cat ".github/env" >> $GITHUB_ENV
 
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
           go-version: ${{ env.go-version }}
           check-latest: true
@@ -96,7 +96,7 @@ jobs:
         run: cat ".github/env" >> $GITHUB_ENV
 
       - name: Setup Go environment
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4
         with:
           go-version: ${{ env.go-version }}
           check-latest: true
