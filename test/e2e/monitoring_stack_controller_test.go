@@ -10,6 +10,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
+	"k8s.io/utils/ptr"
 
 	"github.com/rhobs/observability-operator/test/e2e/framework"
 
@@ -21,8 +22,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"k8s.io/apimachinery/pkg/util/wait"
-
-	"k8s.io/utils/ptr"
 
 	"github.com/google/go-cmp/cmp"
 
@@ -113,6 +112,9 @@ func TestMonitoringStackController(t *testing.T) {
 	}, {
 		name:     "Verify multi-namespace support",
 		scenario: namespaceSelectorTest,
+	}, {
+		name:     "Verify ability to scale down Prometheus",
+		scenario: prometheusScaleDown,
 	}, {
 		name:     "Verify ability to scale down Prometheus",
 		scenario: prometheusScaleDown,
@@ -867,7 +869,7 @@ func namespaceSelectorTest(t *testing.T) {
 	stopChan := make(chan struct{})
 	defer close(stopChan)
 	//nolint
-	if pollErr := wait.Poll(5*time.Second, 2*time.Minute, func() (bool, error) {
+	if pollErr := wait.Poll(15*time.Second, 5*time.Minute, func() (bool, error) {
 		err := f.StartServicePortForward(ms.Name+"-prometheus", e2eTestNamespace, "9090", stopChan)
 		return err == nil, nil
 	}); pollErr != nil {
