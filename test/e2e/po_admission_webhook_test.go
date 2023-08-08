@@ -8,6 +8,7 @@ import (
 	"gotest.tools/v3/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 )
 
 func TestPrometheusRuleWebhook(t *testing.T) {
@@ -42,7 +43,6 @@ func invalidPrometheusRuleIsRejected(t *testing.T) {
 }
 
 func newSinglePrometheusRule(t *testing.T, name, expr string) *monv1.PrometheusRule {
-	durationFifteenMinutes := monv1.Duration("15m")
 	rule := &monv1.PrometheusRule{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -54,7 +54,7 @@ func newSinglePrometheusRule(t *testing.T, name, expr string) *monv1.PrometheusR
 				Rules: []monv1.Rule{{
 					Alert: "alert name",
 					Expr:  intstr.FromString(expr),
-					For:   &durationFifteenMinutes,
+					For:   ptr.To(monv1.Duration("15m")),
 				}},
 			}},
 		},

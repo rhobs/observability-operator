@@ -75,12 +75,7 @@ func singleStackWithSidecar(t *testing.T) {
 	// Assert prometheus instance can be queried
 	stopChan := make(chan struct{})
 	defer close(stopChan)
-<<<<<<< Updated upstream
-	//nolint
-	if err := wait.Poll(5*time.Second, 2*time.Minute, func() (bool, error) {
-=======
 	if err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, 2*time.Minute, true, func(ctx context.Context) (bool, error) {
->>>>>>> Stashed changes
 		err = f.StartServicePortForward(name, e2eTestNamespace, "9090", stopChan)
 		return err == nil, nil
 	}); wait.Interrupted(err) {
@@ -91,12 +86,7 @@ func singleStackWithSidecar(t *testing.T) {
 	expectedResults := map[string]int{
 		"prometheus_build_info": 2, // must return from both prometheus pods
 	}
-<<<<<<< Updated upstream
-	//nolint
-	if err := wait.Poll(5*time.Second, 5*time.Minute, func() (bool, error) {
-=======
 	if err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
->>>>>>> Stashed changes
 		correct := 0
 		for query, value := range expectedResults {
 			result, err := promClient.Query(query)
@@ -147,14 +137,8 @@ func newThanosQuerier(t *testing.T, name string, selector map[string]string) *ms
 }
 
 func waitForThanosQuerierDeletion(tq *msov1.ThanosQuerier) error {
-<<<<<<< Updated upstream
-	//nolint
-	return wait.Poll(5*time.Second, wait.ForeverTestTimeout, func() (bool, error) {
-		err := f.K8sClient.Get(context.Background(),
-=======
 	return wait.PollUntilContextTimeout(context.Background(), 5*time.Second, wait.ForeverTestTimeout, true, func(ctx context.Context) (done bool, err error) {
 		err = f.K8sClient.Get(context.Background(),
->>>>>>> Stashed changes
 			types.NamespacedName{Name: tq.Name, Namespace: tq.Namespace},
 			tq)
 		return errors.IsNotFound(err), nil
@@ -162,12 +146,7 @@ func waitForThanosQuerierDeletion(tq *msov1.ThanosQuerier) error {
 }
 
 func waitForDeploymentDeletion(name string) error {
-<<<<<<< Updated upstream
-	//nolint
-	return wait.Poll(5*time.Second, wait.ForeverTestTimeout, func() (bool, error) {
-=======
 	return wait.PollUntilContextTimeout(context.Background(), 5*time.Second, wait.ForeverTestTimeout, true, func(ctx context.Context) (done bool, err error) {
->>>>>>> Stashed changes
 		var dep appsv1.Deployment
 		err = f.K8sClient.Get(context.Background(),
 			types.NamespacedName{Name: name, Namespace: e2eTestNamespace},
@@ -177,12 +156,7 @@ func waitForDeploymentDeletion(name string) error {
 }
 
 func waitForServiceDeletion(name string) error {
-<<<<<<< Updated upstream
-	//nolint
-	return wait.Poll(5*time.Second, wait.ForeverTestTimeout, func() (bool, error) {
-=======
 	return wait.PollUntilContextTimeout(context.Background(), 5*time.Second, wait.ForeverTestTimeout, true, func(ctx context.Context) (done bool, err error) {
->>>>>>> Stashed changes
 		var svc corev1.Service
 		err = f.K8sClient.Get(context.Background(),
 			types.NamespacedName{Name: name, Namespace: e2eTestNamespace},

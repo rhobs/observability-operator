@@ -25,7 +25,7 @@ import (
 
 // default ForeverTestTimeout is 30, some test fails because they take more than 30s
 // change to custom in order to let the test finish withouth errors
-const CustomForeverTestTimeout = 40 * time.Second
+const DefaultTestTimeout = 40 * time.Second
 
 type AssertOption struct {
 	PollInterval time.Duration
@@ -46,11 +46,11 @@ func WithPollInterval(d time.Duration) OptionFn {
 	}
 }
 
-// AssertResourceNeverExists asserts that a statefulset is never created for the duration of customForeverTestTimeout
+// AssertResourceNeverExists asserts that a statefulset is never created for the duration of DefaultTestTimeout
 func (f *Framework) AssertResourceNeverExists(name, namespace string, resource client.Object, fns ...OptionFn) func(t *testing.T) {
 	option := AssertOption{
 		PollInterval: 5 * time.Second,
-		WaitTimeout:  CustomForeverTestTimeout,
+		WaitTimeout:  DefaultTestTimeout,
 	}
 	for _, fn := range fns {
 		fn(&option)
@@ -62,12 +62,12 @@ func (f *Framework) AssertResourceNeverExists(name, namespace string, resource c
 				Name:      name,
 				Namespace: namespace,
 			}
-			if err := f.K8sClient.Get(ctx, key, resource); errors.IsNotFound(err) {
+			if err := f.K8sClient.Get(context.Background(), key, resource); errors.IsNotFound(err) {
 				return false, nil
 			}
 
 			return true, fmt.Errorf("resource %s/%s should not have been created", namespace, name)
-		}); wait.Interrupted(err) {
+		}); !wait.Interrupted(err) {
 			t.Fatal(err)
 		}
 	}
@@ -77,7 +77,7 @@ func (f *Framework) AssertResourceNeverExists(name, namespace string, resource c
 func (f *Framework) AssertResourceEventuallyExists(name, namespace string, resource client.Object, fns ...OptionFn) func(t *testing.T) {
 	option := AssertOption{
 		PollInterval: 5 * time.Second,
-		WaitTimeout:  CustomForeverTestTimeout,
+		WaitTimeout:  DefaultTestTimeout,
 	}
 	for _, fn := range fns {
 		fn(&option)
@@ -103,16 +103,16 @@ func (f *Framework) AssertResourceEventuallyExists(name, namespace string, resou
 func (f *Framework) AssertStatefulsetReady(name, namespace string, fns ...OptionFn) func(t *testing.T) {
 	option := AssertOption{
 		PollInterval: 5 * time.Second,
-		WaitTimeout:  CustomForeverTestTimeout,
+		WaitTimeout:  DefaultTestTimeout,
 	}
 	for _, fn := range fns {
 		fn(&option)
 	}
 	return func(t *testing.T) {
 		key := types.NamespacedName{Name: name, Namespace: namespace}
-		if err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, option.WaitTimeout, true, func(ctx context.Context) (bool, error) {
+		if err := wait.PollUntilContextTimeout(context.Background(), 5+time.Second, option.WaitTimeout, true, func(ctx context.Context) (done bool, err error) {
 			pod := &appsv1.StatefulSet{}
-			err := f.K8sClient.Get(context.Background(), key, pod)
+			err = f.K8sClient.Get(context.Background(), key, pod)
 			return err == nil && pod.Status.ReadyReplicas == *pod.Spec.Replicas, nil
 		}); err != nil {
 			t.Fatal(err)
@@ -121,7 +121,7 @@ func (f *Framework) AssertStatefulsetReady(name, namespace string, fns ...Option
 }
 
 func (f *Framework) GetResourceWithRetry(t *testing.T, name, namespace string, obj client.Object) {
-	err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, CustomForeverTestTimeout, true, func(ctx context.Context) (bool, error) {
+	err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, DefaultTestTimeout, true, func(ctx context.Context) (bool, error) {
 		key := types.NamespacedName{Name: name, Namespace: namespace}
 
 		if err := f.K8sClient.Get(context.Background(), key, obj); errors.IsNotFound(err) {
@@ -226,7 +226,7 @@ func (f *Framework) GetOperatorMetrics(t *testing.T) []byte {
 
 	stopChan := make(chan struct{})
 	defer close(stopChan)
-	if err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, CustomForeverTestTimeout, true, func(ctx context.Context) (bool, error) {
+	if err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, DefaultTestTimeout, true, func(ctx context.Context) (bool, error) {
 		err := f.StartPortForward(pod.Name, pod.Namespace, "8080", stopChan)
 		return err == nil, nil
 	}); err != nil {
@@ -266,7 +266,7 @@ func (f *Framework) GetStackWhenAvailable(t *testing.T, name, namespace string) 
 	}
 	var lastErr error
 
-	err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, CustomForeverTestTimeout, true, func(ctx context.Context) (bool, error) {
+	err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, DefaultTestTimeout, true, func(ctx context.Context) (bool, error) {
 		lastErr = nil
 		err := f.K8sClient.Get(context.Background(), key, &ms)
 		if err != nil {
@@ -292,7 +292,7 @@ func (f *Framework) AssertAlertmanagerAbsent(t *testing.T, name, namespace strin
 		Name:      name,
 		Namespace: namespace,
 	}
-	err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, CustomForeverTestTimeout, true, func(ctx context.Context) (bool, error) {
+	err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, DefaultTestTimeout, true, func(ctx context.Context) (bool, error) {
 		err := f.K8sClient.Get(context.Background(), key, &am)
 		if errors.IsNotFound(err) {
 			return true, nil

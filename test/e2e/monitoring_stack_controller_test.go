@@ -50,9 +50,7 @@ func assertCRDExists(t *testing.T, crds ...string) {
 
 func TestMonitoringStackController(t *testing.T) {
 	err := stack.AddToScheme(scheme.Scheme)
-	if err != nil {
-		return
-	}
+	assert.NilError(t, err, "adding stack to scheme failed")
 	assertCRDExists(t,
 		"prometheuses.monitoring.rhobs",
 		"alertmanagers.monitoring.rhobs",
@@ -151,7 +149,7 @@ func nilResrouceSelectorPropagatesToPrometheus(t *testing.T) {
 	assert.NilError(t, err, "failed to patch monitoring stack with nil resource selector")
 
 	prometheus := monv1.Prometheus{}
-	err = wait.PollUntilContextTimeout(context.Background(), 5*time.Second, framework.CustomForeverTestTimeout, true, func(ctx context.Context) (bool, error) {
+	err = wait.PollUntilContextTimeout(context.Background(), 5*time.Second, framework.DefaultTestTimeout, true, func(ctx context.Context) (bool, error) {
 		if err := f.K8sClient.Get(context.Background(), types.NamespacedName{Name: updatedMS.Name, Namespace: updatedMS.Namespace}, &prometheus); errors.IsNotFound(err) {
 			return false, nil
 		}
@@ -299,7 +297,7 @@ func reconcileRevertsManualChanges(t *testing.T) {
 	err = f.K8sClient.Update(context.Background(), modified)
 	assert.NilError(t, err, "failed to update a prometheus")
 
-	err = wait.PollUntilContextTimeout(context.Background(), 5*time.Second, framework.CustomForeverTestTimeout, true, func(ctx context.Context) (bool, error) {
+	err = wait.PollUntilContextTimeout(context.Background(), 5*time.Second, framework.DefaultTestTimeout, true, func(ctx context.Context) (bool, error) {
 		reconciled := monv1.Prometheus{}
 		key := types.NamespacedName{Name: ms.Name, Namespace: ms.Namespace}
 
@@ -586,7 +584,7 @@ func prometheusScaleDown(t *testing.T) {
 	ms.Spec.PrometheusConfig.Replicas = &numOfRep
 	err = f.K8sClient.Update(context.Background(), ms)
 	assert.NilError(t, err, "failed to update a monitoring stack")
-	err = wait.PollUntilContextTimeout(context.Background(), 5*time.Second, framework.CustomForeverTestTimeout, true, func(ctx context.Context) (bool, error) {
+	err = wait.PollUntilContextTimeout(context.Background(), 5*time.Second, framework.DefaultTestTimeout, true, func(ctx context.Context) (bool, error) {
 		if err := f.K8sClient.Get(context.Background(), key, &prom); errors.IsNotFound(err) {
 			return false, nil
 		}
@@ -743,8 +741,6 @@ func getAlertmanagerAlerts() ([]alert, error) {
 }
 
 func newAlerts(t *testing.T) *monv1.PrometheusRule {
-	durationTenSec := monv1.Duration("10s")
-	durationOneSec := monv1.Duration("1s")
 	rule := &monv1.PrometheusRule{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: monv1.SchemeGroupVersion.String(),
@@ -758,17 +754,17 @@ func newAlerts(t *testing.T) *monv1.PrometheusRule {
 			Groups: []monv1.RuleGroup{
 				{
 					Name:     "Test",
-					Interval: &durationTenSec,
+					Interval: ptr.To(monv1.Duration("10s")),
 					Rules: []monv1.Rule{
 						{
 							Alert: "AlwaysOn",
 							Expr:  intstr.FromString("vector(1)"),
-							For:   &durationOneSec,
+							For:   ptr.To(monv1.Duration("1s")),
 						},
 						{
 							Alert: "NeverOn",
 							Expr:  intstr.FromString("vector(1) == 0"),
-							For:   &durationOneSec,
+							For:   ptr.To(monv1.Duration("1s")),
 						},
 					},
 				},
@@ -821,7 +817,7 @@ func newMonitoringStack(t *testing.T, name string, mods ...stackModifier) *stack
 }
 
 func waitForStackDeletion(name string) error {
-	return wait.PollUntilContextTimeout(context.Background(), 5*time.Second, framework.CustomForeverTestTimeout, true, func(ctx context.Context) (bool, error) {
+	return wait.PollUntilContextTimeout(context.Background(), 5*time.Second, framework.DefaultTestTimeout, true, func(ctx context.Context) (bool, error) {
 		key := types.NamespacedName{Name: name, Namespace: e2eTestNamespace}
 		var ms stack.MonitoringStack
 		err := f.K8sClient.Get(context.Background(), key, &ms)
