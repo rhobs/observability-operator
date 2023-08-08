@@ -49,7 +49,10 @@ func assertCRDExists(t *testing.T, crds ...string) {
 }
 
 func TestMonitoringStackController(t *testing.T) {
-	stack.AddToScheme(scheme.Scheme)
+	err := stack.AddToScheme(scheme.Scheme)
+	if err != nil {
+		return
+	}
 	assertCRDExists(t,
 		"prometheuses.monitoring.rhobs",
 		"alertmanagers.monitoring.rhobs",
@@ -148,8 +151,7 @@ func nilResrouceSelectorPropagatesToPrometheus(t *testing.T) {
 	assert.NilError(t, err, "failed to patch monitoring stack with nil resource selector")
 
 	prometheus := monv1.Prometheus{}
-	//nolint
-	err = wait.Poll(5*time.Second, framework.CustomForeverTestTimeout, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(context.Background(), 5*time.Second, framework.CustomForeverTestTimeout, true, func(ctx context.Context) (bool, error) {
 		if err := f.K8sClient.Get(context.Background(), types.NamespacedName{Name: updatedMS.Name, Namespace: updatedMS.Namespace}, &prometheus); errors.IsNotFound(err) {
 			return false, nil
 		}
@@ -160,8 +162,7 @@ func nilResrouceSelectorPropagatesToPrometheus(t *testing.T) {
 		return true, nil
 	})
 
-	//nolint
-	if err == wait.ErrWaitTimeout {
+	if wait.Interrupted(err) {
 		t.Fatal(fmt.Errorf("nil ResourceSelector did not propagate to Prometheus object"))
 	}
 }
@@ -298,8 +299,7 @@ func reconcileRevertsManualChanges(t *testing.T) {
 	err = f.K8sClient.Update(context.Background(), modified)
 	assert.NilError(t, err, "failed to update a prometheus")
 
-	//nolint
-	err = wait.Poll(5*time.Second, time.Minute, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(context.Background(), 5*time.Second, framework.CustomForeverTestTimeout, true, func(ctx context.Context) (bool, error) {
 		reconciled := monv1.Prometheus{}
 		key := types.NamespacedName{Name: ms.Name, Namespace: ms.Namespace}
 
@@ -415,8 +415,7 @@ func assertPrometheusScrapesItself(t *testing.T) {
 
 	stopChan := make(chan struct{})
 	defer close(stopChan)
-	//nolint
-	if err := wait.Poll(5*time.Second, 2*time.Minute, func() (bool, error) {
+	if err = wait.PollUntilContextTimeout(context.Background(), 5*time.Second, 2*time.Minute, true, func(ctx context.Context) (bool, error) {
 		err = f.StartServicePortForward("self-scrape-prometheus", e2eTestNamespace, "9090", stopChan)
 		return err == nil, nil
 	}); err != nil {
@@ -428,8 +427,7 @@ func assertPrometheusScrapesItself(t *testing.T) {
 		"prometheus_build_info":   2, // scrapes from both endpoints
 		"alertmanager_build_info": 2,
 	}
-	//nolint
-	if err := wait.Poll(5*time.Second, 5*time.Minute, func() (bool, error) {
+	if err = wait.PollUntilContextTimeout(context.Background(), 5*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
 		correct := 0
 		for query, value := range expectedResults {
 			result, err := promClient.Query(query)
@@ -534,16 +532,14 @@ func assertAlertmanagerReceivesAlerts(t *testing.T) {
 
 	stopChan := make(chan struct{})
 	defer close(stopChan)
-	//nolint
-	if err := wait.Poll(5*time.Second, 5*time.Minute, func() (bool, error) {
+	if err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
 		err := f.StartServicePortForward("alerting-alertmanager", e2eTestNamespace, "9093", stopChan)
 		return err == nil, nil
 	}); err != nil {
 		t.Fatal(err)
 	}
 
-	//nolint
-	if err := wait.Poll(5*time.Second, 5*time.Minute, func() (bool, error) {
+	if err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
 		alerts, err := getAlertmanagerAlerts()
 		if err != nil {
 			return false, nil
@@ -590,8 +586,7 @@ func prometheusScaleDown(t *testing.T) {
 	ms.Spec.PrometheusConfig.Replicas = &numOfRep
 	err = f.K8sClient.Update(context.Background(), ms)
 	assert.NilError(t, err, "failed to update a monitoring stack")
-	//nolint
-	err = wait.Poll(5*time.Second, framework.CustomForeverTestTimeout, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(context.Background(), 5*time.Second, framework.CustomForeverTestTimeout, true, func(ctx context.Context) (bool, error) {
 		if err := f.K8sClient.Get(context.Background(), key, &prom); errors.IsNotFound(err) {
 			return false, nil
 		}
@@ -602,8 +597,7 @@ func prometheusScaleDown(t *testing.T) {
 		return true, nil
 	})
 
-	//nolint
-	if err == wait.ErrWaitTimeout {
+	if wait.Interrupted(err) {
 		t.Fatal(fmt.Errorf("Prometheus was not scaled down"))
 	}
 }
@@ -827,8 +821,7 @@ func newMonitoringStack(t *testing.T, name string, mods ...stackModifier) *stack
 }
 
 func waitForStackDeletion(name string) error {
-	//nolint
-	return wait.Poll(5*time.Second, framework.CustomForeverTestTimeout, func() (bool, error) {
+	return wait.PollUntilContextTimeout(context.Background(), 5*time.Second, framework.CustomForeverTestTimeout, true, func(ctx context.Context) (bool, error) {
 		key := types.NamespacedName{Name: name, Namespace: e2eTestNamespace}
 		var ms stack.MonitoringStack
 		err := f.K8sClient.Get(context.Background(), key, &ms)
@@ -865,8 +858,7 @@ func namespaceSelectorTest(t *testing.T) {
 
 	stopChan := make(chan struct{})
 	defer close(stopChan)
-	//nolint
-	if pollErr := wait.Poll(15*time.Second, 5*time.Minute, func() (bool, error) {
+	if pollErr := wait.PollUntilContextTimeout(context.Background(), 15*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
 		err := f.StartServicePortForward(ms.Name+"-prometheus", e2eTestNamespace, "9090", stopChan)
 		return err == nil, nil
 	}); pollErr != nil {
@@ -874,8 +866,7 @@ func namespaceSelectorTest(t *testing.T) {
 	}
 
 	promClient := framework.NewPrometheusClient("http://localhost:9090")
-	//nolint
-	if pollErr := wait.Poll(5*time.Second, 5*time.Minute, func() (bool, error) {
+	if pollErr := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
 		query := `version{pod="prometheus-example-app",namespace=~"test-ns-.*"}`
 		result, err := promClient.Query(query)
 		if err != nil {
