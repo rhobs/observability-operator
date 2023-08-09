@@ -36,14 +36,17 @@ It is easier to use the web console to remove the installed operator.
 Instructions below removes all traces of what was setup in the previous step
 including removing the catalog.
 ```
-kubectl delete -n operators csv \
+oc delete -n operators csv \
     -l operators.coreos.com/observability-operator.operators=
 
-kubectl delete -n openshift-operators  \
+oc delete -n openshift-operators  \
     installplan,subscriptions \
     -l operators.coreos.com/observability-operator.operators=
 
-kubectl delete -f hack/olm
+oc delete -f hack/olm
+
+oc delete crds "$(oc api-resources --api-group=monitoring.rhobs -o name)"
+
 ```
 
 ### Kubernetes
@@ -76,6 +79,9 @@ kubectl delete -n operators  \
     -l operators.coreos.com/observability-operator.operators=
 
 kubectl delete -f hack/olm/k8s
+
+kubectl delete crds "$(kubectl api-resources --api-group=monitoring.rhobs -o name)"
+
 ```
 ## Development
 
