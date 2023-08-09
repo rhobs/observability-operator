@@ -854,7 +854,8 @@ func namespaceSelectorTest(t *testing.T) {
 
 	stopChan := make(chan struct{})
 	defer close(stopChan)
-	if pollErr := wait.PollUntilContextTimeout(context.Background(), 15*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
+	//nolint
+	if pollErr := wait.Poll(15*time.Second, 5*time.Minute, func() (bool, error) {
 		err := f.StartServicePortForward(ms.Name+"-prometheus", e2eTestNamespace, "9090", stopChan)
 		return err == nil, nil
 	}); pollErr != nil {

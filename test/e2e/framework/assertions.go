@@ -57,7 +57,8 @@ func (f *Framework) AssertResourceNeverExists(name, namespace string, resource c
 	}
 
 	return func(t *testing.T) {
-		if err := wait.PollUntilContextTimeout(context.Background(), option.PollInterval, option.WaitTimeout, true, func(ctx context.Context) (done bool, err error) {
+		//nolint
+		if err := wait.Poll(option.PollInterval, option.WaitTimeout, func() (done bool, err error) {
 			key := types.NamespacedName{
 				Name:      name,
 				Namespace: namespace,
@@ -110,7 +111,8 @@ func (f *Framework) AssertStatefulsetReady(name, namespace string, fns ...Option
 	}
 	return func(t *testing.T) {
 		key := types.NamespacedName{Name: name, Namespace: namespace}
-		if err := wait.PollUntilContextTimeout(context.Background(), 5+time.Second, option.WaitTimeout, true, func(ctx context.Context) (done bool, err error) {
+		//nolint
+		if err := wait.Poll(5+time.Second, option.WaitTimeout, func() (done bool, err error) {
 			pod := &appsv1.StatefulSet{}
 			err = f.K8sClient.Get(context.Background(), key, pod)
 			return err == nil && pod.Status.ReadyReplicas == *pod.Spec.Replicas, nil
