@@ -53,17 +53,14 @@ func TestPrometheusOperatorForNonOwnedResources(t *testing.T) {
 			name: "Operator should not reconcile resources which it does not own",
 			scenario: func(t *testing.T) {
 				t.Run("Prometheus never exists", func(t *testing.T) {
-					t.Parallel()
 					f.AssertResourceNeverExists(prometheusStsName, e2eTestNamespace,
 						&appsv1.StatefulSet{}, framework.WithTimeout(15*time.Second))(t)
 				})
 				t.Run("Alertmanager never exists", func(t *testing.T) {
-					t.Parallel()
 					f.AssertResourceNeverExists(alertmanagerStsName, e2eTestNamespace,
 						&appsv1.StatefulSet{}, framework.WithTimeout(15*time.Second))(t)
 				})
 				t.Run("Thanos Ruler never exists", func(t *testing.T) {
-					t.Parallel()
 					f.AssertResourceNeverExists(thanosRulerStsName, e2eTestNamespace,
 						&appsv1.StatefulSet{}, framework.WithTimeout(15*time.Second))(t)
 				})
