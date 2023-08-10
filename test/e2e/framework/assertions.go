@@ -123,7 +123,8 @@ func (f *Framework) AssertStatefulsetReady(name, namespace string, fns ...Option
 }
 
 func (f *Framework) GetResourceWithRetry(t *testing.T, name, namespace string, obj client.Object) {
-	err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, DefaultTestTimeout, true, func(ctx context.Context) (bool, error) {
+	//nolint
+	err := wait.Poll(5*time.Second, DefaultTestTimeout, func() (bool, error) {
 		key := types.NamespacedName{Name: name, Namespace: namespace}
 
 		if err := f.K8sClient.Get(context.Background(), key, obj); errors.IsNotFound(err) {
