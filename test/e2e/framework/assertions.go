@@ -23,7 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-// default ForeverTestTimeout is 30, some test fails because they take more than 30s
+// default ForeverTestTimeout is 30, some test fail because they take more than 30s
 // change to custom in order to let the test finish withouth errors
 const DefaultTestTimeout = 40 * time.Second
 
