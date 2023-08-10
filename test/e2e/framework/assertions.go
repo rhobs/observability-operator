@@ -112,7 +112,7 @@ func (f *Framework) AssertStatefulsetReady(name, namespace string, fns ...Option
 	return func(t *testing.T) {
 		key := types.NamespacedName{Name: name, Namespace: namespace}
 		//nolint
-		if err := wait.Poll(5+time.Second, option.WaitTimeout, func() (done bool, err error) {
+		if err := wait.Poll(5*time.Second, option.WaitTimeout, func() (done bool, err error) {
 			pod := &appsv1.StatefulSet{}
 			err = f.K8sClient.Get(context.Background(), key, pod)
 			return err == nil && pod.Status.ReadyReplicas == *pod.Spec.Replicas, nil
