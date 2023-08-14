@@ -855,7 +855,7 @@ func namespaceSelectorTest(t *testing.T) {
 	stopChan := make(chan struct{})
 	defer close(stopChan)
 	//nolint
-	if pollErr := wait.Poll(15*time.Second, 5*time.Minute, func() (bool, error) {
+	if pollErr := wait.Poll(15*time.Second, framework.DefaultTestTimeout, func() (bool, error) {
 		err := f.StartServicePortForward(ms.Name+"-prometheus", e2eTestNamespace, "9090", stopChan)
 		return err == nil, nil
 	}); pollErr != nil {
@@ -863,7 +863,7 @@ func namespaceSelectorTest(t *testing.T) {
 	}
 
 	promClient := framework.NewPrometheusClient("http://localhost:9090")
-	if pollErr := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
+	if pollErr := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, framework.DefaultTestTimeout, true, func(ctx context.Context) (bool, error) {
 		query := `version{pod="prometheus-example-app",namespace=~"test-ns-.*"}`
 		result, err := promClient.Query(query)
 		if err != nil {
