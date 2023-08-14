@@ -193,3 +193,77 @@ For example,
 ```sh
 make initiate-release-as RELEASE_VERSION=1.4.0
 ```
+
+## Publish to Community Catalog
+
+Gist of the steps involved are as follows
+1. find the commit in the olm-catalog branch corresponding to
+	 the release made.
+1. Copying the bundle directory to the community operators repo fork
+1. Submitting the PR to community catalog
+
+In this example below, the release used is `0.0.25`
+
+### Find the commit which updates the olm-catalog
+
+1. Go to [`stable workflow`](https://github.com/rhobs/observability-operator/actions/workflows/olm-stable.yaml)
+2. Find the `release` job corresponding to `0.0.25` version
+  * e.g. https://github.com/rhobs/observability-operator/actions/runs/5795055095/job/15705870971
+
+3. Expand the `Publish` step to find the commit
+4. Navigate to the last line of the step and [find the commit](https://github.com/rhobs/observability-operator/actions/runs/5795055095/job/15705870971#step:4:901)
+   that was pushed to the `olm-catalog` branch
+
+```
+Writing manifest to image destination
+Storing signatures
+To https://github.com/rhobs/observability-operator
+   e8d7666..4d3769f  HEAD -> olm-catalog
+             ☝️ .. the commit that got pushed
+```
+
+### Copy the bundle directory from the olm-catalog branch to community-catalog
+
+1. `git checkout -b publish-0.0.25 4d3769f`
+2. Copy the bundle directory from the checkout to your
+   community-catalog fork
+
+```sh
+
+git clone  https://github.com/redhat-openshift-ecosystem/community-operators-prod
+### or if you already have a fork ###
+cd <path/to/community-operators-prod>
+git fetch && git reset --hard upstream/main
+
+
+cd community-operators-prod
+cp -r observabilty-operator/bundle operators/observabilty-operator/0.0.25
+
+```
+
+3. validate the bundle, note this should have been already done in CI, however
+   it is good to validate before submission
+```sh
+operator-sdk bundle validate operators/observabilty-operator/0.0.25 \
+	--select-optional name=operatorhub \
+	--optional-values=k8s-version=1.21 \
+	--select-optional suite=operatorframework
+
+```
+
+4. Commit (signed) and push for review
+
+NOTE: The commit message follows a convention (see `git log`) and must be signed
+
+```sh
+git add operators/observabilty-operator/0.0.25
+git commit -sS  -m "operator observability-operator (0.0.25)"
+git push -u origin  HEAD
+```
+
+5. submit the PR. E.g: https://github.com/redhat-openshift-ecosystem/community-operators-prod/pull/3084
+
+6. There may be some changes that are required to fix the bundle. Make those
+	 changes and ensure the fixes are ported back to Observability Operator repo.
+   E.g.: https://github.com/rhobs/observability-operator/pull/333
+
