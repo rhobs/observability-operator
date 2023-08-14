@@ -195,7 +195,10 @@ bundle: $(KUSTOMIZE) $(OPERATOR_SDK) generate
 		 	$(BUNDLE_METADATA_OPTS)
 	sed -e 's|<IMG_OBSERVABILITY_OPERATOR>|$(OPERATOR_IMG)|g' \
 		-i bundle/manifests/observability-operator.clusterserviceversion.yaml
-	$(OPERATOR_SDK) bundle validate ./bundle
+	$(OPERATOR_SDK) bundle validate ./bundle \
+		--select-optional name=operatorhub \
+		--optional-values=k8s-version=1.21 \
+		--select-optional suite=operatorframework
 
 .PHONY: bundle-image
 bundle-image: bundle ## Build the bundle image.

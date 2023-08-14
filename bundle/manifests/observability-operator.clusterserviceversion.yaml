@@ -39,7 +39,7 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    categories: Monitoring, Observability
+    categories: Monitoring
     certified: "false"
     containerImage: observability-operator:0.0.25
     description: A Go based Kubernetes operator to setup and manage highly available
