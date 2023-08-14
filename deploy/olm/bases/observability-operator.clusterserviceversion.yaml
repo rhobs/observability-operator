@@ -4,7 +4,7 @@ metadata:
   annotations:
     alm-examples: '[]'
     capabilities: Basic Install
-    categories: Monitoring, Observability
+    categories: Monitoring
     certified: "false"
     containerImage: '<IMG_OBSERVABILITY_OPERATOR>'
     description: >-
