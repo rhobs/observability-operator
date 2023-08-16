@@ -11,6 +11,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	po "github.com/rhobs/obo-prometheus-operator/pkg/operator"
 )
 
 func thanosComponentReconcilers(thanos *msoapi.ThanosQuerier, sidecarUrls []string) []reconciler.Reconciler {
@@ -68,7 +69,7 @@ func newThanosQuerierDeployment(name string, spec *msoapi.ThanosQuerier, sidecar
 						{
 							Name:  "thanos-querier",
 							Args:  args,
-							Image: "quay.io/thanos/thanos:v0.24.0",
+							Image: po.DefaultThanosImage,
 							Ports: []corev1.ContainerPort{
 								{
 									ContainerPort: 9090,

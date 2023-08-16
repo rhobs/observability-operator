@@ -14,6 +14,7 @@ import (
 	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 
+	po "github.com/rhobs/obo-prometheus-operator/pkg/operator"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -181,8 +182,7 @@ func newPrometheus(
 			RuleSelector:          prometheusSelector,
 			RuleNamespaceSelector: ms.Spec.NamespaceSelector,
 			Thanos: &monv1.ThanosSpec{
-				BaseImage: stringPtr("quay.io/thanos/thanos"),
-				Version:   stringPtr("v0.24.0"),
+				Image: stringPtr(po.DefaultThanosImage),
 			},
 		},
 	}
