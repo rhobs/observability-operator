@@ -185,3 +185,13 @@ jobs:
           quay_login: ${{ secrets.QUAY_LOGIN }}
           quay_token: ${{ secrets.QUAY_TOKEN }}
           go-version: ${{ env.go-version }}
+
+      - name: Publish test harness
+        uses: ./.github/osd-test-harness-publish
+        env:
+          IMAGE_BASE: ${{ secrets.IMAGE_BASE }}
+          VERSION: ${{ steps.version.outputs.version }}
+        with:
+          quay_login: ${{ secrets.QUAY_LOGIN }}
+          quay_token: ${{ secrets.QUAY_TOKEN }}
+          go-version: ${{ env.go-version }}
