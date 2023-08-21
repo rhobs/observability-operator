@@ -64,6 +64,7 @@ delete_obo() {
 
 	oc delete -f hack/olm/subscription.yaml || true
 	oc delete -f hack/olm/catalog-src.yaml || true
+	oc delete crds "$(oc api-resources --api-group=monitoring.rhobs -o name)"
 	ok "uninstalled ObO"
 }
 
