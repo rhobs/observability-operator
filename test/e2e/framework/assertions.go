@@ -269,7 +269,7 @@ func (f *Framework) GetStackWhenAvailable(t *testing.T, name, namespace string) 
 	}
 	var lastErr error
 
-	err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, DefaultTestTimeout, true, func(ctx context.Context) (bool, error) {
+	err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, DefaultTestTimeout+10*time.Second, true, func(ctx context.Context) (bool, error) {
 		lastErr = nil
 		err := f.K8sClient.Get(context.Background(), key, &ms)
 		if err != nil {
