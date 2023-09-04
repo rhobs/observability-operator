@@ -6,7 +6,7 @@ jobs:
   commit-lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - uses: wagoid/commitlint-github-action@v5
@@ -15,14 +15,14 @@ jobs:
     runs-on: ubuntu-latest
     name: Github Actions yaml linter
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: reviewdog/action-actionlint@v1
 
   lint:
     runs-on: ubuntu-latest
     name: Run all lints
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Import common environment variables
         run: cat ".github/env" >> $GITHUB_ENV
@@ -52,7 +52,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Generate and format
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Import common environment variables
         run: cat ".github/env" >> $GITHUB_ENV
@@ -71,7 +71,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Validate tools cache
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Import common environment variables
         run: cat ".github/env" >> $GITHUB_ENV
@@ -90,7 +90,7 @@ jobs:
   build-bundle-image:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Import common environment variables
         run: cat ".github/env" >> $GITHUB_ENV
@@ -111,7 +111,7 @@ jobs:
   e2e-tests-olm:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Import common environment variables
         run: cat ".github/env" >> $GITHUB_ENV
