@@ -12,6 +12,7 @@ import (
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 // NOTE: The instance selector label is hardcoded in static assets.
@@ -27,8 +28,10 @@ type Operator struct {
 
 func New(metricsAddr, healthProbeAddr string) (*Operator, error) {
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                 NewScheme(),
-		MetricsBindAddress:     metricsAddr,
+		Scheme: NewScheme(),
+		Metrics: metricsserver.Options{
+			BindAddress: metricsAddr,
+		},
 		HealthProbeBindAddress: healthProbeAddr,
 	})
 	if err != nil {
