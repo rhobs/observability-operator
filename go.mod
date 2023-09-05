@@ -12,7 +12,7 @@ require (
 	golang.org/x/exp v0.0.0-20230801115018-d63ba01acd4b
 	gotest.tools/v3 v3.5.0
 	k8s.io/api v0.28.1
-	k8s.io/apiextensions-apiserver v0.28.0
+	k8s.io/apiextensions-apiserver v0.28.1
 	k8s.io/apimachinery v0.28.1
 	k8s.io/client-go v0.28.1
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b
@@ -25,10 +25,13 @@ require (
 	github.com/aws/aws-sdk-go v1.44.302 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
+	github.com/cncf/xds/go v0.0.0-20230105202645-06c439db220b // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dennwc/varint v1.0.0 // indirect
 	github.com/edsrzf/mmap-go v1.1.0 // indirect
 	github.com/emicklei/go-restful/v3 v3.10.2 // indirect
+	github.com/envoyproxy/go-control-plane v0.10.3 // indirect
+	github.com/envoyproxy/protoc-gen-validate v0.9.1 // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/fatih/color v1.15.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
