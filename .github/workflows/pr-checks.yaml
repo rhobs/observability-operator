@@ -24,12 +24,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Import common environment variables
-        run: cat ".github/env" >> $GITHUB_ENV
-
       - uses: actions/setup-go@v4
         with:
-          go-version: ${{ env.go-version }}
+          go-version-file: 'go.mod'
           check-latest: true
           cache: true
 
@@ -54,12 +51,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Import common environment variables
-        run: cat ".github/env" >> $GITHUB_ENV
-
       - uses: actions/setup-go@v4
         with:
-          go-version: ${{ env.go-version }}
+          go-version-file: 'go.mod'
           check-latest: true
           cache: true
 
@@ -73,12 +67,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Import common environment variables
-        run: cat ".github/env" >> $GITHUB_ENV
-
       - uses: actions/setup-go@v4
         with:
-          go-version: ${{ env.go-version }}
+          go-version-file: 'go.mod'
           check-latest: true
           cache: true
 
@@ -92,13 +83,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Import common environment variables
-        run: cat ".github/env" >> $GITHUB_ENV
-
       - name: Setup Go environment
         uses: actions/setup-go@v4
         with:
-          go-version: ${{ env.go-version }}
+          go-version-file: 'go.mod'
           check-latest: true
           cache: true
 
@@ -113,10 +101,5 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Import common environment variables
-        run: cat ".github/env" >> $GITHUB_ENV
-
       - name: e2e tests through OLM
         uses: ./.github/e2e-tests-olm
-        with:
-          go-version: ${{ env.go-version }}
