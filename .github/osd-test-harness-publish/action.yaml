@@ -1,0 +1,40 @@
+name: 'Publish OSD test harness image'
+description: 'Publishes the OSD test harness image'
+inputs:
+  quay_login:
+    description: "Quay login"
+    required: true
+  quay_token:
+    description: "Quay token"
+    required: true
+  go-version:
+    description: "go version"
+    required: true
+runs:
+  using: composite
+  steps:
+  - name: Setup Go environment
+    uses: actions/setup-go@v3
+    with:
+      go-version: ${{ inputs.go-version }}
+      check-latest: true
+      cache: true
+
+  - name: Install tools
+    uses: ./.github/tools-cache
+
+  - name: Registry Login
+    uses: docker/login-action@v2
+    with:
+      registry: quay.io
+      username: ${{ inputs.quay_login }}
+      password: ${{ inputs.quay_token }}
+
+  - uses: actions/checkout@v3
+    with:
+      fetch-depth: 0
+
+  - name: Build and publish test harness image
+    shell: bash
+    run: |
+      make osd-e2e-test-push
