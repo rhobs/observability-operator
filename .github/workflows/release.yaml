@@ -10,13 +10,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Import common environment variables
-        run: cat ".github/env" >> $GITHUB_ENV
-
       - name: e2e tests through OLM
         uses: ./.github/e2e-tests-olm
-        with:
-          go-version: ${{ env.go-version }}
 
   publish-olm-development:
     if: "!startsWith(github.event.head_commit.message, 'chore(release):')"
@@ -29,9 +24,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Import common environment variables
-        run: cat ".github/env" >> $GITHUB_ENV
-
       # Bumping the version in the next step will also run code generation scripts
       # that depend on controller-gen.
       # Therefore, we first need to setup Go so that we can install the
@@ -39,7 +31,7 @@ jobs:
       - name: Setup Go environment
         uses: actions/setup-go@v4
         with:
-          go-version: ${{ env.go-version }}
+          go-version-file: 'go.mod'
           check-latest: true
           cache: true
 
@@ -60,7 +52,6 @@ jobs:
         with:
           quay_login: ${{ secrets.QUAY_LOGIN }}
           quay_token: ${{ secrets.QUAY_TOKEN }}
-          go-version: ${{ env.go-version }}
 
       - name: Push catalog index changes
         uses: ad-m/github-push-action@master
@@ -76,7 +67,6 @@ jobs:
         with:
           quay_login: ${{ secrets.QUAY_LOGIN }}
           quay_token: ${{ secrets.QUAY_TOKEN }}
-          go-version: ${{ env.go-version }}
 
       - name: Publish test harness
         uses: ./.github/osd-test-harness-publish
@@ -100,9 +90,6 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.REPOSITORY_PUSH_TOKEN }}
 
-      - name: Import common environment variables
-        run: cat ".github/env" >> $GITHUB_ENV
-
       # Bumping the version in the next step will also run code generation scripts
       # that depend on controller-gen.
       # Therefore, we first need to setup Go so that we can install the
@@ -110,7 +97,7 @@ jobs:
       - name: Setup Go environment
         uses: actions/setup-go@v4
         with:
-          go-version: ${{ env.go-version }}
+          go-version-file: 'go.mod'
           check-latest: true
           cache: true
 
@@ -151,13 +138,10 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.REPOSITORY_PUSH_TOKEN }}
 
-      - name: Import common environment variables
-        run: cat ".github/env" >> "$GITHUB_ENV"
-
       - name: Setup Go environment
         uses: actions/setup-go@v4
         with:
-          go-version: ${{ env.go-version }}
+          go-version-file: 'go.mod'
           check-latest: true
           cache: true
 
@@ -178,7 +162,6 @@ jobs:
         with:
           quay_login: ${{ secrets.QUAY_LOGIN }}
           quay_token: ${{ secrets.QUAY_TOKEN }}
-          go-version: ${{ env.go-version }}
 
       - name: Push catalog index changes
         uses: ad-m/github-push-action@master
@@ -194,7 +177,6 @@ jobs:
         with:
           quay_login: ${{ secrets.QUAY_LOGIN }}
           quay_token: ${{ secrets.QUAY_TOKEN }}
-          go-version: ${{ env.go-version }}
 
       - name: Publish test harness
         uses: ./.github/osd-test-harness-publish
@@ -204,4 +186,3 @@ jobs:
         with:
           quay_login: ${{ secrets.QUAY_LOGIN }}
           quay_token: ${{ secrets.QUAY_TOKEN }}
-          go-version: ${{ env.go-version }}

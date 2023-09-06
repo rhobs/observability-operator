@@ -7,9 +7,6 @@ inputs:
   quay_token:
     description: "Quay token"
     required: true
-  go-version:
-    description: "go version"
-    required: true
 runs:
   using: composite
   steps:
@@ -20,7 +17,7 @@ runs:
   - name: Setup Go environment
     uses: actions/setup-go@v3
     with:
-      go-version: ${{ inputs.go-version }}
+      go-version-file: 'go.mod'
       check-latest: true
       cache: true
 
