@@ -199,6 +199,7 @@ bundle: $(KUSTOMIZE) $(OPERATOR_SDK) generate
 		--select-optional name=operatorhub \
 		--optional-values=k8s-version=1.21 \
 		--select-optional suite=operatorframework
+	git diff --quiet -I'^    createdAt: ' bundle && git checkout bundle || true
 
 .PHONY: bundle-image
 bundle-image: bundle ## Build the bundle image.
