@@ -134,9 +134,9 @@ $(OC) oc: $(TOOLS_DIR)
 		curl -sSLo $(OC) https://mirror.openshift.com/pub/openshift-v4/$${ARCH}/clients/oc/latest/$${OS}/oc.tar.gz ;\
 		tar -xf $(TOOLS_DIR)/oc -C $(TOOLS_DIR) ;\
 		rm -f $(TOOLS_DIR)/README.md ;\
-		$(OC) version ;\
+		$(OC) version --client ;\
 		version=$(OC_VERSION) ;\
-		$(OC) version | grep -q $${version##v} ;\
+		$(OC) version --client | grep -q $${version##v} ;\
 	}
 
 .PHONY: crdoc
