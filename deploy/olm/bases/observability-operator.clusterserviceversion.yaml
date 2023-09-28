@@ -24,7 +24,7 @@ spec:
   customresourcedefinitions:
     owned:
     - description: AlertmanagerConfig defines a namespaced AlertmanagerConfig to
-        be aggregated across multiple namespaces configuring one Alertmanager cluster.
+        be aggregated across multiple namespaces configuring one Alertmanager cluster
       displayName: AlertmanagerConfig
       kind: AlertmanagerConfig
       name: alertmanagerconfigs.monitoring.rhobs
@@ -39,38 +39,38 @@ spec:
       kind: MonitoringStack
       name: monitoringstacks.monitoring.rhobs
       version: v1alpha1
-    - description: PodMonitor defines monitoring for a set of pods.
+    - description: PodMonitor defines monitoring for a set of pods
       displayName: PodMonitor
       kind: PodMonitor
       name: podmonitors.monitoring.rhobs
       version: v1
-    - description: Probe defines monitoring for a set of static targets or ingresses.
+    - description: Probe defines monitoring for a set of static targets or ingresses
       displayName: Probe
       kind: Probe
       name: probes.monitoring.rhobs
       version: v1
-    - description: PrometheusAgent defines a Prometheus agent deployment.
+    - description: PrometheusAgent defines a Prometheus agent deployment
       displayName: PrometheusAgent
       kind: PrometheusAgent
       name: prometheusagents.monitoring.rhobs
       version: v1alpha1
-    - description: Prometheus defines a Prometheus deployment.
+    - description: Prometheus defines a Prometheus deployment
       displayName: Prometheus
       kind: Prometheus
       name: prometheuses.monitoring.rhobs
       version: v1
-    - description: PrometheusRule defines recording and alerting rules for a Prometheus instance.
+    - description: PrometheusRule defines recording and alerting rules for a Prometheus instance
       displayName: PrometheusRule
       kind: PrometheusRule
       name: prometheusrules.monitoring.rhobs
       version: v1
     - description: ScrapeConfig defines a namespaced Prometheus scrape_config to be aggregated across 
-        multiple namespaces into the Prometheus configuration.
+        multiple namespaces into the Prometheus configuration
       displayName: ScrapeConfig
       kind: ScrapeConfig
       name: scrapeconfigs.monitoring.rhobs
       version: v1alpha1
-    - description: ServiceMonitor defines monitoring for a set of services.
+    - description: ServiceMonitor defines monitoring for a set of services
       displayName: ServiceMonitor
       kind: ServiceMonitor
       name: servicemonitors.monitoring.rhobs
@@ -80,7 +80,7 @@ spec:
       kind: ThanosQuerier
       name: thanosqueriers.monitoring.rhobs
       version: v1alpha1
-    - description: ThanosRuler defines a ThanosRuler deployment.
+    - description: ThanosRuler defines a ThanosRuler deployment
       displayName: ThanosRuler
       kind: ThanosRuler
       name: thanosrulers.monitoring.rhobs
