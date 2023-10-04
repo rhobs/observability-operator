@@ -23,8 +23,8 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - description: AlertmanagerConfig defines a namespaced AlertmanagerConfig to
-        be aggregated across multiple namespaces configuring one Alertmanager cluster
+    - description: AlertmanagerConfig configures the Prometheus Alertmanager, specifying how alerts should be grouped,
+        inhibited and notified to external systems
       displayName: AlertmanagerConfig
       kind: AlertmanagerConfig
       name: alertmanagerconfigs.monitoring.rhobs
