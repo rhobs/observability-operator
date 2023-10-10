@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/go-logr/logr v1.2.4
-	github.com/google/go-cmp v0.5.9
+	github.com/google/go-cmp v0.6.0
 	github.com/prometheus/common v0.44.0
 	github.com/prometheus/prometheus v1.8.2-0.20211105201321-411021ada9ab
 	github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.66.0-rhobs1
