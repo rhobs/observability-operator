@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.26](https://github.com/rhobs/monitoring-stack-operator/commit/) (2023-10-11)
+
+
+### Features
+
+* Bump PO to v0.66.0 ([#319](https://github.com/rhobs/monitoring-stack-operator/issues/319)) ([5e42a1d](https://github.com/rhobs/monitoring-stack-operator/commit/5e42a1dc29027166c5fd2e75894bf53cd0be710b))
+
+
+### Bug Fixes
+
+* add description field to CSV base ([#366](https://github.com/rhobs/monitoring-stack-operator/issues/366)) ([22bb08b](https://github.com/rhobs/monitoring-stack-operator/commit/22bb08b5ca8b7e12d4974a75c412a063a6658789))
+* Clean up deprecated functions  ([#326](https://github.com/rhobs/monitoring-stack-operator/issues/326)) ([3f29722](https://github.com/rhobs/monitoring-stack-operator/commit/3f29722f49b1cd836f1ff0fc05395d985ca1d586))
+* remove ServiceMonitor observability-operator from bundle ([#354](https://github.com/rhobs/monitoring-stack-operator/issues/354)) ([e9f13ce](https://github.com/rhobs/monitoring-stack-operator/commit/e9f13ce9901205f94dc825033673351be81bf5a3))
+* remove stripped down crds hack ([#362](https://github.com/rhobs/monitoring-stack-operator/issues/362)) ([4f1dc2f](https://github.com/rhobs/monitoring-stack-operator/commit/4f1dc2f0c3e6bfb14aa914969f98cc8c9c082575))
+* test scripts and readme doc about uninstallation ([#330](https://github.com/rhobs/monitoring-stack-operator/issues/330)) ([fca1667](https://github.com/rhobs/monitoring-stack-operator/commit/fca16679cb6cb10bf10a7731e046b11617572711))
+* update github workflow to use node>=16 ([#336](https://github.com/rhobs/monitoring-stack-operator/issues/336)) ([a66295f](https://github.com/rhobs/monitoring-stack-operator/commit/a66295f0e2c096cd33b522310de7e6f3ca76e7f2))
+* use framework default timeout in ns tests ([#335](https://github.com/rhobs/monitoring-stack-operator/issues/335)) ([d19d7f2](https://github.com/rhobs/monitoring-stack-operator/commit/d19d7f2eb8a76f9d51a6291de1b36bedcd17ddc4))
+
 ### [0.0.25](https://github.com/rhobs/monitoring-stack-operator/commit/) (2023-08-07)
 
 
