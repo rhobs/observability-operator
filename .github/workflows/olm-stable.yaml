@@ -15,9 +15,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Import common environment variables
-        run: cat ".github/env" >> $GITHUB_ENV
-
       - name: publish
         uses: ./.github/olm-publish
         env:
@@ -28,4 +25,3 @@ jobs:
         with:
           quay_login: ${{ secrets.QUAY_LOGIN }}
           quay_token: ${{ secrets.QUAY_TOKEN }}
-          go-version: ${{ env.go-version }}
