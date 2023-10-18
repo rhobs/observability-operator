@@ -673,7 +673,7 @@ RemoteWriteSpec defines the configuration to write samples from Prometheus to a 
         <td><b>bearerToken</b></td>
         <td>string</td>
         <td>
-          *Warning: this field shouldn't used because the token value appears in clear-text. Prefer using `authorization`.* 
+          *Warning: this field shouldn't be used because the token value appears in clear-text. Prefer using `authorization`.* 
  *Deprecated: this will be removed in a future release.*<br/>
         </td>
         <td>false</td>
@@ -803,21 +803,23 @@ Authorization section for the URL.
         <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexauthorizationcredentials">credentials</a></b></td>
         <td>object</td>
         <td>
-          The secret's key that contains the credentials of the request<br/>
+          Selects a key of a Secret in the namespace that contains the credentials for authentication.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>credentialsFile</b></td>
         <td>string</td>
         <td>
-          File to read a secret from, mutually exclusive with Credentials (from SafeAuthorization)<br/>
+          File to read a secret from, mutually exclusive with `credentials`.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>type</b></td>
         <td>string</td>
         <td>
-          Set the authentication type. Defaults to Bearer, Basic will cause an error<br/>
+          Defines the authentication type. The value is case-insensitive. 
+ "Basic" is not a supported value. 
+ Default: "Bearer"<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -829,7 +831,7 @@ Authorization section for the URL.
 
 
 
-The secret's key that contains the credentials of the request
+Selects a key of a Secret in the namespace that contains the credentials for authentication.
 
 <table>
     <thead>
@@ -1002,14 +1004,14 @@ MetadataConfig configures the sending of series metadata to the remote storage.
         <td><b>send</b></td>
         <td>boolean</td>
         <td>
-          Whether metric metadata is sent to the remote storage or not.<br/>
+          Defines whether metric metadata is sent to the remote storage or not.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>sendInterval</b></td>
         <td>string</td>
         <td>
-          How frequently metric metadata is sent to the remote storage.<br/>
+          Defines how frequently metric metadata is sent to the remote storage.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1806,7 +1808,8 @@ Secret containing the client key file for the targets.
 
 
 
-RelabelConfig allows dynamic rewriting of the label set, being applied to samples before ingestion. It defines `<metric_relabel_configs>`-section of Prometheus configuration. More info: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#metric_relabel_configs
+RelabelConfig allows dynamic rewriting of the label set for targets, alerts, scraped samples and remote write samples. 
+ More info: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config
 
 <table>
     <thead>
@@ -1821,7 +1824,9 @@ RelabelConfig allows dynamic rewriting of the label set, being applied to sample
         <td><b>action</b></td>
         <td>enum</td>
         <td>
-          Action to perform based on regex matching. Default is 'replace'. uppercase and lowercase actions require Prometheus >= 2.36.<br/>
+          Action to perform based on the regex matching. 
+ `Uppercase` and `Lowercase` actions require Prometheus >= v2.36.0. `DropEqual` and `KeepEqual` actions require Prometheus >= v2.41.0. 
+ Default: "Replace"<br/>
           <br/>
             <i>Enum</i>: replace, Replace, keep, Keep, drop, Drop, hashmod, HashMod, labelmap, LabelMap, labeldrop, LabelDrop, labelkeep, LabelKeep, lowercase, Lowercase, uppercase, Uppercase, keepequal, KeepEqual, dropequal, DropEqual<br/>
             <i>Default</i>: replace<br/>
@@ -1831,7 +1836,8 @@ RelabelConfig allows dynamic rewriting of the label set, being applied to sample
         <td><b>modulus</b></td>
         <td>integer</td>
         <td>
-          Modulus to take of the hash of the source label values.<br/>
+          Modulus to take of the hash of the source label values. 
+ Only applicable when the action is `HashMod`.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -1840,35 +1846,38 @@ RelabelConfig allows dynamic rewriting of the label set, being applied to sample
         <td><b>regex</b></td>
         <td>string</td>
         <td>
-          Regular expression against which the extracted value is matched. Default is '(.*)'<br/>
+          Regular expression against which the extracted value is matched.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>replacement</b></td>
         <td>string</td>
         <td>
-          Replacement value against which a regex replace is performed if the regular expression matches. Regex capture groups are available. Default is '$1'<br/>
+          Replacement value against which a Replace action is performed if the regular expression matches. 
+ Regex capture groups are available.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>separator</b></td>
         <td>string</td>
         <td>
-          Separator placed between concatenated source label values. default is ';'.<br/>
+          Separator is the string between concatenated SourceLabels.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>sourceLabels</b></td>
         <td>[]string</td>
         <td>
-          The source labels select values from existing labels. Their content is concatenated using the configured separator and matched against the configured regular expression for the replace, keep, and drop actions.<br/>
+          The source labels select values from existing labels. Their content is concatenated using the configured Separator and matched against the configured regular expression.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>targetLabel</b></td>
         <td>string</td>
         <td>
-          Label to which the resulting value is written in a replace action. It is mandatory for replace actions. Regex capture groups are available.<br/>
+          Label to which the resulting string is written in a replacement. 
+ It is mandatory for `Replace`, `HashMod`, `Lowercase`, `Uppercase`, `KeepEqual` and `DropEqual` actions. 
+ Regex capture groups are available.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
