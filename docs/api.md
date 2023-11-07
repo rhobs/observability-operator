@@ -658,7 +658,16 @@ RemoteWriteSpec defines the configuration to write samples from Prometheus to a 
         <td>
           Authorization section for the URL. 
  It requires Prometheus >= v2.26.0. 
- Cannot be set at the same time as `sigv4`, `basicAuth`, or `oauth2`.<br/>
+ Cannot be set at the same time as `sigv4`, `basicAuth`, `oauth2`, or `azureAd`.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexazuread">azureAd</a></b></td>
+        <td>object</td>
+        <td>
+          AzureAD for the URL. 
+ It requires Prometheus >= v2.45.0. 
+ Cannot be set at the same time as `authorization`, `basicAuth`, `oauth2`, or `sigv4`.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -666,7 +675,7 @@ RemoteWriteSpec defines the configuration to write samples from Prometheus to a 
         <td>object</td>
         <td>
           BasicAuth configuration for the URL. 
- Cannot be set at the same time as `sigv4`, `authorization`, or `oauth2`.<br/>
+ Cannot be set at the same time as `sigv4`, `authorization`, `oauth2`, or `azureAd`.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -714,7 +723,7 @@ RemoteWriteSpec defines the configuration to write samples from Prometheus to a 
         <td>
           OAuth2 configuration for the URL. 
  It requires Prometheus >= v2.27.0. 
- Cannot be set at the same time as `sigv4`, `authorization`, or `basicAuth`.<br/>
+ Cannot be set at the same time as `sigv4`, `authorization`, `basicAuth`, or `azureAd`.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -760,7 +769,7 @@ RemoteWriteSpec defines the configuration to write samples from Prometheus to a 
         <td>
           Sigv4 allows to configures AWS's Signature Verification 4 for the URL. 
  It requires Prometheus >= v2.26.0. 
- Cannot be set at the same time as `authorization`, `basicAuth`, or `oauth2`.<br/>
+ Cannot be set at the same time as `authorization`, `basicAuth`, `oauth2`, or `azureAd`.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -788,7 +797,7 @@ RemoteWriteSpec defines the configuration to write samples from Prometheus to a 
 
 Authorization section for the URL. 
  It requires Prometheus >= v2.26.0. 
- Cannot be set at the same time as `sigv4`, `basicAuth`, or `oauth2`.
+ Cannot be set at the same time as `sigv4`, `basicAuth`, `oauth2`, or `azureAd`.
 
 <table>
     <thead>
@@ -867,13 +876,78 @@ Selects a key of a Secret in the namespace that contains the credentials for aut
 </table>
 
 
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].azureAd
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindex)</sup></sup>
+
+
+
+AzureAD for the URL. 
+ It requires Prometheus >= v2.45.0. 
+ Cannot be set at the same time as `authorization`, `basicAuth`, `oauth2`, or `sigv4`.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexazureadmanagedidentity">managedIdentity</a></b></td>
+        <td>object</td>
+        <td>
+          ManagedIdentity defines the Azure User-assigned Managed identity.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>cloud</b></td>
+        <td>enum</td>
+        <td>
+          The Azure Cloud. Options are 'AzurePublic', 'AzureChina', or 'AzureGovernment'.<br/>
+          <br/>
+            <i>Enum</i>: AzureChina, AzureGovernment, AzurePublic<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].azureAd.managedIdentity
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindexazuread)</sup></sup>
+
+
+
+ManagedIdentity defines the Azure User-assigned Managed identity.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>clientId</b></td>
+        <td>string</td>
+        <td>
+          The client id<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
 ### MonitoringStack.spec.prometheusConfig.remoteWrite[index].basicAuth
 <sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindex)</sup></sup>
 
 
 
 BasicAuth configuration for the URL. 
- Cannot be set at the same time as `sigv4`, `authorization`, or `oauth2`.
+ Cannot be set at the same time as `sigv4`, `authorization`, `oauth2`, or `azureAd`.
 
 <table>
     <thead>
@@ -1025,7 +1099,7 @@ MetadataConfig configures the sending of series metadata to the remote storage.
 
 OAuth2 configuration for the URL. 
  It requires Prometheus >= v2.27.0. 
- Cannot be set at the same time as `sigv4`, `authorization`, or `basicAuth`.
+ Cannot be set at the same time as `sigv4`, `authorization`, `basicAuth`, or `azureAd`.
 
 <table>
     <thead>
@@ -1322,7 +1396,7 @@ QueueConfig allows tuning of the remote write queue parameters.
 
 Sigv4 allows to configures AWS's Signature Verification 4 for the URL. 
  It requires Prometheus >= v2.26.0. 
- Cannot be set at the same time as `authorization`, `basicAuth`, or `oauth2`.
+ Cannot be set at the same time as `authorization`, `basicAuth`, `oauth2`, or `azureAd`.
 
 <table>
     <thead>
