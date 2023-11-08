@@ -19,7 +19,7 @@ COPY pkg/ pkg/
 COPY test/ test/
 
 # compile test into e2e.test binary
-RUN go test -c ./test/e2e/
+RUN go test -c -tags netgo,osusergo ./test/e2e/
 
 ###  Runner  ###
 
