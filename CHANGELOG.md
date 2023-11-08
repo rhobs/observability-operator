@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.27](https://github.com/rhobs/monitoring-stack-operator/commit/) (2023-11-07)
+
+
+### Features
+
+* bump Prometheus operator to v0.68.0 ([#371](https://github.com/rhobs/monitoring-stack-operator/issues/371)) ([50b7889](https://github.com/rhobs/monitoring-stack-operator/commit/50b7889c87005da2c240b88dbf102893eff77117))
+* bump Prometheus operator to v0.69.0 ([#380](https://github.com/rhobs/monitoring-stack-operator/issues/380)) ([7facafd](https://github.com/rhobs/monitoring-stack-operator/commit/7facafdee90820c70b500047b1a93edffaa9fe96))
+
 ### [0.0.26](https://github.com/rhobs/monitoring-stack-operator/commit/) (2023-10-11)
 
 
