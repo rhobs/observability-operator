@@ -13,17 +13,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func thanosComponentReconcilers(thanos *msoapi.ThanosQuerier, sidecarUrls []string) []reconciler.Reconciler {
+func thanosComponentReconcilers(thanos *msoapi.ThanosQuerier, sidecarUrls []string, thanosImage map[string]string) []reconciler.Reconciler {
 	name := "thanos-querier-" + thanos.Name
 	return []reconciler.Reconciler{
 		reconciler.NewUpdater(newServiceAccount(name, thanos.Namespace), thanos),
-		reconciler.NewUpdater(newThanosQuerierDeployment(name, thanos, sidecarUrls), thanos),
+		reconciler.NewUpdater(newThanosQuerierDeployment(name, thanos, sidecarUrls, thanosImage), thanos),
 		reconciler.NewUpdater(newService(name, thanos.Namespace), thanos),
 		reconciler.NewUpdater(newServiceMonitor(name, thanos.Namespace), thanos),
 	}
 }
 
-func newThanosQuerierDeployment(name string, spec *msoapi.ThanosQuerier, sidecarUrls []string) *appsv1.Deployment {
+func newThanosQuerierDeployment(name string, spec *msoapi.ThanosQuerier, sidecarUrls []string, thanosImage map[string]string) *appsv1.Deployment {
 	args := []string{
 		"query",
 		"--grpc-address=127.0.0.1:10901",
@@ -68,7 +68,7 @@ func newThanosQuerierDeployment(name string, spec *msoapi.ThanosQuerier, sidecar
 						{
 							Name:  "thanos-querier",
 							Args:  args,
-							Image: "quay.io/thanos/thanos:v0.24.0",
+							Image: thanosImage["image"],
 							Ports: []corev1.ContainerPort{
 								{
 									ContainerPort: 9090,

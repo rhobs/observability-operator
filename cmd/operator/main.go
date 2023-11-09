@@ -18,7 +18,9 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
+	"strings"
 
 	"github.com/rhobs/observability-operator/pkg/operator"
 	"go.uber.org/zap/zapcore"
@@ -26,6 +28,47 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
+
+type kvarg map[string]string
+
+func (a *kvarg) String() string {
+	m := *a
+	slice := m.asSlice()
+	return strings.Join(slice, ",")
+}
+
+func (a *kvarg) Set(value string) error {
+	m := *a
+	pairs := strings.Split(value, ",")
+	for _, pair := range pairs {
+		splitPair := strings.Split(pair, "=")
+		if len(splitPair) != 2 {
+			return fmt.Errorf("pair %q is malformed; key-value pairs must be in the form of \"key=value\"; multiple pairs must be comma-separated", value)
+		}
+		m[splitPair[0]] = splitPair[1]
+	}
+	return nil
+}
+
+func (a kvarg) asSlice() []string {
+	pairs := []string{}
+	for name, tag := range a {
+		pairs = append(pairs, name+"="+tag)
+	}
+	return pairs
+}
+
+func (a kvarg) asMap() map[string]string {
+	res := make(map[string]string, len(a))
+	for k, v := range a {
+		res[k] = v
+	}
+	return res
+}
+
+func (a *kvarg) Type() string {
+	return "map[string]string"
+}
 
 func main() {
 	var (
@@ -39,6 +82,10 @@ func main() {
 	flag.StringVar(&namespace, "namespace", "default", "The namespace in which the operator runs")
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&healthProbeAddr, "health-probe-bind-address", ":8081", "The address the health probe endpoint binds to.")
+	images := kvarg{}
+	flag.Var(&images, "images", "Images to use for containers managed by the observability-operator.")
+	versions := kvarg{}
+	flag.Var(&versions, "versions", "Version of containers managed by the observability-operator.")
 	opts := zap.Options{
 		Development: true,
 		TimeEncoder: zapcore.RFC3339TimeEncoder,
@@ -52,7 +99,7 @@ func main() {
 		"namespace", namespace,
 		"metrics-bind-address", metricsAddr)
 
-	op, err := operator.New(metricsAddr, healthProbeAddr)
+	op, err := operator.New(metricsAddr, healthProbeAddr, images.asMap(), versions.asMap())
 	if err != nil {
 		setupLog.Error(err, "cannot create a new operator")
 		os.Exit(1)

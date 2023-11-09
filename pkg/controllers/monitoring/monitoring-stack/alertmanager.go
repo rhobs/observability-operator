@@ -18,6 +18,7 @@ func newAlertmanager(
 	rbacResourceName string,
 	instanceSelectorKey string,
 	instanceSelectorValue string,
+	alertmanagerImage map[string]string,
 ) *monv1.Alertmanager {
 	resourceSelector := ms.Spec.ResourceSelector
 	if resourceSelector == nil {
@@ -25,7 +26,7 @@ func newAlertmanager(
 	}
 	replicas := int32(2)
 
-	return &monv1.Alertmanager{
+	am := &monv1.Alertmanager{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: monv1.SchemeGroupVersion.String(),
 			Kind:       "Alertmanager",
@@ -75,6 +76,13 @@ func newAlertmanager(
 			AlertmanagerConfigNamespaceSelector: ms.Spec.NamespaceSelector,
 		},
 	}
+	if alertmanagerImage["image"] != "" {
+		am.Spec.Image = stringPtr(alertmanagerImage["image"])
+	}
+	if alertmanagerImage["version"] != "" {
+		am.Spec.Version = alertmanagerImage["version"]
+	}
+	return am
 }
 
 func newAlertmanagerService(ms *stack.MonitoringStack, instanceSelectorKey string, instanceSelectorValue string) *corev1.Service {

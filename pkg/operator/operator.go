@@ -26,7 +26,7 @@ type Operator struct {
 	manager manager.Manager
 }
 
-func New(metricsAddr, healthProbeAddr string) (*Operator, error) {
+func New(metricsAddr, healthProbeAddr string, images map[string]string, versions map[string]string) (*Operator, error) {
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: NewScheme(),
 		Metrics: metricsserver.Options{
@@ -38,11 +38,11 @@ func New(metricsAddr, healthProbeAddr string) (*Operator, error) {
 		return nil, fmt.Errorf("unable to create manager: %w", err)
 	}
 
-	if err := stackctrl.RegisterWithManager(mgr, stackctrl.Options{InstanceSelector: instanceSelector}); err != nil {
+	if err := stackctrl.RegisterWithManager(mgr, stackctrl.Options{InstanceSelector: instanceSelector, Images: images, Versions: versions}); err != nil {
 		return nil, fmt.Errorf("unable to register monitoring stack controller: %w", err)
 	}
 
-	if err := tqctrl.RegisterWithManager(mgr); err != nil {
+	if err := tqctrl.RegisterWithManager(mgr, tqctrl.Options{Images: images, Versions: versions}); err != nil {
 		return nil, fmt.Errorf("unable to register the thanos querier controller with the manager: %w", err)
 	}
 

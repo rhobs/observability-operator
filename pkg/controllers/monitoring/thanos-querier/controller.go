@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"time"
 
+	obopo "github.com/rhobs/obo-prometheus-operator/pkg/operator"
 	msoapi "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -41,6 +42,13 @@ type resourceManager struct {
 	client.Client
 	scheme *runtime.Scheme
 	logger logr.Logger
+	thanos map[string]string
+}
+
+// Options allows for controller options to be set
+type Options struct {
+	Images   map[string]string
+	Versions map[string]string
 }
 
 // RBAC for watching monitoring stacks
@@ -61,12 +69,21 @@ type resourceManager struct {
 //+kubebuilder:rbac:groups=monitoring.rhobs,resources=servicemonitors,verbs=list;watch;create;update;patch;delete
 
 // RegisterWithManager registers the controller with Manager
-func RegisterWithManager(mgr ctrl.Manager) error {
+func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 	logger := ctrl.Log.WithName("thanos-querier")
+	thanos := map[string]string{"image": "quay.io/thanos/thanos:" + obopo.DefaultThanosVersion, "version": obopo.DefaultThanosVersion}
+	if customImage, ok := opts.Images["thanos"]; ok {
+		thanos["image"] = customImage
+	}
+	if customVersion, ok := opts.Versions["thanos"]; ok {
+		thanos["version"] = customVersion
+	}
+
 	rm := &resourceManager{
 		Client: mgr.GetClient(),
 		scheme: mgr.GetScheme(),
 		logger: logger,
+		thanos: thanos,
 	}
 
 	p := predicate.GenerationChangedPredicate{}
@@ -103,7 +120,7 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{RequeueAfter: 10 * time.Second}, err
 	}
 
-	reconcilers := thanosComponentReconcilers(querier, sidecarServices)
+	reconcilers := thanosComponentReconcilers(querier, sidecarServices, rm.thanos)
 	for _, reconciler := range reconcilers {
 		err := reconciler.Reconcile(ctx, rm, rm.scheme)
 		// handle creation / updation errors that can happen due to a stale cache by
