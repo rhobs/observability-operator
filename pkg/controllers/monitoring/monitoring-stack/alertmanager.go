@@ -18,7 +18,7 @@ func newAlertmanager(
 	rbacResourceName string,
 	instanceSelectorKey string,
 	instanceSelectorValue string,
-	alertmanagerImage map[string]string,
+	alertmanagerCfg AlertmanagerConfiguration,
 ) *monv1.Alertmanager {
 	resourceSelector := ms.Spec.ResourceSelector
 	if resourceSelector == nil {
@@ -76,11 +76,11 @@ func newAlertmanager(
 			AlertmanagerConfigNamespaceSelector: ms.Spec.NamespaceSelector,
 		},
 	}
-	if alertmanagerImage["image"] != "" {
-		am.Spec.Image = stringPtr(alertmanagerImage["image"])
+	if alertmanagerCfg.Image != "" {
+		am.Spec.Image = stringPtr(alertmanagerCfg.Image)
 	}
-	if alertmanagerImage["version"] != "" {
-		am.Spec.Version = alertmanagerImage["version"]
+	if alertmanagerCfg.Version != "" {
+		am.Spec.Version = alertmanagerCfg.Version
 	}
 	return am
 }

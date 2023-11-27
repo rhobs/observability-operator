@@ -26,23 +26,49 @@ type Operator struct {
 	manager manager.Manager
 }
 
-func New(metricsAddr, healthProbeAddr string, images map[string]string, versions map[string]string) (*Operator, error) {
+type OperandConfiguration struct {
+	Image   string
+	Version string
+}
+
+type OperatorConfiguration struct {
+	MetricsAddr     string
+	HealthProbeAddr string
+	Prometheus      stackctrl.PrometheusConfiguration
+	Alertmanager    stackctrl.AlertmanagerConfiguration
+	Thanos          tqctrl.ThanosConfiguration
+}
+
+func NewOperatorConfiguration(metricsAddr string, healthProbeAddr string, images, versions map[string]string) OperatorConfiguration {
+	return OperatorConfiguration{
+		MetricsAddr:     metricsAddr,
+		HealthProbeAddr: healthProbeAddr,
+		Prometheus:      stackctrl.PrometheusConfiguration{Image: images["prometheus"], Version: versions["prometheus"]},
+		Alertmanager:    stackctrl.AlertmanagerConfiguration{Image: images["alertmanager"], Version: versions["alertmanager"]},
+		Thanos:          tqctrl.ThanosConfiguration{Image: images["thanos"], Version: versions["thanos"]},
+	}
+}
+
+func New(cfg OperatorConfiguration) (*Operator, error) {
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: NewScheme(),
 		Metrics: metricsserver.Options{
-			BindAddress: metricsAddr,
+			BindAddress: cfg.MetricsAddr,
 		},
-		HealthProbeBindAddress: healthProbeAddr,
+		HealthProbeBindAddress: cfg.HealthProbeAddr,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to create manager: %w", err)
 	}
 
-	if err := stackctrl.RegisterWithManager(mgr, stackctrl.Options{InstanceSelector: instanceSelector, Images: images, Versions: versions}); err != nil {
+	if err := stackctrl.RegisterWithManager(mgr, stackctrl.Options{
+		InstanceSelector: instanceSelector,
+		Prometheus:       cfg.Prometheus,
+		Alertmanager:     cfg.Alertmanager}); err != nil {
 		return nil, fmt.Errorf("unable to register monitoring stack controller: %w", err)
 	}
 
-	if err := tqctrl.RegisterWithManager(mgr, tqctrl.Options{Images: images, Versions: versions}); err != nil {
+	if err := tqctrl.RegisterWithManager(mgr, tqctrl.Options{Thanos: cfg.Thanos}); err != nil {
 		return nil, fmt.Errorf("unable to register the thanos querier controller with the manager: %w", err)
 	}
 

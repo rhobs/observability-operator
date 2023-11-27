@@ -37,6 +37,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
+	tqctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/thanos-querier"
 
 	"github.com/go-logr/logr"
 	monv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
@@ -49,16 +50,27 @@ type resourceManager struct {
 	instanceSelectorKey   string
 	instanceSelectorValue string
 	controller            controller.Controller
-	thanos                map[string]string
-	prometheus            map[string]string
-	alertmanager          map[string]string
+	prometheus            PrometheusConfiguration
+	alertmanager          AlertmanagerConfiguration
+	thanos                tqctrl.ThanosConfiguration
+}
+
+type PrometheusConfiguration struct {
+	Image   string
+	Version string
+}
+
+type AlertmanagerConfiguration struct {
+	Image   string
+	Version string
 }
 
 // Options allows for controller options to be set
 type Options struct {
 	InstanceSelector string
-	Images           map[string]string
-	Versions         map[string]string
+	Prometheus       PrometheusConfiguration
+	Alertmanager     AlertmanagerConfiguration
+	Thanos           tqctrl.ThanosConfiguration
 }
 
 // RBAC for managing monitoring stacks
@@ -84,27 +96,6 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 	if len(split) != 2 {
 		return fmt.Errorf("invalid InstanceSelector: %s", opts.InstanceSelector)
 	}
-	thanos := map[string]string{"version": "", "image": ""}
-	if customImage, ok := opts.Images["thanos"]; ok {
-		thanos["image"] = customImage
-	}
-	if customVersion, ok := opts.Versions["thanos"]; ok {
-		thanos["version"] = customVersion
-	}
-	prometheus := map[string]string{"version": "", "image": ""}
-	if customImage, ok := opts.Images["prometheus"]; ok {
-		prometheus["image"] = customImage
-	}
-	if customVersion, ok := opts.Versions["prometheus"]; ok {
-		prometheus["version"] = customVersion
-	}
-	alertmanager := map[string]string{"version": "", "image": ""}
-	if customImage, ok := opts.Images["alertmanager"]; ok {
-		alertmanager["image"] = customImage
-	}
-	if customVersion, ok := opts.Versions["alertmanager"]; ok {
-		alertmanager["version"] = customVersion
-	}
 
 	rm := &resourceManager{
 		k8sClient:             mgr.GetClient(),
@@ -112,9 +103,9 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 		logger:                ctrl.Log.WithName("observability-operator"),
 		instanceSelectorKey:   split[0],
 		instanceSelectorValue: split[1],
-		thanos:                thanos,
-		prometheus:            prometheus,
-		alertmanager:          alertmanager,
+		thanos:                opts.Thanos,
+		prometheus:            opts.Prometheus,
+		alertmanager:          opts.Alertmanager,
 	}
 	// We only want to trigger a reconciliation when the generation
 	// of a child changes. Until we need to update our the status for our own objects,

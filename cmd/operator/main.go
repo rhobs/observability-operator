@@ -57,7 +57,7 @@ func main() {
 		"namespace", namespace,
 		"metrics-bind-address", metricsAddr)
 
-	op, err := operator.New(metricsAddr, healthProbeAddr, *images.Map, *versions.Map)
+	op, err := operator.New(operator.NewOperatorConfiguration(metricsAddr, healthProbeAddr, *images.Map, *versions.Map))
 	if err != nil {
 		setupLog.Error(err, "cannot create a new operator")
 		os.Exit(1)

@@ -6,6 +6,7 @@ import (
 	"github.com/rhobs/observability-operator/pkg/reconciler"
 
 	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
+	tqctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/thanos-querier"
 
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
@@ -26,9 +27,9 @@ func stackComponentReconcilers(
 	ms *stack.MonitoringStack,
 	instanceSelectorKey string,
 	instanceSelectorValue string,
-	thanos map[string]string,
-	prometheus map[string]string,
-	alertmanager map[string]string,
+	thanos tqctrl.ThanosConfiguration,
+	prometheus PrometheusConfiguration,
+	alertmanager AlertmanagerConfiguration,
 ) []reconciler.Reconciler {
 	prometheusName := ms.Name + "-prometheus"
 	alertmanagerName := ms.Name + "-alertmanager"
@@ -114,8 +115,8 @@ func newPrometheus(
 	additionalScrapeConfigsSecretName string,
 	instanceSelectorKey string,
 	instanceSelectorValue string,
-	thanosImage map[string]string,
-	prometheusImage map[string]string,
+	thanosCfg tqctrl.ThanosConfiguration,
+	prometheusCfg PrometheusConfiguration,
 ) *monv1.Prometheus {
 	prometheusSelector := ms.Spec.ResourceSelector
 
@@ -197,20 +198,20 @@ func newPrometheus(
 		},
 	}
 
-	if thanosImage["image"] != "" {
-		prometheus.Spec.Thanos.Image = stringPtr(thanosImage["image"])
+	if thanosCfg.Image != "" {
+		prometheus.Spec.Thanos.Image = stringPtr(thanosCfg.Image)
 	}
 
-	if thanosImage["version"] != "" {
-		prometheus.Spec.Thanos.Version = stringPtr(thanosImage["version"])
+	if thanosCfg.Version != "" {
+		prometheus.Spec.Thanos.Version = stringPtr(thanosCfg.Version)
 	}
 
-	if prometheusImage["image"] != "" {
-		prometheus.Spec.CommonPrometheusFields.Image = stringPtr(prometheusImage["image"])
+	if prometheusCfg.Image != "" {
+		prometheus.Spec.CommonPrometheusFields.Image = stringPtr(prometheusCfg.Image)
 	}
 
-	if prometheusImage["version"] != "" {
-		prometheus.Spec.CommonPrometheusFields.Version = prometheusImage["version"]
+	if prometheusCfg.Version != "" {
+		prometheus.Spec.CommonPrometheusFields.Version = prometheusCfg.Version
 	}
 
 	if !ms.Spec.AlertmanagerConfig.Disabled {

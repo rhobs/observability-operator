@@ -42,13 +42,30 @@ type resourceManager struct {
 	client.Client
 	scheme *runtime.Scheme
 	logger logr.Logger
-	thanos map[string]string
+	thanos ThanosConfiguration
+}
+
+type ThanosConfiguration struct {
+	Image   string
+	Version string
+}
+
+func (t ThanosConfiguration) GetImageRef() string {
+	image := "quay.io/thanos/thanos"
+	if t.Image != "" {
+		image = t.Image
+	}
+	if t.Version == "" {
+		image = image + obopo.DefaultThanosVersion
+	} else {
+		image = image + t.Version
+	}
+	return image
 }
 
 // Options allows for controller options to be set
 type Options struct {
-	Images   map[string]string
-	Versions map[string]string
+	Thanos ThanosConfiguration
 }
 
 // RBAC for watching monitoring stacks
@@ -71,19 +88,12 @@ type Options struct {
 // RegisterWithManager registers the controller with Manager
 func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 	logger := ctrl.Log.WithName("thanos-querier")
-	thanos := map[string]string{"image": "quay.io/thanos/thanos:" + obopo.DefaultThanosVersion, "version": obopo.DefaultThanosVersion}
-	if customImage, ok := opts.Images["thanos"]; ok {
-		thanos["image"] = customImage
-	}
-	if customVersion, ok := opts.Versions["thanos"]; ok {
-		thanos["version"] = customVersion
-	}
 
 	rm := &resourceManager{
 		Client: mgr.GetClient(),
 		scheme: mgr.GetScheme(),
 		logger: logger,
-		thanos: thanos,
+		thanos: opts.Thanos,
 	}
 
 	p := predicate.GenerationChangedPredicate{}
