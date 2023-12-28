@@ -123,7 +123,7 @@ main() {
 	wait_for_operators_ready "$OPERATORS_NS"
 
 	local -i ret=0
-	./test/run-e2e.sh --no-deploy --ns "$OPERATORS_NS" || ret=$?
+	./test/run-e2e.sh --no-deploy --ns "$OPERATORS_NS" --ci || ret=$?
 
 	# NOTE: delete_obo will be automatically called when script exits
 	return $ret
