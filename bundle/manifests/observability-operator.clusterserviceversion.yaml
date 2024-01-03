@@ -53,7 +53,7 @@ metadata:
       ]
     operators.operatorframework.io/project_layout: unknown
     repository: https://github.com/rhobs/observability-operator
-  name: observability-operator.v0.0.28
+  name: observability-operator.v0.0.29-231212104734
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -595,7 +595,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.namespace
-                image: observability-operator:0.0.28
+                image: quay.io/rhobs/observability-operator:0.0.29-231212104734
                 imagePullPolicy: Always
                 livenessProbe:
                   httpGet:
@@ -656,7 +656,7 @@ spec:
   maturity: alpha
   provider:
     name: Red Hat
-  version: 0.0.28
+  version: 0.0.29-231212104734
   webhookdefinitions:
   - admissionReviewVersions:
     - v1
