@@ -3,7 +3,7 @@ module github.com/rhobs/observability-operator
 go 1.20
 
 require (
-	github.com/go-logr/logr v1.3.0
+	github.com/go-logr/logr v1.4.1
 	github.com/google/go-cmp v0.6.0
 	github.com/prometheus/common v0.45.0
 	github.com/prometheus/prometheus v1.8.2-0.20211105201321-411021ada9ab
