@@ -34,7 +34,6 @@ func main() {
 		metricsAddr     string
 		healthProbeAddr string
 		images          k8sflag.MapStringString
-		versions        k8sflag.MapStringString
 
 		setupLog = ctrl.Log.WithName("setup")
 	)
@@ -42,8 +41,7 @@ func main() {
 	flag.StringVar(&namespace, "namespace", "default", "The namespace in which the operator runs")
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&healthProbeAddr, "health-probe-bind-address", ":8081", "The address the health probe endpoint binds to.")
-	flag.Var(&images, "images", "Images to use for containers managed by the observability-operator.")
-	flag.Var(&versions, "versions", "Version of containers managed by the observability-operator.")
+	flag.Var(&images, "images", "Full images refs to use for containers managed by the operator. E.g thanos=quay.io/thanos/thanos:v0.33.0")
 	opts := zap.Options{
 		Development: true,
 		TimeEncoder: zapcore.RFC3339TimeEncoder,
@@ -57,7 +55,7 @@ func main() {
 		"namespace", namespace,
 		"metrics-bind-address", metricsAddr)
 
-	op, err := operator.New(operator.NewOperatorConfiguration(metricsAddr, healthProbeAddr, *images.Map, *versions.Map))
+	op, err := operator.New(operator.NewOperatorConfiguration(metricsAddr, healthProbeAddr, *images.Map))
 	if err != nil {
 		setupLog.Error(err, "cannot create a new operator")
 		os.Exit(1)

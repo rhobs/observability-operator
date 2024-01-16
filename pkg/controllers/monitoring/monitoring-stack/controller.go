@@ -37,10 +37,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
-	tqctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/thanos-querier"
 
 	"github.com/go-logr/logr"
 	monv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
+	obopo "github.com/rhobs/obo-prometheus-operator/pkg/operator"
 )
 
 type resourceManager struct {
@@ -52,17 +52,27 @@ type resourceManager struct {
 	controller            controller.Controller
 	prometheus            PrometheusConfiguration
 	alertmanager          AlertmanagerConfiguration
-	thanos                tqctrl.ThanosConfiguration
+	thanos                ThanosConfiguration
 }
 
 type PrometheusConfiguration struct {
-	Image   string
-	Version string
+	Image string
 }
 
 type AlertmanagerConfiguration struct {
-	Image   string
-	Version string
+	Image string
+}
+
+type ThanosConfiguration struct {
+	Image string
+}
+
+func (t ThanosConfiguration) GetImageRef() string {
+	image := "quay.io/thanos/thanos" + obopo.DefaultThanosVersion
+	if t.Image != "" {
+		image = t.Image
+	}
+	return image
 }
 
 // Options allows for controller options to be set
@@ -70,7 +80,7 @@ type Options struct {
 	InstanceSelector string
 	Prometheus       PrometheusConfiguration
 	Alertmanager     AlertmanagerConfiguration
-	Thanos           tqctrl.ThanosConfiguration
+	Thanos           ThanosConfiguration
 }
 
 // RBAC for managing monitoring stacks

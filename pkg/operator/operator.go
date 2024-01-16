@@ -36,16 +36,18 @@ type OperatorConfiguration struct {
 	HealthProbeAddr string
 	Prometheus      stackctrl.PrometheusConfiguration
 	Alertmanager    stackctrl.AlertmanagerConfiguration
-	Thanos          tqctrl.ThanosConfiguration
+	ThanosSidecar   stackctrl.ThanosConfiguration
+	ThanosQuerier   tqctrl.ThanosConfiguration
 }
 
-func NewOperatorConfiguration(metricsAddr string, healthProbeAddr string, images, versions map[string]string) OperatorConfiguration {
+func NewOperatorConfiguration(metricsAddr string, healthProbeAddr string, images map[string]string) OperatorConfiguration {
 	return OperatorConfiguration{
 		MetricsAddr:     metricsAddr,
 		HealthProbeAddr: healthProbeAddr,
-		Prometheus:      stackctrl.PrometheusConfiguration{Image: images["prometheus"], Version: versions["prometheus"]},
-		Alertmanager:    stackctrl.AlertmanagerConfiguration{Image: images["alertmanager"], Version: versions["alertmanager"]},
-		Thanos:          tqctrl.ThanosConfiguration{Image: images["thanos"], Version: versions["thanos"]},
+		Prometheus:      stackctrl.PrometheusConfiguration{Image: images["prometheus"]},
+		Alertmanager:    stackctrl.AlertmanagerConfiguration{Image: images["alertmanager"]},
+		ThanosSidecar:   stackctrl.ThanosConfiguration{Image: images["thanos"]},
+		ThanosQuerier:   tqctrl.ThanosConfiguration{Image: images["thanos"]},
 	}
 }
 
@@ -68,7 +70,7 @@ func New(cfg OperatorConfiguration) (*Operator, error) {
 		return nil, fmt.Errorf("unable to register monitoring stack controller: %w", err)
 	}
 
-	if err := tqctrl.RegisterWithManager(mgr, tqctrl.Options{Thanos: cfg.Thanos}); err != nil {
+	if err := tqctrl.RegisterWithManager(mgr, tqctrl.Options{Thanos: cfg.ThanosQuerier}); err != nil {
 		return nil, fmt.Errorf("unable to register the thanos querier controller with the manager: %w", err)
 	}
 

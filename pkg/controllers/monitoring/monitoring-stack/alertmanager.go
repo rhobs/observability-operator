@@ -79,9 +79,6 @@ func newAlertmanager(
 	if alertmanagerCfg.Image != "" {
 		am.Spec.Image = stringPtr(alertmanagerCfg.Image)
 	}
-	if alertmanagerCfg.Version != "" {
-		am.Spec.Version = alertmanagerCfg.Version
-	}
 	return am
 }
 

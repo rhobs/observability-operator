@@ -46,19 +46,13 @@ type resourceManager struct {
 }
 
 type ThanosConfiguration struct {
-	Image   string
-	Version string
+	Image string
 }
 
 func (t ThanosConfiguration) GetImageRef() string {
-	image := "quay.io/thanos/thanos"
+	image := "quay.io/thanos/thanos" + obopo.DefaultThanosVersion
 	if t.Image != "" {
 		image = t.Image
-	}
-	if t.Version == "" {
-		image = image + obopo.DefaultThanosVersion
-	} else {
-		image = image + t.Version
 	}
 	return image
 }
