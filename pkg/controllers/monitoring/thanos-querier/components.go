@@ -68,7 +68,7 @@ func newThanosQuerierDeployment(name string, spec *msoapi.ThanosQuerier, sidecar
 						{
 							Name:  "thanos-querier",
 							Args:  args,
-							Image: thanosCfg.GetImageRef(),
+							Image: thanosCfg.Image,
 							Ports: []corev1.ContainerPort{
 								{
 									ContainerPort: 9090,

@@ -7,6 +7,8 @@ import (
 	stackctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/monitoring-stack"
 	tqctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/thanos-querier"
 
+	obopo "github.com/rhobs/obo-prometheus-operator/pkg/operator"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 
@@ -21,14 +23,28 @@ const instanceSelector = "app.kubernetes.io/managed-by=observability-operator"
 
 const ObservabilityOperatorName = "observability-operator"
 
+// The default values we use. Prometheus and Alertmanager are handled by
+// prometheus-operator. For thanos we use the default version from
+// prometheus-operator.
+var DefaultImages = map[string]string{
+	"prometheus":   "",
+	"alertmanager": "",
+	"thanos":       "quay.io/thanos/thanos:" + obopo.DefaultThanosVersion,
+}
+
+func ImagesUsed() []string {
+	i := 0
+	imgs := make([]string, len(DefaultImages))
+	for k := range DefaultImages {
+		imgs[i] = k
+		i++
+	}
+	return imgs
+}
+
 // Operator embedds manager and exposes only the minimal set of functions
 type Operator struct {
 	manager manager.Manager
-}
-
-type OperandConfiguration struct {
-	Image   string
-	Version string
 }
 
 type OperatorConfiguration struct {
@@ -40,18 +56,51 @@ type OperatorConfiguration struct {
 	ThanosQuerier   tqctrl.ThanosConfiguration
 }
 
-func NewOperatorConfiguration(metricsAddr string, healthProbeAddr string, images map[string]string) OperatorConfiguration {
-	return OperatorConfiguration{
-		MetricsAddr:     metricsAddr,
-		HealthProbeAddr: healthProbeAddr,
-		Prometheus:      stackctrl.PrometheusConfiguration{Image: images["prometheus"]},
-		Alertmanager:    stackctrl.AlertmanagerConfiguration{Image: images["alertmanager"]},
-		ThanosSidecar:   stackctrl.ThanosConfiguration{Image: images["thanos"]},
-		ThanosQuerier:   tqctrl.ThanosConfiguration{Image: images["thanos"]},
+func WithPrometheusImage(image string) func(*OperatorConfiguration) {
+	return func(oc *OperatorConfiguration) {
+		oc.Prometheus = stackctrl.PrometheusConfiguration{Image: image}
 	}
 }
 
-func New(cfg OperatorConfiguration) (*Operator, error) {
+func WithAlertmanagerImage(image string) func(*OperatorConfiguration) {
+	return func(oc *OperatorConfiguration) {
+		oc.Alertmanager = stackctrl.AlertmanagerConfiguration{Image: image}
+	}
+}
+
+func WithThanosSidecarImage(image string) func(*OperatorConfiguration) {
+	return func(oc *OperatorConfiguration) {
+		oc.ThanosSidecar = stackctrl.ThanosConfiguration{Image: image}
+	}
+}
+
+func WithThanosQuerierImage(image string) func(*OperatorConfiguration) {
+	return func(oc *OperatorConfiguration) {
+		oc.ThanosQuerier = tqctrl.ThanosConfiguration{Image: image}
+	}
+}
+
+func WithMetricsAddr(addr string) func(*OperatorConfiguration) {
+	return func(oc *OperatorConfiguration) {
+		oc.MetricsAddr = addr
+	}
+}
+
+func WithHealthProbeAddr(addr string) func(*OperatorConfiguration) {
+	return func(oc *OperatorConfiguration) {
+		oc.HealthProbeAddr = addr
+	}
+}
+
+func NewOperatorConfiguration(opts ...func(*OperatorConfiguration)) *OperatorConfiguration {
+	cfg := &OperatorConfiguration{}
+	for _, o := range opts {
+		o(cfg)
+	}
+	return cfg
+}
+
+func New(cfg *OperatorConfiguration) (*Operator, error) {
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: NewScheme(),
 		Metrics: metricsserver.Options{
@@ -66,7 +115,9 @@ func New(cfg OperatorConfiguration) (*Operator, error) {
 	if err := stackctrl.RegisterWithManager(mgr, stackctrl.Options{
 		InstanceSelector: instanceSelector,
 		Prometheus:       cfg.Prometheus,
-		Alertmanager:     cfg.Alertmanager}); err != nil {
+		Alertmanager:     cfg.Alertmanager,
+		Thanos:           cfg.ThanosSidecar,
+	}); err != nil {
 		return nil, fmt.Errorf("unable to register monitoring stack controller: %w", err)
 	}
 

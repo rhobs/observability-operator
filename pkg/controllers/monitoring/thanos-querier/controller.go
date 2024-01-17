@@ -17,7 +17,6 @@ import (
 	"fmt"
 	"time"
 
-	obopo "github.com/rhobs/obo-prometheus-operator/pkg/operator"
 	msoapi "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -47,14 +46,6 @@ type resourceManager struct {
 
 type ThanosConfiguration struct {
 	Image string
-}
-
-func (t ThanosConfiguration) GetImageRef() string {
-	image := "quay.io/thanos/thanos" + obopo.DefaultThanosVersion
-	if t.Image != "" {
-		image = t.Image
-	}
-	return image
 }
 
 // Options allows for controller options to be set

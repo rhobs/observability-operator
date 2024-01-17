@@ -191,14 +191,9 @@ func newPrometheus(
 			RuleSelector:          prometheusSelector,
 			RuleNamespaceSelector: ms.Spec.NamespaceSelector,
 			Thanos: &monv1.ThanosSpec{
-				BaseImage: stringPtr("quay.io/thanos/thanos"),
-				Version:   stringPtr("v0.24.0"),
+				Image: stringPtr(thanosCfg.Image),
 			},
 		},
-	}
-
-	if thanosCfg.Image != "" {
-		prometheus.Spec.Thanos.Image = stringPtr(thanosCfg.Image)
 	}
 
 	if prometheusCfg.Image != "" {

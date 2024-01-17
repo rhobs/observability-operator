@@ -40,7 +40,6 @@ import (
 
 	"github.com/go-logr/logr"
 	monv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
-	obopo "github.com/rhobs/obo-prometheus-operator/pkg/operator"
 )
 
 type resourceManager struct {
@@ -65,14 +64,6 @@ type AlertmanagerConfiguration struct {
 
 type ThanosConfiguration struct {
 	Image string
-}
-
-func (t ThanosConfiguration) GetImageRef() string {
-	image := "quay.io/thanos/thanos" + obopo.DefaultThanosVersion
-	if t.Image != "" {
-		image = t.Image
-	}
-	return image
 }
 
 // Options allows for controller options to be set
