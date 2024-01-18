@@ -654,7 +654,7 @@ RemoteWriteSpec defines the configuration to write samples from Prometheus to a 
         <td>string</td>
         <td>
           *Warning: this field shouldn't be used because the token value appears in clear-text. Prefer using `authorization`.* 
- *Deprecated: this will be removed in a future release.*<br/>
+ Deprecated: this will be removed in a future release.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -662,7 +662,14 @@ RemoteWriteSpec defines the configuration to write samples from Prometheus to a 
         <td>string</td>
         <td>
           File from which to read bearer token for the URL. 
- *Deprecated: this will be removed in a future release. Prefer using `authorization`.*<br/>
+ Deprecated: this will be removed in a future release. Prefer using `authorization`.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>enableHTTP2</b></td>
+        <td>boolean</td>
+        <td>
+          Whether to enable HTTP2.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -866,19 +873,27 @@ AzureAD for the URL.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexazureadmanagedidentity">managedIdentity</a></b></td>
-        <td>object</td>
-        <td>
-          ManagedIdentity defines the Azure User-assigned Managed identity.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
         <td><b>cloud</b></td>
         <td>enum</td>
         <td>
           The Azure Cloud. Options are 'AzurePublic', 'AzureChina', or 'AzureGovernment'.<br/>
           <br/>
             <i>Enum</i>: AzureChina, AzureGovernment, AzurePublic<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexazureadmanagedidentity">managedIdentity</a></b></td>
+        <td>object</td>
+        <td>
+          ManagedIdentity defines the Azure User-assigned Managed identity. Cannot be set at the same time as `oauth`.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexazureadoauth">oauth</a></b></td>
+        <td>object</td>
+        <td>
+          OAuth defines the oauth config that is being used to authenticate. Cannot be set at the same time as `managedIdentity`. 
+ It requires Prometheus >= v2.48.0.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -890,7 +905,7 @@ AzureAD for the URL.
 
 
 
-ManagedIdentity defines the Azure User-assigned Managed identity.
+ManagedIdentity defines the Azure User-assigned Managed identity. Cannot be set at the same time as `oauth`.
 
 <table>
     <thead>
@@ -908,6 +923,89 @@ ManagedIdentity defines the Azure User-assigned Managed identity.
           The client id<br/>
         </td>
         <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].azureAd.oauth
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindexazuread)</sup></sup>
+
+
+
+OAuth defines the oauth config that is being used to authenticate. Cannot be set at the same time as `managedIdentity`. 
+ It requires Prometheus >= v2.48.0.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>clientId</b></td>
+        <td>string</td>
+        <td>
+          `clientID` is the clientId of the Azure Active Directory application that is being used to authenticate.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexazureadoauthclientsecret">clientSecret</a></b></td>
+        <td>object</td>
+        <td>
+          `clientSecret` specifies a key of a Secret containing the client secret of the Azure Active Directory application that is being used to authenticate.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>tenantId</b></td>
+        <td>string</td>
+        <td>
+          `tenantID` is the tenant ID of the Azure Active Directory application that is being used to authenticate.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].azureAd.oauth.clientSecret
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindexazureadoauth)</sup></sup>
+
+
+
+`clientSecret` specifies a key of a Secret containing the client secret of the Azure Active Directory application that is being used to authenticate.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -933,14 +1031,14 @@ BasicAuth configuration for the URL.
         <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexbasicauthpassword">password</a></b></td>
         <td>object</td>
         <td>
-          The secret in the service monitor namespace that contains the password for authentication.<br/>
+          `password` specifies a key of a Secret containing the password for authentication.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexbasicauthusername">username</a></b></td>
         <td>object</td>
         <td>
-          The secret in the service monitor namespace that contains the username for authentication.<br/>
+          `username` specifies a key of a Secret containing the username for authentication.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -952,7 +1050,7 @@ BasicAuth configuration for the URL.
 
 
 
-The secret in the service monitor namespace that contains the password for authentication.
+`password` specifies a key of a Secret containing the password for authentication.
 
 <table>
     <thead>
@@ -993,7 +1091,7 @@ The secret in the service monitor namespace that contains the password for authe
 
 
 
-The secret in the service monitor namespace that contains the username for authentication.
+`username` specifies a key of a Secret containing the username for authentication.
 
 <table>
     <thead>
@@ -1085,35 +1183,35 @@ OAuth2 configuration for the URL.
         <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexoauth2clientid">clientId</a></b></td>
         <td>object</td>
         <td>
-          The secret or configmap containing the OAuth2 client id<br/>
+          `clientId` specifies a key of a Secret or ConfigMap containing the OAuth2 client's ID.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexoauth2clientsecret">clientSecret</a></b></td>
         <td>object</td>
         <td>
-          The secret containing the OAuth2 client secret<br/>
+          `clientSecret` specifies a key of a Secret containing the OAuth2 client's secret.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>tokenUrl</b></td>
         <td>string</td>
         <td>
-          The URL to fetch the token from<br/>
+          `tokenURL` configures the URL to fetch the token from.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>endpointParams</b></td>
         <td>map[string]string</td>
         <td>
-          Parameters to append to the token URL<br/>
+          `endpointParams` configures the HTTP parameters to append to the token URL.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>scopes</b></td>
         <td>[]string</td>
         <td>
-          OAuth2 scopes used for the token request<br/>
+          `scopes` defines the OAuth2 scopes used for the token request.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1125,7 +1223,7 @@ OAuth2 configuration for the URL.
 
 
 
-The secret or configmap containing the OAuth2 client id
+`clientId` specifies a key of a Secret or ConfigMap containing the OAuth2 client's ID.
 
 <table>
     <thead>
@@ -1241,7 +1339,7 @@ Secret containing data to use for the targets.
 
 
 
-The secret containing the OAuth2 client secret
+`clientSecret` specifies a key of a Secret containing the OAuth2 client's secret.
 
 <table>
     <thead>
