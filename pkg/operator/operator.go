@@ -7,8 +7,6 @@ import (
 	stackctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/monitoring-stack"
 	tqctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/thanos-querier"
 
-	obopo "github.com/rhobs/obo-prometheus-operator/pkg/operator"
-
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 
@@ -22,25 +20,6 @@ import (
 const instanceSelector = "app.kubernetes.io/managed-by=observability-operator"
 
 const ObservabilityOperatorName = "observability-operator"
-
-// The default values we use. Prometheus and Alertmanager are handled by
-// prometheus-operator. For thanos we use the default version from
-// prometheus-operator.
-var DefaultImages = map[string]string{
-	"prometheus":   "",
-	"alertmanager": "",
-	"thanos":       "quay.io/thanos/thanos:" + obopo.DefaultThanosVersion,
-}
-
-func ImagesUsed() []string {
-	i := 0
-	imgs := make([]string, len(DefaultImages))
-	for k := range DefaultImages {
-		imgs[i] = k
-		i++
-	}
-	return imgs
-}
 
 // Operator embedds manager and exposes only the minimal set of functions
 type Operator struct {
@@ -58,25 +37,25 @@ type OperatorConfiguration struct {
 
 func WithPrometheusImage(image string) func(*OperatorConfiguration) {
 	return func(oc *OperatorConfiguration) {
-		oc.Prometheus = stackctrl.PrometheusConfiguration{Image: image}
+		oc.Prometheus.Image = image
 	}
 }
 
 func WithAlertmanagerImage(image string) func(*OperatorConfiguration) {
 	return func(oc *OperatorConfiguration) {
-		oc.Alertmanager = stackctrl.AlertmanagerConfiguration{Image: image}
+		oc.Alertmanager.Image = image
 	}
 }
 
 func WithThanosSidecarImage(image string) func(*OperatorConfiguration) {
 	return func(oc *OperatorConfiguration) {
-		oc.ThanosSidecar = stackctrl.ThanosConfiguration{Image: image}
+		oc.ThanosSidecar.Image = image
 	}
 }
 
 func WithThanosQuerierImage(image string) func(*OperatorConfiguration) {
 	return func(oc *OperatorConfiguration) {
-		oc.ThanosQuerier = tqctrl.ThanosConfiguration{Image: image}
+		oc.ThanosQuerier.Image = image
 	}
 }
 

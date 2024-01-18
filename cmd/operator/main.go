@@ -20,28 +20,53 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"slices"
 
 	"github.com/rhobs/observability-operator/pkg/operator"
 	"go.uber.org/zap/zapcore"
 
+	obopo "github.com/rhobs/obo-prometheus-operator/pkg/operator"
+
 	k8sflag "k8s.io/component-base/cli/flag"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
+
+// The default values we use. Prometheus and Alertmanager are handled by
+// prometheus-operator. For thanos we use the default version from
+// prometheus-operator.
+var defaultImages = map[string]string{
+	"prometheus":   "",
+	"alertmanager": "",
+	"thanos":       obopo.DefaultThanosImage,
+}
+
+func imagesUsed() []string {
+	i := 0
+	imgs := make([]string, len(defaultImages))
+	for k := range defaultImages {
+		imgs[i] = k
+		i++
+	}
+	slices.Sort(imgs)
+	return imgs
+}
 
 // validateImages merges the passed images with the defaults and checks if any
 // unknown image names are passed. If an unknown image is found, this raises an
 // error.
 func validateImages(images *k8sflag.MapStringString) (map[string]string, error) {
-	res := operator.DefaultImages
-	if !images.Empty() {
-		imgs := *images.Map
-		for k, v := range imgs {
-			if _, ok := res[k]; !ok {
-				return nil, fmt.Errorf(fmt.Sprintf("image %v is unknows", k))
-			}
-			res[k] = v
+	res := defaultImages
+	if images.Empty() {
+		return res, nil
+	}
+	imgs := *images.Map
+	for k, v := range imgs {
+		if _, ok := res[k]; !ok {
+			return nil, fmt.Errorf("image %v is unknown", k)
 		}
+		res[k] = v
 	}
 	return res, nil
 }
@@ -54,13 +79,12 @@ func main() {
 
 		setupLog = ctrl.Log.WithName("setup")
 	)
-	m := make(map[string]string)
-	images := k8sflag.NewMapStringString(&m)
+	images := k8sflag.NewMapStringString(ptr.To(make(map[string]string)))
 
 	flag.StringVar(&namespace, "namespace", "default", "The namespace in which the operator runs")
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&healthProbeAddr, "health-probe-bind-address", ":8081", "The address the health probe endpoint binds to.")
-	flag.Var(images, "images", fmt.Sprintf("Full images refs to use for containers managed by the operator. E.g thanos=quay.io/thanos/thanos:v0.33.0. Images used are %v", operator.ImagesUsed()))
+	flag.Var(images, "images", fmt.Sprintf("Full images refs to use for containers managed by the operator. E.g thanos=quay.io/thanos/thanos:v0.33.0. Images used are %v", imagesUsed()))
 	opts := zap.Options{
 		Development: true,
 		TimeEncoder: zapcore.RFC3339TimeEncoder,
