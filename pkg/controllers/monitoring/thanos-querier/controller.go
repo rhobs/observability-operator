@@ -41,6 +41,16 @@ type resourceManager struct {
 	client.Client
 	scheme *runtime.Scheme
 	logger logr.Logger
+	thanos ThanosConfiguration
+}
+
+type ThanosConfiguration struct {
+	Image string
+}
+
+// Options allows for controller options to be set
+type Options struct {
+	Thanos ThanosConfiguration
 }
 
 // RBAC for watching monitoring stacks
@@ -61,12 +71,14 @@ type resourceManager struct {
 //+kubebuilder:rbac:groups=monitoring.rhobs,resources=servicemonitors,verbs=list;watch;create;update;patch;delete
 
 // RegisterWithManager registers the controller with Manager
-func RegisterWithManager(mgr ctrl.Manager) error {
+func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 	logger := ctrl.Log.WithName("thanos-querier")
+
 	rm := &resourceManager{
 		Client: mgr.GetClient(),
 		scheme: mgr.GetScheme(),
 		logger: logger,
+		thanos: opts.Thanos,
 	}
 
 	p := predicate.GenerationChangedPredicate{}
@@ -103,7 +115,7 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{RequeueAfter: 10 * time.Second}, err
 	}
 
-	reconcilers := thanosComponentReconcilers(querier, sidecarServices)
+	reconcilers := thanosComponentReconcilers(querier, sidecarServices, rm.thanos)
 	for _, reconciler := range reconcilers {
 		err := reconciler.Reconcile(ctx, rm, rm.scheme)
 		// handle creation / updation errors that can happen due to a stale cache by

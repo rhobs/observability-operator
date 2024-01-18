@@ -26,23 +26,81 @@ type Operator struct {
 	manager manager.Manager
 }
 
-func New(metricsAddr, healthProbeAddr string) (*Operator, error) {
+type OperatorConfiguration struct {
+	MetricsAddr     string
+	HealthProbeAddr string
+	Prometheus      stackctrl.PrometheusConfiguration
+	Alertmanager    stackctrl.AlertmanagerConfiguration
+	ThanosSidecar   stackctrl.ThanosConfiguration
+	ThanosQuerier   tqctrl.ThanosConfiguration
+}
+
+func WithPrometheusImage(image string) func(*OperatorConfiguration) {
+	return func(oc *OperatorConfiguration) {
+		oc.Prometheus.Image = image
+	}
+}
+
+func WithAlertmanagerImage(image string) func(*OperatorConfiguration) {
+	return func(oc *OperatorConfiguration) {
+		oc.Alertmanager.Image = image
+	}
+}
+
+func WithThanosSidecarImage(image string) func(*OperatorConfiguration) {
+	return func(oc *OperatorConfiguration) {
+		oc.ThanosSidecar.Image = image
+	}
+}
+
+func WithThanosQuerierImage(image string) func(*OperatorConfiguration) {
+	return func(oc *OperatorConfiguration) {
+		oc.ThanosQuerier.Image = image
+	}
+}
+
+func WithMetricsAddr(addr string) func(*OperatorConfiguration) {
+	return func(oc *OperatorConfiguration) {
+		oc.MetricsAddr = addr
+	}
+}
+
+func WithHealthProbeAddr(addr string) func(*OperatorConfiguration) {
+	return func(oc *OperatorConfiguration) {
+		oc.HealthProbeAddr = addr
+	}
+}
+
+func NewOperatorConfiguration(opts ...func(*OperatorConfiguration)) *OperatorConfiguration {
+	cfg := &OperatorConfiguration{}
+	for _, o := range opts {
+		o(cfg)
+	}
+	return cfg
+}
+
+func New(cfg *OperatorConfiguration) (*Operator, error) {
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: NewScheme(),
 		Metrics: metricsserver.Options{
-			BindAddress: metricsAddr,
+			BindAddress: cfg.MetricsAddr,
 		},
-		HealthProbeBindAddress: healthProbeAddr,
+		HealthProbeBindAddress: cfg.HealthProbeAddr,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to create manager: %w", err)
 	}
 
-	if err := stackctrl.RegisterWithManager(mgr, stackctrl.Options{InstanceSelector: instanceSelector}); err != nil {
+	if err := stackctrl.RegisterWithManager(mgr, stackctrl.Options{
+		InstanceSelector: instanceSelector,
+		Prometheus:       cfg.Prometheus,
+		Alertmanager:     cfg.Alertmanager,
+		Thanos:           cfg.ThanosSidecar,
+	}); err != nil {
 		return nil, fmt.Errorf("unable to register monitoring stack controller: %w", err)
 	}
 
-	if err := tqctrl.RegisterWithManager(mgr); err != nil {
+	if err := tqctrl.RegisterWithManager(mgr, tqctrl.Options{Thanos: cfg.ThanosQuerier}); err != nil {
 		return nil, fmt.Errorf("unable to register the thanos querier controller with the manager: %w", err)
 	}
 

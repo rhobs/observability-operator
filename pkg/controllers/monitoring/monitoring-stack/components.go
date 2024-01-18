@@ -22,7 +22,14 @@ const AdditionalScrapeConfigsSelfScrapeKey = "self-scrape-config"
 const PrometheusUserFSGroupID = int64(65534)
 const AlertmanagerUserFSGroupID = int64(65535)
 
-func stackComponentReconcilers(ms *stack.MonitoringStack, instanceSelectorKey string, instanceSelectorValue string) []reconciler.Reconciler {
+func stackComponentReconcilers(
+	ms *stack.MonitoringStack,
+	instanceSelectorKey string,
+	instanceSelectorValue string,
+	thanos ThanosConfiguration,
+	prometheus PrometheusConfiguration,
+	alertmanager AlertmanagerConfiguration,
+) []reconciler.Reconciler {
 	prometheusName := ms.Name + "-prometheus"
 	alertmanagerName := ms.Name + "-alertmanager"
 	rbacVerbs := []string{"get", "list", "watch"}
@@ -37,7 +44,8 @@ func stackComponentReconcilers(ms *stack.MonitoringStack, instanceSelectorKey st
 		reconciler.NewUpdater(newAdditionalScrapeConfigsSecret(ms, additionalScrapeConfigsSecretName), ms),
 		reconciler.NewUpdater(newPrometheus(ms, prometheusName,
 			additionalScrapeConfigsSecretName,
-			instanceSelectorKey, instanceSelectorValue), ms),
+			instanceSelectorKey, instanceSelectorValue,
+			thanos, prometheus), ms),
 		reconciler.NewUpdater(newPrometheusService(ms, instanceSelectorKey, instanceSelectorValue), ms),
 		reconciler.NewUpdater(newThanosSidecarService(ms, instanceSelectorKey, instanceSelectorValue), ms),
 		reconciler.NewOptionalUpdater(newPrometheusPDB(ms, instanceSelectorKey, instanceSelectorValue), ms,
@@ -55,7 +63,7 @@ func stackComponentReconcilers(ms *stack.MonitoringStack, instanceSelectorKey st
 		reconciler.NewOptionalUpdater(newClusterRoleBinding(ms, alertmanagerName), ms, deployAlertmanager && hasNsSelector),
 		reconciler.NewOptionalUpdater(newRoleBindingForClusterRole(ms, alertmanagerName), ms, deployAlertmanager && !hasNsSelector),
 
-		reconciler.NewOptionalUpdater(newAlertmanager(ms, alertmanagerName, instanceSelectorKey, instanceSelectorValue), ms, deployAlertmanager),
+		reconciler.NewOptionalUpdater(newAlertmanager(ms, alertmanagerName, instanceSelectorKey, instanceSelectorValue, alertmanager), ms, deployAlertmanager),
 		reconciler.NewOptionalUpdater(newAlertmanagerService(ms, instanceSelectorKey, instanceSelectorValue), ms, deployAlertmanager),
 		reconciler.NewOptionalUpdater(newAlertmanagerPDB(ms, instanceSelectorKey, instanceSelectorValue), ms, deployAlertmanager),
 	}
@@ -106,6 +114,8 @@ func newPrometheus(
 	additionalScrapeConfigsSecretName string,
 	instanceSelectorKey string,
 	instanceSelectorValue string,
+	thanosCfg ThanosConfiguration,
+	prometheusCfg PrometheusConfiguration,
 ) *monv1.Prometheus {
 	prometheusSelector := ms.Spec.ResourceSelector
 
@@ -181,10 +191,13 @@ func newPrometheus(
 			RuleSelector:          prometheusSelector,
 			RuleNamespaceSelector: ms.Spec.NamespaceSelector,
 			Thanos: &monv1.ThanosSpec{
-				BaseImage: stringPtr("quay.io/thanos/thanos"),
-				Version:   stringPtr("v0.24.0"),
+				Image: stringPtr(thanosCfg.Image),
 			},
 		},
+	}
+
+	if prometheusCfg.Image != "" {
+		prometheus.Spec.CommonPrometheusFields.Image = stringPtr(prometheusCfg.Image)
 	}
 
 	if !ms.Spec.AlertmanagerConfig.Disabled {

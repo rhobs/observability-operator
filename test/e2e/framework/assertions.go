@@ -1,6 +1,7 @@
 package framework
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -8,11 +9,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/prometheus/promql"
+	"github.com/prometheus/common/expfmt"
+	"github.com/prometheus/common/model"
+
 	"github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/instrumentation-tools/promq/prom"
 
 	monv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -140,55 +142,24 @@ func (f *Framework) GetResourceWithRetry(t *testing.T, name, namespace string, o
 	}
 }
 
-func assertPromQL(t *testing.T, metrics []byte, query string, expected map[string]float64) {
-	now := time.Now()
-	points, err := prom.ParseTextData(metrics, now)
+func assertSamples(t *testing.T, metrics []byte, expected map[string]float64) {
+	sDecoder := expfmt.SampleDecoder{
+		Dec: expfmt.NewDecoder(bytes.NewReader(metrics), expfmt.FmtText),
+	}
+
+	samples := model.Vector{}
+	err := sDecoder.Decode(&samples)
 	if err != nil {
-		t.Errorf("invalid raw data: %v", err)
+		t.Errorf("error decoding samples")
 	}
 
-	// TODO: logger in opts
-	// TODO: query logger?
-	engine := promql.NewEngine(promql.EngineOpts{
-		Timeout:    100000000 * time.Second,
-		MaxSamples: 1000, // TODO: find an ok value
-	})
-
-	storage := prom.NewRangeStorage()
-	if err := storage.LoadData(points); err != nil {
-		t.Errorf("unable to load data: %v", err)
-	}
-
-	iQuery, err := engine.NewInstantQuery(storage, query, now)
-	if err != nil {
-		t.Errorf("error creating query: %v", err)
-	}
-
-	res := iQuery.Exec(context.TODO())
-	defer iQuery.Close()
-
-	if res.Err != nil {
-		t.Errorf("error running query: %v", res.Err)
-	}
-
-	if len(res.Warnings) > 0 {
-		for _, warning := range res.Warnings {
-			t.Logf("warning running query: %v", warning)
-		}
-	}
-
-	vec, err := res.Vector()
-	if res.Err != nil {
-		t.Errorf("error converting to scalar: %v", err)
-	}
-
-	for _, v := range vec {
-		s, ok := expected[v.Metric.String()]
+	for _, s := range samples {
+		expectedVal, ok := expected[s.Metric.String()]
 		if !ok {
-			t.Errorf("Unexpected labelset: %v\n", v.Metric.String())
+			t.Errorf("Unexpected labelset: %v\n", s.Metric.String())
 		}
-		if v.V != s {
-			t.Errorf("%s: got %v, want: %v", v.Metric.String(), v.V, s)
+		if float64(s.Value) != expectedVal {
+			t.Errorf("%s: got %v, want: %v", s.Metric.String(), s.Value, expectedVal)
 		}
 	}
 }
@@ -252,12 +223,10 @@ func (f *Framework) GetOperatorMetrics(t *testing.T) []byte {
 // AssertNoReconcileErrors asserts that there are no reconcilation errors
 func (f *Framework) AssertNoReconcileErrors(t *testing.T) {
 	metrics := f.GetOperatorMetrics(t)
-	assertPromQL(t, metrics,
-		`controller_runtime_reconcile_errors_total`,
+	assertSamples(t, metrics,
 		map[string]float64{
-			`{__name__="controller_runtime_reconcile_errors_total", controller="grafana-operator"}`: 0,
-			`{__name__="controller_runtime_reconcile_errors_total", controller="monitoringstack"}`:  0,
-			`{__name__="controller_runtime_reconcile_errors_total", controller="thanosquerier"}`:    0,
+			`{__name__="controller_runtime_reconcile_errors_total", controller="monitoringstack"}`: 0,
+			`{__name__="controller_runtime_reconcile_errors_total", controller="thanosquerier"}`:   0,
 		})
 }
 

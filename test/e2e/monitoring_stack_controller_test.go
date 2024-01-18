@@ -716,9 +716,8 @@ const oboManagedFieldsJson = `
     }
   },
   "f:thanos": {
-    "f:baseImage": {},
-    "f:resources": {},
-    "f:version": {}
+    "f:image": {},
+    "f:resources": {}
   },
   "f:tsdb": {}
 }

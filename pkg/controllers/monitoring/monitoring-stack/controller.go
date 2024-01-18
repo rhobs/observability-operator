@@ -48,13 +48,30 @@ type resourceManager struct {
 	logger                logr.Logger
 	instanceSelectorKey   string
 	instanceSelectorValue string
-	grafanaDSWatchCreated bool
 	controller            controller.Controller
+	prometheus            PrometheusConfiguration
+	alertmanager          AlertmanagerConfiguration
+	thanos                ThanosConfiguration
+}
+
+type PrometheusConfiguration struct {
+	Image string
+}
+
+type AlertmanagerConfiguration struct {
+	Image string
+}
+
+type ThanosConfiguration struct {
+	Image string
 }
 
 // Options allows for controller options to be set
 type Options struct {
 	InstanceSelector string
+	Prometheus       PrometheusConfiguration
+	Alertmanager     AlertmanagerConfiguration
+	Thanos           ThanosConfiguration
 }
 
 // RBAC for managing monitoring stacks
@@ -87,7 +104,9 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 		logger:                ctrl.Log.WithName("observability-operator"),
 		instanceSelectorKey:   split[0],
 		instanceSelectorValue: split[1],
-		grafanaDSWatchCreated: false,
+		thanos:                opts.Thanos,
+		prometheus:            opts.Prometheus,
+		alertmanager:          opts.Alertmanager,
 	}
 	// We only want to trigger a reconciliation when the generation
 	// of a child changes. Until we need to update our the status for our own objects,
@@ -134,7 +153,13 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, nil
 	}
 
-	reconcilers := stackComponentReconcilers(ms, rm.instanceSelectorKey, rm.instanceSelectorValue)
+	reconcilers := stackComponentReconcilers(ms,
+		rm.instanceSelectorKey,
+		rm.instanceSelectorValue,
+		rm.thanos,
+		rm.prometheus,
+		rm.alertmanager,
+	)
 	for _, reconciler := range reconcilers {
 		err := reconciler.Reconcile(ctx, rm.k8sClient, rm.scheme)
 		// handle create / update errors that can happen due to a stale cache by
