@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.29](https://github.com/rhobs/monitoring-stack-operator/commit/) (2024-01-22)
+
+
+### Bug Fixes
+
+* **test:** update ocp test scripts adding ci mode ([#398](https://github.com/rhobs/monitoring-stack-operator/issues/398)) ([6f2c229](https://github.com/rhobs/monitoring-stack-operator/commit/6f2c2293313962619134b38d1dd78ce39c098831))
+
 ### [0.0.28](https://github.com/rhobs/monitoring-stack-operator/commit/) (2023-11-08)
 
 ### [0.0.27](https://github.com/rhobs/monitoring-stack-operator/commit/) (2023-11-07)
