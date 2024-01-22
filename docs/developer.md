@@ -301,7 +301,7 @@ operator without conflict. The forked operator is maintained at
 instructions to synchronize from upstream.
 
 When a new downstream version is available (e.g. `v0.69.0-rhobs1`), you need to
-update these 2 filesand replace the old version by the new one:
+update these 2 files and replace the old version by the new one:
 
 * `go.mod`
 * `deploy/dependencies/kustomization.yaml`
