@@ -96,7 +96,8 @@ func main() {
 
 	setupLog.Info("running with arguments",
 		"namespace", namespace,
-		"metrics-bind-address", metricsAddr)
+		"metrics-bind-address", metricsAddr,
+		"images", images)
 
 	imgMap, err := validateImages(images)
 	if err != nil {
