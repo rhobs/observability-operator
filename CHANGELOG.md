@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.30](https://github.com/rhobs/monitoring-stack-operator/commit/) (2024-01-23)
+
+
+### Bug Fixes
+
+* update versions in bundle generation ([#411](https://github.com/rhobs/monitoring-stack-operator/issues/411)) ([755caba](https://github.com/rhobs/monitoring-stack-operator/commit/755caba8f0dc11940927b6b829ae176384a6227e))
+
 ### [0.0.29](https://github.com/rhobs/monitoring-stack-operator/commit/) (2024-01-22)
 
 
