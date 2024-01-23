@@ -674,6 +674,7 @@ const oboManagedFieldsJson = `
   "f:externalLabels": {
     "f:key": {}
   },
+  "f:image": {},
   "f:logLevel": {},
   "f:podMetadata": {
     "f:labels": {
