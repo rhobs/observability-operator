@@ -10,10 +10,34 @@ resources:
 images:
 - name: observability-operator
   newName: observability-operator
-  newTag: 0.0.20
+  newTag: 0.0.29
 namespace: operators
 
 patches:
+- patch: |-
+    - op: add
+      path: /spec/template/spec/containers/0/args/-
+      value: --images=alertmanager=quay.io/prometheus/alertmanager:v0.26.0
+  target:
+    group: apps
+    kind: Deployment
+    version: v1
+- patch: |-
+    - op: add
+      path: /spec/template/spec/containers/0/args/-
+      value: --images=prometheus=quay.io/prometheus/prometheus:v2.49.1
+  target:
+    group: apps
+    kind: Deployment
+    version: v1
+- patch: |-
+    - op: add
+      path: /spec/template/spec/containers/0/args/-
+      value: --images=thanos=quay.io/thanos/thanos:v0.33.0
+  target:
+    group: apps
+    kind: Deployment
+    version: v1
 - patch: |-
     - op: add
       path: /spec/template/spec/containers/0/resources
