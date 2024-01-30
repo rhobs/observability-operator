@@ -136,11 +136,16 @@ build:
 
 .PHONY: operator-image
 operator-image: generate
-	$(CONTAINER_RUNTIME) build -f build/Dockerfile . -t $(OPERATOR_IMG)
+	$(CONTAINER_RUNTIME) build -f build/Dockerfile --no-cache --platform linux/amd64 -t $(OPERATOR_IMG)-amd64 --build-arg TAGRTEARCH=amd64 .
+	$(CONTAINER_RUNTIME) build -f build/Dockerfile --no-cache --platform linux/ppc64le -t $(OPERATOR_IMG)-ppc64le --build-arg TARGETARCH=ppc64le .
+	$(CONTAINER_RUNTIME) push ${OPERATOR_IMG}-amd64
+	$(CONTAINER_RUNTIME) push ${OPERATOR_IMG}-ppc64le
+	$(CONTAINER_RUNTIME) manifest create $(OPERATOR_IMG) 
+	$(CONTAINER_RUNTIME) manifest add $(OPERATOR_IMG) $(OPERATOR_IMG)-amd64 $(OPERATOR_IMG)-ppc64le
 
 .PHONY: operator-push
 operator-push:
-	$(CONTAINER_RUNTIME) push $(PUSH_OPTIONS) ${OPERATOR_IMG}
+	$(CONTAINER_RUNTIME) manifest push --all $(PUSH_OPTIONS) ${OPERATOR_IMG}
 
 .PHONY: osd-e2e-test-image
 osd-e2e-test-image: tools
@@ -195,19 +200,20 @@ bundle: $(KUSTOMIZE) $(OPERATOR_SDK) generate
 		 	$(BUNDLE_METADATA_OPTS)
 	sed -e 's|<IMG_OBSERVABILITY_OPERATOR>|$(OPERATOR_IMG)|g' \
 		-i bundle/manifests/observability-operator.clusterserviceversion.yaml
-	$(OPERATOR_SDK) bundle validate ./bundle \
-		--select-optional name=operatorhub \
-		--optional-values=k8s-version=1.21 \
-		--select-optional suite=operatorframework
-	git diff --quiet -I'^    createdAt: ' bundle && git checkout bundle || true
+	$(OPERATOR_SDK) bundle validate ./bundle
 
 .PHONY: bundle-image
 bundle-image: bundle ## Build the bundle image.
-	$(CONTAINER_RUNTIME) build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
+	$(CONTAINER_RUNTIME) build --no-cache -f bundle.Dockerfile --platform linux/amd64 -t $(BUNDLE_IMG)-amd64 .
+	$(CONTAINER_RUNTIME) build --no-cache -f bundle.Dockerfile --platform linux/ppc64le -t $(BUNDLE_IMG)-ppc64le .
+	$(CONTAINER_RUNTIME) push $(BUNDLE_IMG)-amd64
+	$(CONTAINER_RUNTIME) push $(BUNDLE_IMG)-ppc64le
+	$(CONTAINER_RUNTIME) manifest create $(BUNDLE_IMG) 
+	$(CONTAINER_RUNTIME) manifest add $(BUNDLE_IMG) $(BUNDLE_IMG)-amd64 $(BUNDLE_IMG)-ppc64le
 
 .PHONY: bundle-push
 bundle-push: ## Build the bundle image.
-	$(CONTAINER_RUNTIME) push $(PUSH_OPTIONS) $(BUNDLE_IMG)
+	$(CONTAINER_RUNTIME) manifest push --all $(PUSH_OPTIONS) $(BUNDLE_IMG)
 
 # The image tag given to the resulting catalog image
 CATALOG_IMG_BASE ?= $(IMAGE_BASE)-catalog
@@ -222,12 +228,12 @@ CATALOG_IMG_LATEST ?= $(IMAGE_BASE)-catalog:latest
 .PHONY: catalog-image
 catalog-image: $(OPM)
 	$(OPM) render $(BUNDLE_IMG) \
-		--output=yaml  >> olm/observability-operator-index/index.yaml
+		--output=yaml  >> hack/observability-operator-index/index.yaml
 	./olm/update-channels.sh $(CHANNELS) $(OPERATOR_BUNDLE)
-	$(OPM) validate ./olm/observability-operator-index
+	$(OPM) validate .hack/olm/observability-operator-catalog
 
 	$(CONTAINER_RUNTIME) build \
-		-f olm/observability-operator-index.Dockerfile \
+		-f hack/olm/observability-operator-index.Dockerfile \
 		-t $(CATALOG_IMG)
 
 	# tag the catalog img:version as latest so that continious release

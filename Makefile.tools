@@ -56,7 +56,10 @@ JSONNET_VENDOR = jsonnet/vendor
 JSONNETFMT_ARGS = -n 2 --max-blank-lines 2 --string-style s --comment-style s
 
 SHELLCHECK = $(TOOLS_DIR)/shellcheck
-SHELLCHECK_VERSION = 0.9.0
+SHELLCHECK_VERSION = v0.9.0
+
+YQ = $(TOOLS_DIR)/yq
+YQ_VERSION = v4.14.2
 
 $(TOOLS_DIR):
 	@mkdir -p $(TOOLS_DIR)
@@ -194,15 +197,39 @@ $(SHELLCHECK) shellcheck: $(TOOLS_DIR)
 		set -ex ;\
 		[[ -f $(SHELLCHECK) ]] && exit 0 ;\
 		cd $$(mktemp -d) ;\
-		curl -sSLo shellcheck-stable.tar.xz "https://github.com/koalaman/shellcheck/releases/download/stable/shellcheck-stable.linux.x86_64.tar.xz";\
+		curl -sSLo shellcheck-stable.tar.xz "https://github.com/koalaman/shellcheck/releases/download/$(SHELLCHECK_VERSION)/shellcheck-$(SHELLCHECK_VERSION).linux.x86_64.tar.xz" ;\
 		tar -xJf shellcheck-stable.tar.xz ;\
-		cp shellcheck-stable/shellcheck $(SHELLCHECK) ;\
+		cp shellcheck-$(SHELLCHECK_VERSION)/shellcheck $(SHELLCHECK) ;\
 		version=$(SHELLCHECK_VERSION) ;\
 		$(SHELLCHECK) -V | grep -q $${version##v} ;\
 	}
 
+.PHONY: yq
+$(YQ) yq: $(TOOLS_DIR)
+	@{ \
+		set -ex ;\
+		[[ -f  $(YQ) ]] && exit 0 ;\
+                cd $$(mktemp -d) ;\
+		wget https://github.com/mikefarah/yq/releases/download/$(YQ_VERSION)/yq_linux_amd64 -O $(TOOLS_DIR)/yq ;\
+		chmod +x $(TOOLS_DIR)/yq ;\
+	}
+
 .PHONY: jsonnet-tools
 jsonnet-tools: jsonnet jsonnetfmt jsonnet-lint jb gojsontoyaml
+
+.PHONY: jq
+jq: 
+	@{ \
+		set -ex ;\
+		sudo apt-get install jq ;\
+	}
+
+.PHONY: skopeo
+skopeo: 
+	@{ \
+		set -ex ;\
+		sudo apt-get -y install skopeo ;\
+	}
 
 # Install all required tools
 .PHONY: tools
@@ -214,8 +241,11 @@ tools: $(CONTROLLER_GEN) \
 		$(PROMQ) \
 		$(CRDOC) \
 		$(GOLANGCI_LINT) \
+		$(YQ) \
 		$(SHELLCHECK) \
-		jsonnet-tools
+		jsonnet-tools \
+		jq \
+		skopeo
 	@{ \
 		set -ex ;\
 		tools_file=.github/tools ;\
@@ -234,6 +264,7 @@ tools: $(CONTROLLER_GEN) \
 		echo  $$(basename $(JSONNET_LINT)) $(JSONNET_LINT_VERSION) >> $$tools_file ;\
 		echo  $$(basename $(JB)) $(JB_VERSION) >> $$tools_file ;\
 		echo  $$(basename $(GOJSONTOYAML)) $(GOJSONTOYAML_VERSION) >> $$tools_file ;\
+		echo  $$(basename $(YQ)) $(YQ_VERSION) >> $$tools_file ;\
 		echo  $$(basename $(SHELLCHECK)) $(SHELLCHECK_VERSION) >> $$tools_file ;\
 	}
 
@@ -254,4 +285,7 @@ validate-tools:
 	@$(JSONNETFMT) --version
 	@$(JSONNET_LINT) --version
 	@$(JB) --version
+	@$(YQ) --version
 	@$(SHELLCHECK) -V | head -n 2
+	@$(JQ) --version
+	@$(SKOPEO) --version
