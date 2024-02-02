@@ -76,13 +76,13 @@ func singleStackWithSidecar(t *testing.T) {
 	stopChan := make(chan struct{})
 	defer close(stopChan)
 	if err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, 2*time.Minute, true, func(ctx context.Context) (bool, error) {
-		err = f.StartServicePortForward(name, e2eTestNamespace, "9090", stopChan)
+		err = f.StartServicePortForward(name, e2eTestNamespace, "10902", stopChan)
 		return err == nil, nil
 	}); wait.Interrupted(err) {
 		t.Fatal(err)
 	}
 
-	promClient := framework.NewPrometheusClient("http://localhost:9090")
+	promClient := framework.NewPrometheusClient("http://localhost:10902")
 	expectedResults := map[string]int{
 		"prometheus_build_info": 2, // must return from both prometheus pods
 	}
