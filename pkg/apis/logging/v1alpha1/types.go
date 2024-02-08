@@ -5,6 +5,8 @@
 package v1alpha1
 
 import (
+	lokiv1 "github.com/grafana/loki/operator/apis/loki/v1"
+	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -31,29 +33,57 @@ type LoggingStackList struct {
 	Items           []LoggingStack `json:"items"`
 }
 
-// Loglevel set log levels of configured components
-// +kubebuilder:validation:Enum=debug;info;warn;error
-type LogLevel string
+type SubscriptionSpec struct {
+	// +required
+	// +kubebuilder:validation:Required
+	InstallPlanApproval olmv1alpha1.Approval `json:"installPlanApproval"`
+	// +required
+	// +kubebuilder:validation:Required
+	Channel string `json:"channel"`
+	// +required
+	// +kubebuilder:validation:Required
+	// +kubebuilder:default="redhat-operators"
+	CatalogSource string `json:"catalogSource"`
+	// +required
+	// +kubebuilder:validation:Required
+	// +kubebuilder:default="openshift-marketplace"
+	CatalogSourceNamespace string `json:"catalogSourceNamespace"`
+}
 
-const (
-	// Debug Log level
-	Debug LogLevel = "debug"
+type ForwarderSpec struct {
+	// +optional
+	WithAuditLogs bool `json:"withAuditLogs"`
+}
 
-	// Info Log level
-	Info LogLevel = "info"
+type StorageSpec struct {
+	// Size defines one of the support Loki deployment scale out sizes.
+	//
+	// +required
+	// +kubebuilder:validation:Required
+	Size lokiv1.LokiStackSizeType `json:"size"`
 
-	// Warn Log level
-	Warn LogLevel = "warn"
-
-	// Error Log level
-	Error LogLevel = "error"
-)
+	// Storage defines the spec for the object storage endpoint to store logs.
+	//
+	// +required
+	// +kubebuilder:validation:Required
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Object Storage"
+	Storage lokiv1.ObjectStorageSpec `json:"storage"`
+}
 
 // LoggingStackSpec is the specification for desired Logging Stack
 type LoggingStackSpec struct {
+	// +required
+	// +kubebuilder:validation:Required
+	Subscription SubscriptionSpec `json:"subscription"`
 	// +optional
-	// +kubebuilder:default="info"
-	LogLevel LogLevel `json:"logLevel,omitempty"`
+	// +kubebuilder:validation:Optional
+	ForwarderSpec ForwarderSpec `json:"forwarder,omitempty"`
+	// +required
+	// +kubebuilder:validation:Required
+	Storage StorageSpec `json:"storage"`
+	// +optional
+	// +kubebuilder:validation:Optional
+	MonitoringSelector map[string]string `json:"monitoringSelector,omitempty"`
 }
 
 // LoggingStackStatus defines the observed state of LoggingStack.

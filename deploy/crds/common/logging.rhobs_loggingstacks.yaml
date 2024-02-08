@@ -36,15 +36,129 @@ spec:
             description: LoggingStackSpec is the specification for desired Logging
               Stack
             properties:
-              logLevel:
-                default: info
-                description: Loglevel set log levels of configured components
-                enum:
-                - debug
-                - info
-                - warn
-                - error
-                type: string
+              forwarder:
+                properties:
+                  withAuditLogs:
+                    type: boolean
+                type: object
+              monitoringSelector:
+                additionalProperties:
+                  type: string
+                type: object
+              storage:
+                properties:
+                  size:
+                    description: Size defines one of the support Loki deployment scale
+                      out sizes.
+                    enum:
+                    - 1x.demo
+                    - 1x.extra-small
+                    - 1x.small
+                    - 1x.medium
+                    type: string
+                  storage:
+                    description: Storage defines the spec for the object storage endpoint
+                      to store logs.
+                    properties:
+                      schemas:
+                        default:
+                        - effectiveDate: "2020-10-11"
+                          version: v11
+                        description: Schemas for reading and writing logs.
+                        items:
+                          description: ObjectStorageSchema defines the requirements
+                            needed to configure a new storage schema.
+                          properties:
+                            effectiveDate:
+                              description: EffectiveDate is the date in UTC that the
+                                schema will be applied on. To ensure readibility of
+                                logs, this date should be before the current date
+                                in UTC.
+                              pattern: ^([0-9]{4,})([-]([0-9]{2})){2}$
+                              type: string
+                            version:
+                              description: Version for writing and reading logs.
+                              enum:
+                              - v11
+                              - v12
+                              - v13
+                              type: string
+                          required:
+                          - effectiveDate
+                          - version
+                          type: object
+                        minItems: 1
+                        type: array
+                      secret:
+                        description: Secret for object storage authentication. Name
+                          of a secret in the same namespace as the LokiStack custom
+                          resource.
+                        properties:
+                          name:
+                            description: Name of a secret in the namespace configured
+                              for object storage secrets.
+                            type: string
+                          type:
+                            description: Type of object storage that should be used
+                            enum:
+                            - azure
+                            - gcs
+                            - s3
+                            - swift
+                            - alibabacloud
+                            type: string
+                        required:
+                        - name
+                        - type
+                        type: object
+                      tls:
+                        description: TLS configuration for reaching the object storage
+                          endpoint.
+                        properties:
+                          caKey:
+                            description: Key is the data key of a ConfigMap containing
+                              a CA certificate. It needs to be in the same namespace
+                              as the LokiStack custom resource. If empty, it defaults
+                              to "service-ca.crt".
+                            type: string
+                          caName:
+                            description: CA is the name of a ConfigMap containing
+                              a CA certificate. It needs to be in the same namespace
+                              as the LokiStack custom resource.
+                            type: string
+                        required:
+                        - caName
+                        type: object
+                    required:
+                    - secret
+                    type: object
+                required:
+                - size
+                - storage
+                type: object
+              subscription:
+                properties:
+                  catalogSource:
+                    default: redhat-operators
+                    type: string
+                  catalogSourceNamespace:
+                    default: openshift-marketplace
+                    type: string
+                  channel:
+                    type: string
+                  installPlanApproval:
+                    description: Approval is the user approval policy for an InstallPlan.
+                      It must be one of "Automatic" or "Manual".
+                    type: string
+                required:
+                - catalogSource
+                - catalogSourceNamespace
+                - channel
+                - installPlanApproval
+                type: object
+            required:
+            - storage
+            - subscription
             type: object
           status:
             description: LoggingStackStatus defines the observed state of LoggingStack.

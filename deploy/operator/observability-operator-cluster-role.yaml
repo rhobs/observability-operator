@@ -18,6 +18,17 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - namespaces
+  verbs:
+  - create
+  - delete
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - secrets
   - serviceaccounts
   - services
@@ -61,12 +72,36 @@ rules:
   - list
   - watch
 - apiGroups:
+  - logging.openshift.io
+  resources:
+  - clusterlogforwarders
+  verbs:
+  - create
+  - delete
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - logging.openshift.io
+  resources:
+  - clusterloggings
+  verbs:
+  - create
+  - delete
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - logging.rhobs
   resources:
   - loggingstacks
   verbs:
+  - create
   - get
   - list
+  - update
   - watch
 - apiGroups:
   - logging.rhobs
@@ -76,6 +111,57 @@ rules:
   verbs:
   - get
   - update
+- apiGroups:
+  - logging.rhobs
+  resources:
+  - loggingstacks/status
+  verbs:
+  - get
+  - update
+- apiGroups:
+  - loki.grafana.com
+  resources:
+  - alertingrules
+  verbs:
+  - create
+  - delete
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - loki.grafana.com
+  resources:
+  - lokistacks
+  verbs:
+  - create
+  - delete
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - loki.grafana.com
+  resources:
+  - recordingrules
+  verbs:
+  - create
+  - delete
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - loki.grafana.com
+  resources:
+  - rulerconfigs
+  verbs:
+  - create
+  - delete
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - monitoring.rhobs
   resources:
@@ -150,6 +236,28 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - operators.coreos.com
+  resources:
+  - operatorgroups
+  verbs:
+  - create
+  - delete
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - operators.coreos.com
+  resources:
+  - subscriptions
+  verbs:
+  - create
+  - delete
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - policy
   resources:

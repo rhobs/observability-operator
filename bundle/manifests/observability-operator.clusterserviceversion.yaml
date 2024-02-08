@@ -42,7 +42,7 @@ metadata:
     categories: Monitoring
     certified: "false"
     containerImage: observability-operator:0.0.30
-    createdAt: "2024-02-08T19:40:28Z"
+    createdAt: "2024-02-09T09:28:47Z"
     description: A Go based Kubernetes operator to setup and manage highly available
       Monitoring Stack using Prometheus, Alertmanager and Thanos Querier.
     operators.operatorframework.io/builder: operator-sdk-v1.31.0
@@ -278,6 +278,17 @@ spec:
         - apiGroups:
           - ""
           resources:
+          - namespaces
+          verbs:
+          - create
+          - delete
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
           - secrets
           - serviceaccounts
           - services
@@ -321,12 +332,36 @@ spec:
           - list
           - watch
         - apiGroups:
+          - logging.openshift.io
+          resources:
+          - clusterlogforwarders
+          verbs:
+          - create
+          - delete
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - logging.openshift.io
+          resources:
+          - clusterloggings
+          verbs:
+          - create
+          - delete
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
           - logging.rhobs
           resources:
           - loggingstacks
           verbs:
+          - create
           - get
           - list
+          - update
           - watch
         - apiGroups:
           - logging.rhobs
@@ -336,6 +371,57 @@ spec:
           verbs:
           - get
           - update
+        - apiGroups:
+          - logging.rhobs
+          resources:
+          - loggingstacks/status
+          verbs:
+          - get
+          - update
+        - apiGroups:
+          - loki.grafana.com
+          resources:
+          - alertingrules
+          verbs:
+          - create
+          - delete
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - loki.grafana.com
+          resources:
+          - lokistacks
+          verbs:
+          - create
+          - delete
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - loki.grafana.com
+          resources:
+          - recordingrules
+          verbs:
+          - create
+          - delete
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - loki.grafana.com
+          resources:
+          - rulerconfigs
+          verbs:
+          - create
+          - delete
+          - list
+          - patch
+          - update
+          - watch
         - apiGroups:
           - monitoring.rhobs
           resources:
@@ -410,6 +496,28 @@ spec:
           - get
           - patch
           - update
+        - apiGroups:
+          - operators.coreos.com
+          resources:
+          - operatorgroups
+          verbs:
+          - create
+          - delete
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - operators.coreos.com
+          resources:
+          - subscriptions
+          verbs:
+          - create
+          - delete
+          - list
+          - patch
+          - update
+          - watch
         - apiGroups:
           - policy
           resources:
