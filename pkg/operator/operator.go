@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	stackctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/monitoring-stack"
+	logstackctrl "github.com/rhobs/observability-operator/pkg/controllers/logging/logging-stack"
+	monstackctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/monitoring-stack"
 	tqctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/thanos-querier"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,9 +30,9 @@ type Operator struct {
 type OperatorConfiguration struct {
 	MetricsAddr     string
 	HealthProbeAddr string
-	Prometheus      stackctrl.PrometheusConfiguration
-	Alertmanager    stackctrl.AlertmanagerConfiguration
-	ThanosSidecar   stackctrl.ThanosConfiguration
+	Prometheus      monstackctrl.PrometheusConfiguration
+	Alertmanager    monstackctrl.AlertmanagerConfiguration
+	ThanosSidecar   monstackctrl.ThanosConfiguration
 	ThanosQuerier   tqctrl.ThanosConfiguration
 }
 
@@ -91,7 +92,7 @@ func New(cfg *OperatorConfiguration) (*Operator, error) {
 		return nil, fmt.Errorf("unable to create manager: %w", err)
 	}
 
-	if err := stackctrl.RegisterWithManager(mgr, stackctrl.Options{
+	if err := monstackctrl.RegisterWithManager(mgr, monstackctrl.Options{
 		InstanceSelector: instanceSelector,
 		Prometheus:       cfg.Prometheus,
 		Alertmanager:     cfg.Alertmanager,
@@ -102,6 +103,10 @@ func New(cfg *OperatorConfiguration) (*Operator, error) {
 
 	if err := tqctrl.RegisterWithManager(mgr, tqctrl.Options{Thanos: cfg.ThanosQuerier}); err != nil {
 		return nil, fmt.Errorf("unable to register the thanos querier controller with the manager: %w", err)
+	}
+
+	if err := logstackctrl.RegisterWithManager(mgr); err != nil {
+		return nil, fmt.Errorf("unable to register logging stack controller: %w", err)
 	}
 
 	if err := mgr.AddHealthzCheck("health probe", healthz.Ping); err != nil {

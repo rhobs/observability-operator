@@ -61,6 +61,22 @@ rules:
   - list
   - watch
 - apiGroups:
+  - logging.rhobs
+  resources:
+  - loggingstacks
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - logging.rhobs
+  resources:
+  - loggingstacks/finalizers
+  - loggingstacks/status
+  verbs:
+  - get
+  - update
+- apiGroups:
   - monitoring.rhobs
   resources:
   - alertmanagers
