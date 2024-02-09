@@ -1,7 +1,8 @@
 package operator
 
 import (
-	rhobsv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
+	rhobslogv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/logging/v1alpha1"
+	rhobsmonv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 
 	lokiv1 "github.com/grafana/loki/operator/apis/loki/v1"
 	loggingv1 "github.com/openshift/cluster-logging-operator/apis/logging/v1"
@@ -18,7 +19,8 @@ func NewScheme() *runtime.Scheme {
 	scheme := runtime.NewScheme()
 
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-	utilruntime.Must(rhobsv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(rhobsmonv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(rhobslogv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(apiextensionsv1.AddToScheme(scheme))
 	utilruntime.Must(monitoringv1.AddToScheme(scheme))
 	utilruntime.Must(lokiv1.AddToScheme(scheme))
