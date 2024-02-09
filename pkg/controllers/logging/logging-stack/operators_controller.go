@@ -16,6 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	stack "github.com/rhobs/observability-operator/pkg/apis/logging/v1alpha1"
+	"github.com/rhobs/observability-operator/pkg/reconciler"
 )
 
 type operatorsResourceManager struct {
@@ -30,13 +31,13 @@ type operatorsResourceManager struct {
 // +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch;create;update;delete;patch
 // +kubebuilder:rbac:groups=operators.coreos.com,resources=operatorgroups,verbs=get;list;watch;create;update;delete;patch
 // +kubebuilder:rbac:groups=operators.coreos.com,resources=subscriptions,verbs=get;list;watch;create;update;delete;patch
-// +kubebuilder:rbac:groups=operators.coreos.com,resources=clusterserviceversions,verbs=get;list;watch
+// +kubebuilder:rbac:groups=operators.coreos.com,resources=clusterserviceversions,verbs=get;list;watch;delete
 
 func RegisterWithOperatorsManager(mgr ctrl.Manager, c chan struct{}) error {
 	rm := &operatorsResourceManager{
 		k8sClient:         mgr.GetClient(),
 		scheme:            mgr.GetScheme(),
-		logger:            ctrl.Log.WithName("observability-operator").WithName("logging-stack"),
+		logger:            ctrl.Log.WithName("observability-operator").WithName("logging-stack").WithName("logging-operators-operator"),
 		operatorInstalled: c,
 	}
 
@@ -70,13 +71,14 @@ func (rm operatorsResourceManager) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, err
 	}
 
-	if ls == nil {
-		// no such logging stack, so stop here
-		return ctrl.Result{}, nil
-	}
+	if ls == nil || !ls.ObjectMeta.DeletionTimestamp.IsZero() {
+		logger.V(6).Info("skipping reconcile since object is already schedule for deletion and cleanup logging operator install resources")
 
-	if !ls.ObjectMeta.DeletionTimestamp.IsZero() {
-		logger.V(6).Info("skipping reconcile since object is already schedule for deletion")
+		res, err := rm.deleteManagedOperators(ctx, logger)
+		if err != nil {
+			return res, err
+		}
+
 		return ctrl.Result{}, nil
 	}
 
@@ -98,79 +100,93 @@ func (rm operatorsResourceManager) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 	}
 
-	if res, ok := rm.operatorsInstalled(ctx, ls); !ok {
+	if res, ok := rm.operatorsInstalled(ctx, logger); !ok {
 		return res, nil
 	}
 
 	// Signal stack operator to start
-	rm.operatorInstalled <- struct{}{}
+	select {
+	case rm.operatorInstalled <- struct{}{}:
+		return ctrl.Result{}, nil
+	default:
+		logger.V(6).Info("skipping sending operatorInstalled signal as channel closed")
+	}
 
 	return ctrl.Result{}, nil
 }
 func (rm operatorsResourceManager) updateStatus(ctx context.Context, req ctrl.Request, ls *stack.LoggingStack, recError error) ctrl.Result {
-	// var prom monv1.Prometheus
-	// logger := rm.logger.WithValues("stack", req.NamespacedName)
-	// key := client.ObjectKey{
-	//	Name:      ms.Name,
-	//	Namespace: ms.Namespace,
-	// }
-	// err := rm.k8sClient.Get(ctx, key, &prom)
-	// if err != nil {
-	//	logger.Info("Failed to get prometheus object", "err", err)
-	//	return ctrl.Result{RequeueAfter: 2 * time.Second}
-	// }
-	// ms.Status.Conditions = updateConditions(ms, prom, recError)
-	// err = rm.k8sClient.Status().Update(ctx, ms)
-	// if err != nil {
-	//	logger.Info("Failed to update status", "err", err)
-	//	return ctrl.Result{RequeueAfter: 2 * time.Second}
-	// }
+
 	return ctrl.Result{}
 }
 
-func (rm operatorsResourceManager) operatorsInstalled(ctx context.Context, ls *stack.LoggingStack) (ctrl.Result, bool) {
-	logger := rm.logger.WithValues("stack", client.ObjectKeyFromObject(ls))
-
-	var (
-		isCLOInstalled = false
-		isLOInstalled  = false
-	)
-
+func (rm operatorsResourceManager) operatorsInstalled(ctx context.Context, logger logr.Logger) (ctrl.Result, bool) {
 	// Cluster Logging Operator
-	cloSub := &olmv1alpha1.Subscription{}
-	cloSubKey := client.ObjectKeyFromObject(newClusterLoggingOperatorSubscription(ls))
-	if err := rm.k8sClient.Get(ctx, cloSubKey, cloSub); err != nil {
-		logger.Error(err, "failed to get cluster-logging subscription")
+	_, cloCSV, err := rm.getOperatorResources(ctx, logger, nameClusterLoggingOperator, stackNamespace)
+	if err != nil {
 		return ctrl.Result{RequeueAfter: 2 * time.Second}, false
 	}
-
-	cloCSV := &olmv1alpha1.ClusterServiceVersion{}
-	cloCSVKey := client.ObjectKey{Name: cloSub.Status.CurrentCSV, Namespace: cloSub.Namespace}
-	if err := rm.k8sClient.Get(ctx, cloCSVKey, cloCSV); err != nil {
-		logger.Error(err, "failed to get cluster-logging CSV")
-		return ctrl.Result{RequeueAfter: 2 * time.Second}, false
-	}
-
-	isCLOInstalled = cloCSV.Status.Phase == olmv1alpha1.CSVPhaseSucceeded
 
 	// Loki Operator
-	loSub := &olmv1alpha1.Subscription{}
-	loSubKey := client.ObjectKeyFromObject(newLokiOperatorSubscription(ls))
-	if err := rm.k8sClient.Get(ctx, loSubKey, loSub); err != nil {
-		logger.Error(err, "failed to get loki-operator subscription")
+	_, loCSV, err := rm.getOperatorResources(ctx, logger, nameLokiOperator, namespaceLokiOperator)
+	if err != nil {
 		return ctrl.Result{RequeueAfter: 2 * time.Second}, false
 	}
 
-	loCSV := &olmv1alpha1.ClusterServiceVersion{}
-	loCSVKey := client.ObjectKey{Name: loSub.Status.CurrentCSV, Namespace: loSub.Namespace}
-	if err := rm.k8sClient.Get(ctx, loCSVKey, loCSV); err != nil {
-		logger.Error(err, "failed to get loki-operator CSV")
-		return ctrl.Result{RequeueAfter: 2 * time.Second}, false
+	var (
+		isCLOInstalled = cloCSV.Status.Phase == olmv1alpha1.CSVPhaseSucceeded
+		isLOInstalled  = loCSV.Status.Phase == olmv1alpha1.CSVPhaseSucceeded
+	)
+
+	if isCLOInstalled && isLOInstalled {
+		return ctrl.Result{}, true
 	}
 
-	isLOInstalled = loCSV.Status.Phase == olmv1alpha1.CSVPhaseSucceeded
+	return ctrl.Result{RequeueAfter: 2 * time.Second}, false
+}
 
-	return ctrl.Result{}, isCLOInstalled && isLOInstalled
+func (rm operatorsResourceManager) getOperatorResources(ctx context.Context, logger logr.Logger, operatorName, operatorNs string) (*olmv1alpha1.Subscription, *olmv1alpha1.ClusterServiceVersion, error) {
+	// Cluster Logging Operator
+	sub := &olmv1alpha1.Subscription{}
+	subKey := client.ObjectKey{Name: operatorName, Namespace: operatorNs}
+	if err := rm.k8sClient.Get(ctx, subKey, sub); err != nil {
+		logger.Error(err, "failed to get subscription", "operator-name", operatorName)
+		return nil, nil, err
+	}
+
+	csv := &olmv1alpha1.ClusterServiceVersion{}
+	csvKey := client.ObjectKey{Name: sub.Status.CurrentCSV, Namespace: operatorNs}
+	if err := rm.k8sClient.Get(ctx, csvKey, csv); err != nil {
+		logger.Error(err, "failed to get clusterserviceversion", "operator-name", operatorName)
+		return nil, nil, err
+	}
+
+	return sub, csv, nil
+}
+
+func (rm operatorsResourceManager) deleteManagedOperators(ctx context.Context, logger logr.Logger) (ctrl.Result, error) {
+	cloSub, cloCSV, err := rm.getOperatorResources(ctx, logger, nameClusterLoggingOperator, stackNamespace)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	loSub, loCSV, err := rm.getOperatorResources(ctx, logger, nameLokiOperator, namespaceLokiOperator)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	deleters := []reconciler.Reconciler{
+		reconciler.NewDeleter(cloCSV),
+		reconciler.NewDeleter(cloSub),
+		reconciler.NewDeleter(loCSV),
+		reconciler.NewDeleter(loSub),
+	}
+	for _, deleter := range deleters {
+		err := deleter.Reconcile(ctx, rm.k8sClient, rm.scheme)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
+	return ctrl.Result{}, nil
 }
 
 func (rm operatorsResourceManager) getStack(ctx context.Context, req ctrl.Request) (*stack.LoggingStack, error) {

@@ -43,7 +43,7 @@ func RegisterWithStackManager(mgr ctrl.Manager) error {
 	rm := &resourceManager{
 		k8sClient: mgr.GetClient(),
 		scheme:    mgr.GetScheme(),
-		logger:    ctrl.Log.WithName("observability-operator").WithName("logging-stack"),
+		logger:    ctrl.Log.WithName("observability-operator").WithName("logging-stack").WithName("custom-resources-operator"),
 	}
 	// We want to trigger reconciliation when the resource version
 	// of a child changes to update the status about changes in

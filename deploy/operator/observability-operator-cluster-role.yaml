@@ -248,6 +248,7 @@ rules:
   resources:
   - clusterserviceversions
   verbs:
+  - delete
   - get
   - list
   - watch
