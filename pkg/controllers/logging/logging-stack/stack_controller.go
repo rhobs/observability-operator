@@ -7,8 +7,6 @@ import (
 	"github.com/go-logr/logr"
 	lokiv1 "github.com/grafana/loki/operator/apis/loki/v1"
 	loggingv1 "github.com/openshift/cluster-logging-operator/apis/logging/v1"
-	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
-	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -27,39 +25,26 @@ type resourceManager struct {
 	controller controller.Controller
 }
 
-// RBAC for managing monitoring stacks
-// +kubebuilder:rbac:groups=logging.rhobs,resources=loggingstacks,verbs=list;watch;create;update
+// RBAC for managing logging stacks
+// +kubebuilder:rbac:groups=logging.rhobs,resources=loggingstacks,verbs=get;list;watch;create;update
 // +kubebuilder:rbac:groups=logging.rhobs,resources=loggingstacks/status,verbs=get;update
 
 // RBAC for managing ClusterLoggingOperator CRs
-// +kubebuilder:rbac:groups=logging.openshift.io,resources=clusterloggings,verbs=list;watch;create;update;delete;patch
-// +kubebuilder:rbac:groups=logging.openshift.io,resources=clusterlogforwarders,verbs=list;watch;create;update;delete;patch
+// +kubebuilder:rbac:groups=logging.openshift.io,resources=clusterloggings,verbs=get;list;watch;create;update;delete;patch
+// +kubebuilder:rbac:groups=logging.openshift.io,resources=clusterlogforwarders,verbs=get;list;watch;create;update;delete;patch
 
 // RBAC for managing LokiOperator CRs
-// +kubebuilder:rbac:groups=loki.grafana.com,resources=alertingrules,verbs=list;watch;create;update;delete;patch
-// +kubebuilder:rbac:groups=loki.grafana.com,resources=lokistacks,verbs=list;watch;create;update;delete;patch
-// +kubebuilder:rbac:groups=loki.grafana.com,resources=recordingrules,verbs=list;watch;create;update;delete;patch
-// +kubebuilder:rbac:groups=loki.grafana.com,resources=rulerconfigs,verbs=list;watch;create;update;delete;patch
+// +kubebuilder:rbac:groups=loki.grafana.com,resources=alertingrules,verbs=get;list;watch;create;update;delete;patch
+// +kubebuilder:rbac:groups=loki.grafana.com,resources=lokistacks,verbs=get;list;watch;create;update;delete;patch
+// +kubebuilder:rbac:groups=loki.grafana.com,resources=recordingrules,verbs=get;list;watch;create;update;delete;patch
+// +kubebuilder:rbac:groups=loki.grafana.com,resources=rulerconfigs,verbs=get;list;watch;create;update;delete;patch
 
-// RBAC for managing OperatorLifecycleManager CRs
-// +kubebuilder:rbac:groups="",resources=namespaces,verbs=list;watch;create;update;delete;patch
-// +kubebuilder:rbac:groups=operators.coreos.com,resources=operatorgroups,verbs=list;watch;create;update;delete;patch
-// +kubebuilder:rbac:groups=operators.coreos.com,resources=subscriptions,verbs=list;watch;create;update;delete;patch
-
-func RegisterWithManager(mgr ctrl.Manager) error {
+func RegisterWithStackManager(mgr ctrl.Manager) error {
 	rm := &resourceManager{
 		k8sClient: mgr.GetClient(),
 		scheme:    mgr.GetScheme(),
 		logger:    ctrl.Log.WithName("observability-operator").WithName("logging-stack"),
 	}
-
-	// We only want to trigger a reconciliation when the generation
-	// of a child changes. Until we need to update our the status for our own objects,
-	// we can save CPU cycles by avoiding reconciliations triggered by
-	// child status changes. The only exception is Prometheus resources, where we want to
-	// be notified about changes in their status.
-	generationChanged := builder.WithPredicates(predicate.GenerationChangedPredicate{})
-
 	// We want to trigger reconciliation when the resource version
 	// of a child changes to update the status about changes in
 	// ClusterLogging, ClusterLogForwarder and LokiStack status.
@@ -67,8 +52,6 @@ func RegisterWithManager(mgr ctrl.Manager) error {
 
 	ctrl, err := ctrl.NewControllerManagedBy(mgr).
 		For(&stack.LoggingStack{}).
-		Owns(&olmv1.OperatorGroup{}, generationChanged).
-		Owns(&olmv1alpha1.Subscription{}, generationChanged).
 		Owns(&lokiv1.LokiStack{}, resourceVersionChanged).
 		Owns(&loggingv1.ClusterLogging{}, resourceVersionChanged).
 		Owns(&loggingv1.ClusterLogForwarder{}, resourceVersionChanged).

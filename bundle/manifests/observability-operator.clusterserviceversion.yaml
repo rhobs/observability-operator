@@ -81,7 +81,7 @@ metadata:
     categories: Monitoring
     certified: "false"
     containerImage: observability-operator:0.0.30
-    createdAt: "2024-02-09T10:15:10Z"
+    createdAt: "2024-02-09T13:51:50Z"
     description: A Go based Kubernetes operator to setup and manage highly available
       Monitoring Stack using Prometheus, Alertmanager and Thanos Querier.
     operators.operatorframework.io/builder: operator-sdk-v1.31.0
@@ -98,9 +98,6 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - kind: AlertingRule
-      name: alertingrules.loki.grafana.com
-      version: v1
     - description: AlertmanagerConfig configures the Prometheus Alertmanager, specifying
         how alerts should be grouped, inhibited and notified to external systems
       displayName: AlertmanagerConfig
@@ -112,18 +109,9 @@ spec:
       kind: Alertmanager
       name: alertmanagers.monitoring.rhobs
       version: v1
-    - kind: ClusterLogForwarder
-      name: clusterlogforwarders.logging.openshift.io
-      version: v1
-    - kind: ClusterLogging
-      name: clusterloggings.logging.openshift.io
-      version: v1
     - kind: LoggingStack
       name: loggingstacks.logging.rhobs
       version: v1alpha1
-    - kind: LokiStack
-      name: lokistacks.loki.grafana.com
-      version: v1
     - description: MonitoringStack is the Schema for the monitoringstacks API
       displayName: MonitoringStack
       kind: MonitoringStack
@@ -154,12 +142,6 @@ spec:
       displayName: PrometheusRule
       kind: PrometheusRule
       name: prometheusrules.monitoring.rhobs
-      version: v1
-    - kind: RecordingRule
-      name: recordingrules.loki.grafana.com
-      version: v1
-    - kind: RulerConfig
-      name: rulerconfigs.loki.grafana.com
       version: v1
     - description: ScrapeConfig defines a namespaced Prometheus scrape_config to be
         aggregated across multiple namespaces into the Prometheus configuration
@@ -339,6 +321,7 @@ spec:
           verbs:
           - create
           - delete
+          - get
           - list
           - patch
           - update
@@ -395,6 +378,7 @@ spec:
           verbs:
           - create
           - delete
+          - get
           - list
           - patch
           - update
@@ -406,6 +390,7 @@ spec:
           verbs:
           - create
           - delete
+          - get
           - list
           - patch
           - update
@@ -442,6 +427,7 @@ spec:
           verbs:
           - create
           - delete
+          - get
           - list
           - patch
           - update
@@ -453,6 +439,7 @@ spec:
           verbs:
           - create
           - delete
+          - get
           - list
           - patch
           - update
@@ -464,6 +451,7 @@ spec:
           verbs:
           - create
           - delete
+          - get
           - list
           - patch
           - update
@@ -475,6 +463,7 @@ spec:
           verbs:
           - create
           - delete
+          - get
           - list
           - patch
           - update
@@ -556,10 +545,19 @@ spec:
         - apiGroups:
           - operators.coreos.com
           resources:
+          - clusterserviceversions
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - operators.coreos.com
+          resources:
           - operatorgroups
           verbs:
           - create
           - delete
+          - get
           - list
           - patch
           - update
@@ -571,6 +569,7 @@ spec:
           verbs:
           - create
           - delete
+          - get
           - list
           - patch
           - update

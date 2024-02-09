@@ -29,8 +29,7 @@ type loggingStackReconciler struct {
 	Requeue bool
 }
 
-func stackComponentReconcilers(ls *stack.LoggingStack) []loggingStackReconciler {
-	withAuditLogs := ls.Spec.ForwarderSpec.WithAuditLogs
+func operatorsComponentReconcilers(ls *stack.LoggingStack) []loggingStackReconciler {
 	return []loggingStackReconciler{
 		// Installation Namespaces
 		{
@@ -59,6 +58,12 @@ func stackComponentReconcilers(ls *stack.LoggingStack) []loggingStackReconciler 
 			Reconciler: reconciler.NewUpdater(newLokiOperatorSubscription(ls), nil),
 			Requeue:    true,
 		},
+	}
+}
+
+func stackComponentReconcilers(ls *stack.LoggingStack) []loggingStackReconciler {
+	withAuditLogs := ls.Spec.ForwarderSpec.WithAuditLogs
+	return []loggingStackReconciler{
 		// Storage Deployment
 		{
 			Reconciler: reconciler.NewUpdater(newLokiStack(ls), ls),

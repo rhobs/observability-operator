@@ -105,6 +105,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	operatorInstalledChan := make(chan struct{}, 1)
+
 	op, err := operator.New(
 		operator.NewOperatorConfiguration(
 			operator.WithMetricsAddr(metricsAddr),
@@ -113,6 +115,7 @@ func main() {
 			operator.WithAlertmanagerImage(imgMap["alertmanager"]),
 			operator.WithThanosSidecarImage(imgMap["thanos"]),
 			operator.WithThanosQuerierImage(imgMap["thanos"]),
+			operator.WithOperatorInstalled(operatorInstalledChan),
 		))
 	if err != nil {
 		setupLog.Error(err, "cannot create a new operator")
@@ -120,6 +123,25 @@ func main() {
 	}
 
 	ctx := ctrl.SetupSignalHandler()
+
+	go func() {
+		<-operatorInstalledChan
+
+		op, err := operator.NewForManagedStacks()
+		if err != nil {
+			setupLog.Error(err, "cannot create a new stack operator")
+			os.Exit(1)
+		}
+
+		setupLog.Info("starting stack manager")
+		if err := op.Start(ctx); err != nil {
+			setupLog.Error(err, "terminating")
+			os.Exit(1)
+		}
+
+		close(operatorInstalledChan)
+	}()
+
 	setupLog.Info("starting manager")
 	if err := op.Start(ctx); err != nil {
 		setupLog.Error(err, "terminating")

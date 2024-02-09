@@ -15,14 +15,6 @@ resources:
 - https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.71.0-rhobs1/example/prometheus-operator-crd/monitoring.rhobs_alertmanagerconfigs.yaml
 - https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.71.0-rhobs1/example/prometheus-operator-crd/monitoring.rhobs_scrapeconfigs.yaml
 
-# Logging CRDs
-- https://raw.githubusercontent.com/openshift/cluster-logging-operator/release-5.8/bundle/manifests/logging.openshift.io_clusterloggings.yaml
-- https://raw.githubusercontent.com/openshift/cluster-logging-operator/release-5.8/bundle/manifests/logging.openshift.io_clusterlogforwarders.yaml
-- https://raw.githubusercontent.com/grafana/loki/main/operator/bundle/openshift/manifests/loki.grafana.com_alertingrules.yaml
-- https://raw.githubusercontent.com/grafana/loki/main/operator/bundle/openshift/manifests/loki.grafana.com_lokistacks.yaml
-- https://raw.githubusercontent.com/grafana/loki/main/operator/bundle/openshift/manifests/loki.grafana.com_recordingrules.yaml
-- https://raw.githubusercontent.com/grafana/loki/main/operator/bundle/openshift/manifests/loki.grafana.com_rulerconfigs.yaml
-
 # PO Deployment
 - https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.71.0-rhobs1/example/rbac/prometheus-operator/prometheus-operator-deployment.yaml
 - https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.71.0-rhobs1/example/rbac/prometheus-operator/prometheus-operator-cluster-role-binding.yaml
