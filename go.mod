@@ -6,6 +6,7 @@ require (
 	github.com/go-logr/logr v1.4.1
 	github.com/google/go-cmp v0.6.0
 	github.com/grafana/loki/operator/apis/loki v0.0.0-20240208183537-5914df77b961
+	github.com/openshift/api v0.0.0-20240206154754-8ec9b53f66b6
 	github.com/openshift/cluster-logging-operator v0.0.0-20240207232642-9c322f597f9c
 	github.com/operator-framework/api v0.22.0
 	github.com/prometheus/common v0.46.0
@@ -85,7 +86,6 @@ require (
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
-	github.com/openshift/api v0.0.0-20220124143425-d74727069f6f // indirect
 	github.com/openshift/elasticsearch-operator v0.0.0-20220613183908-e1648e67c298 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect

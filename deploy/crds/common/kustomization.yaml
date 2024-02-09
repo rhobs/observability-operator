@@ -5,3 +5,4 @@ resources:
   - logging.rhobs_loggingstacks.yaml
   - monitoring.rhobs_monitoringstacks.yaml
   - monitoring.rhobs_thanosqueriers.yaml
+  - observabilityui.rhobs_observabilityuiplugins.yaml

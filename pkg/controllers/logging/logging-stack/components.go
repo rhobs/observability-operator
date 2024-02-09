@@ -9,6 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	stack "github.com/rhobs/observability-operator/pkg/apis/logging/v1alpha1"
+	observabilityuiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/observabilityui/v1alpha1"
 	"github.com/rhobs/observability-operator/pkg/reconciler"
 )
 
@@ -77,6 +78,11 @@ func stackComponentReconcilers(ls *stack.LoggingStack) []loggingStackReconciler 
 		// Forwarder Deployment
 		{
 			Reconciler: reconciler.NewOptionalUpdater(newClusterLogForwarder(ls), ls, withAuditLogs),
+			Requeue:    true,
+		},
+		// UI Plugin
+		{
+			Reconciler: reconciler.NewUpdater(newUIPlugin(ls), ls),
 			Requeue:    true,
 		},
 	}
@@ -250,6 +256,23 @@ func newClusterLogForwarder(ls *stack.LoggingStack) *loggingv1.ClusterLogForward
 					},
 				},
 			},
+		},
+	}
+}
+
+func newUIPlugin(ls *stack.LoggingStack) *observabilityuiv1alpha1.ObservabilityUIPlugin {
+	return &observabilityuiv1alpha1.ObservabilityUIPlugin{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: observabilityuiv1alpha1.GroupVersion.String(),
+			Kind:       "ObservabilityUIPlugin",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      ls.Name,
+			Namespace: ls.Namespace,
+		},
+		Spec: observabilityuiv1alpha1.ObservabilityUIPluginSpec{
+			Type:        observabilityuiv1alpha1.TypeLogs,
+			DisplayName: "Logging View Plugin",
 		},
 	}
 }

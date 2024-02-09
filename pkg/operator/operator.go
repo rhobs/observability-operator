@@ -7,6 +7,7 @@ import (
 	logstackctrl "github.com/rhobs/observability-operator/pkg/controllers/logging/logging-stack"
 	monstackctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/monitoring-stack"
 	tqctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/thanos-querier"
+	"github.com/rhobs/observability-operator/pkg/controllers/observabilityui/observabilityuiplugin"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -114,6 +115,10 @@ func New(cfg *OperatorConfiguration) (*Operator, error) {
 
 	if err := logstackctrl.RegisterWithOperatorsManager(mgr, cfg.OperatorInstalled); err != nil {
 		return nil, fmt.Errorf("unable to register logging stack operator controller: %w", err)
+	}
+
+	if err := observabilityuiplugin.RegisterWithStackManager(mgr); err != nil {
+		return nil, fmt.Errorf("unable to register observability-ui-plugin controller: %w", err)
 	}
 
 	if err := mgr.AddHealthzCheck("health probe", healthz.Ping); err != nil {

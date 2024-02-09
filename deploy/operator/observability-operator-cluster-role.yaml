@@ -244,6 +244,40 @@ rules:
   - patch
   - update
 - apiGroups:
+  - observabilityui.rhobs
+  resources:
+  - observabilityuiplugins
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - observabilityui.rhobs
+  resources:
+  - observabilityuiplugins/finalizers
+  - observabilityuiplugins/status
+  verbs:
+  - get
+  - update
+- apiGroups:
+  - observabilityui.rhobs
+  resources:
+  - observabilityuiplugins/status
+  verbs:
+  - get
+  - update
+- apiGroups:
+  - operator.openshift.io
+  resources:
+  - consoles
+  verbs:
+  - get
+  - patch
+- apiGroups:
   - operators.coreos.com
   resources:
   - clusterserviceversions

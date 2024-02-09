@@ -16,6 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	stack "github.com/rhobs/observability-operator/pkg/apis/logging/v1alpha1"
+	observabilityuiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/observabilityui/v1alpha1"
 )
 
 type resourceManager struct {
@@ -28,6 +29,9 @@ type resourceManager struct {
 // RBAC for managing logging stacks
 // +kubebuilder:rbac:groups=logging.rhobs,resources=loggingstacks,verbs=get;list;watch;create;update
 // +kubebuilder:rbac:groups=logging.rhobs,resources=loggingstacks/status,verbs=get;update
+
+// RBAC for managing ObservabilityUI Plugin
+// +kubebuilder:rbac:groups=observabilityui.rhobs,resources=observabilityuiplugins,verbs=get;list;watch;create;update
 
 // RBAC for managing ClusterLoggingOperator CRs
 // +kubebuilder:rbac:groups=logging.openshift.io,resources=clusterloggings,verbs=get;list;watch;create;update;delete;patch
@@ -55,6 +59,7 @@ func RegisterWithStackManager(mgr ctrl.Manager) error {
 		Owns(&lokiv1.LokiStack{}, resourceVersionChanged).
 		Owns(&loggingv1.ClusterLogging{}, resourceVersionChanged).
 		Owns(&loggingv1.ClusterLogForwarder{}, resourceVersionChanged).
+		Owns(&observabilityuiv1alpha1.ObservabilityUIPlugin{}, resourceVersionChanged).
 		Build(rm)
 	if err != nil {
 		return err
