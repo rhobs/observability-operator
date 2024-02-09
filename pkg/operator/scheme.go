@@ -6,8 +6,8 @@ import (
 
 	lokiv1 "github.com/grafana/loki/operator/apis/loki/v1"
 	loggingv1 "github.com/openshift/cluster-logging-operator/apis/logging/v1"
+	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
-	olmv1alpha2 "github.com/operator-framework/api/pkg/operators/v1alpha2"
 	monitoringv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -26,7 +26,7 @@ func NewScheme() *runtime.Scheme {
 	utilruntime.Must(lokiv1.AddToScheme(scheme))
 	utilruntime.Must(loggingv1.AddToScheme(scheme))
 	utilruntime.Must(olmv1alpha1.AddToScheme(scheme))
-	utilruntime.Must(olmv1alpha2.AddToScheme(scheme))
+	utilruntime.Must(olmv1.AddToScheme(scheme))
 
 	return scheme
 }

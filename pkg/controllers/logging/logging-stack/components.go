@@ -3,8 +3,8 @@ package loggingstack
 import (
 	lokiv1 "github.com/grafana/loki/operator/apis/loki/v1"
 	loggingv1 "github.com/openshift/cluster-logging-operator/apis/logging/v1"
+	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
-	olmv1alpha2 "github.com/operator-framework/api/pkg/operators/v1alpha2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -103,17 +103,17 @@ func newOpenShiftOperatorsRedHatNamespace(ls *stack.LoggingStack) *corev1.Namesp
 	}
 }
 
-func newClusterLoggingOperatorGroup() *olmv1alpha2.OperatorGroup {
-	return &olmv1alpha2.OperatorGroup{
+func newClusterLoggingOperatorGroup() *olmv1.OperatorGroup {
+	return &olmv1.OperatorGroup{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: olmv1alpha2.SchemeGroupVersion.String(),
-			Kind:       olmv1alpha2.OperatorGroupKind,
+			APIVersion: olmv1.SchemeGroupVersion.String(),
+			Kind:       olmv1.OperatorGroupKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      nameClusterLoggingOperator,
 			Namespace: stackNamespace,
 		},
-		Spec: olmv1alpha2.OperatorGroupSpec{
+		Spec: olmv1.OperatorGroupSpec{
 			TargetNamespaces: []string{
 				stackNamespace,
 			},
@@ -140,17 +140,17 @@ func newClusterLoggingOperatorSubscription(ls *stack.LoggingStack) *olmv1alpha1.
 	}
 }
 
-func newLokiOperatorGroup() *olmv1alpha2.OperatorGroup {
-	return &olmv1alpha2.OperatorGroup{
+func newLokiOperatorGroup() *olmv1.OperatorGroup {
+	return &olmv1.OperatorGroup{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: olmv1alpha2.SchemeGroupVersion.String(),
-			Kind:       olmv1alpha2.OperatorGroupKind,
+			APIVersion: olmv1.SchemeGroupVersion.String(),
+			Kind:       olmv1.OperatorGroupKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      nameLokiOperator,
 			Namespace: namespaceLokiOperator,
 		},
-		Spec: olmv1alpha2.OperatorGroupSpec{},
+		Spec: olmv1.OperatorGroupSpec{},
 	}
 
 }

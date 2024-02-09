@@ -7,8 +7,8 @@ import (
 	"github.com/go-logr/logr"
 	lokiv1 "github.com/grafana/loki/operator/apis/loki/v1"
 	loggingv1 "github.com/openshift/cluster-logging-operator/apis/logging/v1"
+	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
-	olmv1alpha2 "github.com/operator-framework/api/pkg/operators/v1alpha2"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -67,7 +67,7 @@ func RegisterWithManager(mgr ctrl.Manager) error {
 
 	ctrl, err := ctrl.NewControllerManagedBy(mgr).
 		For(&stack.LoggingStack{}).
-		Owns(&olmv1alpha2.OperatorGroup{}, generationChanged).
+		Owns(&olmv1.OperatorGroup{}, generationChanged).
 		Owns(&olmv1alpha1.Subscription{}, generationChanged).
 		Owns(&lokiv1.LokiStack{}, resourceVersionChanged).
 		Owns(&loggingv1.ClusterLogging{}, resourceVersionChanged).
