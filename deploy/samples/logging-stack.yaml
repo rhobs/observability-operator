@@ -1,0 +1,25 @@
+apiVersion: logging.rhobs/v1alpha1
+kind: LoggingStack
+metadata:
+  name: sample-logging-stack
+  labels:
+    lso: example
+spec:
+  monitoringSelector:
+    openshift.io/cluster-monitoring: "true"
+  subscription:
+    installPlanApproval: Automatic
+    channel: stable-5.8
+    catalogSource: redhat-operators
+    catalogSourceNamespace: openshift-marketplace
+  forwarder:
+    withAuditLogs: true
+  storage:
+    size: 1x.demo
+    storage:
+      schemas:
+      - version: v13
+        effectiveDate: 2023-10-15
+      secret:
+        name: test
+        type: s3
