@@ -101,7 +101,7 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 	rm := &resourceManager{
 		k8sClient:             mgr.GetClient(),
 		scheme:                mgr.GetScheme(),
-		logger:                ctrl.Log.WithName("observability-operator"),
+		logger:                ctrl.Log.WithName("observability-operator").WithName("monitoring-stack"),
 		instanceSelectorKey:   split[0],
 		instanceSelectorValue: split[1],
 		thanos:                opts.Thanos,

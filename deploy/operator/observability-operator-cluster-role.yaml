@@ -18,6 +18,18 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - namespaces
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - secrets
   - serviceaccounts
   - services
@@ -59,6 +71,103 @@ rules:
   verbs:
   - get
   - list
+  - watch
+- apiGroups:
+  - logging.openshift.io
+  resources:
+  - clusterlogforwarders
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - logging.openshift.io
+  resources:
+  - clusterloggings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - logging.rhobs
+  resources:
+  - loggingstacks
+  verbs:
+  - create
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - logging.rhobs
+  resources:
+  - loggingstacks/finalizers
+  - loggingstacks/status
+  verbs:
+  - get
+  - update
+- apiGroups:
+  - logging.rhobs
+  resources:
+  - loggingstacks/status
+  verbs:
+  - get
+  - update
+- apiGroups:
+  - loki.grafana.com
+  resources:
+  - alertingrules
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - loki.grafana.com
+  resources:
+  - lokistacks
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - loki.grafana.com
+  resources:
+  - recordingrules
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - loki.grafana.com
+  resources:
+  - rulerconfigs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
   - watch
 - apiGroups:
   - monitoring.rhobs
@@ -134,6 +243,73 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - observabilityui.rhobs
+  resources:
+  - observabilityuiplugins
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - observabilityui.rhobs
+  resources:
+  - observabilityuiplugins/finalizers
+  - observabilityuiplugins/status
+  verbs:
+  - get
+  - update
+- apiGroups:
+  - observabilityui.rhobs
+  resources:
+  - observabilityuiplugins/status
+  verbs:
+  - get
+  - update
+- apiGroups:
+  - operator.openshift.io
+  resources:
+  - consoles
+  verbs:
+  - get
+  - patch
+- apiGroups:
+  - operators.coreos.com
+  resources:
+  - clusterserviceversions
+  verbs:
+  - delete
+  - get
+  - list
+  - watch
+- apiGroups:
+  - operators.coreos.com
+  resources:
+  - operatorgroups
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - operators.coreos.com
+  resources:
+  - subscriptions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - policy
   resources:

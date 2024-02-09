@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	stackctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/monitoring-stack"
+	logstackctrl "github.com/rhobs/observability-operator/pkg/controllers/logging/logging-stack"
+	monstackctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/monitoring-stack"
 	tqctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/thanos-querier"
+	"github.com/rhobs/observability-operator/pkg/controllers/observabilityui/observabilityuiplugin"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -27,12 +29,19 @@ type Operator struct {
 }
 
 type OperatorConfiguration struct {
-	MetricsAddr     string
-	HealthProbeAddr string
-	Prometheus      stackctrl.PrometheusConfiguration
-	Alertmanager    stackctrl.AlertmanagerConfiguration
-	ThanosSidecar   stackctrl.ThanosConfiguration
-	ThanosQuerier   tqctrl.ThanosConfiguration
+	MetricsAddr       string
+	HealthProbeAddr   string
+	Prometheus        monstackctrl.PrometheusConfiguration
+	Alertmanager      monstackctrl.AlertmanagerConfiguration
+	ThanosSidecar     monstackctrl.ThanosConfiguration
+	ThanosQuerier     tqctrl.ThanosConfiguration
+	OperatorInstalled chan struct{}
+}
+
+func WithOperatorInstalled(c chan struct{}) func(*OperatorConfiguration) {
+	return func(oc *OperatorConfiguration) {
+		oc.OperatorInstalled = c
+	}
 }
 
 func WithPrometheusImage(image string) func(*OperatorConfiguration) {
@@ -91,7 +100,7 @@ func New(cfg *OperatorConfiguration) (*Operator, error) {
 		return nil, fmt.Errorf("unable to create manager: %w", err)
 	}
 
-	if err := stackctrl.RegisterWithManager(mgr, stackctrl.Options{
+	if err := monstackctrl.RegisterWithManager(mgr, monstackctrl.Options{
 		InstanceSelector: instanceSelector,
 		Prometheus:       cfg.Prometheus,
 		Alertmanager:     cfg.Alertmanager,
@@ -102,6 +111,39 @@ func New(cfg *OperatorConfiguration) (*Operator, error) {
 
 	if err := tqctrl.RegisterWithManager(mgr, tqctrl.Options{Thanos: cfg.ThanosQuerier}); err != nil {
 		return nil, fmt.Errorf("unable to register the thanos querier controller with the manager: %w", err)
+	}
+
+	if err := logstackctrl.RegisterWithOperatorsManager(mgr, cfg.OperatorInstalled); err != nil {
+		return nil, fmt.Errorf("unable to register logging stack operator controller: %w", err)
+	}
+
+	if err := observabilityuiplugin.RegisterWithStackManager(mgr); err != nil {
+		return nil, fmt.Errorf("unable to register observability-ui-plugin controller: %w", err)
+	}
+
+	if err := mgr.AddHealthzCheck("health probe", healthz.Ping); err != nil {
+		return nil, fmt.Errorf("unable to add health probe: %w", err)
+	}
+
+	return &Operator{
+		manager: mgr,
+	}, nil
+}
+
+func NewForManagedStacks() (*Operator, error) {
+	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+		Scheme: NewScheme(),
+		Metrics: metricsserver.Options{
+			BindAddress: "0",
+		},
+		HealthProbeBindAddress: "0",
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to create manager: %w", err)
+	}
+
+	if err := logstackctrl.RegisterWithStackManager(mgr); err != nil {
+		return nil, fmt.Errorf("unable to register logging stack operator controller: %w", err)
 	}
 
 	if err := mgr.AddHealthzCheck("health probe", healthz.Ping); err != nil {

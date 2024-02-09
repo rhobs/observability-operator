@@ -5,6 +5,46 @@ metadata:
     alm-examples: |-
       [
         {
+          "apiVersion": "logging.rhobs/v1alpha1",
+          "kind": "LoggingStack",
+          "metadata": {
+            "labels": {
+              "lso": "example"
+            },
+            "name": "sample-logging-stack"
+          },
+          "spec": {
+            "forwarder": {
+              "withAuditLogs": true
+            },
+            "monitoringSelector": {
+              "openshift.io/cluster-monitoring": "true"
+            },
+            "storage": {
+              "size": "1x.demo",
+              "storage": {
+                "schemas": [
+                  {
+                    "effectiveDate": "2023-10-15T00:00:00Z",
+                    "version": "v12"
+                  }
+                ],
+                "secret": {
+                  "name": "test",
+                  "type": "s3"
+                }
+              },
+              "storageClassName": "gp3-csi"
+            },
+            "subscription": {
+              "catalogSource": "redhat-operators",
+              "catalogSourceNamespace": "openshift-marketplace",
+              "channel": "stable-5.8",
+              "installPlanApproval": "Automatic"
+            }
+          }
+        },
+        {
           "apiVersion": "monitoring.rhobs/v1alpha1",
           "kind": "MonitoringStack",
           "metadata": {
@@ -42,7 +82,7 @@ metadata:
     categories: Monitoring
     certified: "false"
     containerImage: observability-operator:0.0.30
-    createdAt: "2024-01-23T15:52:54Z"
+    createdAt: "2024-02-09T21:29:35Z"
     description: A Go based Kubernetes operator to setup and manage highly available
       Monitoring Stack using Prometheus, Alertmanager and Thanos Querier.
     operators.operatorframework.io/builder: operator-sdk-v1.31.0
@@ -70,10 +110,16 @@ spec:
       kind: Alertmanager
       name: alertmanagers.monitoring.rhobs
       version: v1
+    - kind: LoggingStack
+      name: loggingstacks.logging.rhobs
+      version: v1alpha1
     - description: MonitoringStack is the Schema for the monitoringstacks API
       displayName: MonitoringStack
       kind: MonitoringStack
       name: monitoringstacks.monitoring.rhobs
+      version: v1alpha1
+    - kind: ObservabilityUIPlugin
+      name: observabilityuiplugins.observabilityui.rhobs
       version: v1alpha1
     - description: PodMonitor defines monitoring for a set of pods
       displayName: PodMonitor
@@ -275,6 +321,18 @@ spec:
         - apiGroups:
           - ""
           resources:
+          - namespaces
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
           - secrets
           - serviceaccounts
           - services
@@ -316,6 +374,103 @@ spec:
           verbs:
           - get
           - list
+          - watch
+        - apiGroups:
+          - logging.openshift.io
+          resources:
+          - clusterlogforwarders
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - logging.openshift.io
+          resources:
+          - clusterloggings
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - logging.rhobs
+          resources:
+          - loggingstacks
+          verbs:
+          - create
+          - get
+          - list
+          - update
+          - watch
+        - apiGroups:
+          - logging.rhobs
+          resources:
+          - loggingstacks/finalizers
+          - loggingstacks/status
+          verbs:
+          - get
+          - update
+        - apiGroups:
+          - logging.rhobs
+          resources:
+          - loggingstacks/status
+          verbs:
+          - get
+          - update
+        - apiGroups:
+          - loki.grafana.com
+          resources:
+          - alertingrules
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - loki.grafana.com
+          resources:
+          - lokistacks
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - loki.grafana.com
+          resources:
+          - recordingrules
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - loki.grafana.com
+          resources:
+          - rulerconfigs
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
           - watch
         - apiGroups:
           - monitoring.rhobs
@@ -391,6 +546,73 @@ spec:
           - get
           - patch
           - update
+        - apiGroups:
+          - observabilityui.rhobs
+          resources:
+          - observabilityuiplugins
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - observabilityui.rhobs
+          resources:
+          - observabilityuiplugins/finalizers
+          - observabilityuiplugins/status
+          verbs:
+          - get
+          - update
+        - apiGroups:
+          - observabilityui.rhobs
+          resources:
+          - observabilityuiplugins/status
+          verbs:
+          - get
+          - update
+        - apiGroups:
+          - operator.openshift.io
+          resources:
+          - consoles
+          verbs:
+          - get
+          - patch
+        - apiGroups:
+          - operators.coreos.com
+          resources:
+          - clusterserviceversions
+          verbs:
+          - delete
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - operators.coreos.com
+          resources:
+          - operatorgroups
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - operators.coreos.com
+          resources:
+          - subscriptions
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
         - apiGroups:
           - policy
           resources:
