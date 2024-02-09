@@ -131,9 +131,14 @@ spec:
                     required:
                     - secret
                     type: object
+                  storageClassName:
+                    description: Storage class name defines the storage class for
+                      ingester/querier PVCs.
+                    type: string
                 required:
                 - size
                 - storage
+                - storageClassName
                 type: object
               subscription:
                 properties:

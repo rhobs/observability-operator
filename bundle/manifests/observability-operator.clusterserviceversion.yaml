@@ -26,14 +26,15 @@ metadata:
                 "schemas": [
                   {
                     "effectiveDate": "2023-10-15T00:00:00Z",
-                    "version": "v13"
+                    "version": "v12"
                   }
                 ],
                 "secret": {
                   "name": "test",
                   "type": "s3"
                 }
-              }
+              },
+              "storageClassName": "gp3-csi"
             },
             "subscription": {
               "catalogSource": "redhat-operators",
@@ -81,7 +82,7 @@ metadata:
     categories: Monitoring
     certified: "false"
     containerImage: observability-operator:0.0.30
-    createdAt: "2024-02-09T13:51:50Z"
+    createdAt: "2024-02-09T18:24:03Z"
     description: A Go based Kubernetes operator to setup and manage highly available
       Monitoring Stack using Prometheus, Alertmanager and Thanos Querier.
     operators.operatorframework.io/builder: operator-sdk-v1.31.0

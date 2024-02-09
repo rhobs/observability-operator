@@ -16,6 +16,7 @@ spec:
     withAuditLogs: true
   storage:
     size: 1x.demo
+    storageClassName: gp3-csi
     storage:
       schemas:
       - version: v12

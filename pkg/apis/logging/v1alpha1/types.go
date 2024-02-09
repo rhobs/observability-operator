@@ -62,6 +62,13 @@ type StorageSpec struct {
 	// +kubebuilder:validation:Required
 	Size lokiv1.LokiStackSizeType `json:"size"`
 
+	// Storage class name defines the storage class for ingester/querier PVCs.
+	//
+	// +required
+	// +kubebuilder:validation:Required
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors="urn:alm:descriptor:io.kubernetes:StorageClass",displayName="Storage Class Name"
+	StorageClassName string `json:"storageClassName"`
+
 	// Storage defines the spec for the object storage endpoint to store logs.
 	//
 	// +required

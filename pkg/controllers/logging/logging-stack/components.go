@@ -190,9 +190,10 @@ func newLokiStack(ls *stack.LoggingStack) *lokiv1.LokiStack {
 			Namespace: stackNamespace,
 		},
 		Spec: lokiv1.LokiStackSpec{
-			ManagementState: lokiv1.ManagementStateManaged,
-			Size:            ls.Spec.Storage.Size,
-			Storage:         ls.Spec.Storage.Storage,
+			ManagementState:  lokiv1.ManagementStateManaged,
+			Size:             ls.Spec.Storage.Size,
+			Storage:          ls.Spec.Storage.Storage,
+			StorageClassName: ls.Spec.Storage.StorageClassName,
 			Tenants: &lokiv1.TenantsSpec{
 				Mode: lokiv1.OpenshiftLogging,
 			},
