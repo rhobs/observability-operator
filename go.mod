@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/go-logr/logr v1.4.1
 	github.com/google/go-cmp v0.6.0
-	github.com/prometheus/common v0.46.0
+	github.com/prometheus/common v0.47.0
 	github.com/rhobs/obo-prometheus-operator v0.71.0-rhobs1
 	github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.71.0-rhobs1
 	go.uber.org/zap v1.26.0
