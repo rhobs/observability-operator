@@ -61,6 +61,13 @@ SHELLCHECK_VERSION = v0.9.0
 YQ = $(TOOLS_DIR)/yq
 YQ_VERSION = v4.14.2
 
+JQ = $(TOOLS_DIR)/jq
+JQ_VERSION = jq-1.7.1
+
+SKOPEO = $(TOOLS_DIR)/skopeo
+SKOPEO_VERSION = v1.14.2
+SKOPE_VERSION = 1.14.2
+
 $(TOOLS_DIR):
 	@mkdir -p $(TOOLS_DIR)
 
@@ -195,7 +202,7 @@ $(GOJSONTOYAML) gojsontoyaml: $(TOOLS_DIR)
 $(SHELLCHECK) shellcheck: $(TOOLS_DIR)
 	@{ \
 		set -ex ;\
-		[[ -f $(SHELLCHECK) ]] && exit 0 ;\
+		[[ -f $(SHELLCHECK) ]] && exit 0; \
 		cd $$(mktemp -d) ;\
 		curl -sSLo shellcheck-stable.tar.xz "https://github.com/koalaman/shellcheck/releases/download/$(SHELLCHECK_VERSION)/shellcheck-$(SHELLCHECK_VERSION).linux.x86_64.tar.xz" ;\
 		tar -xJf shellcheck-stable.tar.xz ;\
@@ -209,8 +216,8 @@ $(YQ) yq: $(TOOLS_DIR)
 	@{ \
 		set -ex ;\
 		[[ -f  $(YQ) ]] && exit 0 ;\
-                cd $$(mktemp -d) ;\
-		wget https://github.com/mikefarah/yq/releases/download/$(YQ_VERSION)/yq_linux_amd64 -O $(TOOLS_DIR)/yq ;\
+		OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) && \
+		wget https://github.com/mikefarah/yq/releases/download/$(YQ_VERSION)/yq_linux_${ARCH} -O $(TOOLS_DIR)/yq ;\
 		chmod +x $(TOOLS_DIR)/yq ;\
 	}
 
@@ -218,17 +225,30 @@ $(YQ) yq: $(TOOLS_DIR)
 jsonnet-tools: jsonnet jsonnetfmt jsonnet-lint jb gojsontoyaml
 
 .PHONY: jq
-jq: 
+$(JQ) jq: $(TOOLS_DIR)
 	@{ \
 		set -ex ;\
-		sudo apt-get install jq ;\
+		[[ -f $(JQ) ]] && exit 0 ;\
+		if [ $(shell go env GOARCH) == "ppc64le" ]; then \
+			wget https://github.com/jqlang/jq/releases/download/$(JQ_VERSION)/jq-linux-ppc64el -O $(TOOLS_DIR)/jq; \
+		else \
+			wget https://github.com/jqlang/jq/releases/download/$(JQ_VERSION)/jq-linux-$(shell go env GOARCH) -O $(TOOLS_DIR)/jq; \
+		fi ;\
+	        chmod +x $(TOOLS_DIR)/jq ;\
 	}
 
 .PHONY: skopeo
-skopeo: 
+$(SKOPEO) skopeo: $(TOOLS_DIR)
 	@{ \
 		set -ex ;\
-		sudo apt-get -y install skopeo ;\
+		[[ -f $(SKOPEO) ]] && exit 0; \
+		OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) ;\
+		curl -sSLo skopeo.tar.xz "https://github.com/containers/skopeo/archive/refs/tags/$(SKOPEO_VERSION).tar.gz" ;\
+	        tar -xvf skopeo.tar.xz  && rm skopeo.tar.xz  ;\
+		cd skopeo-$(SKOPE_VERSION) && make bin/skopeo.${OS}.${ARCH} ;\
+		mv bin/skopeo.${OS}.${ARCH} $(TOOLS_DIR)/skopeo ;\
+		cd .. && rm -rf skopeo-$(SKOPE_VERSION) ;\
+		chmod +x $(TOOLS_DIR)/skopeo ;\
 	}
 
 # Install all required tools
@@ -242,10 +262,10 @@ tools: $(CONTROLLER_GEN) \
 		$(CRDOC) \
 		$(GOLANGCI_LINT) \
 		$(YQ) \
+		$(JQ) \
 		$(SHELLCHECK) \
-		jsonnet-tools \
-		jq \
-		skopeo
+		$(SKOPEO) \
+		jsonnet-tools 
 	@{ \
 		set -ex ;\
 		tools_file=.github/tools ;\
@@ -265,7 +285,9 @@ tools: $(CONTROLLER_GEN) \
 		echo  $$(basename $(JB)) $(JB_VERSION) >> $$tools_file ;\
 		echo  $$(basename $(GOJSONTOYAML)) $(GOJSONTOYAML_VERSION) >> $$tools_file ;\
 		echo  $$(basename $(YQ)) $(YQ_VERSION) >> $$tools_file ;\
+		echo  $$(basename $(JQ)) $(JQ_VERSION) >> $tools_file ;\
 		echo  $$(basename $(SHELLCHECK)) $(SHELLCHECK_VERSION) >> $$tools_file ;\
+		echo  $$(basename $(SKOPEO)) $(SKOPEO_VERSION) >> $$tools_file ;\
 	}
 
 .PHONY: clean-tools

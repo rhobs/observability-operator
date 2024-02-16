@@ -17,7 +17,7 @@ set -eu -o pipefail
 declare -r OPERATOR_NAME='observability-operator'
 declare -r REGISTRY=${REGISTRY:-'quay.io'}
 declare -r NAMESPACE=${NAMESPACE:-'rhobs'}
-declare -r TAG=${TAG=$1}
+declare -r TAG=${TAG=$1 || 'latest'}
 declare -r CONTAINER_RUNTIME=$(shell command -v podman 2> /dev/null || echo docker)
 declare -r CSV_PATH=${CSV_PATH:-'bundle/manifests/observability-operator.clusterserviceversion.yaml'}
 declare -r ANNOTATIONS_PATH=${ANNOTATIONS_PATH:-'bundle/metadata/annotations.yaml'}
@@ -94,11 +94,12 @@ build_single_arch_index_image() {
 
 push_single_arch_index_images() {
 	${CONTAINER_RUNTIME} push "${REGISTRY}/${NAMESPACE}/observability-operator-catalog:${TAG}-amd64"
-	${CONTAINER_RUNTIME} "${REGISTRY}/${NAMESPACE}/observability-operator-catalog:${TAG}-ppc64le"
+	${CONTAINER_RUNTIME} push "${REGISTRY}/${NAMESPACE}/observability-operator-catalog:${TAG}-ppc64le"
 }
 
 build_catalog_manifest() {
-	${CONTAINER_RUNTIME} manifest create "observability-operator-catalog:${TAG}" \
+	${CONTAINER_RUNTIME} manifest create "${REGISTRY}/${NAMESPACE}/observability-operator-catalog:${TAG}"
+	${CONTAINER_RUNTIME} manifest add "${REGISTRY}/${NAMESPACE}/observability-operator-catalog:${TAG}" \
 		"${REGISTRY}/${NAMESPACE}/observability-operator-catalog:${TAG}-amd64" \
 		"${REGISTRY}/${NAMESPACE}/observability-operator-catalog:${TAG}-ppc64le"
 }
