@@ -98,6 +98,7 @@ func TestMonitoringStackController(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			assertPDBExpectedPodsAreHealthy(t, stackName+"-alertmanager", e2eTestNamespace)
 			assertAlertmanagersAreOnDifferentNodes(t, pods)
 			assertAlertmanagersAreResilientToDisruption(t, pods)
 		},
@@ -396,7 +397,7 @@ func singlePrometheusReplicaHasNoPDB(t *testing.T) {
 	assert.NilError(t, err, "failed to update monitoring stack")
 
 	// ensure there is no pdb
-	f.AssertResourceNeverExists(pdbName, ms.Namespace, &pdb)(t)
+	f.AssertResourceAbsent(pdbName, ms.Namespace, &pdb)(t)
 }
 
 func assertPrometheusScrapesItself(t *testing.T) {
@@ -505,6 +506,21 @@ func assertAlertmanagersAreResilientToDisruption(t *testing.T, pods []corev1.Pod
 		if !lastPod && err != nil {
 			t.Fatalf("expected no error when evicting pod with index %d, got %v", i, err)
 		}
+	}
+}
+
+func assertPDBExpectedPodsAreHealthy(t *testing.T, name, namespace string) {
+	if err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, framework.DefaultTestTimeout, true, func(ctx context.Context) (bool, error) {
+		pdb := &policyv1.PodDisruptionBudget{}
+		key := types.NamespacedName{Name: name, Namespace: namespace}
+		err := f.K8sClient.Get(context.Background(), key, pdb)
+		if err != nil {
+			return false, nil
+		}
+		return pdb.Status.CurrentHealthy == pdb.Status.ExpectedPods, nil
+
+	}); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -838,11 +854,12 @@ func namespaceSelectorTest(t *testing.T) {
 		err := deployDemoApp(t, ns, nsLabels, resourceLabels)
 		assert.NilError(t, err, "%s: deploying demo app failed", ns)
 	}
+	f.AssertStatefulsetReady("prometheus-"+stackName, e2eTestNamespace, framework.WithTimeout(5*time.Minute))(t)
 
 	stopChan := make(chan struct{})
 	defer close(stopChan)
 	//nolint
-	if pollErr := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, framework.DefaultTestTimeout, true, func(ctx context.Context) (bool, error) {
+	if pollErr := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, framework.DefaultTestTimeout*2, true, func(ctx context.Context) (bool, error) {
 		err := f.StartServicePortForward(ms.Name+"-prometheus", e2eTestNamespace, "9090", stopChan)
 		return err == nil, nil
 	}); pollErr != nil {

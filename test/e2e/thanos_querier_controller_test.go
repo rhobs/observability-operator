@@ -79,13 +79,14 @@ func singleStackWithSidecar(t *testing.T) {
 		err = f.StartServicePortForward(name, e2eTestNamespace, "10902", stopChan)
 		return err == nil, nil
 	}); wait.Interrupted(err) {
-		t.Fatal(err)
+		t.Fatal("timeout waiting for port-forward")
 	}
 
 	promClient := framework.NewPrometheusClient("http://localhost:10902")
 	expectedResults := map[string]int{
 		"prometheus_build_info": 2, // must return from both prometheus pods
 	}
+	var lastErr error
 	if err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
 		correct := 0
 		for query, value := range expectedResults {
@@ -99,8 +100,8 @@ func singleStackWithSidecar(t *testing.T) {
 			}
 
 			if len(result.Data.Result) > value {
-				resultErr := fmt.Errorf("invalid result for query %s, got %d, want %d", query, len(result.Data.Result), value)
-				return true, resultErr
+				lastErr = fmt.Errorf("invalid result for query %s, got %d, want %d", query, len(result.Data.Result), value)
+				return true, lastErr
 			}
 
 			if len(result.Data.Result) != value {
@@ -112,7 +113,7 @@ func singleStackWithSidecar(t *testing.T) {
 
 		return correct == len(expectedResults), nil
 	}); wait.Interrupted(err) {
-		t.Fatal(err)
+		t.Fatal(fmt.Errorf("querying thanos did not yield expected results: %w", lastErr))
 	}
 }
 
