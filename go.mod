@@ -8,7 +8,7 @@ require (
 	github.com/prometheus/common v0.46.0
 	github.com/rhobs/obo-prometheus-operator v0.71.0-rhobs1
 	github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.71.0-rhobs1
-	go.uber.org/zap v1.26.0
+	go.uber.org/zap v1.27.0
 	golang.org/x/exp v0.0.0-20231127185646-65229373498e
 	gotest.tools/v3 v3.5.1
 	k8s.io/api v0.29.2
