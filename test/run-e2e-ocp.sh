@@ -43,7 +43,7 @@ install_obo() {
 	oc apply -f ./hack/olm/subscription.yaml
 
 	oc -n "$OPERATORS_NS" wait --for=condition=CatalogSourcesUnhealthy=False \
-		subscription.operators.coreos.com observability-operator
+		subscription.operators.coreos.com observability-operator --timeout=60s
 
 	ok "ObO subscription is ready"
 }
