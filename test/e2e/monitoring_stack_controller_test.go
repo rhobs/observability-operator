@@ -144,8 +144,7 @@ func nilResrouceSelectorPropagatesToPrometheus(t *testing.T) {
 
 	updatedMS := &stack.MonitoringStack{}
 	f.GetResourceWithRetry(t, ms.Name, ms.Namespace, updatedMS)
-	updatedMS.Spec.ResourceSelector = nil
-	err = f.K8sClient.Update(context.Background(), updatedMS)
+	err = f.UpdateWithRetry(t, updatedMS, framework.SetResourceSelector(nil))
 	assert.NilError(t, err, "failed to patch monitoring stack with nil resource selector")
 
 	prometheus := monv1.Prometheus{}
@@ -392,13 +391,8 @@ func singlePrometheusReplicaHasNoPDB(t *testing.T) {
 	pdbName := ms.Name + "-prometheus"
 	f.AssertResourceEventuallyExists(pdbName, ms.Namespace, &pdb)(t)
 
-	// Update replica count to 1 and assert that pdb is removed
-	key := types.NamespacedName{Name: ms.Name, Namespace: ms.Namespace}
-	err = f.K8sClient.Get(context.Background(), key, ms)
-	assert.NilError(t, err, "failed to get a monitoring stack")
-
-	ms.Spec.PrometheusConfig.Replicas = intPtr(1)
-	err = f.K8sClient.Update(context.Background(), ms)
+	// Update replica count to 1
+	err = f.UpdateWithRetry(t, ms, framework.SetPrometheusReplicas(1))
 	assert.NilError(t, err, "failed to update monitoring stack")
 
 	// ensure there is no pdb
@@ -476,10 +470,8 @@ func assertAlertmanagerDeployedAndRemoved(t *testing.T) {
 	key := types.NamespacedName{Name: ms.Name, Namespace: ms.Namespace}
 	err := f.K8sClient.Get(context.Background(), key, &am)
 	assert.NilError(t, err)
-
-	updatedMS.Spec.AlertmanagerConfig.Disabled = true
-	err = f.K8sClient.Update(context.Background(), &updatedMS)
-	assert.NilError(t, err)
+	err = f.UpdateWithRetry(t, &updatedMS, framework.SetAlertmanagerDisabled(true))
+	assert.NilError(t, err, "failed to update monitoring stack to disable alertmanager")
 
 	f.AssertAlertmanagerAbsent(t, updatedMS.Name, updatedMS.Namespace)
 }
@@ -576,13 +568,8 @@ func prometheusScaleDown(t *testing.T) {
 
 	assert.Equal(t, prom.Status.Replicas, int32(1))
 
+	err = f.UpdateWithRetry(t, ms, framework.SetPrometheusReplicas(0))
 	key := types.NamespacedName{Name: ms.Name, Namespace: ms.Namespace}
-	err = f.K8sClient.Get(context.Background(), key, ms)
-	assert.NilError(t, err, "failed to get a monitoring stack")
-
-	numOfRep = 0
-	ms.Spec.PrometheusConfig.Replicas = &numOfRep
-	err = f.K8sClient.Update(context.Background(), ms)
 	assert.NilError(t, err, "failed to update a monitoring stack")
 	err = wait.PollUntilContextTimeout(context.Background(), 5*time.Second, framework.DefaultTestTimeout, true, func(ctx context.Context) (bool, error) {
 		if err := f.K8sClient.Get(context.Background(), key, &prom); errors.IsNotFound(err) {
