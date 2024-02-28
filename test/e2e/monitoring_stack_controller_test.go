@@ -392,7 +392,7 @@ func singlePrometheusReplicaHasNoPDB(t *testing.T) {
 	f.AssertResourceEventuallyExists(pdbName, ms.Namespace, &pdb)(t)
 
 	// Update replica count to 1
-	err = f.UpdateWithRetry(t, ms, framework.SetPrometheusReplicas(intPtr(1)))
+	err = f.UpdateWithRetry(t, ms, framework.SetPrometheusReplicas(1))
 	assert.NilError(t, err, "failed to update monitoring stack")
 
 	// ensure there is no pdb
@@ -568,7 +568,7 @@ func prometheusScaleDown(t *testing.T) {
 
 	assert.Equal(t, prom.Status.Replicas, int32(1))
 
-	err = f.UpdateWithRetry(t, ms, framework.SetPrometheusReplicas(intPtr(0)))
+	err = f.UpdateWithRetry(t, ms, framework.SetPrometheusReplicas(0))
 	key := types.NamespacedName{Name: ms.Name, Namespace: ms.Namespace}
 	assert.NilError(t, err, "failed to update a monitoring stack")
 	err = wait.PollUntilContextTimeout(context.Background(), 5*time.Second, framework.DefaultTestTimeout, true, func(ctx context.Context) (bool, error) {

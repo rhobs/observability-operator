@@ -11,26 +11,28 @@ import (
 	"k8s.io/client-go/util/retry"
 )
 
-type StackFn func(monitoringStack *stack.MonitoringStack)
+type MonitoringStackConfig func(monitoringStack *stack.MonitoringStack)
 
-func SetPrometheusReplicas(replicas *int32) StackFn {
+func SetPrometheusReplicas(replicas int32) MonitoringStackConfig {
 	return func(ms *stack.MonitoringStack) {
-		ms.Spec.PrometheusConfig.Replicas = replicas
+		ms.Spec.PrometheusConfig.Replicas = &replicas
 	}
 }
-func SetResourceSelector(resourceSelector *v1.LabelSelector) StackFn {
+
+func SetResourceSelector(resourceSelector *v1.LabelSelector) MonitoringStackConfig {
 	return func(ms *stack.MonitoringStack) {
 		ms.Spec.ResourceSelector = resourceSelector
 	}
 }
-func SetAlertmanagerDisabled(disabled bool) StackFn {
+
+func SetAlertmanagerDisabled(disabled bool) MonitoringStackConfig {
 	return func(ms *stack.MonitoringStack) {
 		ms.Spec.AlertmanagerConfig.Disabled = disabled
 	}
 }
 
-// Update monitoringstack with retry
-func (f *Framework) UpdateWithRetry(t *testing.T, ms *stack.MonitoringStack, fns ...StackFn) error {
+// UpdateWithRetry updates monitoringstack with retry
+func (f *Framework) UpdateWithRetry(t *testing.T, ms *stack.MonitoringStack, fns ...MonitoringStackConfig) error {
 	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		key := types.NamespacedName{Name: ms.Name, Namespace: ms.Namespace}
 		err := f.K8sClient.Get(context.Background(), key, ms)
