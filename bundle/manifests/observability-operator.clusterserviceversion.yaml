@@ -55,6 +55,10 @@ metadata:
     repository: https://github.com/rhobs/observability-operator
   name: observability-operator.v0.0.30
   namespace: placeholder
+  labels:
+    operatorframework.io/arch.amd64: supported
+    operatorframework.io/arch.ppc64le: supported
+    operatorframework.io/os.linux: supported
 spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
