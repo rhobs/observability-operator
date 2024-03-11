@@ -144,7 +144,7 @@ func (f *Framework) GetResourceWithRetry(t *testing.T, name, namespace string, o
 
 func assertSamples(t *testing.T, metrics []byte, expected map[string]float64) {
 	sDecoder := expfmt.SampleDecoder{
-		Dec: expfmt.NewDecoder(bytes.NewReader(metrics), expfmt.FmtText),
+		Dec: expfmt.NewDecoder(bytes.NewReader(metrics), expfmt.NewFormat(expfmt.FormatType(expfmt.TypeTextPlain))),
 	}
 
 	samples := model.Vector{}
