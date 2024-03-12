@@ -4,3 +4,4 @@ kind: Kustomization
 resources:
   - monitoring.rhobs_monitoringstacks.yaml
   - monitoring.rhobs_thanosqueriers.yaml
+  - observabilityui.rhobs_observabilityuiplugins.yaml

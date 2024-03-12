@@ -7,6 +7,20 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - configmaps
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - endpoints
   - pods
   - services
@@ -34,6 +48,26 @@ rules:
   verbs:
   - create
   - delete
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - config.openshift.io
+  resources:
+  - clusterversions
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - console.openshift.io
+  resources:
+  - consoleplugins
+  verbs:
+  - create
+  - delete
+  - get
   - list
   - patch
   - update
@@ -133,6 +167,42 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - observabilityui.rhobs
+  resources:
+  - observabilityuiplugins
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - observabilityui.rhobs
+  resources:
+  - observabilityuiplugins/finalizers
+  - observabilityuiplugins/status
+  verbs:
+  - get
+  - update
+- apiGroups:
+  - observabilityui.rhobs
+  resources:
+  - observabilityuiplugins/status
+  verbs:
+  - get
+  - update
+- apiGroups:
+  - operator.openshift.io
+  resources:
+  - consoles
+  verbs:
+  - get
+  - list
+  - patch
+  - watch
 - apiGroups:
   - policy
   resources:

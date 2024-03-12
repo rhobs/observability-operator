@@ -3,6 +3,7 @@
 Packages:
 
 - [monitoring.rhobs/v1alpha1](#monitoringrhobsv1alpha1)
+- [observabilityui.rhobs/v1alpha1](#observabilityuirhobsv1alpha1)
 
 # monitoring.rhobs/v1alpha1
 
@@ -2762,6 +2763,193 @@ list restricting them.<br/>
         <td>[]string</td>
         <td>
           List of namespace names.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+# observabilityui.rhobs/v1alpha1
+
+Resource Types:
+
+- [ObservabilityUIPlugin](#observabilityuiplugin)
+
+
+
+
+## ObservabilityUIPlugin
+<sup><sup>[↩ Parent](#observabilityuirhobsv1alpha1 )</sup></sup>
+
+
+
+
+
+
+ObservabilityUIPlugin defines an observability console plugin
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+      <td><b>apiVersion</b></td>
+      <td>string</td>
+      <td>observabilityui.rhobs/v1alpha1</td>
+      <td>true</td>
+      </tr>
+      <tr>
+      <td><b>kind</b></td>
+      <td>string</td>
+      <td>ObservabilityUIPlugin</td>
+      <td>true</td>
+      </tr>
+      <tr>
+      <td><b><a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta">metadata</a></b></td>
+      <td>object</td>
+      <td>Refer to the Kubernetes API documentation for the fields of the `metadata` field.</td>
+      <td>true</td>
+      </tr><tr>
+        <td><b><a href="#observabilityuipluginspec">spec</a></b></td>
+        <td>object</td>
+        <td>
+          Observabilityuipluginpec is the specification for desired state of ObservabilityUIPlugin.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#observabilityuipluginstatus">status</a></b></td>
+        <td>object</td>
+        <td>
+          Observabilityuiplugintatus defines the observed state of ObservabilityUIPlugin. It should always be reconstructable from the state of the cluster and/or outside world.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ObservabilityUIPlugin.spec
+<sup><sup>[↩ Parent](#observabilityuiplugin)</sup></sup>
+
+
+
+Observabilityuipluginpec is the specification for desired state of ObservabilityUIPlugin.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>type</b></td>
+        <td>enum</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Enum</i>: dashboards<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ObservabilityUIPlugin.status
+<sup><sup>[↩ Parent](#observabilityuiplugin)</sup></sup>
+
+
+
+Observabilityuiplugintatus defines the observed state of ObservabilityUIPlugin. It should always be reconstructable from the state of the cluster and/or outside world.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#observabilityuipluginstatusconditionsindex">conditions</a></b></td>
+        <td>[]object</td>
+        <td>
+          Conditions provide status information about the plugin.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ObservabilityUIPlugin.status.conditions[index]
+<sup><sup>[↩ Parent](#observabilityuipluginstatus)</sup></sup>
+
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>lastTransitionTime</b></td>
+        <td>string</td>
+        <td>
+          lastTransitionTime is the last time the condition transitioned from one status to another. This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.<br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>message</b></td>
+        <td>string</td>
+        <td>
+          message is a human readable message indicating details about the transition. This may be an empty string.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>reason</b></td>
+        <td>string</td>
+        <td>
+          reason contains a programmatic identifier indicating the reason for the condition's last transition. Producers of specific condition types may define expected values and meanings for this field, and whether the values are considered a guaranteed API. The value should be a CamelCase string. This field may not be empty.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>status</b></td>
+        <td>enum</td>
+        <td>
+          status of the condition<br/>
+          <br/>
+            <i>Enum</i>: True, False, Unknown, Degraded<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          type of condition in CamelCase or in foo.example.com/CamelCase. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>observedGeneration</b></td>
+        <td>integer</td>
+        <td>
+          observedGeneration represents the .metadata.generation that the condition was set based upon. For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date with respect to the current state of the instance.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+            <i>Minimum</i>: 0<br/>
         </td>
         <td>false</td>
       </tr></tbody>

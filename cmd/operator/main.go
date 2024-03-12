@@ -36,9 +36,10 @@ import (
 // prometheus-operator. For thanos we use the default version from
 // prometheus-operator.
 var defaultImages = map[string]string{
-	"prometheus":   "",
-	"alertmanager": "",
-	"thanos":       obopo.DefaultThanosImage,
+	"prometheus":    "",
+	"alertmanager":  "",
+	"thanos":        obopo.DefaultThanosImage,
+	"ui-dashboards": "quay.io/openshift-observability-ui/console-dashboards-plugin:v0.1.0",
 }
 
 func imagesUsed() []string {
@@ -112,6 +113,7 @@ func main() {
 			operator.WithAlertmanagerImage(imgMap["alertmanager"]),
 			operator.WithThanosSidecarImage(imgMap["thanos"]),
 			operator.WithThanosQuerierImage(imgMap["thanos"]),
+			operator.WithUIPluginImages(imgMap),
 		))
 	if err != nil {
 		setupLog.Error(err, "cannot create a new operator")
