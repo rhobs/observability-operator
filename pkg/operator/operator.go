@@ -6,6 +6,7 @@ import (
 
 	stackctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/monitoring-stack"
 	tqctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/thanos-querier"
+	obsuictrl "github.com/rhobs/observability-operator/pkg/controllers/observability-ui/observability-ui-plugin"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -27,12 +28,13 @@ type Operator struct {
 }
 
 type OperatorConfiguration struct {
-	MetricsAddr     string
-	HealthProbeAddr string
-	Prometheus      stackctrl.PrometheusConfiguration
-	Alertmanager    stackctrl.AlertmanagerConfiguration
-	ThanosSidecar   stackctrl.ThanosConfiguration
-	ThanosQuerier   tqctrl.ThanosConfiguration
+	MetricsAddr            string
+	HealthProbeAddr        string
+	Prometheus             stackctrl.PrometheusConfiguration
+	Alertmanager           stackctrl.AlertmanagerConfiguration
+	ThanosSidecar          stackctrl.ThanosConfiguration
+	ThanosQuerier          tqctrl.ThanosConfiguration
+	ObservabilityUIPlugins obsuictrl.ObservabilityUIPluginsConfiguration
 }
 
 func WithPrometheusImage(image string) func(*OperatorConfiguration) {
@@ -71,6 +73,12 @@ func WithHealthProbeAddr(addr string) func(*OperatorConfiguration) {
 	}
 }
 
+func WithUIPluginImages(images map[string]string) func(*OperatorConfiguration) {
+	return func(oc *OperatorConfiguration) {
+		oc.ObservabilityUIPlugins.Images = images
+	}
+}
+
 func NewOperatorConfiguration(opts ...func(*OperatorConfiguration)) *OperatorConfiguration {
 	cfg := &OperatorConfiguration{}
 	for _, o := range opts {
@@ -102,6 +110,10 @@ func New(cfg *OperatorConfiguration) (*Operator, error) {
 
 	if err := tqctrl.RegisterWithManager(mgr, tqctrl.Options{Thanos: cfg.ThanosQuerier}); err != nil {
 		return nil, fmt.Errorf("unable to register the thanos querier controller with the manager: %w", err)
+	}
+
+	if err := obsuictrl.RegisterWithManager(mgr, obsuictrl.Options{PluginsConf: cfg.ObservabilityUIPlugins}); err != nil {
+		return nil, fmt.Errorf("unable to register observability-ui-plugin controller: %w", err)
 	}
 
 	if err := mgr.AddHealthzCheck("health probe", healthz.Ping); err != nil {
