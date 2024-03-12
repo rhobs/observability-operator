@@ -56,6 +56,7 @@ entries:
   replaces: observability-operator.v0.0.27
 - name: observability-operator.v0.0.28
   replaces: observability-operator.v0.0.28-rc
+### CANDIDATE_CHANNEL_MARKER ###
 name: candidate
 package: observability-operator
 schema: olm.channel
@@ -318,6 +319,7 @@ entries:
   replaces: observability-operator.v0.0.29-240118173426
 - name: observability-operator.v0.0.29-240122104019
   replaces: observability-operator.v0.0.29-240122093649
+### DEVELOPMENT_CHANNEL_MARKER ###
 name: development
 package: observability-operator
 schema: olm.channel
@@ -350,6 +352,7 @@ entries:
   replaces: observability-operator.v0.0.25
 - name: observability-operator.v0.0.28
   replaces: observability-operator.v0.0.27
+### STABLE_CHANNEL_MARKER ###
 name: stable
 package: observability-operator
 schema: olm.channel
