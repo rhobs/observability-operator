@@ -22,6 +22,7 @@ declare SHOW_USAGE=false
 declare LOGS_DIR="tmp/e2e"
 declare OPERATORS_NS="operators"
 declare TEST_TIMEOUT="15m"
+declare RUN_REGEX=""
 
 cleanup() {
 	info "Cleaning up ..."
@@ -154,7 +155,7 @@ run_e2e() {
 	watch_obo_errors "$obo_error_log" &
 
 	local ret=0
-	go test -v -failfast -timeout $TEST_TIMEOUT ./test/e2e/... --retain=true | tee "$LOGS_DIR/e2e.log" || ret=1
+	go test -v -failfast -timeout $TEST_TIMEOUT ./test/e2e/... -run "$RUN_REGEX" -count 1 | tee "$LOGS_DIR/e2e.log" || ret=1
 
 	# terminte both log_events
 	{ jobs -p | xargs -I {} -- pkill -TERM -P {}; } || true
@@ -203,6 +204,11 @@ parse_args() {
 			OPERATORS_NS=$1
 			shift
 			;;
+		--run)
+			shift
+			RUN_REGEX=$1
+			shift
+			;;
 		*) return 1 ;; # show usage on everything else
 		esac
 	done
@@ -227,7 +233,9 @@ print_usage() {
 		  --no-builds      skip building operator images, useful when operator image is already
 		                   built and pushed
 		  --ns NAMESPACE   namespace to deploy operators (default: $OPERATORS_NS)
-		                   For running against openshift use --ns openshift-operators
+		                   for running against openshift use --ns openshift-operators
+                  --run REGEX      regex to limit which tests are run. See go help testflag -run entry
+                                   for details
 
 
 	EOF_HELP
@@ -337,6 +345,7 @@ print_config() {
 		  Skip Deploy: $NO_DEPLOY
 		  Operator namespace: $OPERATORS_NS
 		  Logs directory: $LOGS_DIR
+                  Run regex: $RUN_REGEX
 
 	EOF
 	line 50

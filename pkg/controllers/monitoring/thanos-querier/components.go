@@ -26,8 +26,6 @@ func thanosComponentReconcilers(thanos *msoapi.ThanosQuerier, sidecarUrls []stri
 func newThanosQuerierDeployment(name string, spec *msoapi.ThanosQuerier, sidecarUrls []string, thanosCfg ThanosConfiguration) *appsv1.Deployment {
 	args := []string{
 		"query",
-		"--grpc-address=127.0.0.1:10901",
-		"--http-address=127.0.0.1:9090",
 		"--log.format=logfmt",
 		"--query.replica-label=prometheus_replica",
 		"--query.auto-downsampling",
@@ -71,7 +69,7 @@ func newThanosQuerierDeployment(name string, spec *msoapi.ThanosQuerier, sidecar
 							Image: thanosCfg.Image,
 							Ports: []corev1.ContainerPort{
 								{
-									ContainerPort: 9090,
+									ContainerPort: 10902,
 									Name:          "metrics",
 								},
 							},
@@ -116,7 +114,7 @@ func newService(name string, namespace string) *corev1.Service {
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
 				{
-					Port: 9090,
+					Port: 10902,
 					Name: "http",
 				},
 			},

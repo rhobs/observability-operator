@@ -9,7 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	"github.com/pkg/errors"
+	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 
@@ -37,7 +38,7 @@ type Framework struct {
 func (f *Framework) StartPortForward(podName string, ns string, port string, stopChan chan struct{}) error {
 	roundTripper, upgrader, err := spdy.RoundTripperFor(f.Config)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "error creating RoundTripper")
 	}
 
 	path := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s/portforward", ns, podName)
@@ -49,7 +50,7 @@ func (f *Framework) StartPortForward(podName string, ns string, port string, sto
 	out, errOut := new(bytes.Buffer), new(bytes.Buffer)
 	forwarder, err := portforward.New(dialer, []string{port}, stopChan, readyChan, out, errOut)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to create portforward")
 	}
 
 	go func() {
@@ -131,9 +132,9 @@ func (f *Framework) Evict(pod *corev1.Pod, gracePeriodSeconds int64) error {
 		GracePeriodSeconds: &gracePeriodSeconds,
 	}
 
-	eviction := &policyv1beta1.Eviction{
+	eviction := &policyv1.Eviction{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: policyv1beta1.SchemeGroupVersion.String(),
+			APIVersion: policyv1.SchemeGroupVersion.String(),
 			Kind:       "Eviction",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -147,7 +148,7 @@ func (f *Framework) Evict(pod *corev1.Pod, gracePeriodSeconds int64) error {
 	if err != nil {
 		return err
 	}
-	return c.PolicyV1beta1().Evictions(pod.Namespace).Evict(context.Background(), eviction)
+	return c.PolicyV1().Evictions(pod.Namespace).Evict(context.Background(), eviction)
 }
 
 func (f *Framework) CleanUp(t *testing.T, cleanupFunc func()) {
