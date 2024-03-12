@@ -17,7 +17,7 @@ OPERATOR_SDK = $(TOOLS_DIR)/operator-sdk
 OPERATOR_SDK_VERSION = v1.31.0
 
 OPM=$(TOOLS_DIR)/opm
-OPM_VERSION = v1.26.1
+OPM_VERSION = v1.36.0
 
 GOLANGCI_LINT=$(TOOLS_DIR)/golangci-lint
 GOLANGCI_LINT_VERSION = v1.52.2
@@ -56,7 +56,7 @@ JSONNET_VENDOR = jsonnet/vendor
 JSONNETFMT_ARGS = -n 2 --max-blank-lines 2 --string-style s --comment-style s
 
 SHELLCHECK = $(TOOLS_DIR)/shellcheck
-SHELLCHECK_VERSION = 0.9.0
+SHELLCHECK_VERSION = 0.10.0
 
 $(TOOLS_DIR):
 	@mkdir -p $(TOOLS_DIR)

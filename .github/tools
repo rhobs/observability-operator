@@ -5,7 +5,7 @@ controller-gen v0.11.3
 kustomize v4.5.2
 oc v4.8.11
 operator-sdk v1.31.0
-opm v1.26.1
+opm v1.36.0
 promq v0.0.1
 crdoc v0.5.2
 jsonnet v0.17.0
@@ -13,4 +13,4 @@ jsonnetfmt v0.17.0
 jsonnet-lint v0.17.0
 jb v0.4.0
 gojsontoyaml 0.0.1
-shellcheck 0.9.0
+shellcheck 0.10.0
