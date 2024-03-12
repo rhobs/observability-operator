@@ -56,7 +56,7 @@ JSONNET_VENDOR = jsonnet/vendor
 JSONNETFMT_ARGS = -n 2 --max-blank-lines 2 --string-style s --comment-style s
 
 SHELLCHECK = $(TOOLS_DIR)/shellcheck
-SHELLCHECK_VERSION = 0.9.0
+SHELLCHECK_VERSION = 0.10.0
 
 $(TOOLS_DIR):
 	@mkdir -p $(TOOLS_DIR)
