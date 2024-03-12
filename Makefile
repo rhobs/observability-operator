@@ -162,6 +162,9 @@ test-e2e:
 # BUNDLE_IMG defines the image:tag used for the bundle.
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
 BUNDLE_IMG ?= $(IMAGE_BASE)-bundle:$(VERSION)
+# The tag is used as latest since it allows a bundle image to point to
+# a single image which keeps updating there by allowing auto upgrades
+BUNDLE_IMG_LATEST ?= $(IMAGE_BASE)-bundle:latest
 
 # CHANNELS define the bundle channels used in the bundle.
 # To re-generate a bundle for other specific channels without changing the standard setup, you can:
@@ -204,10 +207,14 @@ bundle: $(KUSTOMIZE) $(OPERATOR_SDK) generate
 .PHONY: bundle-image
 bundle-image: bundle ## Build the bundle image.
 	$(CONTAINER_RUNTIME) build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
+	# tag the catalog img:version as latest so that continious release
+	# is possible by refering to latest tag instead of a version
+	$(CONTAINER_RUNTIME) tag $(BUNDLE_IMG) $(BUNDLE_IMG_LATEST)
 
 .PHONY: bundle-push
 bundle-push: ## Build the bundle image.
 	$(CONTAINER_RUNTIME) push $(PUSH_OPTIONS) $(BUNDLE_IMG)
+	$(CONTAINER_RUNTIME) push $(PUSH_OPTIONS) $(BUNDLE_IMG_LATEST)
 
 # The image tag given to the resulting catalog image
 CATALOG_IMG_BASE ?= $(IMAGE_BASE)-catalog
