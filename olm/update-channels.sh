@@ -33,7 +33,7 @@ update_channel() {
   echo " -> found previous entry: $previous_entry"
 
  sed -e \
-   "s|^\($marker\)|  - name: $bundle\n    replaces: $previous_entry\n\1|" \
+   "s|^\($marker\)|- name: $bundle\n  replaces: $previous_entry\n\1|" \
    -i "$CATALOG_INDEX_FILE"
 
 }
