@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.1.0](https://github.com/rhobs/monitoring-stack-operator/commit/) (2024-03-13)
+
+
+### Bug Fixes
+
+* use thanos default port in service and containerPort ([#414](https://github.com/rhobs/monitoring-stack-operator/issues/414)) ([2d6c82b](https://github.com/rhobs/monitoring-stack-operator/commit/2d6c82b9ff44a197a6ce06d2001b32570b61f376))
+
 ### [0.0.30](https://github.com/rhobs/monitoring-stack-operator/commit/) (2024-01-23)
 
 
