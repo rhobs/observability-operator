@@ -38,7 +38,7 @@ spec:
             properties:
               type:
                 enum:
-                - dashboards
+                - Dashboards
                 type: string
             required:
             - type

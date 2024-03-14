@@ -73,9 +73,10 @@ func validateImages(images *k8sflag.MapStringString) (map[string]string, error) 
 
 func main() {
 	var (
-		namespace       string
-		metricsAddr     string
-		healthProbeAddr string
+		namespace        string
+		metricsAddr      string
+		healthProbeAddr  string
+		openShiftEnabled bool
 
 		setupLog = ctrl.Log.WithName("setup")
 	)
@@ -85,6 +86,8 @@ func main() {
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&healthProbeAddr, "health-probe-bind-address", ":8081", "The address the health probe endpoint binds to.")
 	flag.Var(images, "images", fmt.Sprintf("Full images refs to use for containers managed by the operator. E.g thanos=quay.io/thanos/thanos:v0.33.0. Images used are %v", imagesUsed()))
+	flag.BoolVar(&openShiftEnabled, "openshift.enabled", true, "Enable OpenShift specific features such as Console Plugins.")
+
 	opts := zap.Options{
 		Development: true,
 		TimeEncoder: zapcore.RFC3339TimeEncoder,
@@ -114,6 +117,11 @@ func main() {
 			operator.WithThanosSidecarImage(imgMap["thanos"]),
 			operator.WithThanosQuerierImage(imgMap["thanos"]),
 			operator.WithUIPluginImages(imgMap),
+			operator.WithFeatureGates(operator.FeatureGates{
+				OpenShift: operator.OpenShiftFeatureGates{
+					Enabled: openShiftEnabled,
+				},
+			}),
 		))
 	if err != nil {
 		setupLog.Error(err, "cannot create a new operator")

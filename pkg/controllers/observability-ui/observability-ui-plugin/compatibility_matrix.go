@@ -1,6 +1,7 @@
 package observability_ui_plugin
 
 import (
+	"fmt"
 	"strings"
 
 	"golang.org/x/mod/semver"
@@ -26,27 +27,27 @@ var compatibilityMatrix = []CompatibilityEntry{
 	},
 }
 
-func getImageKeyForPluginType(pluginType obsui.UIPluginType, clusterVersion string) string {
+func getImageKeyForPluginType(pluginType obsui.UIPluginType, clusterVersion string) (string, error) {
 	if !strings.HasPrefix(clusterVersion, "v") {
 		clusterVersion = "v" + clusterVersion
 	}
 
 	// No console plugins are supported before 4.11
 	if semver.Compare(clusterVersion, "v4.11") < 0 {
-		return ""
+		return "", fmt.Errorf("dynamic pluings not supported before 4.11")
 	}
 
 	for _, entry := range compatibilityMatrix {
 		if entry.PluginType == pluginType {
 			if entry.MaxClusterVersion == "" && semver.Compare(clusterVersion, entry.MinClusterVersion) >= 0 {
-				return entry.ImageKey
+				return entry.ImageKey, nil
 			}
 
 			if semver.Compare(clusterVersion, entry.MinClusterVersion) >= 0 && semver.Compare(clusterVersion, entry.MaxClusterVersion) < 0 {
-				return entry.ImageKey
+				return entry.ImageKey, nil
 			}
 		}
 	}
 
-	return ""
+	return "", fmt.Errorf("no compatible image found for plugin type %s and cluster version %s", pluginType, clusterVersion)
 }

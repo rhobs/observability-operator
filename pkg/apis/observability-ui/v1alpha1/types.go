@@ -31,17 +31,17 @@ type ObservabilityUIPluginList struct {
 	Items           []ObservabilityUIPlugin `json:"items"`
 }
 
+// +kubebuilder:validation:Enum=Dashboards
 type UIPluginType string
 
 const (
-	TypeDashboards UIPluginType = "dashboards"
+	TypeDashboards UIPluginType = "Dashboards"
 )
 
 // Observabilityuipluginpec is the specification for desired state of ObservabilityUIPlugin.
 type ObservabilityUIPluginSpec struct {
 	// +required
 	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Enum=dashboards
 	Type UIPluginType `json:"type"`
 }
 

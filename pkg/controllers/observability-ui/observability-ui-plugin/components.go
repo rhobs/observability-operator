@@ -13,6 +13,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 )
 
 func pluginComponentReconcilers(plugin *obsui.ObservabilityUIPlugin, pluginInfo ObservabilityUIPluginInfo) []reconciler.Reconciler {
@@ -85,7 +86,7 @@ func newDeployment(info ObservabilityUIPluginInfo, namespace string) *appsv1.Dep
 			Labels:    componentLabels(info.Name),
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: func(i int32) *int32 { return &i }(1),
+			Replicas: ptr.To(int32(1)),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app.kubernetes.io/instance": info.Name,
@@ -149,7 +150,7 @@ func newDeployment(info ObservabilityUIPluginInfo, namespace string) *appsv1.Dep
 					},
 				},
 			},
-			ProgressDeadlineSeconds: func(i int32) *int32 { return &i }(300),
+			ProgressDeadlineSeconds: ptr.To(int32(300)),
 		},
 	}
 

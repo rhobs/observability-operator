@@ -2853,7 +2853,7 @@ Observabilityuipluginpec is the specification for desired state of Observability
         <td>
           <br/>
           <br/>
-            <i>Enum</i>: dashboards<br/>
+            <i>Enum</i>: Dashboards<br/>
         </td>
         <td>true</td>
       </tr></tbody>

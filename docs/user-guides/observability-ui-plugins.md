@@ -4,7 +4,7 @@ Using the Observability UI, you can install and manage plugins that extend the o
 
 ## Plugins
 
-- [dashboards](#dashboards): Add enhanced dashboards to the OpenShift web console. This plugin allows you to add other prometheus datasources present in the cluster, apart from the in-cluster one, to the default dashboards.
+- [dashboards](#dashboards): Add enhanced dashboards to the OpenShift web console. This plugin allows you to add other Prometheus datasources present in the cluster, apart from the in-cluster one, to the default dashboards.
 
 ### Dashboards
 

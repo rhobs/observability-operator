@@ -14,7 +14,7 @@ import (
 	rhobsuiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/observability-ui/v1alpha1"
 )
 
-func NewScheme() *runtime.Scheme {
+func NewScheme(cfg OperatorConfiguration) *runtime.Scheme {
 	scheme := runtime.NewScheme()
 
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
@@ -22,8 +22,11 @@ func NewScheme() *runtime.Scheme {
 	utilruntime.Must(apiextensionsv1.AddToScheme(scheme))
 	utilruntime.Must(monitoringv1.AddToScheme(scheme))
 	utilruntime.Must(rhobsuiv1alpha1.AddToScheme(scheme))
-	utilruntime.Must(osv1alpha1.AddToScheme(scheme))
-	utilruntime.Must(operatorv1.AddToScheme(scheme))
+
+	if cfg.FeatureGates.OpenShift.Enabled {
+		utilruntime.Must(osv1alpha1.AddToScheme(scheme))
+		utilruntime.Must(operatorv1.AddToScheme(scheme))
+	}
 
 	return scheme
 }

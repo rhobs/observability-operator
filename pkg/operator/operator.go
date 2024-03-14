@@ -28,6 +28,14 @@ type Operator struct {
 	manager manager.Manager
 }
 
+type OpenShiftFeatureGates struct {
+	Enabled bool `json:"enabled,omitempty"`
+}
+
+type FeatureGates struct {
+	OpenShift OpenShiftFeatureGates `json:"openshift,omitempty"`
+}
+
 type OperatorConfiguration struct {
 	MetricsAddr            string
 	HealthProbeAddr        string
@@ -36,6 +44,7 @@ type OperatorConfiguration struct {
 	ThanosSidecar          stackctrl.ThanosConfiguration
 	ThanosQuerier          tqctrl.ThanosConfiguration
 	ObservabilityUIPlugins obsuictrl.ObservabilityUIPluginsConfiguration
+	FeatureGates           FeatureGates
 }
 
 func WithPrometheusImage(image string) func(*OperatorConfiguration) {
@@ -80,6 +89,12 @@ func WithUIPluginImages(images map[string]string) func(*OperatorConfiguration) {
 	}
 }
 
+func WithFeatureGates(featureGates FeatureGates) func(*OperatorConfiguration) {
+	return func(oc *OperatorConfiguration) {
+		oc.FeatureGates = featureGates
+	}
+}
+
 func NewOperatorConfiguration(opts ...func(*OperatorConfiguration)) *OperatorConfiguration {
 	cfg := &OperatorConfiguration{}
 	for _, o := range opts {
@@ -113,8 +128,10 @@ func New(cfg *OperatorConfiguration) (*Operator, error) {
 		return nil, fmt.Errorf("unable to register the thanos querier controller with the manager: %w", err)
 	}
 
-	if err := obsuictrl.RegisterWithManager(mgr, obsuictrl.Options{PluginsConf: cfg.ObservabilityUIPlugins}); err != nil {
-		return nil, fmt.Errorf("unable to register observability-ui-plugin controller: %w", err)
+	if cfg.FeatureGates.OpenShift.Enabled {
+		if err := obsuictrl.RegisterWithManager(mgr, obsuictrl.Options{PluginsConf: cfg.ObservabilityUIPlugins}); err != nil {
+			return nil, fmt.Errorf("unable to register observability-ui-plugin controller: %w", err)
+		}
 	}
 
 	if err := mgr.AddHealthzCheck("health probe", healthz.Ping); err != nil {

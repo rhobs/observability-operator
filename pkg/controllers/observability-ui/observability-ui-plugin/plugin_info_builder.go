@@ -21,10 +21,10 @@ type ObservabilityUIPluginInfo struct {
 }
 
 func PluginInfoBuilder(plugin *obsui.ObservabilityUIPlugin, pluginConf ObservabilityUIPluginsConfiguration, clusterVersion string) (*ObservabilityUIPluginInfo, error) {
-	imageKey := getImageKeyForPluginType(plugin.Spec.Type, clusterVersion)
+	imageKey, err := getImageKeyForPluginType(plugin.Spec.Type, clusterVersion)
 
-	if imageKey == "" {
-		return nil, fmt.Errorf("no compatible image found for plugin type %s and cluster version %s", plugin.Spec.Type, clusterVersion)
+	if err != nil {
+		return nil, err
 	}
 
 	image := pluginConf.Images[imageKey]
@@ -36,7 +36,7 @@ func PluginInfoBuilder(plugin *obsui.ObservabilityUIPlugin, pluginConf Observabi
 	name := "observability-ui-" + plugin.Name
 
 	switch plugin.Spec.Type {
-	case "dashboards":
+	case obsui.TypeDashboards:
 		{
 			readerRoleName := plugin.Name + "-datasource-reader"
 
