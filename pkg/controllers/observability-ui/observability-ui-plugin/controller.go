@@ -12,8 +12,10 @@ import (
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metaerrors "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 
@@ -103,8 +105,21 @@ func getClusterVersion(k8client client.Reader) (*configv1.ClusterVersion, error)
 	return clusterVersion, nil
 }
 
+func consolePluginCapabilityEnabled(k8client client.Reader, name types.NamespacedName) bool {
+	current := &osv1alpha1.ConsolePlugin{}
+	err := k8client.Get(context.TODO(), name, current)
+
+	return err == nil || !metaerrors.IsNoMatchError(err)
+}
+
 func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := rm.logger.WithValues("plugin", req.NamespacedName)
+
+	if !consolePluginCapabilityEnabled(rm.k8sClient, req.NamespacedName) {
+		logger.Info("Cluster console plugin not supported. Skipping observability UI plugin reconciliation")
+		return ctrl.Result{}, nil
+	}
+
 	logger.Info("Reconciling observability UI plugin")
 
 	plugin, err := rm.getUIPlugin(ctx, req)
