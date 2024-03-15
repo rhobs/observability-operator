@@ -37,6 +37,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
+	"github.com/rhobs/observability-operator/pkg/status"
 
 	"github.com/go-logr/logr"
 	monv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
@@ -188,7 +189,12 @@ func (rm resourceManager) updateStatus(ctx context.Context, req ctrl.Request, ms
 		logger.Info("Failed to get prometheus object", "err", err)
 		return ctrl.Result{RequeueAfter: 2 * time.Second}
 	}
-	ms.Status.Conditions = updateConditions(ms, prom, recError)
+
+	ms.Status.Conditions, err = status.UpdateConditions(ms, operands, recError)
+	if err != nil {
+		logger.Info("Failed to update status conditions", "err", err)
+		return ctrl.Result{RequeueAfter: 2 * time.Second}
+	}
 	err = rm.k8sClient.Status().Update(ctx, ms)
 	if err != nil {
 		logger.Info("Failed to update status", "err", err)
