@@ -177,6 +177,7 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 }
 
 func (rm resourceManager) updateStatus(ctx context.Context, req ctrl.Request, ms *stack.MonitoringStack, recError error) ctrl.Result {
+	var operands []status.Operand
 	var prom monv1.Prometheus
 	logger := rm.logger.WithValues("stack", req.NamespacedName)
 	key := client.ObjectKey{
@@ -187,6 +188,16 @@ func (rm resourceManager) updateStatus(ctx context.Context, req ctrl.Request, ms
 	if err != nil {
 		logger.Info("Failed to get prometheus object", "err", err)
 		return ctrl.Result{RequeueAfter: 2 * time.Second}
+	}
+	operands = append(operands, *status.NewOperand(&prom, true, true))
+	if !ms.Spec.AlertmanagerConfig.Disabled {
+		var am monv1.Alertmanager
+		err := rm.k8sClient.Get(ctx, key, &am)
+		if err != nil {
+			logger.Info("Failed to get alertmanager object", "err", err)
+			return ctrl.Result{RequeueAfter: 2 * time.Second}
+		}
+		operands = append(operands, *status.NewOperand(&am, false, true))
 	}
 
 	ms.Status.Conditions, err = status.UpdateConditions(ms, operands, recError)
