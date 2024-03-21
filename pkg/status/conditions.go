@@ -52,6 +52,40 @@ func UpdateConditions(stackObj client.Object, operands []Operand, recError error
 	}, nil
 }
 
+// updateResourceDiscovery updates the ResourceDiscoveryCondition based on the
+// ResourceSelector in the MonitorinStack spec. A ResourceSelector of nil causes
+// the condition to be false, any other value sets the condition to true
+func updateResourceDiscovery(stackObj client.Object) (*v1alpha1.Condition, error) {
+	unstrObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(stackObj)
+	if err != nil {
+		return nil, err
+	}
+	rs, ok, err := unstructured.NestedFieldCopy(unstrObj, "spec", "resourceSelector")
+	if err != nil {
+		return nil, err
+	}
+	if rs == nil || !ok {
+		return &v1alpha1.Condition{
+			Type:               v1alpha1.ResourceDiscoveryCondition,
+			Status:             v1alpha1.ConditionFalse,
+			Reason:             ResourceSelectorIsNil,
+			Message:            ResourceSelectorIsNilMessage,
+			LastTransitionTime: metav1.Now(),
+			ObservedGeneration: stackObj.GetGeneration(),
+		}, nil
+	} else {
+		return &v1alpha1.Condition{
+			Type:               v1alpha1.ResourceDiscoveryCondition,
+			Status:             v1alpha1.ConditionTrue,
+			Reason:             NoReason,
+			Message:            ResourceDiscoveryOnMessage,
+			LastTransitionTime: metav1.Now(),
+			ObservedGeneration: stackObj.GetGeneration(),
+		}, nil
+	}
+
+}
+
 // updateAvailable gets existing "Available" condition and updates its parameters
 // based on the operand "Available" condition
 func updateAvailable(conditions []v1alpha1.Condition, opr Operand, generation int64) v1alpha1.Condition {
