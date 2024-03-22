@@ -153,6 +153,27 @@ func (f *Framework) AssertStatefulsetReady(name, namespace string, fns ...Option
 	}
 }
 
+// AssertDeploymentReady asserts that a deployment has the desired number of pods running
+func (f *Framework) AssertDeploymentReady(name, namespace string, fns ...OptionFn) func(t *testing.T) {
+	option := AssertOption{
+		PollInterval: 5 * time.Second,
+		WaitTimeout:  DefaultTestTimeout,
+	}
+	for _, fn := range fns {
+		fn(&option)
+	}
+	return func(t *testing.T) {
+		key := types.NamespacedName{Name: name, Namespace: namespace}
+		if err := wait.PollUntilContextTimeout(context.Background(), option.PollInterval, option.WaitTimeout, true, func(ctx context.Context) (bool, error) {
+			deployment := &appsv1.Deployment{}
+			err := f.K8sClient.Get(context.Background(), key, deployment)
+			return err == nil && deployment.Status.ReadyReplicas == *deployment.Spec.Replicas, nil
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
 func (f *Framework) GetResourceWithRetry(t *testing.T, name, namespace string, obj client.Object) {
 	option := AssertOption{
 		PollInterval: 5 * time.Second,
