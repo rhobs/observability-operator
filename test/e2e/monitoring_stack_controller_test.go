@@ -85,6 +85,7 @@ func TestMonitoringStackController(t *testing.T) {
 		scenario: func(t *testing.T) {
 			stackName := "alerting"
 			assertAlertmanagerCreated(t, stackName)
+			f.AssertStatefulsetReady("alertmanager-"+stackName, e2eTestNamespace)
 			pods, err := f.GetStatefulSetPods("alertmanager-"+stackName, e2eTestNamespace)
 			if err != nil {
 				t.Fatal(err)
@@ -488,22 +489,30 @@ func assertAlertmanagersAreOnDifferentNodes(t *testing.T, pods []corev1.Pod) {
 }
 
 func assertAlertmanagersAreResilientToDisruption(t *testing.T, pods []corev1.Pod) {
-	errs := make([]error, len(pods))
-	for i := range pods {
-		pod := pods[i]
-		errs[i] = f.Evict(&pod, 0)
-	}
-
-	for i, err := range errs {
-		if i != len(errs)-1 {
-			if err != nil {
+	for i, pod := range pods {
+		lastPod := i == len(pods)-1
+		if lastPod {
+			if err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, framework.DefaultTestTimeout, true, func(ctx context.Context) (bool, error) {
+				err := f.Evict(&pod, 0)
+				if err == nil {
+					return false, nil
+				}
+				return true, nil
+			}); err != nil {
+				t.Fatal("expected an error when evicting the last pod, got nil")
+			}
+		}
+		if !lastPod {
+			if err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, framework.DefaultTestTimeout, true, func(ctx context.Context) (bool, error) {
+				err := f.Evict(&pod, 0)
+				if err != nil {
+					return false, nil
+				}
+				return true, nil
+			}); err != nil {
 				t.Fatalf("expected no error when evicting pod with index %d, got %v", i, err)
 			}
-			continue
-		}
-
-		if err == nil {
-			t.Fatalf("expected an error when evicting the last pod %d, got nil", i)
+			f.AssertResourceAbsent(pod.Name, pod.Namespace, &pod)(t)
 		}
 	}
 }
@@ -579,9 +588,15 @@ func prometheusScaleDown(t *testing.T) {
 	assert.NilError(t, err, "failed to create a monitoring stack")
 
 	prom := monv1.Prometheus{}
-	f.GetResourceWithRetry(t, ms.Name, ms.Namespace, &prom)
-
-	assert.Equal(t, prom.Status.Replicas, int32(1))
+	if err = wait.PollUntilContextTimeout(context.Background(), 5*time.Second, framework.DefaultTestTimeout, true, func(ctx context.Context) (bool, error) {
+		f.GetResourceWithRetry(t, ms.Name, ms.Namespace, &prom)
+		if prom.Status.Replicas != 1 {
+			return false, nil
+		}
+		return true, nil
+	}); err != nil {
+		t.Fatalf("prometheus replicase is not scaled down to %d, got %v", 1, err)
+	}
 
 	err = f.UpdateWithRetry(t, ms, framework.SetPrometheusReplicas(0))
 	key := types.NamespacedName{Name: ms.Name, Namespace: ms.Namespace}
