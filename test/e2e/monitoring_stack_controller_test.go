@@ -581,7 +581,7 @@ func prometheusScaleDown(t *testing.T) {
 
 	prom := monv1.Prometheus{}
 	f.GetResourceWithRetry(t, ms.Name, ms.Namespace, &prom)
-
+	f.AssertStatefulsetReady("prometheus-prometheus-scale-down-test", ms.Namespace)
 	assert.Equal(t, prom.Status.Replicas, int32(1))
 
 	err = f.UpdateWithRetry(t, ms, framework.SetPrometheusReplicas(0))
