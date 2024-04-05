@@ -4,11 +4,12 @@ import (
 	"context"
 	"testing"
 
-	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 	"gotest.tools/v3/assert"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
+
+	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 )
 
 type MonitoringStackConfig func(monitoringStack *stack.MonitoringStack)

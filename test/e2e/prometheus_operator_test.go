@@ -5,13 +5,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rhobs/observability-operator/test/e2e/framework"
-
 	v1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/rhobs/observability-operator/test/e2e/framework"
 )
 
 var (

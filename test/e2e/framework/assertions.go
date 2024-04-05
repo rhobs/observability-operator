@@ -11,11 +11,6 @@ import (
 
 	"github.com/prometheus/common/expfmt"
 	"github.com/prometheus/common/model"
-
-	"github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	monv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -23,6 +18,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 )
 
 // default ForeverTestTimeout is 30, some test fail because they take more than 30s

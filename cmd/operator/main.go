@@ -22,15 +22,14 @@ import (
 	"os"
 	"slices"
 
-	"github.com/rhobs/observability-operator/pkg/operator"
-	"go.uber.org/zap/zapcore"
-
 	obopo "github.com/rhobs/obo-prometheus-operator/pkg/operator"
-
+	"go.uber.org/zap/zapcore"
 	k8sflag "k8s.io/component-base/cli/flag"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	"github.com/rhobs/observability-operator/pkg/operator"
 )
 
 // The default values we use. Prometheus and Alertmanager are handled by

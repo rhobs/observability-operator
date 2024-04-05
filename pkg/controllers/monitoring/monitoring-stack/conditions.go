@@ -4,8 +4,9 @@ import (
 	"fmt"
 
 	monv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
-	"github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 )
 
 const (

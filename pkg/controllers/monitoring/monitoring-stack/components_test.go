@@ -3,12 +3,11 @@ package monitoringstack
 import (
 	"testing"
 
-	"k8s.io/apimachinery/pkg/api/resource"
-
 	monv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
 	v1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
 	"gotest.tools/v3/assert"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 func TestStorageSpec(t *testing.T) {

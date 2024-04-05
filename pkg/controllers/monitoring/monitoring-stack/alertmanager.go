@@ -1,16 +1,15 @@
 package monitoringstack
 
 import (
-	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
+	monv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
+	corev1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
-
-	monv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 )
 
 func newAlertmanager(
