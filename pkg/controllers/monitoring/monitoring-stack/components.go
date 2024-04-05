@@ -191,13 +191,13 @@ func newPrometheus(
 			RuleSelector:          prometheusSelector,
 			RuleNamespaceSelector: ms.Spec.NamespaceSelector,
 			Thanos: &monv1.ThanosSpec{
-				Image: stringPtr(thanosCfg.Image),
+				Image: ptr.To(thanosCfg.Image),
 			},
 		},
 	}
 
 	if prometheusCfg.Image != "" {
-		prometheus.Spec.CommonPrometheusFields.Image = stringPtr(prometheusCfg.Image)
+		prometheus.Spec.CommonPrometheusFields.Image = ptr.To(prometheusCfg.Image)
 	}
 
 	if !ms.Spec.AlertmanagerConfig.Disabled {
@@ -483,8 +483,4 @@ func podLabels(component string, msName string) map[string]string {
 		"app.kubernetes.io/component": component,
 		"app.kubernetes.io/part-of":   msName,
 	}
-}
-
-func stringPtr(s string) *string {
-	return &s
 }
