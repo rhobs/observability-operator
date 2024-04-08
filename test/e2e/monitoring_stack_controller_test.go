@@ -497,14 +497,22 @@ func assertAlertmanagersAreOnDifferentNodes(t *testing.T, pods []corev1.Pod) {
 }
 
 func assertAlertmanagersAreResilientToDisruption(t *testing.T, pods []corev1.Pod) {
-	for i, pod := range pods {
-		lastPod := i == len(pods)-1
-		err := f.Evict(&pod, 0)
-		if lastPod && err == nil {
-			t.Fatal("expected an error when evicting the last pod, got nil")
+	errs := make([]error, len(pods))
+	for i := range pods {
+		pod := pods[i]
+		errs[i] = f.Evict(&pod, 0)
+	}
+
+	for i, err := range errs {
+		if i != len(errs)-1 {
+			if err != nil {
+				t.Fatalf("expected no error when evicting pod with index %d, got %v", i, err)
+			}
+			continue
 		}
-		if !lastPod && err != nil {
-			t.Fatalf("expected no error when evicting pod with index %d, got %v", i, err)
+
+		if err == nil {
+			t.Fatalf("expected an error when evicting the last pod %d, got nil", i)
 		}
 	}
 }
