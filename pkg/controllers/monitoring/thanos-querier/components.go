@@ -3,14 +3,14 @@ package thanos_querier
 import (
 	"fmt"
 
-	"github.com/rhobs/observability-operator/pkg/reconciler"
-
 	monv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
-	msoapi "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
-
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
+
+	msoapi "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
+	"github.com/rhobs/observability-operator/pkg/reconciler"
 )
 
 func thanosComponentReconcilers(thanos *msoapi.ThanosQuerier, sidecarUrls []string, thanosCfg ThanosConfiguration) []reconciler.Reconciler {
@@ -49,7 +49,7 @@ func newThanosQuerierDeployment(name string, spec *msoapi.ThanosQuerier, sidecar
 			Labels:    componentLabels(name),
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: func(i int32) *int32 { return &i }(1),
+			Replicas: ptr.To(int32(1)),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app.kubernetes.io/instance": name,
@@ -74,14 +74,32 @@ func newThanosQuerierDeployment(name string, spec *msoapi.ThanosQuerier, sidecar
 								},
 							},
 							TerminationMessagePolicy: "FallbackToLogsOnError",
+							SecurityContext: &corev1.SecurityContext{
+								AllowPrivilegeEscalation: ptr.To(false),
+								Capabilities: &corev1.Capabilities{
+									Drop: []corev1.Capability{
+										"ALL",
+									},
+								},
+								RunAsNonRoot: ptr.To(true),
+								SeccompProfile: &corev1.SeccompProfile{
+									Type: corev1.SeccompProfileTypeRuntimeDefault,
+								},
+							},
 						},
 					},
 					NodeSelector: map[string]string{
 						"kubernetes.io/os": "linux",
 					},
+					SecurityContext: &corev1.PodSecurityContext{
+						RunAsNonRoot: ptr.To(true),
+						SeccompProfile: &corev1.SeccompProfile{
+							Type: corev1.SeccompProfileTypeRuntimeDefault,
+						},
+					},
 				},
 			},
-			ProgressDeadlineSeconds: func(i int32) *int32 { return &i }(300),
+			ProgressDeadlineSeconds: ptr.To(int32(300)),
 		},
 	}
 

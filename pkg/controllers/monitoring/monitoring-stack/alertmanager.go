@@ -77,7 +77,7 @@ func newAlertmanager(
 		},
 	}
 	if alertmanagerCfg.Image != "" {
-		am.Spec.Image = stringPtr(alertmanagerCfg.Image)
+		am.Spec.Image = ptr.To(alertmanagerCfg.Image)
 	}
 	return am
 }
