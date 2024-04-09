@@ -62,7 +62,8 @@ MonitoringStack is the Schema for the monitoringstacks API
         <td><b><a href="#monitoringstackstatus">status</a></b></td>
         <td>object</td>
         <td>
-          MonitoringStackStatus defines the observed state of MonitoringStack. It should always be reconstructable from the state of the cluster and/or outside world.<br/>
+          MonitoringStackStatus defines the observed state of MonitoringStack.
+It should always be reconstructable from the state of the cluster and/or outside world.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -108,7 +109,9 @@ MonitoringStackSpec is the specification for desired Monitoring Stack
         <td><b><a href="#monitoringstackspecnamespaceselector">namespaceSelector</a></b></td>
         <td>object</td>
         <td>
-          Namespace selector for Monitoring Stack Resources. To monitor everything, set to empty map selector. E.g. namespaceSelector: {}. To monitor resources in the namespace where Monitoring Stack was created in, set to null. E.g. namespaceSelector:.<br/>
+          Namespace selector for Monitoring Stack Resources.
+To monitor everything, set to empty map selector. E.g. namespaceSelector: {}.
+To monitor resources in the namespace where Monitoring Stack was created in, set to null. E.g. namespaceSelector:.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -124,7 +127,9 @@ MonitoringStackSpec is the specification for desired Monitoring Stack
         <td><b><a href="#monitoringstackspecresourceselector">resourceSelector</a></b></td>
         <td>object</td>
         <td>
-          Label selector for Monitoring Stack Resources. To monitor everything, set to empty map selector. E.g. resourceSelector: {}. To disable service discovery, set to null. E.g. resourceSelector:.<br/>
+          Label selector for Monitoring Stack Resources.
+To monitor everything, set to empty map selector. E.g. resourceSelector: {}.
+To disable service discovery, set to null. E.g. resourceSelector:.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -140,7 +145,8 @@ MonitoringStackSpec is the specification for desired Monitoring Stack
         <td><b>retention</b></td>
         <td>string</td>
         <td>
-          Time duration to retain data for. Default is '120h', and must match the regular expression `[0-9]+(ms|s|m|h|d|w|y)` (milliseconds seconds minutes hours days weeks years).<br/>
+          Time duration to retain data for. Default is '120h',
+and must match the regular expression `[0-9]+(ms|s|m|h|d|w|y)` (milliseconds seconds minutes hours days weeks years).<br/>
           <br/>
             <i>Default</i>: 120h<br/>
         </td>
@@ -183,7 +189,9 @@ Define Alertmanager config
 
 
 
-Namespace selector for Monitoring Stack Resources. To monitor everything, set to empty map selector. E.g. namespaceSelector: {}. To monitor resources in the namespace where Monitoring Stack was created in, set to null. E.g. namespaceSelector:.
+Namespace selector for Monitoring Stack Resources.
+To monitor everything, set to empty map selector. E.g. namespaceSelector: {}.
+To monitor resources in the namespace where Monitoring Stack was created in, set to null. E.g. namespaceSelector:.
 
 <table>
     <thead>
@@ -205,7 +213,9 @@ Namespace selector for Monitoring Stack Resources. To monitor everything, set to
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -217,7 +227,8 @@ Namespace selector for Monitoring Stack Resources. To monitor everything, set to
 
 
 
-A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
 
 <table>
     <thead>
@@ -239,14 +250,18 @@ A label selector requirement is a selector that contains values, a key, and an o
         <td><b>operator</b></td>
         <td>string</td>
         <td>
-          operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>values</b></td>
         <td>[]string</td>
         <td>
-          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.<br/>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -339,28 +354,62 @@ Define persistent volume claim for prometheus
         <td><b>accessModes</b></td>
         <td>[]string</td>
         <td>
-          accessModes contains the desired access modes the volume should have. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1<br/>
+          accessModes contains the desired access modes the volume should have.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#monitoringstackspecprometheusconfigpersistentvolumeclaimdatasource">dataSource</a></b></td>
         <td>object</td>
         <td>
-          dataSource field can be used to specify either: * An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot) * An existing PVC (PersistentVolumeClaim) If the provisioner or an external controller can support the specified data source, it will create a new volume based on the contents of the specified data source. When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef, and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified. If the namespace is specified, then dataSourceRef will not be copied to dataSource.<br/>
+          dataSource field can be used to specify either:
+* An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)
+* An existing PVC (PersistentVolumeClaim)
+If the provisioner or an external controller can support the specified data source,
+it will create a new volume based on the contents of the specified data source.
+When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef,
+and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified.
+If the namespace is specified, then dataSourceRef will not be copied to dataSource.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#monitoringstackspecprometheusconfigpersistentvolumeclaimdatasourceref">dataSourceRef</a></b></td>
         <td>object</td>
         <td>
-          dataSourceRef specifies the object from which to populate the volume with data, if a non-empty volume is desired. This may be any object from a non-empty API group (non core object) or a PersistentVolumeClaim object. When this field is specified, volume binding will only succeed if the type of the specified object matches some installed volume populator or dynamic provisioner. This field will replace the functionality of the dataSource field and as such if both fields are non-empty, they must have the same value. For backwards compatibility, when namespace isn't specified in dataSourceRef, both fields (dataSource and dataSourceRef) will be set to the same value automatically if one of them is empty and the other is non-empty. When namespace is specified in dataSourceRef, dataSource isn't set to the same value and must be empty. There are three important differences between dataSource and dataSourceRef: * While dataSource only allows two specific types of objects, dataSourceRef allows any non-core object, as well as PersistentVolumeClaim objects. * While dataSource ignores disallowed values (dropping them), dataSourceRef preserves all values, and generates an error if a disallowed value is specified. * While dataSource only allows local objects, dataSourceRef allows objects in any namespaces. (Beta) Using this field requires the AnyVolumeDataSource feature gate to be enabled. (Alpha) Using the namespace field of dataSourceRef requires the CrossNamespaceVolumeDataSource feature gate to be enabled.<br/>
+          dataSourceRef specifies the object from which to populate the volume with data, if a non-empty
+volume is desired. This may be any object from a non-empty API group (non
+core object) or a PersistentVolumeClaim object.
+When this field is specified, volume binding will only succeed if the type of
+the specified object matches some installed volume populator or dynamic
+provisioner.
+This field will replace the functionality of the dataSource field and as such
+if both fields are non-empty, they must have the same value. For backwards
+compatibility, when namespace isn't specified in dataSourceRef,
+both fields (dataSource and dataSourceRef) will be set to the same
+value automatically if one of them is empty and the other is non-empty.
+When namespace is specified in dataSourceRef,
+dataSource isn't set to the same value and must be empty.
+There are three important differences between dataSource and dataSourceRef:
+* While dataSource only allows two specific types of objects, dataSourceRef
+  allows any non-core object, as well as PersistentVolumeClaim objects.
+* While dataSource ignores disallowed values (dropping them), dataSourceRef
+  preserves all values, and generates an error if a disallowed value is
+  specified.
+* While dataSource only allows local objects, dataSourceRef allows objects
+  in any namespaces.
+(Beta) Using this field requires the AnyVolumeDataSource feature gate to be enabled.
+(Alpha) Using the namespace field of dataSourceRef requires the CrossNamespaceVolumeDataSource feature gate to be enabled.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#monitoringstackspecprometheusconfigpersistentvolumeclaimresources">resources</a></b></td>
         <td>object</td>
         <td>
-          resources represents the minimum resources the volume should have. If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements that are lower than previous value but must still be higher than capacity recorded in the status field of the claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources<br/>
+          resources represents the minimum resources the volume should have.
+If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+that are lower than previous value but must still be higher than capacity recorded in the
+status field of the claim.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -374,21 +423,34 @@ Define persistent volume claim for prometheus
         <td><b>storageClassName</b></td>
         <td>string</td>
         <td>
-          storageClassName is the name of the StorageClass required by the claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1<br/>
+          storageClassName is the name of the StorageClass required by the claim.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>volumeAttributesClassName</b></td>
         <td>string</td>
         <td>
-          volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim. If specified, the CSI driver will create or update the volume with the attributes defined in the corresponding VolumeAttributesClass. This has a different purpose than storageClassName, it can be changed after the claim is created. An empty string value means that no VolumeAttributesClass will be applied to the claim but it's not allowed to reset this field to empty string once it is set. If unspecified and the PersistentVolumeClaim is unbound, the default VolumeAttributesClass will be set by the persistentvolume controller if it exists. If the resource referred to by volumeAttributesClass does not exist, this PersistentVolumeClaim will be set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource exists. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#volumeattributesclass (Alpha) Using this field requires the VolumeAttributesClass feature gate to be enabled.<br/>
+          volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.
+If specified, the CSI driver will create or update the volume with the attributes defined
+in the corresponding VolumeAttributesClass. This has a different purpose than storageClassName,
+it can be changed after the claim is created. An empty string value means that no VolumeAttributesClass
+will be applied to the claim but it's not allowed to reset this field to empty string once it is set.
+If unspecified and the PersistentVolumeClaim is unbound, the default VolumeAttributesClass
+will be set by the persistentvolume controller if it exists.
+If the resource referred to by volumeAttributesClass does not exist, this PersistentVolumeClaim will be
+set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
+exists.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#volumeattributesclass
+(Alpha) Using this field requires the VolumeAttributesClass feature gate to be enabled.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>volumeMode</b></td>
         <td>string</td>
         <td>
-          volumeMode defines what type of volume is required by the claim. Value of Filesystem is implied when not included in claim spec.<br/>
+          volumeMode defines what type of volume is required by the claim.
+Value of Filesystem is implied when not included in claim spec.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -407,7 +469,14 @@ Define persistent volume claim for prometheus
 
 
 
-dataSource field can be used to specify either: * An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot) * An existing PVC (PersistentVolumeClaim) If the provisioner or an external controller can support the specified data source, it will create a new volume based on the contents of the specified data source. When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef, and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified. If the namespace is specified, then dataSourceRef will not be copied to dataSource.
+dataSource field can be used to specify either:
+* An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)
+* An existing PVC (PersistentVolumeClaim)
+If the provisioner or an external controller can support the specified data source,
+it will create a new volume based on the contents of the specified data source.
+When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef,
+and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified.
+If the namespace is specified, then dataSourceRef will not be copied to dataSource.
 
 <table>
     <thead>
@@ -436,7 +505,9 @@ dataSource field can be used to specify either: * An existing VolumeSnapshot obj
         <td><b>apiGroup</b></td>
         <td>string</td>
         <td>
-          APIGroup is the group for the resource being referenced. If APIGroup is not specified, the specified Kind must be in the core API group. For any other third-party types, APIGroup is required.<br/>
+          APIGroup is the group for the resource being referenced.
+If APIGroup is not specified, the specified Kind must be in the core API group.
+For any other third-party types, APIGroup is required.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -448,7 +519,29 @@ dataSource field can be used to specify either: * An existing VolumeSnapshot obj
 
 
 
-dataSourceRef specifies the object from which to populate the volume with data, if a non-empty volume is desired. This may be any object from a non-empty API group (non core object) or a PersistentVolumeClaim object. When this field is specified, volume binding will only succeed if the type of the specified object matches some installed volume populator or dynamic provisioner. This field will replace the functionality of the dataSource field and as such if both fields are non-empty, they must have the same value. For backwards compatibility, when namespace isn't specified in dataSourceRef, both fields (dataSource and dataSourceRef) will be set to the same value automatically if one of them is empty and the other is non-empty. When namespace is specified in dataSourceRef, dataSource isn't set to the same value and must be empty. There are three important differences between dataSource and dataSourceRef: * While dataSource only allows two specific types of objects, dataSourceRef allows any non-core object, as well as PersistentVolumeClaim objects. * While dataSource ignores disallowed values (dropping them), dataSourceRef preserves all values, and generates an error if a disallowed value is specified. * While dataSource only allows local objects, dataSourceRef allows objects in any namespaces. (Beta) Using this field requires the AnyVolumeDataSource feature gate to be enabled. (Alpha) Using the namespace field of dataSourceRef requires the CrossNamespaceVolumeDataSource feature gate to be enabled.
+dataSourceRef specifies the object from which to populate the volume with data, if a non-empty
+volume is desired. This may be any object from a non-empty API group (non
+core object) or a PersistentVolumeClaim object.
+When this field is specified, volume binding will only succeed if the type of
+the specified object matches some installed volume populator or dynamic
+provisioner.
+This field will replace the functionality of the dataSource field and as such
+if both fields are non-empty, they must have the same value. For backwards
+compatibility, when namespace isn't specified in dataSourceRef,
+both fields (dataSource and dataSourceRef) will be set to the same
+value automatically if one of them is empty and the other is non-empty.
+When namespace is specified in dataSourceRef,
+dataSource isn't set to the same value and must be empty.
+There are three important differences between dataSource and dataSourceRef:
+* While dataSource only allows two specific types of objects, dataSourceRef
+  allows any non-core object, as well as PersistentVolumeClaim objects.
+* While dataSource ignores disallowed values (dropping them), dataSourceRef
+  preserves all values, and generates an error if a disallowed value is
+  specified.
+* While dataSource only allows local objects, dataSourceRef allows objects
+  in any namespaces.
+(Beta) Using this field requires the AnyVolumeDataSource feature gate to be enabled.
+(Alpha) Using the namespace field of dataSourceRef requires the CrossNamespaceVolumeDataSource feature gate to be enabled.
 
 <table>
     <thead>
@@ -477,14 +570,18 @@ dataSourceRef specifies the object from which to populate the volume with data, 
         <td><b>apiGroup</b></td>
         <td>string</td>
         <td>
-          APIGroup is the group for the resource being referenced. If APIGroup is not specified, the specified Kind must be in the core API group. For any other third-party types, APIGroup is required.<br/>
+          APIGroup is the group for the resource being referenced.
+If APIGroup is not specified, the specified Kind must be in the core API group.
+For any other third-party types, APIGroup is required.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>namespace</b></td>
         <td>string</td>
         <td>
-          Namespace is the namespace of resource being referenced Note that when a namespace is specified, a gateway.networking.k8s.io/ReferenceGrant object is required in the referent namespace to allow that namespace's owner to accept the reference. See the ReferenceGrant documentation for details. (Alpha) This field requires the CrossNamespaceVolumeDataSource feature gate to be enabled.<br/>
+          Namespace is the namespace of resource being referenced
+Note that when a namespace is specified, a gateway.networking.k8s.io/ReferenceGrant object is required in the referent namespace to allow that namespace's owner to accept the reference. See the ReferenceGrant documentation for details.
+(Alpha) This field requires the CrossNamespaceVolumeDataSource feature gate to be enabled.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -496,7 +593,11 @@ dataSourceRef specifies the object from which to populate the volume with data, 
 
 
 
-resources represents the minimum resources the volume should have. If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements that are lower than previous value but must still be higher than capacity recorded in the status field of the claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
+resources represents the minimum resources the volume should have.
+If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+that are lower than previous value but must still be higher than capacity recorded in the
+status field of the claim.
+More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
 
 <table>
     <thead>
@@ -511,14 +612,18 @@ resources represents the minimum resources the volume should have. If RecoverVol
         <td><b>limits</b></td>
         <td>map[string]int or string</td>
         <td>
-          Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+          Limits describes the maximum amount of compute resources allowed.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>requests</b></td>
         <td>map[string]int or string</td>
         <td>
-          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+          Requests describes the minimum amount of compute resources required.
+If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+otherwise to an implementation-defined value. Requests cannot exceed Limits.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -552,7 +657,9 @@ selector is a label query over volumes to consider for binding.
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -564,7 +671,8 @@ selector is a label query over volumes to consider for binding.
 
 
 
-A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
 
 <table>
     <thead>
@@ -586,14 +694,18 @@ A label selector requirement is a selector that contains values, a key, and an o
         <td><b>operator</b></td>
         <td>string</td>
         <td>
-          operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>values</b></td>
         <td>[]string</td>
         <td>
-          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.<br/>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -605,7 +717,8 @@ A label selector requirement is a selector that contains values, a key, and an o
 
 
 
-RemoteWriteSpec defines the configuration to write samples from Prometheus to a remote endpoint.
+RemoteWriteSpec defines the configuration to write samples from Prometheus
+to a remote endpoint.
 
 <table>
     <thead>
@@ -627,42 +740,57 @@ RemoteWriteSpec defines the configuration to write samples from Prometheus to a 
         <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexauthorization">authorization</a></b></td>
         <td>object</td>
         <td>
-          Authorization section for the URL. 
- It requires Prometheus >= v2.26.0. 
- Cannot be set at the same time as `sigv4`, `basicAuth`, `oauth2`, or `azureAd`.<br/>
+          Authorization section for the URL.
+
+
+It requires Prometheus >= v2.26.0.
+
+
+Cannot be set at the same time as `sigv4`, `basicAuth`, `oauth2`, or `azureAd`.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexazuread">azureAd</a></b></td>
         <td>object</td>
         <td>
-          AzureAD for the URL. 
- It requires Prometheus >= v2.45.0. 
- Cannot be set at the same time as `authorization`, `basicAuth`, `oauth2`, or `sigv4`.<br/>
+          AzureAD for the URL.
+
+
+It requires Prometheus >= v2.45.0.
+
+
+Cannot be set at the same time as `authorization`, `basicAuth`, `oauth2`, or `sigv4`.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexbasicauth">basicAuth</a></b></td>
         <td>object</td>
         <td>
-          BasicAuth configuration for the URL. 
- Cannot be set at the same time as `sigv4`, `authorization`, `oauth2`, or `azureAd`.<br/>
+          BasicAuth configuration for the URL.
+
+
+Cannot be set at the same time as `sigv4`, `authorization`, `oauth2`, or `azureAd`.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>bearerToken</b></td>
         <td>string</td>
         <td>
-          *Warning: this field shouldn't be used because the token value appears in clear-text. Prefer using `authorization`.* 
- Deprecated: this will be removed in a future release.<br/>
+          *Warning: this field shouldn't be used because the token value appears
+in clear-text. Prefer using `authorization`.*
+
+
+Deprecated: this will be removed in a future release.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>bearerTokenFile</b></td>
         <td>string</td>
         <td>
-          File from which to read bearer token for the URL. 
- Deprecated: this will be removed in a future release. Prefer using `authorization`.<br/>
+          File from which to read bearer token for the URL.
+
+
+Deprecated: this will be removed in a future release. Prefer using `authorization`.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -676,8 +804,11 @@ RemoteWriteSpec defines the configuration to write samples from Prometheus to a 
         <td><b>headers</b></td>
         <td>map[string]string</td>
         <td>
-          Custom HTTP headers to be sent along with each remote write request. Be aware that headers that are set by Prometheus itself can't be overwritten. 
- It requires Prometheus >= v2.25.0.<br/>
+          Custom HTTP headers to be sent along with each remote write request.
+Be aware that headers that are set by Prometheus itself can't be overwritten.
+
+
+It requires Prometheus >= v2.25.0.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -691,17 +822,24 @@ RemoteWriteSpec defines the configuration to write samples from Prometheus to a 
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          The name of the remote write queue, it must be unique if specified. The name is used in metrics and logging in order to differentiate queues. 
- It requires Prometheus >= v2.15.0.<br/>
+          The name of the remote write queue, it must be unique if specified. The
+name is used in metrics and logging in order to differentiate queues.
+
+
+It requires Prometheus >= v2.15.0.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexoauth2">oauth2</a></b></td>
         <td>object</td>
         <td>
-          OAuth2 configuration for the URL. 
- It requires Prometheus >= v2.27.0. 
- Cannot be set at the same time as `sigv4`, `authorization`, `basicAuth`, or `azureAd`.<br/>
+          OAuth2 configuration for the URL.
+
+
+It requires Prometheus >= v2.27.0.
+
+
+Cannot be set at the same time as `sigv4`, `authorization`, `basicAuth`, or `azureAd`.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -729,25 +867,36 @@ RemoteWriteSpec defines the configuration to write samples from Prometheus to a 
         <td><b>sendExemplars</b></td>
         <td>boolean</td>
         <td>
-          Enables sending of exemplars over remote write. Note that exemplar-storage itself must be enabled using the `spec.enableFeature` option for exemplars to be scraped in the first place. 
- It requires Prometheus >= v2.27.0.<br/>
+          Enables sending of exemplars over remote write. Note that
+exemplar-storage itself must be enabled using the `spec.enableFeature`
+option for exemplars to be scraped in the first place.
+
+
+It requires Prometheus >= v2.27.0.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>sendNativeHistograms</b></td>
         <td>boolean</td>
         <td>
-          Enables sending of native histograms, also known as sparse histograms over remote write. 
- It requires Prometheus >= v2.40.0.<br/>
+          Enables sending of native histograms, also known as sparse histograms
+over remote write.
+
+
+It requires Prometheus >= v2.40.0.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexsigv4">sigv4</a></b></td>
         <td>object</td>
         <td>
-          Sigv4 allows to configures AWS's Signature Verification 4 for the URL. 
- It requires Prometheus >= v2.26.0. 
- Cannot be set at the same time as `authorization`, `basicAuth`, `oauth2`, or `azureAd`.<br/>
+          Sigv4 allows to configures AWS's Signature Verification 4 for the URL.
+
+
+It requires Prometheus >= v2.26.0.
+
+
+Cannot be set at the same time as `authorization`, `basicAuth`, `oauth2`, or `azureAd`.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -773,9 +922,13 @@ RemoteWriteSpec defines the configuration to write samples from Prometheus to a 
 
 
 
-Authorization section for the URL. 
- It requires Prometheus >= v2.26.0. 
- Cannot be set at the same time as `sigv4`, `basicAuth`, `oauth2`, or `azureAd`.
+Authorization section for the URL.
+
+
+It requires Prometheus >= v2.26.0.
+
+
+Cannot be set at the same time as `sigv4`, `basicAuth`, `oauth2`, or `azureAd`.
 
 <table>
     <thead>
@@ -804,9 +957,13 @@ Authorization section for the URL.
         <td><b>type</b></td>
         <td>string</td>
         <td>
-          Defines the authentication type. The value is case-insensitive. 
- "Basic" is not a supported value. 
- Default: "Bearer"<br/>
+          Defines the authentication type. The value is case-insensitive.
+
+
+"Basic" is not a supported value.
+
+
+Default: "Bearer"<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -840,7 +997,9 @@ Selects a key of a Secret in the namespace that contains the credentials for aut
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+          Name of the referent.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+TODO: Add other useful fields. apiVersion, kind, uid?<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -859,9 +1018,13 @@ Selects a key of a Secret in the namespace that contains the credentials for aut
 
 
 
-AzureAD for the URL. 
- It requires Prometheus >= v2.45.0. 
- Cannot be set at the same time as `authorization`, `basicAuth`, `oauth2`, or `sigv4`.
+AzureAD for the URL.
+
+
+It requires Prometheus >= v2.45.0.
+
+
+Cannot be set at the same time as `authorization`, `basicAuth`, `oauth2`, or `sigv4`.
 
 <table>
     <thead>
@@ -885,15 +1048,19 @@ AzureAD for the URL.
         <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexazureadmanagedidentity">managedIdentity</a></b></td>
         <td>object</td>
         <td>
-          ManagedIdentity defines the Azure User-assigned Managed identity. Cannot be set at the same time as `oauth`.<br/>
+          ManagedIdentity defines the Azure User-assigned Managed identity.
+Cannot be set at the same time as `oauth`.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexazureadoauth">oauth</a></b></td>
         <td>object</td>
         <td>
-          OAuth defines the oauth config that is being used to authenticate. Cannot be set at the same time as `managedIdentity`. 
- It requires Prometheus >= v2.48.0.<br/>
+          OAuth defines the oauth config that is being used to authenticate.
+Cannot be set at the same time as `managedIdentity`.
+
+
+It requires Prometheus >= v2.48.0.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -905,7 +1072,8 @@ AzureAD for the URL.
 
 
 
-ManagedIdentity defines the Azure User-assigned Managed identity. Cannot be set at the same time as `oauth`.
+ManagedIdentity defines the Azure User-assigned Managed identity.
+Cannot be set at the same time as `oauth`.
 
 <table>
     <thead>
@@ -932,8 +1100,11 @@ ManagedIdentity defines the Azure User-assigned Managed identity. Cannot be set 
 
 
 
-OAuth defines the oauth config that is being used to authenticate. Cannot be set at the same time as `managedIdentity`. 
- It requires Prometheus >= v2.48.0.
+OAuth defines the oauth config that is being used to authenticate.
+Cannot be set at the same time as `managedIdentity`.
+
+
+It requires Prometheus >= v2.48.0.
 
 <table>
     <thead>
@@ -996,7 +1167,9 @@ OAuth defines the oauth config that is being used to authenticate. Cannot be set
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+          Name of the referent.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+TODO: Add other useful fields. apiVersion, kind, uid?<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1015,8 +1188,10 @@ OAuth defines the oauth config that is being used to authenticate. Cannot be set
 
 
 
-BasicAuth configuration for the URL. 
- Cannot be set at the same time as `sigv4`, `authorization`, `oauth2`, or `azureAd`.
+BasicAuth configuration for the URL.
+
+
+Cannot be set at the same time as `sigv4`, `authorization`, `oauth2`, or `azureAd`.
 
 <table>
     <thead>
@@ -1031,14 +1206,16 @@ BasicAuth configuration for the URL.
         <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexbasicauthpassword">password</a></b></td>
         <td>object</td>
         <td>
-          `password` specifies a key of a Secret containing the password for authentication.<br/>
+          `password` specifies a key of a Secret containing the password for
+authentication.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexbasicauthusername">username</a></b></td>
         <td>object</td>
         <td>
-          `username` specifies a key of a Secret containing the username for authentication.<br/>
+          `username` specifies a key of a Secret containing the username for
+authentication.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1050,7 +1227,8 @@ BasicAuth configuration for the URL.
 
 
 
-`password` specifies a key of a Secret containing the password for authentication.
+`password` specifies a key of a Secret containing the password for
+authentication.
 
 <table>
     <thead>
@@ -1072,7 +1250,9 @@ BasicAuth configuration for the URL.
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+          Name of the referent.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+TODO: Add other useful fields. apiVersion, kind, uid?<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1091,7 +1271,8 @@ BasicAuth configuration for the URL.
 
 
 
-`username` specifies a key of a Secret containing the username for authentication.
+`username` specifies a key of a Secret containing the username for
+authentication.
 
 <table>
     <thead>
@@ -1113,7 +1294,9 @@ BasicAuth configuration for the URL.
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+          Name of the referent.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+TODO: Add other useful fields. apiVersion, kind, uid?<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1166,9 +1349,13 @@ MetadataConfig configures the sending of series metadata to the remote storage.
 
 
 
-OAuth2 configuration for the URL. 
- It requires Prometheus >= v2.27.0. 
- Cannot be set at the same time as `sigv4`, `authorization`, `basicAuth`, or `azureAd`.
+OAuth2 configuration for the URL.
+
+
+It requires Prometheus >= v2.27.0.
+
+
+Cannot be set at the same time as `sigv4`, `authorization`, `basicAuth`, or `azureAd`.
 
 <table>
     <thead>
@@ -1183,14 +1370,16 @@ OAuth2 configuration for the URL.
         <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexoauth2clientid">clientId</a></b></td>
         <td>object</td>
         <td>
-          `clientId` specifies a key of a Secret or ConfigMap containing the OAuth2 client's ID.<br/>
+          `clientId` specifies a key of a Secret or ConfigMap containing the
+OAuth2 client's ID.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexoauth2clientsecret">clientSecret</a></b></td>
         <td>object</td>
         <td>
-          `clientSecret` specifies a key of a Secret containing the OAuth2 client's secret.<br/>
+          `clientSecret` specifies a key of a Secret containing the OAuth2
+client's secret.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -1204,7 +1393,8 @@ OAuth2 configuration for the URL.
         <td><b>endpointParams</b></td>
         <td>map[string]string</td>
         <td>
-          `endpointParams` configures the HTTP parameters to append to the token URL.<br/>
+          `endpointParams` configures the HTTP parameters to append to the token
+URL.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1223,7 +1413,8 @@ OAuth2 configuration for the URL.
 
 
 
-`clientId` specifies a key of a Secret or ConfigMap containing the OAuth2 client's ID.
+`clientId` specifies a key of a Secret or ConfigMap containing the
+OAuth2 client's ID.
 
 <table>
     <thead>
@@ -1279,7 +1470,9 @@ ConfigMap containing data to use for the targets.
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+          Name of the referent.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+TODO: Add other useful fields. apiVersion, kind, uid?<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1320,7 +1513,9 @@ Secret containing data to use for the targets.
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+          Name of the referent.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+TODO: Add other useful fields. apiVersion, kind, uid?<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1339,7 +1534,8 @@ Secret containing data to use for the targets.
 
 
 
-`clientSecret` specifies a key of a Secret containing the OAuth2 client's secret.
+`clientSecret` specifies a key of a Secret containing the OAuth2
+client's secret.
 
 <table>
     <thead>
@@ -1361,7 +1557,9 @@ Secret containing data to use for the targets.
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+          Name of the referent.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+TODO: Add other useful fields. apiVersion, kind, uid?<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1402,7 +1600,8 @@ QueueConfig allows tuning of the remote write queue parameters.
         <td><b>capacity</b></td>
         <td>integer</td>
         <td>
-          Capacity is the number of samples to buffer per shard before we start dropping them.<br/>
+          Capacity is the number of samples to buffer per shard before we start
+dropping them.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1451,7 +1650,8 @@ QueueConfig allows tuning of the remote write queue parameters.
         <td><b>retryOnRateLimit</b></td>
         <td>boolean</td>
         <td>
-          Retry upon receiving a 429 status code from the remote-write storage. This is experimental feature and might change in the future.<br/>
+          Retry upon receiving a 429 status code from the remote-write storage.
+This is experimental feature and might change in the future.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1463,9 +1663,13 @@ QueueConfig allows tuning of the remote write queue parameters.
 
 
 
-Sigv4 allows to configures AWS's Signature Verification 4 for the URL. 
- It requires Prometheus >= v2.26.0. 
- Cannot be set at the same time as `authorization`, `basicAuth`, `oauth2`, or `azureAd`.
+Sigv4 allows to configures AWS's Signature Verification 4 for the URL.
+
+
+It requires Prometheus >= v2.26.0.
+
+
+Cannot be set at the same time as `authorization`, `basicAuth`, `oauth2`, or `azureAd`.
 
 <table>
     <thead>
@@ -1480,7 +1684,8 @@ Sigv4 allows to configures AWS's Signature Verification 4 for the URL.
         <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexsigv4accesskey">accessKey</a></b></td>
         <td>object</td>
         <td>
-          AccessKey is the AWS API key. If not specified, the environment variable `AWS_ACCESS_KEY_ID` is used.<br/>
+          AccessKey is the AWS API key. If not specified, the environment variable
+`AWS_ACCESS_KEY_ID` is used.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1508,7 +1713,8 @@ Sigv4 allows to configures AWS's Signature Verification 4 for the URL.
         <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexsigv4secretkey">secretKey</a></b></td>
         <td>object</td>
         <td>
-          SecretKey is the AWS API secret. If not specified, the environment variable `AWS_SECRET_ACCESS_KEY` is used.<br/>
+          SecretKey is the AWS API secret. If not specified, the environment
+variable `AWS_SECRET_ACCESS_KEY` is used.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1520,7 +1726,8 @@ Sigv4 allows to configures AWS's Signature Verification 4 for the URL.
 
 
 
-AccessKey is the AWS API key. If not specified, the environment variable `AWS_ACCESS_KEY_ID` is used.
+AccessKey is the AWS API key. If not specified, the environment variable
+`AWS_ACCESS_KEY_ID` is used.
 
 <table>
     <thead>
@@ -1542,7 +1749,9 @@ AccessKey is the AWS API key. If not specified, the environment variable `AWS_AC
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+          Name of the referent.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+TODO: Add other useful fields. apiVersion, kind, uid?<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1561,7 +1770,8 @@ AccessKey is the AWS API key. If not specified, the environment variable `AWS_AC
 
 
 
-SecretKey is the AWS API secret. If not specified, the environment variable `AWS_SECRET_ACCESS_KEY` is used.
+SecretKey is the AWS API secret. If not specified, the environment
+variable `AWS_SECRET_ACCESS_KEY` is used.
 
 <table>
     <thead>
@@ -1583,7 +1793,9 @@ SecretKey is the AWS API secret. If not specified, the environment variable `AWS
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+          Name of the referent.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+TODO: Add other useful fields. apiVersion, kind, uid?<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1734,7 +1946,9 @@ ConfigMap containing data to use for the targets.
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+          Name of the referent.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+TODO: Add other useful fields. apiVersion, kind, uid?<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1775,7 +1989,9 @@ Secret containing data to use for the targets.
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+          Name of the referent.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+TODO: Add other useful fields. apiVersion, kind, uid?<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1850,7 +2066,9 @@ ConfigMap containing data to use for the targets.
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+          Name of the referent.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+TODO: Add other useful fields. apiVersion, kind, uid?<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1891,7 +2109,9 @@ Secret containing data to use for the targets.
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+          Name of the referent.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+TODO: Add other useful fields. apiVersion, kind, uid?<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1932,7 +2152,9 @@ Secret containing the client key file for the targets.
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+          Name of the referent.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+TODO: Add other useful fields. apiVersion, kind, uid?<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1951,8 +2173,11 @@ Secret containing the client key file for the targets.
 
 
 
-RelabelConfig allows dynamic rewriting of the label set for targets, alerts, scraped samples and remote write samples. 
- More info: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config
+RelabelConfig allows dynamic rewriting of the label set for targets, alerts,
+scraped samples and remote write samples.
+
+
+More info: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config
 
 <table>
     <thead>
@@ -1967,9 +2192,14 @@ RelabelConfig allows dynamic rewriting of the label set for targets, alerts, scr
         <td><b>action</b></td>
         <td>enum</td>
         <td>
-          Action to perform based on the regex matching. 
- `Uppercase` and `Lowercase` actions require Prometheus >= v2.36.0. `DropEqual` and `KeepEqual` actions require Prometheus >= v2.41.0. 
- Default: "Replace"<br/>
+          Action to perform based on the regex matching.
+
+
+`Uppercase` and `Lowercase` actions require Prometheus >= v2.36.0.
+`DropEqual` and `KeepEqual` actions require Prometheus >= v2.41.0.
+
+
+Default: "Replace"<br/>
           <br/>
             <i>Enum</i>: replace, Replace, keep, Keep, drop, Drop, hashmod, HashMod, labelmap, LabelMap, labeldrop, LabelDrop, labelkeep, LabelKeep, lowercase, Lowercase, uppercase, Uppercase, keepequal, KeepEqual, dropequal, DropEqual<br/>
             <i>Default</i>: replace<br/>
@@ -1979,8 +2209,10 @@ RelabelConfig allows dynamic rewriting of the label set for targets, alerts, scr
         <td><b>modulus</b></td>
         <td>integer</td>
         <td>
-          Modulus to take of the hash of the source label values. 
- Only applicable when the action is `HashMod`.<br/>
+          Modulus to take of the hash of the source label values.
+
+
+Only applicable when the action is `HashMod`.<br/>
           <br/>
             <i>Format</i>: int64<br/>
         </td>
@@ -1996,8 +2228,11 @@ RelabelConfig allows dynamic rewriting of the label set for targets, alerts, scr
         <td><b>replacement</b></td>
         <td>string</td>
         <td>
-          Replacement value against which a Replace action is performed if the regular expression matches. 
- Regex capture groups are available.<br/>
+          Replacement value against which a Replace action is performed if the
+regular expression matches.
+
+
+Regex capture groups are available.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2011,16 +2246,23 @@ RelabelConfig allows dynamic rewriting of the label set for targets, alerts, scr
         <td><b>sourceLabels</b></td>
         <td>[]string</td>
         <td>
-          The source labels select values from existing labels. Their content is concatenated using the configured Separator and matched against the configured regular expression.<br/>
+          The source labels select values from existing labels. Their content is
+concatenated using the configured Separator and matched against the
+configured regular expression.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>targetLabel</b></td>
         <td>string</td>
         <td>
-          Label to which the resulting string is written in a replacement. 
- It is mandatory for `Replace`, `HashMod`, `Lowercase`, `Uppercase`, `KeepEqual` and `DropEqual` actions. 
- Regex capture groups are available.<br/>
+          Label to which the resulting string is written in a replacement.
+
+
+It is mandatory for `Replace`, `HashMod`, `Lowercase`, `Uppercase`,
+`KeepEqual` and `DropEqual` actions.
+
+
+Regex capture groups are available.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -2032,7 +2274,9 @@ RelabelConfig allows dynamic rewriting of the label set for targets, alerts, scr
 
 
 
-Label selector for Monitoring Stack Resources. To monitor everything, set to empty map selector. E.g. resourceSelector: {}. To disable service discovery, set to null. E.g. resourceSelector:.
+Label selector for Monitoring Stack Resources.
+To monitor everything, set to empty map selector. E.g. resourceSelector: {}.
+To disable service discovery, set to null. E.g. resourceSelector:.
 
 <table>
     <thead>
@@ -2054,7 +2298,9 @@ Label selector for Monitoring Stack Resources. To monitor everything, set to emp
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -2066,7 +2312,8 @@ Label selector for Monitoring Stack Resources. To monitor everything, set to emp
 
 
 
-A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
 
 <table>
     <thead>
@@ -2088,14 +2335,18 @@ A label selector requirement is a selector that contains values, a key, and an o
         <td><b>operator</b></td>
         <td>string</td>
         <td>
-          operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>values</b></td>
         <td>[]string</td>
         <td>
-          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.<br/>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -2122,23 +2373,33 @@ Define resources requests and limits for Monitoring Stack Pods.
         <td><b><a href="#monitoringstackspecresourcesclaimsindex">claims</a></b></td>
         <td>[]object</td>
         <td>
-          Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. 
- This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. 
- This field is immutable. It can only be set for containers.<br/>
+          Claims lists the names of resources, defined in spec.resourceClaims,
+that are used by this container.
+
+
+This is an alpha field and requires enabling the
+DynamicResourceAllocation feature gate.
+
+
+This field is immutable. It can only be set for containers.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>limits</b></td>
         <td>map[string]int or string</td>
         <td>
-          Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+          Limits describes the maximum amount of compute resources allowed.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>requests</b></td>
         <td>map[string]int or string</td>
         <td>
-          Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+          Requests describes the minimum amount of compute resources required.
+If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+otherwise to an implementation-defined value. Requests cannot exceed Limits.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -2165,7 +2426,9 @@ ResourceClaim references one entry in PodSpec.ResourceClaims.
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.<br/>
+          Name must match the name of one entry in pod.spec.resourceClaims of
+the Pod where this field is used. It makes that resource available
+inside a container.<br/>
         </td>
         <td>true</td>
       </tr></tbody>
@@ -2177,7 +2440,8 @@ ResourceClaim references one entry in PodSpec.ResourceClaims.
 
 
 
-MonitoringStackStatus defines the observed state of MonitoringStack. It should always be reconstructable from the state of the cluster and/or outside world.
+MonitoringStackStatus defines the observed state of MonitoringStack.
+It should always be reconstructable from the state of the cluster and/or outside world.
 
 <table>
     <thead>
@@ -2219,7 +2483,8 @@ MonitoringStackStatus defines the observed state of MonitoringStack. It should a
         <td><b>lastTransitionTime</b></td>
         <td>string</td>
         <td>
-          lastTransitionTime is the last time the condition transitioned from one status to another. This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.<br/>
+          lastTransitionTime is the last time the condition transitioned from one status to another.
+This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.<br/>
           <br/>
             <i>Format</i>: date-time<br/>
         </td>
@@ -2228,14 +2493,19 @@ MonitoringStackStatus defines the observed state of MonitoringStack. It should a
         <td><b>message</b></td>
         <td>string</td>
         <td>
-          message is a human readable message indicating details about the transition. This may be an empty string.<br/>
+          message is a human readable message indicating details about the transition.
+This may be an empty string.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>reason</b></td>
         <td>string</td>
         <td>
-          reason contains a programmatic identifier indicating the reason for the condition's last transition. Producers of specific condition types may define expected values and meanings for this field, and whether the values are considered a guaranteed API. The value should be a CamelCase string. This field may not be empty.<br/>
+          reason contains a programmatic identifier indicating the reason for the condition's last transition.
+Producers of specific condition types may define expected values and meanings for this field,
+and whether the values are considered a guaranteed API.
+The value should be a CamelCase string.
+This field may not be empty.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -2251,14 +2521,17 @@ MonitoringStackStatus defines the observed state of MonitoringStack. It should a
         <td><b>type</b></td>
         <td>string</td>
         <td>
-          type of condition in CamelCase or in foo.example.com/CamelCase. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)<br/>
+          type of condition in CamelCase or in foo.example.com/CamelCase.
+The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>observedGeneration</b></td>
         <td>integer</td>
         <td>
-          observedGeneration represents the .metadata.generation that the condition was set based upon. For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date with respect to the current state of the instance.<br/>
+          observedGeneration represents the .metadata.generation that the condition was set based upon.
+For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+with respect to the current state of the instance.<br/>
           <br/>
             <i>Format</i>: int64<br/>
             <i>Minimum</i>: 0<br/>
@@ -2307,14 +2580,18 @@ ThanosQuerier outlines the Thanos querier components, managed by this stack
         <td><b><a href="#thanosquerierspec">spec</a></b></td>
         <td>object</td>
         <td>
-          ThanosQuerierSpec defines a single Thanos Querier instance. This means a label selector by which Monitoring Stack instances to query are selected, and an optional namespace selector and a list of replica labels by which to deduplicate.<br/>
+          ThanosQuerierSpec defines a single Thanos Querier instance. This means a
+label selector by which Monitoring Stack instances to query are selected, and
+an optional namespace selector and a list of replica labels by which to
+deduplicate.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>status</b></td>
         <td>object</td>
         <td>
-          ThanosQuerierStatus defines the observed state of ThanosQuerier. It should always be reconstructable from the state of the cluster and/or outside world.<br/>
+          ThanosQuerierStatus defines the observed state of ThanosQuerier.
+It should always be reconstructable from the state of the cluster and/or outside world.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -2326,7 +2603,10 @@ ThanosQuerier outlines the Thanos querier components, managed by this stack
 
 
 
-ThanosQuerierSpec defines a single Thanos Querier instance. This means a label selector by which Monitoring Stack instances to query are selected, and an optional namespace selector and a list of replica labels by which to deduplicate.
+ThanosQuerierSpec defines a single Thanos Querier instance. This means a
+label selector by which Monitoring Stack instances to query are selected, and
+an optional namespace selector and a list of replica labels by which to
+deduplicate.
 
 <table>
     <thead>
@@ -2389,7 +2669,9 @@ Selector to select Monitoring stacks to unify
         <td><b>matchLabels</b></td>
         <td>map[string]string</td>
         <td>
-          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
+          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is "key", the
+operator is "In", and the values array contains only "value". The requirements are ANDed.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -2401,7 +2683,8 @@ Selector to select Monitoring stacks to unify
 
 
 
-A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.
+A label selector requirement is a selector that contains values, a key, and an operator that
+relates the key and values.
 
 <table>
     <thead>
@@ -2423,14 +2706,18 @@ A label selector requirement is a selector that contains values, a key, and an o
         <td><b>operator</b></td>
         <td>string</td>
         <td>
-          operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
+          operator represents a key's relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>values</b></td>
         <td>[]string</td>
         <td>
-          values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.<br/>
+          values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -2457,7 +2744,8 @@ Selector to select which namespaces the Monitoring Stack objects are discovered 
         <td><b>any</b></td>
         <td>boolean</td>
         <td>
-          Boolean describing whether all namespaces are selected in contrast to a list restricting them.<br/>
+          Boolean describing whether all namespaces are selected in contrast to a
+list restricting them.<br/>
         </td>
         <td>false</td>
       </tr><tr>

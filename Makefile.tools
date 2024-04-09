@@ -8,16 +8,16 @@ TOOLS_DIR = $(shell pwd)/tmp/bin
 # see: .github/tools-cache/action.yaml
 
 CONTROLLER_GEN=$(TOOLS_DIR)/controller-gen
-CONTROLLER_GEN_VERSION= v0.11.3
+CONTROLLER_GEN_VERSION= v0.14.0
 
 KUSTOMIZE=$(TOOLS_DIR)/kustomize
 KUSTOMIZE_VERSION= v4.5.2
 
 OPERATOR_SDK = $(TOOLS_DIR)/operator-sdk
-OPERATOR_SDK_VERSION = v1.31.0
+OPERATOR_SDK_VERSION = v1.34.1
 
 OPM=$(TOOLS_DIR)/opm
-OPM_VERSION = v1.36.0
+OPM_VERSION = v1.39.0
 
 GOLANGCI_LINT=$(TOOLS_DIR)/golangci-lint
 GOLANGCI_LINT_VERSION = v1.52.2
@@ -36,21 +36,15 @@ CRDOC_VERSION = v0.5.2
 
 # jsonnet related tools and dependencies
 JSONNET = $(TOOLS_DIR)/jsonnet
-JSONNET_VERSION = v0.17.0
-
 JSONNETFMT = $(TOOLS_DIR)/jsonnetfmt
-JSONNETFMT_VERSION = v0.17.0
-
 JSONNET_LINT = $(TOOLS_DIR)/jsonnet-lint
-JSONNET_LINT_VERSION = v0.17.0
+JSONNET_VERSION = v0.20.0
 
 JB = $(TOOLS_DIR)/jb
-JB_VERSION = v0.4.0
+JB_VERSION = v0.5.1
 
-## NOTE: gojsontoyaml does not have any releases, so we use a fake version starting with v0.0.1
-# thus to upgrade/invalidate the github cache, increment the value
 GOJSONTOYAML = $(TOOLS_DIR)/gojsontoyaml
-GOJSONTOYAML_VERSION = 0.0.1
+GOJSONTOYAML_VERSION = v0.1.0
 
 JSONNET_VENDOR = jsonnet/vendor
 JSONNETFMT_ARGS = -n 2 --max-blank-lines 2 --string-style s --comment-style s
@@ -152,7 +146,7 @@ $(JSONNET) jsonnet: $(TOOLS_DIR)
 	@{ \
 		set -ex ;\
 		[[ -f $(JSONNET) ]] && exit 0 ;\
-		GOBIN=$(TOOLS_DIR) go install github.com/google/go-jsonnet/cmd/jsonnet@latest ;\
+		GOBIN=$(TOOLS_DIR) go install github.com/google/go-jsonnet/cmd/jsonnet@$(JSONNET_VERSION) ;\
 	}
 
 
@@ -161,7 +155,7 @@ $(JSONNETFMT) jsonnetfmt: $(TOOLS_DIR)
 	@{ \
 		set -ex ;\
 		[[ -f $(JSONNETFMT) ]] && exit 0 ;\
-		GOBIN=$(TOOLS_DIR)  go install github.com/google/go-jsonnet/cmd/jsonnetfmt@latest ;\
+		GOBIN=$(TOOLS_DIR)  go install github.com/google/go-jsonnet/cmd/jsonnetfmt@$(JSONNET_VERSION) ;\
 	}
 
 .PHONY: jsonnet-lint
@@ -169,7 +163,7 @@ $(JSONNET_LINT) jsonnet-lint: $(TOOLS_DIR)
 	@{ \
 		set -ex ;\
 		[[ -f $(JSONNET_LINT) ]] && exit 0 ;\
-		GOBIN=$(TOOLS_DIR)  go install github.com/google/go-jsonnet/cmd/jsonnet-lint@latest ;\
+		GOBIN=$(TOOLS_DIR)  go install github.com/google/go-jsonnet/cmd/jsonnet-lint@$(JSONNET_VERSION) ;\
 	}
 
 .PHONY: jb
@@ -177,7 +171,7 @@ $(JB) jb: $(TOOLS_DIR)
 	@{ \
 		set -ex ;\
 		[[ -f $(JB) ]] && exit 0 ;\
-		GOBIN=$(TOOLS_DIR) go install github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb@latest ;\
+		GOBIN=$(TOOLS_DIR) go install github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb@$(JB_VERSION) ;\
 	}
 
 .PHONY: gojsontoyaml
@@ -185,7 +179,7 @@ $(GOJSONTOYAML) gojsontoyaml: $(TOOLS_DIR)
 	@{ \
 		set -ex ;\
 		[[ -f $(GOJSONTOYAML) ]] && exit 0 ;\
-		GOBIN=$(TOOLS_DIR) go install github.com/brancz/gojsontoyaml@latest ;\
+		GOBIN=$(TOOLS_DIR) go install github.com/brancz/gojsontoyaml@$(GOJSONTOYAML_VERSION) ;\
 	}
 
 .PHONY: shellcheck
@@ -230,8 +224,8 @@ tools: $(CONTROLLER_GEN) \
 		echo  $$(basename $(PROMQ)) $(PROMQ_VERSION) >> $$tools_file ;\
 		echo  $$(basename $(CRDOC)) $(CRDOC_VERSION) >> $$tools_file ; \
 		echo  $$(basename $(JSONNET)) $(JSONNET_VERSION) >> $$tools_file ;\
-		echo  $$(basename $(JSONNETFMT)) $(JSONNETFMT_VERSION) >> $$tools_file ;\
-		echo  $$(basename $(JSONNET_LINT)) $(JSONNET_LINT_VERSION) >> $$tools_file ;\
+		echo  $$(basename $(JSONNETFMT)) $(JSONNET_VERSION) >> $$tools_file ;\
+		echo  $$(basename $(JSONNET_LINT)) $(JSONNET_VERSION) >> $$tools_file ;\
 		echo  $$(basename $(JB)) $(JB_VERSION) >> $$tools_file ;\
 		echo  $$(basename $(GOJSONTOYAML)) $(GOJSONTOYAML_VERSION) >> $$tools_file ;\
 		echo  $$(basename $(SHELLCHECK)) $(SHELLCHECK_VERSION) >> $$tools_file ;\
