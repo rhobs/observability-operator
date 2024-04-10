@@ -8,34 +8,25 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	monv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
+	"golang.org/x/exp/slices"
+	"gotest.tools/v3/assert"
 	corev1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
-	"k8s.io/utils/ptr"
-
-	"github.com/rhobs/observability-operator/test/e2e/framework"
-
-	"golang.org/x/exp/slices"
-
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-
 	"k8s.io/apimachinery/pkg/util/intstr"
-
 	"k8s.io/apimachinery/pkg/util/wait"
-
-	"github.com/google/go-cmp/cmp"
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/utils/ptr"
 
 	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 	monitoringstack "github.com/rhobs/observability-operator/pkg/controllers/monitoring/monitoring-stack"
 	operator "github.com/rhobs/observability-operator/pkg/operator"
-
-	monv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
-
-	"gotest.tools/v3/assert"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"k8s.io/client-go/kubernetes/scheme"
+	"github.com/rhobs/observability-operator/test/e2e/framework"
 )
 
 type alert struct {

@@ -3,13 +3,17 @@ run:
 
 linters:
   enable:
-    - goimports
+    - gci
 
 issues:
   exclude-rules:
-  - path: zz_generated.deepcopy.go
-    linters:
-      - goimports
-  - path: _test.go
-    linters:
-    - errcheck
+   - path: _test.go
+     linters:
+     - errcheck
+
+linters-settings:
+  gci:
+    sections:
+      - standard
+      - default
+      - prefix(github.com/rhobs/observability-operator)

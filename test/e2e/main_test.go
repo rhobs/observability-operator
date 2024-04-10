@@ -7,14 +7,13 @@ import (
 	"os"
 	"testing"
 
-	"github.com/rhobs/observability-operator/pkg/operator"
-	"github.com/rhobs/observability-operator/test/e2e/framework"
-
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/rhobs/observability-operator/pkg/operator"
+	"github.com/rhobs/observability-operator/test/e2e/framework"
 )
 
 var (

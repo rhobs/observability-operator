@@ -6,20 +6,17 @@ import (
 	"testing"
 	"time"
 
-	msov1 "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
-	"github.com/rhobs/observability-operator/test/e2e/framework"
-
 	"gotest.tools/v3/assert"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	msov1 "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
+	"github.com/rhobs/observability-operator/test/e2e/framework"
 )
 
 func TestThanosQuerierController(t *testing.T) {

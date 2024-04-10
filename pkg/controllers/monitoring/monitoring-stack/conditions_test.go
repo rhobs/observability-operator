@@ -4,9 +4,10 @@ import (
 	"testing"
 
 	monv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
-	"github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 	"gotest.tools/v3/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 )
 
 func TestUpdateAvailable(t *testing.T) {
