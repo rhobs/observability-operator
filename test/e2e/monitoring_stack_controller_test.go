@@ -622,6 +622,7 @@ func assertPrometheusManagedFields(t *testing.T) {
 			"key": "value",
 		},
 		EnableRemoteWriteReceiver: true,
+		EnableOtlpHttpReceiver:    func(b bool) *bool { return &b }(true),
 	}
 	ms.Spec.NamespaceSelector = &metav1.LabelSelector{
 		MatchLabels: map[string]string{
@@ -689,6 +690,7 @@ const oboManagedFieldsJson = `
   "f:probeNamespaceSelector": {},
   "f:probeSelector": {},
   "f:remoteWrite": {},
+  "f:enableFeatures": {},
   "f:replicas": {},
   "f:resources": {},
   "f:retention": {},

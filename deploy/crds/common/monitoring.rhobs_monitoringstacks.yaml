@@ -111,6 +111,12 @@ spec:
                   replicas: 2
                 description: Define prometheus config
                 properties:
+                  enableOtlpHttpReceiver:
+                    description: |-
+                      Enable Prometheus to accept OpenTelemetry Metrics via the otlp/http protocol.
+                      Defaults to the value of `false`.
+                      The resulting endpoint is /api/v1/otlp/v1/metrics.
+                    type: boolean
                   enableRemoteWriteReceiver:
                     description: Enable Prometheus to be used as a receiver for the
                       Prometheus remote write protocol. Defaults to the value of `false`.

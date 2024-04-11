@@ -184,6 +184,11 @@ type PrometheusConfig struct {
 	// Enable Prometheus to be used as a receiver for the Prometheus remote write protocol. Defaults to the value of `false`.
 	// +optional
 	EnableRemoteWriteReceiver bool `json:"enableRemoteWriteReceiver,omitempty"`
+	// Enable Prometheus to accept OpenTelemetry Metrics via the otlp/http protocol.
+	// Defaults to the value of `false`.
+	// The resulting endpoint is /api/v1/otlp/v1/metrics.
+	// +optional
+	EnableOtlpHttpReceiver *bool `json:"enableOtlpHttpReceiver,omitempty"`
 	// Default interval between scrapes.
 	// +optional
 	ScrapeInterval *monv1.Duration `json:"scrapeInterval,omitempty"`
