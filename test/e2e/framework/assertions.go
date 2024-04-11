@@ -335,3 +335,33 @@ func getConditionByType(conditions []v1alpha1.Condition, ctype v1alpha1.Conditio
 	}
 	return nil
 }
+
+// AssertPrometheusReplicaStatus asserts that prometheus is scaled correctly duration a time period of customForeverTestTimeout
+func (f *Framework) AssertPrometheusReplicaStatus(name, namespace string, expectedReplicas int32, fns ...OptionFn) func(t *testing.T) {
+	option := AssertOption{
+		PollInterval: 5 * time.Second,
+		WaitTimeout:  DefaultTestTimeout,
+	}
+	for _, fn := range fns {
+		fn(&option)
+	}
+	prom := monv1.Prometheus{}
+	return func(t *testing.T) {
+		if err := wait.PollUntilContextTimeout(context.Background(), option.PollInterval, option.WaitTimeout, false, func(ctx context.Context) (bool, error) {
+			key := types.NamespacedName{
+				Name:      name,
+				Namespace: namespace,
+			}
+			if err := f.K8sClient.Get(context.Background(), key, &prom); errors.IsNotFound(err) {
+				return false, nil
+			}
+			if prom.Status.Replicas != expectedReplicas {
+				return false, nil
+			}
+			return true, nil
+
+		}); wait.Interrupted(err) {
+			t.Fatal(fmt.Errorf("Prometheus %s/%s was not scaled down to %d", namespace, name, expectedReplicas))
+		}
+	}
+}

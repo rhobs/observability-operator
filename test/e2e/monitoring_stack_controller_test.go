@@ -489,30 +489,22 @@ func assertAlertmanagersAreOnDifferentNodes(t *testing.T, pods []corev1.Pod) {
 }
 
 func assertAlertmanagersAreResilientToDisruption(t *testing.T, pods []corev1.Pod) {
-	for i, pod := range pods {
-		lastPod := i == len(pods)-1
-		if lastPod {
-			if err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, framework.DefaultTestTimeout, true, func(ctx context.Context) (bool, error) {
-				err := f.Evict(&pod, 0)
-				if err == nil {
-					return false, nil
-				}
-				return true, nil
-			}); err != nil {
-				t.Fatal("expected an error when evicting the last pod, got nil")
-			}
-		}
-		if !lastPod {
-			if err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, framework.DefaultTestTimeout, true, func(ctx context.Context) (bool, error) {
-				err := f.Evict(&pod, 0)
-				if err != nil {
-					return false, nil
-				}
-				return true, nil
-			}); err != nil {
+	errs := make([]error, len(pods))
+	for i := range pods {
+		pod := pods[i]
+		errs[i] = f.Evict(&pod, 0)
+	}
+
+	for i, err := range errs {
+		if i != len(errs)-1 {
+			if err != nil {
 				t.Fatalf("expected no error when evicting pod with index %d, got %v", i, err)
 			}
-			f.AssertResourceAbsent(pod.Name, pod.Namespace, &pod)(t)
+			continue
+		}
+
+		if err == nil {
+			t.Fatalf("expected an error when evicting the last pod %d, got nil", i)
 		}
 	}
 }
@@ -586,35 +578,11 @@ func prometheusScaleDown(t *testing.T) {
 
 	err := f.K8sClient.Create(context.Background(), ms)
 	assert.NilError(t, err, "failed to create a monitoring stack")
-
-	prom := monv1.Prometheus{}
-	if err = wait.PollUntilContextTimeout(context.Background(), 5*time.Second, framework.DefaultTestTimeout, true, func(ctx context.Context) (bool, error) {
-		f.GetResourceWithRetry(t, ms.Name, ms.Namespace, &prom)
-		if prom.Status.Replicas != 1 {
-			return false, nil
-		}
-		return true, nil
-	}); err != nil {
-		t.Fatalf("prometheus replicase is not scaled down to %d, got %v", 1, err)
-	}
+	f.AssertPrometheusReplicaStatus(ms.Name, ms.Namespace, numOfRep)
 
 	err = f.UpdateWithRetry(t, ms, framework.SetPrometheusReplicas(0))
-	key := types.NamespacedName{Name: ms.Name, Namespace: ms.Namespace}
 	assert.NilError(t, err, "failed to update a monitoring stack")
-	err = wait.PollUntilContextTimeout(context.Background(), 5*time.Second, framework.DefaultTestTimeout, true, func(ctx context.Context) (bool, error) {
-		if err := f.K8sClient.Get(context.Background(), key, &prom); errors.IsNotFound(err) {
-			return false, nil
-		}
-
-		if prom.Status.Replicas != 0 {
-			return false, nil
-		}
-		return true, nil
-	})
-
-	if wait.Interrupted(err) {
-		t.Fatal(fmt.Errorf("Prometheus was not scaled down"))
-	}
+	f.AssertPrometheusReplicaStatus(ms.Name, ms.Namespace, numOfRep)
 }
 
 func assertPrometheusManagedFields(t *testing.T) {
