@@ -285,6 +285,15 @@ Define prometheus config
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>enableOtlpHttpReceiver</b></td>
+        <td>boolean</td>
+        <td>
+          Enable Prometheus to accept OpenTelemetry Metrics via the otlp/http protocol.
+Defaults to the value of `false`.
+The resulting endpoint is /api/v1/otlp/v1/metrics.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>enableRemoteWriteReceiver</b></td>
         <td>boolean</td>
         <td>

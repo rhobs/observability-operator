@@ -218,6 +218,11 @@ func (in *PrometheusConfig) DeepCopyInto(out *PrometheusConfig) {
 			(*out)[key] = val
 		}
 	}
+	if in.EnableOtlpHttpReceiver != nil {
+		in, out := &in.EnableOtlpHttpReceiver, &out.EnableOtlpHttpReceiver
+		*out = new(bool)
+		**out = **in
+	}
 	if in.ScrapeInterval != nil {
 		in, out := &in.ScrapeInterval, &out.ScrapeInterval
 		*out = new(monitoringv1.Duration)
