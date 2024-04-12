@@ -582,7 +582,7 @@ func prometheusScaleDown(t *testing.T) {
 
 	err = f.UpdateWithRetry(t, ms, framework.SetPrometheusReplicas(0))
 	assert.NilError(t, err, "failed to update a monitoring stack")
-	f.AssertPrometheusReplicaStatus(ms.Name, ms.Namespace, numOfRep)
+	f.AssertPrometheusReplicaStatus(ms.Name, ms.Namespace, 0)
 }
 
 func assertPrometheusManagedFields(t *testing.T) {

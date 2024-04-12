@@ -361,7 +361,7 @@ func (f *Framework) AssertPrometheusReplicaStatus(name, namespace string, expect
 			return true, nil
 
 		}); wait.Interrupted(err) {
-			t.Fatal(fmt.Errorf("Prometheus %s/%s was not scaled down to %d", namespace, name, expectedReplicas))
+			t.Fatal(fmt.Errorf("Prometheus %s/%s has unexpected number of replicas, got %d, expected %d", namespace, name, prom.Status.Replicas, expectedReplicas))
 		}
 	}
 }
