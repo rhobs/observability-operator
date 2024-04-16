@@ -1,4 +1,4 @@
-package observability_ui_plugin
+package uiplugin
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"github.com/go-logr/logr"
 	configv1 "github.com/openshift/api/config/v1"
 	osv1alpha1 "github.com/openshift/api/console/v1alpha1"
+	operatorv1 "github.com/openshift/api/operator/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -18,13 +19,11 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
-
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
-	operatorv1 "github.com/openshift/api/operator/v1"
-	obsui "github.com/rhobs/observability-operator/pkg/apis/observability-ui/v1alpha1"
+	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 	"github.com/rhobs/observability-operator/pkg/reconciler"
 )
 
@@ -33,21 +32,29 @@ type resourceManager struct {
 	scheme         *runtime.Scheme
 	logger         logr.Logger
 	controller     controller.Controller
-	pluginConf     ObservabilityUIPluginsConfiguration
+	pluginConf     UIPluginsConfiguration
 	clusterVersion string
 }
 
-type ObservabilityUIPluginsConfiguration struct {
+type UIPluginsConfiguration struct {
 	Images map[string]string
 }
 
 type Options struct {
-	PluginsConf ObservabilityUIPluginsConfiguration
+	PluginsConf UIPluginsConfiguration
 }
 
-// RBAC for managing ObservabilityUIPlugins
-// +kubebuilder:rbac:groups=observabilityui.rhobs,resources=observabilityuiplugins,verbs=get;list;watch;create;update;delete;patch
-// +kubebuilder:rbac:groups=observabilityui.rhobs,resources=observabilityuiplugins/status,verbs=get;update
+const (
+	AvailableReason         = "UIPluginAvailable"
+	ReconciledReason        = "UIPluginReconciled"
+	FailedToReconcileReason = "UIPluginFailedToReconciled"
+	ReconciledMessage       = "Plugin reconciled successfully"
+	NoReason                = "None"
+)
+
+// RBAC for managing UIPlugins
+// +kubebuilder:rbac:groups=observability.openshift.io,resources=uiplugins,verbs=get;list;watch;create;update;delete;patch
+// +kubebuilder:rbac:groups=observability.openshift.io,resources=uiplugins/status,verbs=get;update
 
 // RBAC for managing observability ui plugin objects
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=list;watch;create;update;patch;delete
@@ -81,7 +88,7 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 	generationChanged := builder.WithPredicates(predicate.GenerationChangedPredicate{})
 
 	ctrl, err := ctrl.NewControllerManagedBy(mgr).
-		For(&obsui.ObservabilityUIPlugin{}).
+		For(&uiv1alpha1.UIPlugin{}).
 		Owns(&appsv1.Deployment{}, generationChanged).
 		Owns(&v1.Service{}, generationChanged).
 		Owns(&v1.ServiceAccount{}, generationChanged).
@@ -117,7 +124,7 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	logger := rm.logger.WithValues("plugin", req.NamespacedName)
 
 	if !rm.consolePluginCapabilityEnabled(ctx, req.NamespacedName) {
-		logger.Info("Cluster console plugin not supported. Skipping observability UI plugin reconciliation")
+		logger.Info("Cluster console plugin not supported or not accessible. Skipping observability UI plugin reconciliation")
 		return ctrl.Result{}, nil
 	}
 
@@ -156,62 +163,114 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			return ctrl.Result{RequeueAfter: 2 * time.Second}, nil
 		}
 		if err != nil {
-			return ctrl.Result{}, err
+			return rm.updateStatus(ctx, req, plugin, err), err
 		}
 	}
 
 	if err := rm.registerPluginWithConsole(ctx, pluginInfo); err != nil {
-		return ctrl.Result{}, err
+		return rm.updateStatus(ctx, req, plugin, err), err
 	}
 
-	return ctrl.Result{}, nil
+	return rm.updateStatus(ctx, req, plugin, nil), nil
 }
 
-func (rm resourceManager) registerPluginWithConsole(ctx context.Context, pluginInfo *ObservabilityUIPluginInfo) error {
+func (rm resourceManager) updateStatus(ctx context.Context, req ctrl.Request, pl *uiv1alpha1.UIPlugin, recError error) ctrl.Result {
+	logger := rm.logger.WithValues("plugin", req.NamespacedName)
+
+	if recError != nil {
+		pl.Status.Conditions = []uiv1alpha1.Condition{
+			{
+				Type:               uiv1alpha1.ReconciledCondition,
+				Status:             uiv1alpha1.ConditionFalse,
+				Reason:             FailedToReconcileReason,
+				Message:            recError.Error(),
+				ObservedGeneration: pl.Generation,
+				LastTransitionTime: metav1.Now(),
+			},
+			{
+				Type:               uiv1alpha1.AvailableCondition,
+				Status:             uiv1alpha1.ConditionFalse,
+				Reason:             FailedToReconcileReason,
+				ObservedGeneration: pl.Generation,
+				LastTransitionTime: metav1.Now(),
+			},
+		}
+	} else {
+		pl.Status.Conditions = []uiv1alpha1.Condition{
+			{
+				Type:               uiv1alpha1.ReconciledCondition,
+				Status:             uiv1alpha1.ConditionTrue,
+				Reason:             ReconciledReason,
+				Message:            ReconciledMessage,
+				ObservedGeneration: pl.Generation,
+				LastTransitionTime: metav1.Now(),
+			},
+			{
+				Type:               uiv1alpha1.AvailableCondition,
+				Status:             uiv1alpha1.ConditionTrue,
+				Reason:             AvailableReason,
+				ObservedGeneration: pl.Generation,
+				LastTransitionTime: metav1.Now(),
+			},
+		}
+	}
+
+	err := rm.k8sClient.Status().Update(ctx, pl)
+	if err != nil {
+		logger.Info("Failed to update status", "err", err)
+		return ctrl.Result{RequeueAfter: 2 * time.Second}
+	}
+
+	return ctrl.Result{}
+}
+
+func (rm resourceManager) registerPluginWithConsole(ctx context.Context, pluginInfo *UIPluginInfo) error {
 	cluster := &operatorv1.Console{}
 	if err := rm.k8sClient.Get(ctx, client.ObjectKey{Name: "cluster"}, cluster); err != nil {
 		return err
 	}
 
-	if !slices.Contains(cluster.Spec.Plugins, pluginInfo.ConsoleName) {
-		// Register the plugin with the console
-		cluster := &operatorv1.Console{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: operatorv1.GroupVersion.String(),
-				Kind:       "Console",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "cluster",
-			},
-			Spec: operatorv1.ConsoleSpec{
-				OperatorSpec: operatorv1.OperatorSpec{
-					ManagementState: operatorv1.Managed,
-				},
-				Plugins: []string{
-					pluginInfo.ConsoleName,
-				},
-			},
-		}
+	if slices.Contains(cluster.Spec.Plugins, pluginInfo.ConsoleName) {
+		return nil
+	}
 
-		if err := reconciler.NewMerger(cluster).Reconcile(ctx, rm.k8sClient, rm.scheme); err != nil {
-			return err
-		}
+	clusterPlugins := append(cluster.Spec.Plugins, pluginInfo.ConsoleName)
+
+	// Register the plugin with the console
+	cluster = &operatorv1.Console{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: operatorv1.GroupVersion.String(),
+			Kind:       "Console",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "cluster",
+		},
+		Spec: operatorv1.ConsoleSpec{
+			OperatorSpec: operatorv1.OperatorSpec{
+				ManagementState: operatorv1.Managed,
+			},
+			Plugins: clusterPlugins,
+		},
+	}
+
+	if err := reconciler.NewMerger(cluster).Reconcile(ctx, rm.k8sClient, rm.scheme); err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func (rm resourceManager) getUIPlugin(ctx context.Context, req ctrl.Request) (*obsui.ObservabilityUIPlugin, error) {
+func (rm resourceManager) getUIPlugin(ctx context.Context, req ctrl.Request) (*uiv1alpha1.UIPlugin, error) {
 	logger := rm.logger.WithValues("plugin", req.NamespacedName)
 
-	plugin := obsui.ObservabilityUIPlugin{}
+	plugin := uiv1alpha1.UIPlugin{}
 
 	if err := rm.k8sClient.Get(ctx, req.NamespacedName, &plugin); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.V(3).Info("stack could not be found; may be marked for deletion")
 			return nil, nil
 		}
-		logger.Error(err, "failed to get ObservabilityUIPlugin")
+		logger.Error(err, "failed to get UIPlugin")
 		return nil, err
 	}
 

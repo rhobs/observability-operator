@@ -1,35 +1,35 @@
-package observability_ui_plugin
+package uiplugin
 
 import (
 	"fmt"
 	"testing"
 
-	obsui "github.com/rhobs/observability-operator/pkg/apis/observability-ui/v1alpha1"
-
 	"gotest.tools/v3/assert"
+
+	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 )
 
 func TestCompatibilityMatrixSpec(t *testing.T) {
 	tt := []struct {
-		pluginType     obsui.UIPluginType
+		pluginType     uiv1alpha1.UIPluginType
 		clusterVersion string
 		expectedKey    string
 		expectedErr    error
 	}{
 		{
-			pluginType:     obsui.TypeDashboards,
+			pluginType:     uiv1alpha1.TypeDashboards,
 			clusterVersion: "4.10",
 			expectedKey:    "",
 			expectedErr:    fmt.Errorf("dynamic pluings not supported before 4.11"),
 		},
 		{
-			pluginType:     obsui.TypeDashboards,
+			pluginType:     uiv1alpha1.TypeDashboards,
 			clusterVersion: "4.11",
 			expectedKey:    "ui-dashboards",
 			expectedErr:    nil,
 		},
 		{
-			pluginType:     obsui.TypeDashboards,
+			pluginType:     uiv1alpha1.TypeDashboards,
 			clusterVersion: "4.24.0-0.nightly-2024-03-11-200348",
 			expectedKey:    "ui-dashboards",
 			expectedErr:    nil,

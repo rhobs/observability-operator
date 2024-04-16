@@ -40,6 +40,14 @@ patches:
     version: v1
 - patch: |-
     - op: add
+      path: /spec/template/spec/containers/0/args/-
+      value: --images=ui-dashboards=quay.io/openshift-observability-ui/console-dashboards-plugin:v0.1.0
+  target:
+    group: apps
+    kind: Deployment
+    version: v1
+- patch: |-
+    - op: add
       path: /spec/template/spec/containers/0/resources
       value:
         requests:

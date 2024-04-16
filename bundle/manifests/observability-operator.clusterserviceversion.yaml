@@ -75,9 +75,6 @@ spec:
       kind: MonitoringStack
       name: monitoringstacks.monitoring.rhobs
       version: v1alpha1
-    - kind: ObservabilityUIPlugin
-      name: observabilityuiplugins.observabilityui.rhobs
-      version: v1alpha1
     - description: PodMonitor defines monitoring for a set of pods
       displayName: PodMonitor
       kind: PodMonitor
@@ -126,6 +123,11 @@ spec:
       kind: ThanosRuler
       name: thanosrulers.monitoring.rhobs
       version: v1
+    - description: UIPlugin defines a console plugin for observability
+      displayName: UIPlugin
+      kind: UIPlugin
+      name: uiplugins.observability.openshift.io
+      version: v1alpha1
   description: |2+
 
     Observability Operator is a Go based Kubernetes operator to setup and manage highly available Monitoring stack using Prometheus, Alertmanager and Thanos Querier.
@@ -429,9 +431,9 @@ spec:
           - patch
           - update
         - apiGroups:
-          - observabilityui.rhobs
+          - observability.openshift.io
           resources:
-          - observabilityuiplugins
+          - uiplugins
           verbs:
           - create
           - delete
@@ -441,17 +443,17 @@ spec:
           - update
           - watch
         - apiGroups:
-          - observabilityui.rhobs
+          - observability.openshift.io
           resources:
-          - observabilityuiplugins/finalizers
-          - observabilityuiplugins/status
+          - uiplugins/finalizers
+          - uiplugins/status
           verbs:
           - get
           - update
         - apiGroups:
-          - observabilityui.rhobs
+          - observability.openshift.io
           resources:
-          - observabilityuiplugins/status
+          - uiplugins/status
           verbs:
           - get
           - update

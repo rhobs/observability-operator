@@ -1,4 +1,4 @@
-package observability_ui_plugin
+package uiplugin
 
 import (
 	"fmt"
@@ -6,11 +6,11 @@ import (
 
 	"golang.org/x/mod/semver"
 
-	obsui "github.com/rhobs/observability-operator/pkg/apis/observability-ui/v1alpha1"
+	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 )
 
 type CompatibilityEntry struct {
-	PluginType        obsui.UIPluginType
+	PluginType        uiv1alpha1.UIPluginType
 	MinClusterVersion string
 	MaxClusterVersion string
 	ImageKey          string
@@ -19,7 +19,7 @@ type CompatibilityEntry struct {
 
 var compatibilityMatrix = []CompatibilityEntry{
 	{
-		PluginType:        obsui.TypeDashboards,
+		PluginType:        uiv1alpha1.TypeDashboards,
 		MinClusterVersion: "v4.11",
 		MaxClusterVersion: "",
 		ImageKey:          "ui-dashboards",
@@ -27,7 +27,7 @@ var compatibilityMatrix = []CompatibilityEntry{
 	},
 }
 
-func getImageKeyForPluginType(pluginType obsui.UIPluginType, clusterVersion string) (string, error) {
+func getImageKeyForPluginType(pluginType uiv1alpha1.UIPluginType, clusterVersion string) (string, error) {
 	if !strings.HasPrefix(clusterVersion, "v") {
 		clusterVersion = "v" + clusterVersion
 	}

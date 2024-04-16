@@ -168,9 +168,9 @@ rules:
   - patch
   - update
 - apiGroups:
-  - observabilityui.rhobs
+  - observability.openshift.io
   resources:
-  - observabilityuiplugins
+  - uiplugins
   verbs:
   - create
   - delete
@@ -180,17 +180,17 @@ rules:
   - update
   - watch
 - apiGroups:
-  - observabilityui.rhobs
+  - observability.openshift.io
   resources:
-  - observabilityuiplugins/finalizers
-  - observabilityuiplugins/status
+  - uiplugins/finalizers
+  - uiplugins/status
   verbs:
   - get
   - update
 - apiGroups:
-  - observabilityui.rhobs
+  - observability.openshift.io
   resources:
-  - observabilityuiplugins/status
+  - uiplugins/status
   verbs:
   - get
   - update

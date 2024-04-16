@@ -8,16 +8,16 @@ Using the Observability UI, you can install and manage plugins that extend the o
 
 ### Dashboards
 
-The plugin will search for datasources as ConfigMaps in the `console-dashboards` namespace with the `console.openshift.io/dashboard-datasource: 'true'` label. The namespace `console-dashboards` is required, more details on how to create a datasource ConfigMap can be found in the [console-dashboards-plugin](https://github.com/openshift/console-dashboards-plugin/blob/main/docs/add-datasource.md)
+The plugin will search for datasources as ConfigMaps in the `openshift-config-managed` namespace with the `console.openshift.io/dashboard-datasource: 'true'` label. The namespace `openshift-config-managed` is required, more details on how to create a datasource ConfigMap can be found in the [console-dashboards-plugin](https://github.com/openshift/console-dashboards-plugin/blob/main/docs/add-datasource.md)
 
-To enable the console dashboards plugin, create a `ObservabilityUIPlugin` CR. The following example shows how to create a CR to enable the console dashboards plugin:
+To enable the console dashboards plugin, create a `UIPlugin` CR. The following example shows how to create a CR to enable the console dashboards plugin:
 
 ```yaml
-apiVersion: observabilityui.rhobs/v1alpha1
-kind: ObservabilityUIPlugin
+apiVersion: observability.openshift.io/v1alpha1
+kind: UIPlugin
 metadata:
   name: ui-dashboards
-  namespace: openshift-observability-ui
+  namespace: observability-ui
 spec:
   type: Dashboards
 ```

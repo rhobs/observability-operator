@@ -85,10 +85,10 @@ spec:
       kind: ThanosRuler
       name: thanosrulers.monitoring.rhobs
       version: v1
-    - description: ObservabilityUIPlugin defines a console plugin for observability
-      displayName: ObservabilityUIPlugin
-      kind: ObservabilityUIPlugin
-      name: observabilityui.rhobs
+    - description: UIPlugin defines a console plugin for observability
+      displayName: UIPlugin
+      kind: UIPlugin
+      name: uiplugins.observability.openshift.io
       version: v1alpha1
   description: >+
 

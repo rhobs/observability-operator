@@ -1,22 +1,27 @@
-package observability_ui_plugin
+package uiplugin
 
 import (
 	"fmt"
 
-	"github.com/rhobs/observability-operator/pkg/reconciler"
-
 	osv1alpha1 "github.com/openshift/api/console/v1alpha1"
-	obsui "github.com/rhobs/observability-operator/pkg/apis/observability-ui/v1alpha1"
-
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
+
+	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
+	"github.com/rhobs/observability-operator/pkg/reconciler"
 )
 
-func pluginComponentReconcilers(plugin *obsui.ObservabilityUIPlugin, pluginInfo ObservabilityUIPluginInfo) []reconciler.Reconciler {
+const (
+	port                  = 9443
+	serviceAccountSuffix  = "-sa"
+	servingCertVolumeName = "serving-cert"
+)
+
+func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPluginInfo) []reconciler.Reconciler {
 	hasClusterRole := pluginInfo.ClusterRole != nil
 	hasClusterRoleBinding := pluginInfo.ClusterRoleBinding != nil
 	namespace := plugin.Namespace
@@ -31,28 +36,28 @@ func pluginComponentReconcilers(plugin *obsui.ObservabilityUIPlugin, pluginInfo 
 	}
 }
 
-func newServiceAccount(info ObservabilityUIPluginInfo, namespace string) *corev1.ServiceAccount {
+func newServiceAccount(info UIPluginInfo, namespace string) *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),
 			Kind:       "ServiceAccount",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      info.Name + "-sa",
+			Name:      info.Name + serviceAccountSuffix,
 			Namespace: namespace,
 		},
 	}
 }
 
-func newClusterRole(info ObservabilityUIPluginInfo) *rbacv1.ClusterRole {
+func newClusterRole(info UIPluginInfo) *rbacv1.ClusterRole {
 	return info.ClusterRole
 }
 
-func newClusterRoleBinding(info ObservabilityUIPluginInfo) *rbacv1.ClusterRoleBinding {
+func newClusterRoleBinding(info UIPluginInfo) *rbacv1.ClusterRoleBinding {
 	return info.ClusterRoleBinding
 }
 
-func newConsolePlugin(info ObservabilityUIPluginInfo, namespace string) *osv1alpha1.ConsolePlugin {
+func newConsolePlugin(info UIPluginInfo, namespace string) *osv1alpha1.ConsolePlugin {
 	return &osv1alpha1.ConsolePlugin{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: osv1alpha1.SchemeGroupVersion.String(),
@@ -66,7 +71,7 @@ func newConsolePlugin(info ObservabilityUIPluginInfo, namespace string) *osv1alp
 			Service: osv1alpha1.ConsolePluginService{
 				Name:      info.Name,
 				Namespace: namespace,
-				Port:      9443,
+				Port:      port,
 				BasePath:  "/",
 			},
 			Proxy: info.Proxies,
@@ -74,7 +79,7 @@ func newConsolePlugin(info ObservabilityUIPluginInfo, namespace string) *osv1alp
 	}
 }
 
-func newDeployment(info ObservabilityUIPluginInfo, namespace string) *appsv1.Deployment {
+func newDeployment(info UIPluginInfo, namespace string) *appsv1.Deployment {
 	plugin := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: appsv1.SchemeGroupVersion.String(),
@@ -99,21 +104,21 @@ func newDeployment(info ObservabilityUIPluginInfo, namespace string) *appsv1.Dep
 					Labels:    componentLabels(info.Name),
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName: info.Name + "-sa",
+					ServiceAccountName: info.Name + serviceAccountSuffix,
 					Containers: []corev1.Container{
 						{
 							Name:  info.Name,
 							Image: info.Image,
 							Ports: []corev1.ContainerPort{
 								{
-									ContainerPort: 9443,
+									ContainerPort: port,
 									Name:          "web",
 								},
 							},
 							TerminationMessagePolicy: "FallbackToLogsOnError",
 							SecurityContext: &corev1.SecurityContext{
-								RunAsNonRoot:             &[]bool{true}[0],
-								AllowPrivilegeEscalation: &[]bool{false}[0],
+								RunAsNonRoot:             ptr.To(bool(true)),
+								AllowPrivilegeEscalation: ptr.To(bool(false)),
 								Capabilities: &corev1.Capabilities{
 									Drop: []corev1.Capability{
 										"ALL",
@@ -122,13 +127,13 @@ func newDeployment(info ObservabilityUIPluginInfo, namespace string) *appsv1.Dep
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      "serving-cert",
+									Name:      servingCertVolumeName,
 									ReadOnly:  true,
 									MountPath: "/var/serving-cert",
 								},
 							},
 							Args: []string{
-								fmt.Sprintf("-port=%d", 9443),
+								fmt.Sprintf("-port=%d", port),
 								"-cert=/var/serving-cert/tls.crt",
 								"-key=/var/serving-cert/tls.key",
 							},
@@ -136,11 +141,11 @@ func newDeployment(info ObservabilityUIPluginInfo, namespace string) *appsv1.Dep
 					},
 					Volumes: []corev1.Volume{
 						{
-							Name: "serving-cert",
+							Name: servingCertVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								Secret: &corev1.SecretVolumeSource{
 									SecretName:  info.Name,
-									DefaultMode: &[]int32{420}[0],
+									DefaultMode: ptr.To(int32(420)),
 								},
 							},
 						},
@@ -157,7 +162,7 @@ func newDeployment(info ObservabilityUIPluginInfo, namespace string) *appsv1.Dep
 	return plugin
 }
 
-func newService(info ObservabilityUIPluginInfo, namespace string) *corev1.Service {
+func newService(info UIPluginInfo, namespace string) *corev1.Service {
 	annotations := map[string]string{
 		"service.alpha.openshift.io/serving-cert-secret-name": info.Name,
 	}
@@ -176,10 +181,10 @@ func newService(info ObservabilityUIPluginInfo, namespace string) *corev1.Servic
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
 				{
-					Port:       9443,
+					Port:       port,
 					Name:       "http",
 					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt32(9443),
+					TargetPort: intstr.FromInt32(port),
 				},
 			},
 			Selector: map[string]string{
@@ -193,7 +198,7 @@ func newService(info ObservabilityUIPluginInfo, namespace string) *corev1.Servic
 func componentLabels(pluginName string) map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/instance":   pluginName,
-		"app.kubernetes.io/part-of":    "ObservabilityUIPlugin",
+		"app.kubernetes.io/part-of":    "UIPlugin",
 		"app.kubernetes.io/managed-by": "observability-operator",
 	}
 }

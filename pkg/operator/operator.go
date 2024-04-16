@@ -4,9 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
-
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -14,7 +12,7 @@ import (
 
 	stackctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/monitoring-stack"
 	tqctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/thanos-querier"
-	obsuictrl "github.com/rhobs/observability-operator/pkg/controllers/observability-ui/observability-ui-plugin"
+	uictrl "github.com/rhobs/observability-operator/pkg/controllers/uiplugin"
 )
 
 // NOTE: The instance selector label is hardcoded in static assets.
@@ -37,14 +35,14 @@ type FeatureGates struct {
 }
 
 type OperatorConfiguration struct {
-	MetricsAddr            string
-	HealthProbeAddr        string
-	Prometheus             stackctrl.PrometheusConfiguration
-	Alertmanager           stackctrl.AlertmanagerConfiguration
-	ThanosSidecar          stackctrl.ThanosConfiguration
-	ThanosQuerier          tqctrl.ThanosConfiguration
-	ObservabilityUIPlugins obsuictrl.ObservabilityUIPluginsConfiguration
-	FeatureGates           FeatureGates
+	MetricsAddr     string
+	HealthProbeAddr string
+	Prometheus      stackctrl.PrometheusConfiguration
+	Alertmanager    stackctrl.AlertmanagerConfiguration
+	ThanosSidecar   stackctrl.ThanosConfiguration
+	ThanosQuerier   tqctrl.ThanosConfiguration
+	UIPlugins       uictrl.UIPluginsConfiguration
+	FeatureGates    FeatureGates
 }
 
 func WithPrometheusImage(image string) func(*OperatorConfiguration) {
@@ -85,7 +83,7 @@ func WithHealthProbeAddr(addr string) func(*OperatorConfiguration) {
 
 func WithUIPluginImages(images map[string]string) func(*OperatorConfiguration) {
 	return func(oc *OperatorConfiguration) {
-		oc.ObservabilityUIPlugins.Images = images
+		oc.UIPlugins.Images = images
 	}
 }
 
@@ -105,7 +103,7 @@ func NewOperatorConfiguration(opts ...func(*OperatorConfiguration)) *OperatorCon
 
 func New(cfg *OperatorConfiguration) (*Operator, error) {
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme: runtime.NewScheme(),
+		Scheme: NewScheme(cfg),
 		Metrics: metricsserver.Options{
 			BindAddress: cfg.MetricsAddr,
 		},
@@ -129,7 +127,7 @@ func New(cfg *OperatorConfiguration) (*Operator, error) {
 	}
 
 	if cfg.FeatureGates.OpenShift.Enabled {
-		if err := obsuictrl.RegisterWithManager(mgr, obsuictrl.Options{PluginsConf: cfg.ObservabilityUIPlugins}); err != nil {
+		if err := uictrl.RegisterWithManager(mgr, uictrl.Options{PluginsConf: cfg.UIPlugins}); err != nil {
 			return nil, fmt.Errorf("unable to register observability-ui-plugin controller: %w", err)
 		}
 	}

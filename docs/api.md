@@ -3,7 +3,7 @@
 Packages:
 
 - [monitoring.rhobs/v1alpha1](#monitoringrhobsv1alpha1)
-- [observabilityui.rhobs/v1alpha1](#observabilityuirhobsv1alpha1)
+- [observability.openshift.io/v1alpha1](#observabilityopenshiftiov1alpha1)
 
 # monitoring.rhobs/v1alpha1
 
@@ -2768,24 +2768,24 @@ list restricting them.<br/>
       </tr></tbody>
 </table>
 
-# observabilityui.rhobs/v1alpha1
+# observability.openshift.io/v1alpha1
 
 Resource Types:
 
-- [ObservabilityUIPlugin](#observabilityuiplugin)
+- [UIPlugin](#uiplugin)
 
 
 
 
-## ObservabilityUIPlugin
-<sup><sup>[↩ Parent](#observabilityuirhobsv1alpha1 )</sup></sup>
+## UIPlugin
+<sup><sup>[↩ Parent](#observabilityopenshiftiov1alpha1 )</sup></sup>
 
 
 
 
 
 
-ObservabilityUIPlugin defines an observability console plugin
+UIPlugin defines an observability console plugin
 
 <table>
     <thead>
@@ -2799,13 +2799,13 @@ ObservabilityUIPlugin defines an observability console plugin
     <tbody><tr>
       <td><b>apiVersion</b></td>
       <td>string</td>
-      <td>observabilityui.rhobs/v1alpha1</td>
+      <td>observability.openshift.io/v1alpha1</td>
       <td>true</td>
       </tr>
       <tr>
       <td><b>kind</b></td>
       <td>string</td>
-      <td>ObservabilityUIPlugin</td>
+      <td>UIPlugin</td>
       <td>true</td>
       </tr>
       <tr>
@@ -2814,29 +2814,30 @@ ObservabilityUIPlugin defines an observability console plugin
       <td>Refer to the Kubernetes API documentation for the fields of the `metadata` field.</td>
       <td>true</td>
       </tr><tr>
-        <td><b><a href="#observabilityuipluginspec">spec</a></b></td>
+        <td><b><a href="#uipluginspec">spec</a></b></td>
         <td>object</td>
         <td>
-          Observabilityuipluginpec is the specification for desired state of ObservabilityUIPlugin.<br/>
+          UIPluginSpec is the specification for desired state of UIPlugin.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#observabilityuipluginstatus">status</a></b></td>
+        <td><b><a href="#uipluginstatus">status</a></b></td>
         <td>object</td>
         <td>
-          Observabilityuiplugintatus defines the observed state of ObservabilityUIPlugin. It should always be reconstructable from the state of the cluster and/or outside world.<br/>
+          UIPluginStatus defines the observed state of UIPlugin.
+It should always be reconstructable from the state of the cluster and/or outside world.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
 </table>
 
 
-### ObservabilityUIPlugin.spec
-<sup><sup>[↩ Parent](#observabilityuiplugin)</sup></sup>
+### UIPlugin.spec
+<sup><sup>[↩ Parent](#uiplugin)</sup></sup>
 
 
 
-Observabilityuipluginpec is the specification for desired state of ObservabilityUIPlugin.
+UIPluginSpec is the specification for desired state of UIPlugin.
 
 <table>
     <thead>
@@ -2860,12 +2861,13 @@ Observabilityuipluginpec is the specification for desired state of Observability
 </table>
 
 
-### ObservabilityUIPlugin.status
-<sup><sup>[↩ Parent](#observabilityuiplugin)</sup></sup>
+### UIPlugin.status
+<sup><sup>[↩ Parent](#uiplugin)</sup></sup>
 
 
 
-Observabilityuiplugintatus defines the observed state of ObservabilityUIPlugin. It should always be reconstructable from the state of the cluster and/or outside world.
+UIPluginStatus defines the observed state of UIPlugin.
+It should always be reconstructable from the state of the cluster and/or outside world.
 
 <table>
     <thead>
@@ -2877,7 +2879,7 @@ Observabilityuiplugintatus defines the observed state of ObservabilityUIPlugin. 
         </tr>
     </thead>
     <tbody><tr>
-        <td><b><a href="#observabilityuipluginstatusconditionsindex">conditions</a></b></td>
+        <td><b><a href="#uipluginstatusconditionsindex">conditions</a></b></td>
         <td>[]object</td>
         <td>
           Conditions provide status information about the plugin.<br/>
@@ -2887,8 +2889,8 @@ Observabilityuiplugintatus defines the observed state of ObservabilityUIPlugin. 
 </table>
 
 
-### ObservabilityUIPlugin.status.conditions[index]
-<sup><sup>[↩ Parent](#observabilityuipluginstatus)</sup></sup>
+### UIPlugin.status.conditions[index]
+<sup><sup>[↩ Parent](#uipluginstatus)</sup></sup>
 
 
 
@@ -2907,7 +2909,8 @@ Observabilityuiplugintatus defines the observed state of ObservabilityUIPlugin. 
         <td><b>lastTransitionTime</b></td>
         <td>string</td>
         <td>
-          lastTransitionTime is the last time the condition transitioned from one status to another. This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.<br/>
+          lastTransitionTime is the last time the condition transitioned from one status to another.
+This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.<br/>
           <br/>
             <i>Format</i>: date-time<br/>
         </td>
@@ -2916,14 +2919,19 @@ Observabilityuiplugintatus defines the observed state of ObservabilityUIPlugin. 
         <td><b>message</b></td>
         <td>string</td>
         <td>
-          message is a human readable message indicating details about the transition. This may be an empty string.<br/>
+          message is a human readable message indicating details about the transition.
+This may be an empty string.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>reason</b></td>
         <td>string</td>
         <td>
-          reason contains a programmatic identifier indicating the reason for the condition's last transition. Producers of specific condition types may define expected values and meanings for this field, and whether the values are considered a guaranteed API. The value should be a CamelCase string. This field may not be empty.<br/>
+          reason contains a programmatic identifier indicating the reason for the condition's last transition.
+Producers of specific condition types may define expected values and meanings for this field,
+and whether the values are considered a guaranteed API.
+The value should be a CamelCase string.
+This field may not be empty.<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -2939,14 +2947,17 @@ Observabilityuiplugintatus defines the observed state of ObservabilityUIPlugin. 
         <td><b>type</b></td>
         <td>string</td>
         <td>
-          type of condition in CamelCase or in foo.example.com/CamelCase. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)<br/>
+          type of condition in CamelCase or in foo.example.com/CamelCase.
+The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>observedGeneration</b></td>
         <td>integer</td>
         <td>
-          observedGeneration represents the .metadata.generation that the condition was set based upon. For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date with respect to the current state of the instance.<br/>
+          observedGeneration represents the .metadata.generation that the condition was set based upon.
+For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+with respect to the current state of the instance.<br/>
           <br/>
             <i>Format</i>: int64<br/>
             <i>Minimum</i>: 0<br/>
