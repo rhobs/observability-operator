@@ -25,7 +25,6 @@ type Updater struct {
 }
 
 func (r Updater) Reconcile(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
-
 	if r.resourceOwner.GetNamespace() == r.resource.GetNamespace() {
 		if err := controllerutil.SetControllerReference(r.resourceOwner, r.resource, scheme); err != nil {
 			return fmt.Errorf("%s/%s (%s): updater failed to set owner reference: %w",
@@ -39,6 +38,7 @@ func (r Updater) Reconcile(ctx context.Context, c client.Client, scheme *runtime
 			r.resource.GetNamespace(), r.resource.GetName(),
 			r.resource.GetObjectKind().GroupVersionKind().String(), err)
 	}
+
 	return nil
 }
 

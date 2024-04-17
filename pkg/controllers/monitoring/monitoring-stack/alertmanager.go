@@ -139,8 +139,7 @@ func newAlertManagerClusterRole(ms *stack.MonitoringStack, rbacResourceName stri
 			Kind:       "ClusterRole",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      rbacResourceName,
-			Namespace: ms.Namespace,
+			Name: rbacResourceName,
 		},
 		Rules: []rbacv1.PolicyRule{{
 			APIGroups:     []string{"security.openshift.io"},
