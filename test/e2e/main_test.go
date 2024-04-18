@@ -51,14 +51,27 @@ func main(m *testing.M) int {
 
 	exitCode := m.Run()
 
-	tests := []testing.InternalTest{{
-		Name: "NoReconcilationErrors",
-		F: func(t *testing.T) {
-			// see: https://github.com/rhobs/observability-operator/issues/200
-			t.Skip("skipping reconciliation error test until #200 is fixed")
-			f.AssertNoReconcileErrors(t)
+	tests := []testing.InternalTest{
+		{
+			Name: "NoReconcilationErrors",
+			F: func(t *testing.T) {
+				// see: https://github.com/rhobs/observability-operator/issues/200
+				t.Skip("skipping reconciliation error test until #200 is fixed")
+				f.AssertNoReconcileErrors(t)
+			},
 		},
-	}}
+		{
+			// Kubernetes will emit events with reason=OwnerRefInvalidNamespace
+			// if the operator defines invalid owner references.
+			// See:
+			// - https://kubernetes.io/docs/concepts/architecture/garbage-collection/#owners-dependents
+			// - https://issues.redhat.com/browse/COO-117
+			Name: "NoOwnerRefInvalidNamespaceReasonEvent",
+			F: func(t *testing.T) {
+				f.AssertNoEventWithReason(t, "OwnerRefInvalidNamespace")
+			},
+		},
+	}
 
 	log.Println("=== Running post e2e test validations ===")
 	if !testing.RunTests(func(_, _ string) (bool, error) { return true, nil }, tests) {
