@@ -2785,7 +2785,7 @@ Resource Types:
 
 
 
-UIPlugin defines an observability console plugin
+UIPlugin defines an observability console plugin.
 
 <table>
     <thead>
@@ -2852,7 +2852,7 @@ UIPluginSpec is the specification for desired state of UIPlugin.
         <td><b>type</b></td>
         <td>enum</td>
         <td>
-          <br/>
+          Type defines the UI plugin.<br/>
           <br/>
             <i>Enum</i>: Dashboards<br/>
         </td>

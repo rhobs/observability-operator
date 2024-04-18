@@ -81,9 +81,10 @@ func WithHealthProbeAddr(addr string) func(*OperatorConfiguration) {
 	}
 }
 
-func WithUIPluginImages(images map[string]string) func(*OperatorConfiguration) {
+func WithUIPlugins(namespace string, images map[string]string) func(*OperatorConfiguration) {
 	return func(oc *OperatorConfiguration) {
 		oc.UIPlugins.Images = images
+		oc.UIPlugins.ResourcesNamespace = namespace
 	}
 }
 

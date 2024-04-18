@@ -12,7 +12,7 @@ import (
 
 // UIPlugin defines an observability console plugin.
 // +k8s:openapi-gen=true
-// +kubebuilder:resource
+// +kubebuilder:resource:scope=Cluster
 // +kubebuilder:subresource:status
 type UIPlugin struct {
 	metav1.TypeMeta   `json:",inline"`

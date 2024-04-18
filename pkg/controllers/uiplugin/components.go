@@ -22,14 +22,14 @@ const (
 )
 
 func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPluginInfo) []reconciler.Reconciler {
-	hasClusterRole := pluginInfo.ClusterRole != nil
-	hasClusterRoleBinding := pluginInfo.ClusterRoleBinding != nil
-	namespace := plugin.Namespace
+	hasRole := pluginInfo.Role != nil
+	hasRoleBinding := pluginInfo.RoleBinding != nil
+	namespace := pluginInfo.ResourceNamespace
 
 	return []reconciler.Reconciler{
 		reconciler.NewUpdater(newServiceAccount(pluginInfo, namespace), plugin),
-		reconciler.NewOptionalUpdater(newClusterRole(pluginInfo), plugin, hasClusterRole),
-		reconciler.NewOptionalUpdater(newClusterRoleBinding(pluginInfo), plugin, hasClusterRoleBinding),
+		reconciler.NewOptionalUpdater(newRole(pluginInfo), plugin, hasRole),
+		reconciler.NewOptionalUpdater(newRoleBinding(pluginInfo), plugin, hasRoleBinding),
 		reconciler.NewUpdater(newDeployment(pluginInfo, namespace), plugin),
 		reconciler.NewUpdater(newService(pluginInfo, namespace), plugin),
 		reconciler.NewUpdater(newConsolePlugin(pluginInfo, namespace), plugin),
@@ -49,12 +49,12 @@ func newServiceAccount(info UIPluginInfo, namespace string) *corev1.ServiceAccou
 	}
 }
 
-func newClusterRole(info UIPluginInfo) *rbacv1.ClusterRole {
-	return info.ClusterRole
+func newRole(info UIPluginInfo) *rbacv1.Role {
+	return info.Role
 }
 
-func newClusterRoleBinding(info UIPluginInfo) *rbacv1.ClusterRoleBinding {
-	return info.ClusterRoleBinding
+func newRoleBinding(info UIPluginInfo) *rbacv1.RoleBinding {
+	return info.RoleBinding
 }
 
 func newConsolePlugin(info UIPluginInfo, namespace string) *osv1alpha1.ConsolePlugin {
@@ -93,9 +93,7 @@ func newDeployment(info UIPluginInfo, namespace string) *appsv1.Deployment {
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptr.To(int32(1)),
 			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"app.kubernetes.io/instance": info.Name,
-				},
+				MatchLabels: componentLabels(info.Name),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
@@ -187,10 +185,8 @@ func newService(info UIPluginInfo, namespace string) *corev1.Service {
 					TargetPort: intstr.FromInt32(port),
 				},
 			},
-			Selector: map[string]string{
-				"app.kubernetes.io/instance": info.Name,
-			},
-			Type: corev1.ServiceTypeClusterIP,
+			Selector: componentLabels(info.Name),
+			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
 }

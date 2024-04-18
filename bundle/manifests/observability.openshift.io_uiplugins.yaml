@@ -12,12 +12,12 @@ spec:
     listKind: UIPluginList
     plural: uiplugins
     singular: uiplugin
-  scope: Namespaced
+  scope: Cluster
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: UIPlugin defines an observability console plugin
+        description: UIPlugin defines an observability console plugin.
         properties:
           apiVersion:
             description: |-
@@ -40,6 +40,7 @@ spec:
             description: UIPluginSpec is the specification for desired state of UIPlugin.
             properties:
               type:
+                description: Type defines the UI plugin.
                 enum:
                 - Dashboards
                 type: string

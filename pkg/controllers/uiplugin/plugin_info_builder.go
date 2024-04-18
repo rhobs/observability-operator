@@ -12,13 +12,14 @@ import (
 )
 
 type UIPluginInfo struct {
-	Image              string
-	Name               string
-	ConsoleName        string
-	DisplayName        string
-	Proxies            []osv1alpha1.ConsolePluginProxy
-	ClusterRole        *rbacv1.ClusterRole
-	ClusterRoleBinding *rbacv1.ClusterRoleBinding
+	Image             string
+	Name              string
+	ConsoleName       string
+	DisplayName       string
+	Proxies           []osv1alpha1.ConsolePluginProxy
+	Role              *rbacv1.Role
+	RoleBinding       *rbacv1.RoleBinding
+	ResourceNamespace string
 }
 
 func PluginInfoBuilder(plugin *uiv1alpha1.UIPlugin, pluginConf UIPluginsConfiguration, clusterVersion string) (*UIPluginInfo, error) {
@@ -33,17 +34,20 @@ func PluginInfoBuilder(plugin *uiv1alpha1.UIPlugin, pluginConf UIPluginsConfigur
 	}
 
 	name := "observability-ui-" + plugin.Name
+	namespace := pluginConf.ResourcesNamespace
 
 	switch plugin.Spec.Type {
 	case uiv1alpha1.TypeDashboards:
 		{
 			readerRoleName := plugin.Name + "-datasource-reader"
+			datasourcesNamespace := "openshift-config-managed"
 
 			pluginInfo := &UIPluginInfo{
-				Image:       image,
-				Name:        name,
-				ConsoleName: "console-dashboards-plugin",
-				DisplayName: "Console Enhanced Dashboards",
+				Image:             image,
+				Name:              name,
+				ConsoleName:       "console-dashboards-plugin",
+				DisplayName:       "Console Enhanced Dashboards",
+				ResourceNamespace: namespace,
 				Proxies: []osv1alpha1.ConsolePluginProxy{
 					{
 						Type:      osv1alpha1.ProxyTypeService,
@@ -51,18 +55,19 @@ func PluginInfoBuilder(plugin *uiv1alpha1.UIPlugin, pluginConf UIPluginsConfigur
 						Authorize: true,
 						Service: osv1alpha1.ConsolePluginProxyServiceConfig{
 							Name:      name,
-							Namespace: plugin.Namespace,
+							Namespace: namespace,
 							Port:      9443,
 						},
 					},
 				},
-				ClusterRole: &rbacv1.ClusterRole{
+				Role: &rbacv1.Role{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: rbacv1.SchemeGroupVersion.String(),
-						Kind:       "ClusterRole",
+						Kind:       "Role",
 					},
 					ObjectMeta: metav1.ObjectMeta{
-						Name: readerRoleName,
+						Name:      readerRoleName,
+						Namespace: datasourcesNamespace,
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -72,25 +77,26 @@ func PluginInfoBuilder(plugin *uiv1alpha1.UIPlugin, pluginConf UIPluginsConfigur
 						},
 					},
 				},
-				ClusterRoleBinding: &rbacv1.ClusterRoleBinding{
+				RoleBinding: &rbacv1.RoleBinding{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: rbacv1.SchemeGroupVersion.String(),
-						Kind:       "ClusterRoleBinding",
+						Kind:       "RoleBinding",
 					},
 					ObjectMeta: metav1.ObjectMeta{
-						Name: name + "-rolebinding",
+						Name:      name + "-rolebinding",
+						Namespace: datasourcesNamespace,
 					},
 					Subjects: []rbacv1.Subject{
 						{
 							APIGroup:  corev1.SchemeGroupVersion.Group,
 							Kind:      "ServiceAccount",
 							Name:      name + "-sa",
-							Namespace: plugin.Namespace,
+							Namespace: namespace,
 						},
 					},
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.SchemeGroupVersion.Group,
-						Kind:     "ClusterRole",
+						Kind:     "Role",
 						Name:     readerRoleName,
 					},
 				},

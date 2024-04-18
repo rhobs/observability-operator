@@ -37,7 +37,8 @@ type resourceManager struct {
 }
 
 type UIPluginsConfiguration struct {
-	Images map[string]string
+	Images             map[string]string
+	ResourcesNamespace string
 }
 
 type Options struct {
@@ -58,6 +59,7 @@ const (
 
 // RBAC for managing observability ui plugin objects
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles;rolebindings,verbs=list;watch;create;update;delete;patch
 //+kubebuilder:rbac:groups="",resources=serviceaccounts;services;configmaps,verbs=get;list;watch;create;update;patch;delete
 
 // RBAC for managing Console CRs
@@ -92,8 +94,8 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 		Owns(&appsv1.Deployment{}, generationChanged).
 		Owns(&v1.Service{}, generationChanged).
 		Owns(&v1.ServiceAccount{}, generationChanged).
-		Owns(&rbacv1.ClusterRole{}, generationChanged).
-		Owns(&rbacv1.ClusterRoleBinding{}, generationChanged).
+		Owns(&rbacv1.Role{}, generationChanged).
+		Owns(&rbacv1.RoleBinding{}, generationChanged).
 		Owns(&osv1alpha1.ConsolePlugin{}, generationChanged).
 		Build(rm)
 	if err != nil {

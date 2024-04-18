@@ -17,7 +17,6 @@ apiVersion: observability.openshift.io/v1alpha1
 kind: UIPlugin
 metadata:
   name: ui-dashboards
-  namespace: observability-ui
 spec:
   type: Dashboards
 ```
