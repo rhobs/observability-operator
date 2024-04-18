@@ -194,6 +194,7 @@ func (f *Framework) GetResourceWithRetry(t *testing.T, name, namespace string, o
 }
 
 func assertSamples(t *testing.T, metrics []byte, expected map[string]float64) {
+	t.Helper()
 	sDecoder := expfmt.SampleDecoder{
 		Dec: expfmt.NewDecoder(bytes.NewReader(metrics), expfmt.NewFormat(expfmt.FormatType(expfmt.TypeTextPlain))),
 	}
@@ -273,12 +274,32 @@ func (f *Framework) GetOperatorMetrics(t *testing.T) []byte {
 
 // AssertNoReconcileErrors asserts that there are no reconcilation errors
 func (f *Framework) AssertNoReconcileErrors(t *testing.T) {
+	t.Helper()
 	metrics := f.GetOperatorMetrics(t)
 	assertSamples(t, metrics,
 		map[string]float64{
 			`{__name__="controller_runtime_reconcile_errors_total", controller="monitoringstack"}`: 0,
 			`{__name__="controller_runtime_reconcile_errors_total", controller="thanosquerier"}`:   0,
 		})
+}
+
+func (f *Framework) AssertNoEventWithReason(t *testing.T, reason string) {
+	t.Helper()
+
+	evts, err := f.kubernetes.EventsV1().Events("").List(context.Background(), metav1.ListOptions{
+		FieldSelector: fmt.Sprintf("reason=%s", reason),
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	if len(evts.Items) > 0 {
+		t.Logf("expected 0 event with reason=%q, got %d", reason, len(evts.Items))
+		for i, e := range evts.Items {
+			t.Logf("event[%d]: %s", i, e.String())
+		}
+		t.FailNow()
+	}
 }
 
 func (f *Framework) GetStackWhenAvailable(t *testing.T, name, namespace string) v1alpha1.MonitoringStack {
