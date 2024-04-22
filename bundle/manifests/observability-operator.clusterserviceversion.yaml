@@ -123,6 +123,11 @@ spec:
       kind: ThanosRuler
       name: thanosrulers.monitoring.rhobs
       version: v1
+    - description: UIPlugin defines a console plugin for observability
+      displayName: UIPlugin
+      kind: UIPlugin
+      name: uiplugins.observability.openshift.io
+      version: v1alpha1
   description: |2+
 
     Observability Operator is a Go based Kubernetes operator to setup and manage highly available Monitoring stack using Prometheus, Alertmanager and Thanos Querier.
@@ -265,6 +270,20 @@ spec:
         - apiGroups:
           - ""
           resources:
+          - configmaps
+          - serviceaccounts
+          - services
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
           - endpoints
           - pods
           - services
@@ -292,6 +311,26 @@ spec:
           verbs:
           - create
           - delete
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - config.openshift.io
+          resources:
+          - clusterversions
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - console.openshift.io
+          resources:
+          - consoleplugins
+          verbs:
+          - create
+          - delete
+          - get
           - list
           - patch
           - update
@@ -392,6 +431,42 @@ spec:
           - patch
           - update
         - apiGroups:
+          - observability.openshift.io
+          resources:
+          - uiplugins
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - observability.openshift.io
+          resources:
+          - uiplugins/finalizers
+          - uiplugins/status
+          verbs:
+          - get
+          - update
+        - apiGroups:
+          - observability.openshift.io
+          resources:
+          - uiplugins/status
+          verbs:
+          - get
+          - update
+        - apiGroups:
+          - operator.openshift.io
+          resources:
+          - consoles
+          verbs:
+          - get
+          - list
+          - patch
+          - watch
+        - apiGroups:
           - policy
           resources:
           - poddisruptionbudgets
@@ -407,6 +482,18 @@ spec:
           resources:
           - clusterrolebindings
           - clusterroles
+          - rolebindings
+          - roles
+          verbs:
+          - create
+          - delete
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
           - rolebindings
           - roles
           verbs:

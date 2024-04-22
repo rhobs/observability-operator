@@ -85,6 +85,11 @@ spec:
       kind: ThanosRuler
       name: thanosrulers.monitoring.rhobs
       version: v1
+    - description: UIPlugin defines a console plugin for observability
+      displayName: UIPlugin
+      kind: UIPlugin
+      name: uiplugins.observability.openshift.io
+      version: v1alpha1
   description: >+
 
     Observability Operator is a Go based Kubernetes operator to setup and

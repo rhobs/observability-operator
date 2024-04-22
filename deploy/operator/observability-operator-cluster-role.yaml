@@ -7,6 +7,20 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - configmaps
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - endpoints
   - pods
   - services
@@ -34,6 +48,26 @@ rules:
   verbs:
   - create
   - delete
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - config.openshift.io
+  resources:
+  - clusterversions
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - console.openshift.io
+  resources:
+  - consoleplugins
+  verbs:
+  - create
+  - delete
+  - get
   - list
   - patch
   - update
@@ -134,6 +168,42 @@ rules:
   - patch
   - update
 - apiGroups:
+  - observability.openshift.io
+  resources:
+  - uiplugins
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - observability.openshift.io
+  resources:
+  - uiplugins/finalizers
+  - uiplugins/status
+  verbs:
+  - get
+  - update
+- apiGroups:
+  - observability.openshift.io
+  resources:
+  - uiplugins/status
+  verbs:
+  - get
+  - update
+- apiGroups:
+  - operator.openshift.io
+  resources:
+  - consoles
+  verbs:
+  - get
+  - list
+  - patch
+  - watch
+- apiGroups:
   - policy
   resources:
   - poddisruptionbudgets
@@ -149,6 +219,18 @@ rules:
   resources:
   - clusterrolebindings
   - clusterroles
+  - rolebindings
+  - roles
+  verbs:
+  - create
+  - delete
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
   - rolebindings
   - roles
   verbs:

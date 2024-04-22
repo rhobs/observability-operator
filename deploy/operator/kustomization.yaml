@@ -38,6 +38,10 @@ patches:
     group: apps
     kind: Deployment
     version: v1
+  target:
+    group: apps
+    kind: Deployment
+    version: v1
 - patch: |-
     - op: add
       path: /spec/template/spec/containers/0/resources

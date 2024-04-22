@@ -25,7 +25,8 @@ type Updater struct {
 }
 
 func (r Updater) Reconcile(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
-	if r.resourceOwner.GetNamespace() == r.resource.GetNamespace() {
+	// If the resource owner is in the same namespace as the resource, or if the resource owner is cluster scoped set the owner reference.
+	if r.resourceOwner.GetNamespace() == r.resource.GetNamespace() || r.resourceOwner.GetNamespace() == "" {
 		if err := controllerutil.SetControllerReference(r.resourceOwner, r.resource, scheme); err != nil {
 			return fmt.Errorf("%s/%s (%s): updater failed to set owner reference: %w",
 				r.resource.GetNamespace(), r.resource.GetName(),
@@ -65,6 +66,23 @@ func (r Deleter) Reconcile(ctx context.Context, c client.Client, scheme *runtime
 
 func NewDeleter(r client.Object) Deleter {
 	return Deleter{resource: r}
+}
+
+type Merger struct {
+	resource client.Object
+}
+
+func NewMerger(r client.Object) Merger {
+	return Merger{resource: r}
+}
+
+func (r Merger) Reconcile(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
+	if err := c.Patch(ctx, r.resource, client.Merge); err != nil {
+		return fmt.Errorf("%s/%s (%s): merger failed to patch: %w",
+			r.resource.GetNamespace(), r.resource.GetName(),
+			r.resource.GetObjectKind().GroupVersionKind().String(), err)
+	}
+	return nil
 }
 
 // NewOptionalUpdater ensures that a resource is present or absent depending on the `cond` value (true: present).

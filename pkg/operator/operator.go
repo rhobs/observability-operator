@@ -12,6 +12,7 @@ import (
 
 	stackctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/monitoring-stack"
 	tqctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/thanos-querier"
+	uictrl "github.com/rhobs/observability-operator/pkg/controllers/uiplugin"
 )
 
 // NOTE: The instance selector label is hardcoded in static assets.
@@ -25,6 +26,14 @@ type Operator struct {
 	manager manager.Manager
 }
 
+type OpenShiftFeatureGates struct {
+	Enabled bool `json:"enabled,omitempty"`
+}
+
+type FeatureGates struct {
+	OpenShift OpenShiftFeatureGates `json:"openshift,omitempty"`
+}
+
 type OperatorConfiguration struct {
 	MetricsAddr     string
 	HealthProbeAddr string
@@ -32,6 +41,8 @@ type OperatorConfiguration struct {
 	Alertmanager    stackctrl.AlertmanagerConfiguration
 	ThanosSidecar   stackctrl.ThanosConfiguration
 	ThanosQuerier   tqctrl.ThanosConfiguration
+	UIPlugins       uictrl.UIPluginsConfiguration
+	FeatureGates    FeatureGates
 }
 
 func WithPrometheusImage(image string) func(*OperatorConfiguration) {
@@ -70,6 +81,19 @@ func WithHealthProbeAddr(addr string) func(*OperatorConfiguration) {
 	}
 }
 
+func WithUIPlugins(namespace string, images map[string]string) func(*OperatorConfiguration) {
+	return func(oc *OperatorConfiguration) {
+		oc.UIPlugins.Images = images
+		oc.UIPlugins.ResourcesNamespace = namespace
+	}
+}
+
+func WithFeatureGates(featureGates FeatureGates) func(*OperatorConfiguration) {
+	return func(oc *OperatorConfiguration) {
+		oc.FeatureGates = featureGates
+	}
+}
+
 func NewOperatorConfiguration(opts ...func(*OperatorConfiguration)) *OperatorConfiguration {
 	cfg := &OperatorConfiguration{}
 	for _, o := range opts {
@@ -80,7 +104,7 @@ func NewOperatorConfiguration(opts ...func(*OperatorConfiguration)) *OperatorCon
 
 func New(cfg *OperatorConfiguration) (*Operator, error) {
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme: NewScheme(),
+		Scheme: NewScheme(cfg),
 		Metrics: metricsserver.Options{
 			BindAddress: cfg.MetricsAddr,
 		},
@@ -101,6 +125,12 @@ func New(cfg *OperatorConfiguration) (*Operator, error) {
 
 	if err := tqctrl.RegisterWithManager(mgr, tqctrl.Options{Thanos: cfg.ThanosQuerier}); err != nil {
 		return nil, fmt.Errorf("unable to register the thanos querier controller with the manager: %w", err)
+	}
+
+	if cfg.FeatureGates.OpenShift.Enabled {
+		if err := uictrl.RegisterWithManager(mgr, uictrl.Options{PluginsConf: cfg.UIPlugins}); err != nil {
+			return nil, fmt.Errorf("unable to register observability-ui-plugin controller: %w", err)
+		}
 	}
 
 	if err := mgr.AddHealthzCheck("health probe", healthz.Ping); err != nil {
