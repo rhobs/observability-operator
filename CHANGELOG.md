@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.2.0](https://github.com/rhobs/monitoring-stack-operator/commit/) (2024-04-22)
+
+
+### Features
+
+* Add ObservabilityUI plugins API ([#434](https://github.com/rhobs/monitoring-stack-operator/issues/434)) ([92bae83](https://github.com/rhobs/monitoring-stack-operator/commit/92bae83b9a43c2080134452b240eba5ff15e12b7))
+* make Thanos querier compliant with restricted policy ([#452](https://github.com/rhobs/monitoring-stack-operator/issues/452)) ([cd8cd42](https://github.com/rhobs/monitoring-stack-operator/commit/cd8cd4241d3cc464243deae2d21dff20e6d7a968))
+* provide api option to enable otlp/http receiver ([#450](https://github.com/rhobs/monitoring-stack-operator/issues/450)) ([65ea6bd](https://github.com/rhobs/monitoring-stack-operator/commit/65ea6bdd37b4c19db97da43afd3d72e8eee1c843))
+
+
+### Bug Fixes
+
+* remove invalid owner ref on cluster role ([#460](https://github.com/rhobs/monitoring-stack-operator/issues/460)) ([fc12c57](https://github.com/rhobs/monitoring-stack-operator/commit/fc12c57af2af014d97fc0a01fe850b6b64940da6))
+
 ## [0.1.0](https://github.com/rhobs/monitoring-stack-operator/commit/) (2024-03-13)
 
 
