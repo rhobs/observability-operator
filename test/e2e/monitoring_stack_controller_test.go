@@ -22,6 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 	monitoringstack "github.com/rhobs/observability-operator/pkg/controllers/monitoring/monitoring-stack"
@@ -285,7 +286,8 @@ func reconcileRevertsManualChanges(t *testing.T) {
 		},
 	}
 
-	err = f.K8sClient.Update(context.Background(), modified)
+	patch := client.MergeFrom(modified)
+	err = f.K8sClient.Patch(context.Background(), &generated, patch)
 	assert.NilError(t, err, "failed to update a prometheus")
 
 	err = wait.PollUntilContextTimeout(context.Background(), 5*time.Second, framework.DefaultTestTimeout, true, func(ctx context.Context) (bool, error) {
