@@ -3,20 +3,12 @@ package status
 import (
 	"fmt"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-)
 
-type conditionHelper struct {
-	Type               string
-	Status             string
-	Reason             string
-	ObservedGeneration int64
-	Message            string
-	LastTransitionTime metav1.Time
-}
+	"github.com/rhobs/observability-operator/pkg/apis/shared"
+)
 
 func convert[T comparable](v interface{}) T {
 	var r T
@@ -49,7 +41,7 @@ func NewOperand(obj client.Object, affectsStackAvailability bool, affectsStackRe
 
 // getConditionByType converts the operand object to unstructured and
 // then tries to find conidtion with provided type.
-func (o *Operand) getConditionByType(ctype string) (*conditionHelper, error) {
+func (o *Operand) getConditionByType(ctype string) (*shared.Condition, error) {
 	unstrObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(o.Object)
 	if err != nil {
 		return nil, err
@@ -71,12 +63,13 @@ func (o *Operand) getConditionByType(ctype string) (*conditionHelper, error) {
 
 		if t, ok := cMap["type"]; ok {
 			if t == ctype {
-				return &conditionHelper{
-					Type:               convert[string](t),
-					Status:             convert[string](cMap["status"]),
+				oc := &shared.Condition{
+					Type:               shared.ConditionType(convert[string](t)),
+					Status:             shared.ConditionStatus(convert[string](cMap["status"])),
 					ObservedGeneration: convert[int64](cMap["observedGeneration"]),
 					Message:            convert[string](cMap["message"]),
-				}, nil
+				}
+				return oc, nil
 			}
 		}
 	}

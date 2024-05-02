@@ -23,6 +23,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
+	"github.com/rhobs/observability-operator/pkg/apis/shared"
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 	"github.com/rhobs/observability-operator/pkg/reconciler"
 )
@@ -180,36 +181,36 @@ func (rm resourceManager) updateStatus(ctx context.Context, req ctrl.Request, pl
 	logger := rm.logger.WithValues("plugin", req.NamespacedName)
 
 	if recError != nil {
-		pl.Status.Conditions = []uiv1alpha1.Condition{
+		pl.Status.Conditions = []shared.Condition{
 			{
-				Type:               uiv1alpha1.ReconciledCondition,
-				Status:             uiv1alpha1.ConditionFalse,
+				Type:               shared.ReconciledCondition,
+				Status:             shared.ConditionFalse,
 				Reason:             FailedToReconcileReason,
 				Message:            recError.Error(),
 				ObservedGeneration: pl.Generation,
 				LastTransitionTime: metav1.Now(),
 			},
 			{
-				Type:               uiv1alpha1.AvailableCondition,
-				Status:             uiv1alpha1.ConditionFalse,
+				Type:               shared.AvailableCondition,
+				Status:             shared.ConditionFalse,
 				Reason:             FailedToReconcileReason,
 				ObservedGeneration: pl.Generation,
 				LastTransitionTime: metav1.Now(),
 			},
 		}
 	} else {
-		pl.Status.Conditions = []uiv1alpha1.Condition{
+		pl.Status.Conditions = []shared.Condition{
 			{
-				Type:               uiv1alpha1.ReconciledCondition,
-				Status:             uiv1alpha1.ConditionTrue,
+				Type:               shared.ReconciledCondition,
+				Status:             shared.ConditionTrue,
 				Reason:             ReconciledReason,
 				Message:            ReconciledMessage,
 				ObservedGeneration: pl.Generation,
 				LastTransitionTime: metav1.Now(),
 			},
 			{
-				Type:               uiv1alpha1.AvailableCondition,
-				Status:             uiv1alpha1.ConditionTrue,
+				Type:               shared.AvailableCondition,
+				Status:             shared.ConditionTrue,
 				Reason:             AvailableReason,
 				ObservedGeneration: pl.Generation,
 				LastTransitionTime: metav1.Now(),

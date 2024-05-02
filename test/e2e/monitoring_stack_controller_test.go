@@ -25,8 +25,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
-	monitoringstack "github.com/rhobs/observability-operator/pkg/controllers/monitoring/monitoring-stack"
+	"github.com/rhobs/observability-operator/pkg/apis/shared"
 	operator "github.com/rhobs/observability-operator/pkg/operator"
+	"github.com/rhobs/observability-operator/pkg/status"
 	"github.com/rhobs/observability-operator/test/e2e/framework"
 )
 
@@ -236,19 +237,19 @@ func reconcileStack(t *testing.T) {
 	assert.Equal(t, expected.Retention, generated.Spec.Retention)
 
 	availableMs := f.GetStackWhenAvailable(t, ms.Name, ms.Namespace)
-	availableC := getConditionByType(availableMs.Status.Conditions, stack.AvailableCondition)
-	assertCondition(t, availableC, monitoringstack.AvailableReason, stack.AvailableCondition, availableMs)
-	reconciledC := getConditionByType(availableMs.Status.Conditions, stack.ReconciledCondition)
-	assertCondition(t, reconciledC, monitoringstack.ReconciledReason, stack.ReconciledCondition, availableMs)
+	availableC := getConditionByType(availableMs.Status.Conditions, shared.AvailableCondition)
+	assertCondition(t, availableC, status.AvailableReason, shared.AvailableCondition, availableMs)
+	reconciledC := getConditionByType(availableMs.Status.Conditions, shared.ReconciledCondition)
+	assertCondition(t, reconciledC, status.ReconciledReason, shared.ReconciledCondition, availableMs)
 }
 
-func assertCondition(t *testing.T, c *stack.Condition, reason string, ctype stack.ConditionType, ms stack.MonitoringStack) {
+func assertCondition(t *testing.T, c *shared.Condition, reason string, ctype shared.ConditionType, ms stack.MonitoringStack) {
 	assert.Check(t, c != nil, "failed to find %s status condition for %s monitoring stack", ctype, ms.Name)
-	assert.Check(t, c.Status == stack.ConditionTrue, "unexpected %s condition status", ctype)
+	assert.Check(t, c.Status == shared.ConditionTrue, "unexpected %s condition status", ctype)
 	assert.Check(t, c.Reason == reason, "unexpected %s condition reason", ctype)
 }
 
-func getConditionByType(conditions []stack.Condition, ctype stack.ConditionType) *stack.Condition {
+func getConditionByType(conditions []shared.Condition, ctype shared.ConditionType) *shared.Condition {
 	for _, c := range conditions {
 		if c.Type == ctype {
 			return &c

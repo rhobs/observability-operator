@@ -3,11 +3,11 @@ package status
 import (
 	"fmt"
 
-	"github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/rhobs/observability-operator/pkg/apis/shared"
 )
 
 const (
@@ -24,13 +24,10 @@ const (
 	reconciled                    = "Reconciled"
 )
 
-func UpdateConditions(stackObj client.Object, operands []Operand, recError error) ([]v1alpha1.Condition, error) {
-	var availableCon v1alpha1.Condition
-	var reconciledCon v1alpha1.Condition
-	conditions, err := getConditionsFromObject(stackObj)
-	if err != nil {
-		return nil, err
-	}
+func UpdateConditions(stackObj shared.StatusReporter, operands []Operand, recError error) ([]shared.Condition, error) {
+	var availableCon shared.Condition
+	var reconciledCon shared.Condition
+	conditions := stackObj.Conditions()
 	for _, opr := range operands {
 		if opr.affectsAvailability {
 			availableCon = updateAvailable(conditions, opr, stackObj.GetGeneration())
@@ -45,7 +42,7 @@ func UpdateConditions(stackObj client.Object, operands []Operand, recError error
 		return nil, err
 	}
 
-	return []v1alpha1.Condition{
+	return []shared.Condition{
 		availableCon,
 		reconciledCon,
 		*resourceDiscoveryCon,
@@ -55,7 +52,7 @@ func UpdateConditions(stackObj client.Object, operands []Operand, recError error
 // updateResourceDiscovery updates the ResourceDiscoveryCondition based on the
 // ResourceSelector in the MonitorinStack spec. A ResourceSelector of nil causes
 // the condition to be false, any other value sets the condition to true
-func updateResourceDiscovery(stackObj client.Object) (*v1alpha1.Condition, error) {
+func updateResourceDiscovery(stackObj shared.StatusReporter) (*shared.Condition, error) {
 	unstrObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(stackObj)
 	if err != nil {
 		return nil, err
@@ -65,18 +62,18 @@ func updateResourceDiscovery(stackObj client.Object) (*v1alpha1.Condition, error
 		return nil, err
 	}
 	if rs == nil || !ok {
-		return &v1alpha1.Condition{
-			Type:               v1alpha1.ResourceDiscoveryCondition,
-			Status:             v1alpha1.ConditionFalse,
+		return &shared.Condition{
+			Type:               shared.ResourceDiscoveryCondition,
+			Status:             shared.ConditionFalse,
 			Reason:             ResourceSelectorIsNil,
 			Message:            ResourceSelectorIsNilMessage,
 			LastTransitionTime: metav1.Now(),
 			ObservedGeneration: stackObj.GetGeneration(),
 		}, nil
 	} else {
-		return &v1alpha1.Condition{
-			Type:               v1alpha1.ResourceDiscoveryCondition,
-			Status:             v1alpha1.ConditionTrue,
+		return &shared.Condition{
+			Type:               shared.ResourceDiscoveryCondition,
+			Status:             shared.ConditionTrue,
 			Reason:             NoReason,
 			Message:            ResourceDiscoveryOnMessage,
 			LastTransitionTime: metav1.Now(),
@@ -88,21 +85,22 @@ func updateResourceDiscovery(stackObj client.Object) (*v1alpha1.Condition, error
 
 // updateAvailable gets existing "Available" condition and updates its parameters
 // based on the operand "Available" condition
-func updateAvailable(conditions []v1alpha1.Condition, opr Operand, generation int64) v1alpha1.Condition {
-	ac, err := getConditionByType(conditions, v1alpha1.AvailableCondition)
+func updateAvailable(conditions []shared.Condition, opr Operand, generation int64) shared.Condition {
+	ac, err := getConditionByType(conditions, shared.AvailableCondition)
 	if err != nil {
-		ac = v1alpha1.Condition{
-			Type:               v1alpha1.AvailableCondition,
-			Status:             v1alpha1.ConditionUnknown,
+		ac = shared.Condition{
+			Type:               shared.AvailableCondition,
+			Status:             shared.ConditionUnknown,
 			Reason:             NoReason,
 			LastTransitionTime: metav1.Now(),
+			Message:            err.Error(),
 		}
+		return ac
 	}
 
 	operandAvailable, err := opr.getConditionByType(available)
-
 	if err != nil {
-		ac.Status = v1alpha1.ConditionUnknown
+		ac.Status = shared.ConditionUnknown
 		ac.Reason = fmt.Sprintf("%sNotAvailable", opr.name)
 		ac.Message = fmt.Sprintf("Cannot read %s status conditions", opr.name)
 		ac.LastTransitionTime = metav1.Now()
@@ -125,7 +123,7 @@ func updateAvailable(conditions []v1alpha1.Condition, opr Operand, generation in
 		ac.LastTransitionTime = metav1.Now()
 		return ac
 	}
-	ac.Status = v1alpha1.ConditionTrue
+	ac.Status = shared.ConditionTrue
 	ac.Reason = AvailableReason
 	ac.Message = AvailableMessage
 	ac.ObservedGeneration = generation
@@ -135,18 +133,20 @@ func updateAvailable(conditions []v1alpha1.Condition, opr Operand, generation in
 
 // updateReconciled updates "Reconciled" conditions based on the provided error value and
 // the operand "Reconciled" condition
-func updateReconciled(conditions []v1alpha1.Condition, opr Operand, generation int64, reconcileErr error) v1alpha1.Condition {
-	rc, cErr := getConditionByType(conditions, v1alpha1.ReconciledCondition)
+func updateReconciled(conditions []shared.Condition, opr Operand, generation int64, reconcileErr error) shared.Condition {
+	rc, cErr := getConditionByType(conditions, shared.ReconciledCondition)
 	if cErr != nil {
-		rc = v1alpha1.Condition{
-			Type:               v1alpha1.ReconciledCondition,
-			Status:             v1alpha1.ConditionUnknown,
+		rc = shared.Condition{
+			Type:               shared.ReconciledCondition,
+			Status:             shared.ConditionUnknown,
 			Reason:             NoReason,
 			LastTransitionTime: metav1.Now(),
+			Message:            cErr.Error(),
 		}
+		return rc
 	}
 	if reconcileErr != nil {
-		rc.Status = v1alpha1.ConditionFalse
+		rc.Status = shared.ConditionFalse
 		rc.Message = reconcileErr.Error()
 		rc.Reason = FailedToReconcileReason
 		rc.LastTransitionTime = metav1.Now()
@@ -155,7 +155,7 @@ func updateReconciled(conditions []v1alpha1.Condition, opr Operand, generation i
 	operandReconciled, reconcileErr := opr.getConditionByType(reconciled)
 
 	if reconcileErr != nil {
-		rc.Status = v1alpha1.ConditionUnknown
+		rc.Status = shared.ConditionUnknown
 		rc.Reason = fmt.Sprintf("%sNotReconciled", opr.name)
 		rc.Message = fmt.Sprintf("Cannot read %s status conditions", opr.name)
 		rc.LastTransitionTime = metav1.Now()
@@ -173,7 +173,7 @@ func updateReconciled(conditions []v1alpha1.Condition, opr Operand, generation i
 		rc.LastTransitionTime = metav1.Now()
 		return rc
 	}
-	rc.Status = v1alpha1.ConditionTrue
+	rc.Status = shared.ConditionTrue
 	rc.Reason = ReconciledReason
 	rc.Message = SuccessfullyReconciledMessage
 	rc.ObservedGeneration = generation
@@ -181,61 +181,28 @@ func updateReconciled(conditions []v1alpha1.Condition, opr Operand, generation i
 	return rc
 }
 
-func getConditionByType(conditions []v1alpha1.Condition, t v1alpha1.ConditionType) (v1alpha1.Condition, error) {
+func getConditionByType(conditions []shared.Condition, t shared.ConditionType) (shared.Condition, error) {
 	for _, c := range conditions {
 		if c.Type == t {
 			return c, nil
 		}
 	}
-	return v1alpha1.Condition{}, fmt.Errorf("ERROR: condition type %v not found", t)
+	return shared.Condition{}, fmt.Errorf("condition type %v not found", t)
 }
 
-func getConditionsFromObject(o client.Object) ([]v1alpha1.Condition, error) {
-	unstrObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(o)
-	if err != nil {
-		return nil, err
-	}
-	var conditions []v1alpha1.Condition
-	untypedCon, ok, err := unstructured.NestedSlice(unstrObj, "status", "conditions")
-	// if no conditions found, return empty conditions
-	if !ok {
-		return conditions, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	for _, untypedC := range untypedCon {
-		cMap, ok := untypedC.(map[string]interface{})
-		if !ok {
-			return nil, fmt.Errorf("converting to map[string]interface{}: %v", untypedC)
-		}
-		conditions = append(conditions, v1alpha1.Condition{
-			Type:               v1alpha1.ConditionType(convert[string](cMap["type"])),
-			Reason:             convert[string](cMap["reason"]),
-			Status:             v1alpha1.ConditionStatus(convert[string](cMap["status"])),
-			Message:            convert[string](cMap["message"]),
-			ObservedGeneration: convert[int64](cMap["observedGeneration"]),
-			LastTransitionTime: convert[metav1.Time](cMap["lastTransitionTime"]),
-		})
-	}
-	return conditions, nil
-
-}
-
-func prometheusStatusToMSStatus(ps string) v1alpha1.ConditionStatus {
+func prometheusStatusToMSStatus(ps shared.ConditionStatus) shared.ConditionStatus {
 	switch ps {
 	// Prometheus "Available" condition with status "Degraded" is reported as "Available" condition
 	// with status false
 	case "Degraded":
-		return v1alpha1.ConditionFalse
+		return shared.ConditionFalse
 	case "True":
-		return v1alpha1.ConditionTrue
+		return shared.ConditionTrue
 	case "False":
-		return v1alpha1.ConditionFalse
+		return shared.ConditionFalse
 	case "Unknown":
-		return v1alpha1.ConditionUnknown
+		return shared.ConditionUnknown
 	default:
-		return v1alpha1.ConditionUnknown
+		return shared.ConditionUnknown
 	}
 }
