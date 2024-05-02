@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/instance: korrel8r
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/part-of: Korrel8r
+  name: korrel8r
+  namespace: operators
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+        app.kubernetes.io/instance: korrel8r
+        app.kubernetes.io/managed-by: observability-operator
+        app.kubernetes.io/part-of: Korrel8r
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: korrel8r
+        app.kubernetes.io/managed-by: observability-operator
+        app.kubernetes.io/part-of: Korrel8r
+    spec:
+      containers:
+      - image: quay.io/korrel8r/korrel8r:latest
+        command: ["/bin/korrel8r", "web", "--config", "/etc/korrel8r/openshift-svc.yaml"]
+        imagePullPolicy: Always
+        name: korrel8r
+        resources: {}
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault

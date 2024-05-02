@@ -39,6 +39,7 @@ var defaultImages = map[string]string{
 	"prometheus":    "",
 	"alertmanager":  "",
 	"thanos":        obopo.DefaultThanosImage,
+	"korrel8r": "quay.io/korrel8r/korrel8r:latest",
 	"ui-dashboards": "quay.io/openshift-observability-ui/console-dashboards-plugin:v0.1.0",
 }
 
@@ -116,6 +117,7 @@ func main() {
 			operator.WithAlertmanagerImage(imgMap["alertmanager"]),
 			operator.WithThanosSidecarImage(imgMap["thanos"]),
 			operator.WithThanosQuerierImage(imgMap["thanos"]),
+			operator.WithKorrel8rImage(imgMap["korrel8r"]),
 			operator.WithUIPlugins(namespace, imgMap),
 			operator.WithFeatureGates(operator.FeatureGates{
 				OpenShift: operator.OpenShiftFeatureGates{

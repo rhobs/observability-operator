@@ -10,6 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
+	korrel8rctrl "github.com/rhobs/observability-operator/pkg/controllers/korrel8r"
 	stackctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/monitoring-stack"
 	tqctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/thanos-querier"
 	uictrl "github.com/rhobs/observability-operator/pkg/controllers/uiplugin"
@@ -42,6 +43,7 @@ type OperatorConfiguration struct {
 	ThanosSidecar   stackctrl.ThanosConfiguration
 	ThanosQuerier   tqctrl.ThanosConfiguration
 	UIPlugins       uictrl.UIPluginsConfiguration
+	Korrel8r        korrel8rctrl.Korrel8rConfiguration
 	FeatureGates    FeatureGates
 }
 
@@ -66,6 +68,12 @@ func WithThanosSidecarImage(image string) func(*OperatorConfiguration) {
 func WithThanosQuerierImage(image string) func(*OperatorConfiguration) {
 	return func(oc *OperatorConfiguration) {
 		oc.ThanosQuerier.Image = image
+	}
+}
+
+func WithKorrel8rImage(image string) func(*OperatorConfiguration) {
+	return func(oc *OperatorConfiguration) {
+		oc.Korrel8r.Image = image
 	}
 }
 
@@ -125,6 +133,10 @@ func New(cfg *OperatorConfiguration) (*Operator, error) {
 
 	if err := tqctrl.RegisterWithManager(mgr, tqctrl.Options{Thanos: cfg.ThanosQuerier}); err != nil {
 		return nil, fmt.Errorf("unable to register the thanos querier controller with the manager: %w", err)
+	}
+
+	if err := korrel8rctrl.RegisterWithManager(mgr, korrel8rctrl.Options{Korrel8rconf: cfg.Korrel8r}); err != nil {
+		return nil, fmt.Errorf("unable to register the Korrel8r controller with the manager: %w", err)
 	}
 
 	if cfg.FeatureGates.OpenShift.Enabled {
