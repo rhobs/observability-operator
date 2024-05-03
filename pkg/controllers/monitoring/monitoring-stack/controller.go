@@ -37,9 +37,6 @@ import (
 
 	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 	"github.com/rhobs/observability-operator/pkg/status"
-
-	"github.com/go-logr/logr"
-	monv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
 )
 
 type resourceManager struct {
