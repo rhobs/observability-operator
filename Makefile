@@ -15,7 +15,7 @@ OSD_E2E_TEST_HARNESS_IMG=$(IMAGE_BASE)-test-harness:$(VERSION)
 OSD_E2E_TEST_HARNESS_IMG_LATEST=$(IMAGE_BASE)-test-harness:latest
 
 # running `make` builds the operator (default target)
-all: operator
+.DEFAULT_GOAL := operator
 
 ## Development
 
