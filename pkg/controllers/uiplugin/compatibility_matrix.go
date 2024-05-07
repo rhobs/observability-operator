@@ -43,7 +43,7 @@ func getImageKeyForPluginType(pluginType uiv1alpha1.UIPluginType, clusterVersion
 				return entry.ImageKey, nil
 			}
 
-			if semver.Compare(clusterVersion, entry.MinClusterVersion) >= 0 && semver.Compare(clusterVersion, entry.MaxClusterVersion) < 0 {
+			if semver.Compare(clusterVersion, entry.MinClusterVersion) >= 0 && semver.Compare(clusterVersion, entry.MaxClusterVersion) <= 0 {
 				return entry.ImageKey, nil
 			}
 		}
