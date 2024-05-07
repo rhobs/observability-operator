@@ -20,7 +20,7 @@ func TestCompatibilityMatrixSpec(t *testing.T) {
 			pluginType:     uiv1alpha1.TypeDashboards,
 			clusterVersion: "4.10",
 			expectedKey:    "",
-			expectedErr:    fmt.Errorf("dynamic pluings not supported before 4.11"),
+			expectedErr:    fmt.Errorf("dynamic plugins not supported before 4.11"),
 		},
 		{
 			pluginType:     uiv1alpha1.TypeDashboards,
