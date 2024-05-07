@@ -2854,7 +2854,7 @@ UIPluginSpec is the specification for desired state of UIPlugin.
         <td>
           Type defines the UI plugin.<br/>
           <br/>
-            <i>Enum</i>: Dashboards, TroubleshootingPanel, DistributedTracing<br/>
+            <i>Enum</i>: Dashboards, TroubleshootingPanel, DistributedTracing, Logging<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -2869,6 +2869,16 @@ UIPluginSpec is the specification for desired state of UIPlugin.
         <td>object</td>
         <td>
           DistributedTracing contains configuration for the distributed tracing console plugin.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#uipluginspeclogging">logging</a></b></td>
+        <td>object</td>
+        <td>
+          Logging contains configuration for the logging console plugin.
+
+
+It only applies to UIPlugin Type: Logging.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3013,6 +3023,86 @@ The value is expected to be a sequence of digits followed by a unit suffix, whic
 or 'm' (minutes).<br/>
         </td>
         <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### UIPlugin.spec.logging
+<sup><sup>[↩ Parent](#uipluginspec)</sup></sup>
+
+
+
+Logging contains configuration for the logging console plugin.
+
+
+It only applies to UIPlugin Type: Logging.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#uipluginspeclogginglokistack">lokiStack</a></b></td>
+        <td>object</td>
+        <td>
+          LokiStack points to the LokiStack instance of which logs should be displayed.
+It always references a LokiStack in the "openshift-logging" namespace.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>logsLimit</b></td>
+        <td>integer</td>
+        <td>
+          LogsLimit is the max number of entries returned for a query.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeout</b></td>
+        <td>string</td>
+        <td>
+          Timeout is the maximum duration before a query timeout.
+
+
+The value is expected to be a sequence of digits followed by an optional unit suffix, which can be 's' (seconds)
+or 'm' (minutes). If the unit is omitted, it defaults to seconds.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### UIPlugin.spec.logging.lokiStack
+<sup><sup>[↩ Parent](#uipluginspeclogging)</sup></sup>
+
+
+
+LokiStack points to the LokiStack instance of which logs should be displayed.
+It always references a LokiStack in the "openshift-logging" namespace.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the LokiStack resource.<br/>
+        </td>
+        <td>true</td>
       </tr></tbody>
 </table>
 

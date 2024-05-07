@@ -2,6 +2,8 @@ package uiplugin
 
 import (
 	"fmt"
+	"hash/fnv"
+	"sort"
 
 	osv1alpha1 "github.com/openshift/api/console/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -19,12 +21,16 @@ const (
 	port                  = 9443
 	serviceAccountSuffix  = "-sa"
 	servingCertVolumeName = "serving-cert"
+
+	annotationPrefix = "observability.openshift.io/ui-plugin-"
 )
 
 var (
 	defaultNodeSelector = map[string]string{
 		"kubernetes.io/os": "linux",
 	}
+
+	hashSeparator = []byte("\n")
 )
 
 func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPluginInfo) []reconciler.Reconciler {
@@ -137,7 +143,9 @@ func newDeployment(info UIPluginInfo, namespace string, config *uiv1alpha1.Deplo
 		},
 	}
 
+	podAnnotations := map[string]string{}
 	if info.ConfigMap != nil {
+		podAnnotations[annotationPrefix+"config-hash"] = computeConfigMapHash(info.ConfigMap)
 		volumes = append(volumes, corev1.Volume{
 			Name: "plugin-config",
 			VolumeSource: corev1.VolumeSource{
@@ -174,9 +182,10 @@ func newDeployment(info UIPluginInfo, namespace string, config *uiv1alpha1.Deplo
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      info.Name,
-					Namespace: namespace,
-					Labels:    componentLabels(info.Name),
+					Name:        info.Name,
+					Namespace:   namespace,
+					Labels:      componentLabels(info.Name),
+					Annotations: podAnnotations,
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName: info.Name + serviceAccountSuffix,
@@ -222,6 +231,24 @@ func newDeployment(info UIPluginInfo, namespace string, config *uiv1alpha1.Deplo
 	}
 
 	return plugin
+}
+
+func computeConfigMapHash(cm *corev1.ConfigMap) string {
+	keys := make([]string, 0, len(cm.Data))
+	for k := range cm.Data {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	h := fnv.New32a()
+	for _, k := range keys {
+		h.Write([]byte(k))
+		h.Write(hashSeparator)
+		h.Write([]byte(cm.Data[k]))
+		h.Write(hashSeparator)
+	}
+
+	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
 func createNodeSelectorAndTolerations(config *uiv1alpha1.DeploymentConfig) (map[string]string, []corev1.Toleration) {

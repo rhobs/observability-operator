@@ -42,7 +42,7 @@ metadata:
     categories: Monitoring
     certified: "false"
     containerImage: observability-operator:0.2.0
-    createdAt: "2024-06-05T21:58:19Z"
+    createdAt: "2024-06-05T21:58:56Z"
     description: A Go based Kubernetes operator to setup and manage highly available
       Monitoring Stack using Prometheus, Alertmanager and Thanos Querier.
     operators.operatorframework.io/builder: operator-sdk-v1.34.1
@@ -356,6 +356,14 @@ spec:
           - get
           - list
           - watch
+        - apiGroups:
+          - loki.grafana.com
+          resources:
+          - application
+          - audit
+          - infrastructure
+          verbs:
+          - get
         - apiGroups:
           - monitoring.rhobs
           resources:

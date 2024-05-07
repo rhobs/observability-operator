@@ -32,7 +32,7 @@ type UIPluginList struct {
 	Items           []UIPlugin `json:"items"`
 }
 
-// +kubebuilder:validation:Enum=Dashboards;TroubleshootingPanel;DistributedTracing
+// +kubebuilder:validation:Enum=Dashboards;TroubleshootingPanel;DistributedTracing;Logging
 type UIPluginType string
 
 const (
@@ -42,6 +42,9 @@ const (
 	TypeDistributedTracing UIPluginType = "DistributedTracing"
 	// TroubleshootingPanel deploys the Troubleshooting Panel Dynamic Plugin for the OpenShift Console
 	TypeTroubleshootingPanel UIPluginType = "TroubleshootingPanel"
+
+	// TypeLogging deploys the Logging View Plugin for OpenShift Console.
+	TypeLogging UIPluginType = "Logging"
 )
 
 // DeploymentConfig contains options allowing the customization of the deployment hosting the UI Plugin.
@@ -106,7 +109,47 @@ type DistributedTracingConfig struct {
 	Timeout string `json:"timeout,omitempty"`
 }
 
+// LoggingConfig contains options for configuring the logging console plugin.
+type LoggingConfig struct {
+	// LokiStack points to the LokiStack instance of which logs should be displayed.
+	// It always references a LokiStack in the "openshift-logging" namespace.
+	//
+	// +kubebuilder:validation:Required
+	LokiStack LokiStackReference `json:"lokiStack"`
+
+	// LogsLimit is the max number of entries returned for a query.
+	//
+	// +kubebuilder:validation:Minimum=0
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OCP Console Log Limit",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:ocpConsoleLogLimit"}
+	LogsLimit int32 `json:"logsLimit,omitempty"`
+
+	// Timeout is the maximum duration before a query timeout.
+	//
+	// The value is expected to be a sequence of digits followed by an optional unit suffix, which can be 's' (seconds)
+	// or 'm' (minutes). If the unit is omitted, it defaults to seconds.
+	//
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OCP Console Query Timeout",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:ocpConsoleTimeout"}
+	// +kubebuilder:validation:Pattern:="^([0-9]+)([sm]{0,1})$"
+	Timeout string `json:"timeout,omitempty"`
+}
+
+// LokiStackReference is used to configure a reference to a LokiStack that should be used
+// by the Logging console plugin.
+//
+// Currently, always points to a LokiStack resource in the "openshift-logging" namespace.
+//
+// +structType=atomic
+type LokiStackReference struct {
+	// Name of the LokiStack resource.
+	//
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength:=1
+	Name string `json:"name"`
+}
+
 // UIPluginSpec is the specification for desired state of UIPlugin.
+//
+// +kubebuilder:validation:XValidation:rule="self.type != 'Logging' || has(self.logging)", message="Logging configuration is required if type is Logging"
 type UIPluginSpec struct {
 	// Type defines the UI plugin.
 	// +required
@@ -127,6 +170,13 @@ type UIPluginSpec struct {
 	//
 	// +kubebuilder:validation:Optional
 	DistributedTracing *DistributedTracingConfig `json:"distributedTracing,omitempty"`
+
+	// Logging contains configuration for the logging console plugin.
+	//
+	// It only applies to UIPlugin Type: Logging.
+	//
+	// +kubebuilder:validation:Optional
+	Logging *LoggingConfig `json:"logging,omitempty"`
 }
 
 // UIPluginStatus defines the observed state of UIPlugin.

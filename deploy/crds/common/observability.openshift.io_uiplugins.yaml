@@ -106,6 +106,44 @@ spec:
                     pattern: ^([0-9]+)([sm]{1})$
                     type: string
                 type: object
+              logging:
+                description: |-
+                  Logging contains configuration for the logging console plugin.
+
+
+                  It only applies to UIPlugin Type: Logging.
+                properties:
+                  logsLimit:
+                    description: LogsLimit is the max number of entries returned for
+                      a query.
+                    format: int32
+                    minimum: 0
+                    type: integer
+                  lokiStack:
+                    description: |-
+                      LokiStack points to the LokiStack instance of which logs should be displayed.
+                      It always references a LokiStack in the "openshift-logging" namespace.
+                    properties:
+                      name:
+                        description: Name of the LokiStack resource.
+                        minLength: 1
+                        type: string
+                    required:
+                    - name
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  timeout:
+                    description: |-
+                      Timeout is the maximum duration before a query timeout.
+
+
+                      The value is expected to be a sequence of digits followed by an optional unit suffix, which can be 's' (seconds)
+                      or 'm' (minutes). If the unit is omitted, it defaults to seconds.
+                    pattern: ^([0-9]+)([sm]{0,1})$
+                    type: string
+                required:
+                - lokiStack
+                type: object
               troubleshootingPanel:
                 description: TroubleshootingPanel contains configuration for the troubleshooting
                   console plugin.
@@ -137,10 +175,14 @@ spec:
                 - Dashboards
                 - TroubleshootingPanel
                 - DistributedTracing
+                - Logging
                 type: string
             required:
             - type
             type: object
+            x-kubernetes-validations:
+            - message: Logging configuration is required if type is Logging
+              rule: self.type != 'Logging' || has(self.logging)
           status:
             description: |-
               UIPluginStatus defines the observed state of UIPlugin.

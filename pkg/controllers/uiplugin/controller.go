@@ -72,6 +72,9 @@ const (
 // RBAC for distributed tracing
 // +kubebuilder:rbac:groups=tempo.grafana.com,resources=tempostacks,verbs=list
 
+// RBAC for logging view plugin
+// +kubebuilder:rbac:groups=loki.grafana.com,resources=application;infrastructure;audit,verbs=get
+
 func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 	logger := ctrl.Log.WithName("observability-ui")
 
