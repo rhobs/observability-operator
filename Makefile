@@ -19,6 +19,10 @@ all: operator
 
 ## Development
 
+.PHONY: test-unit
+test-unit:
+	go test -cover ./cmd/... ./pkg/...
+
 .PHONY: lint
 lint: lint-golang lint-jsonnet lint-shell
 
