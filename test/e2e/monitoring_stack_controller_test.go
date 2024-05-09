@@ -84,7 +84,7 @@ func TestMonitoringStackController(t *testing.T) {
 	}, {
 		name: "Alertmanager runs in HA mode",
 		scenario: func(t *testing.T) {
-			stackName := "alerting"
+			stackName := "alerting-ha"
 			assertAlertmanagerCreated(t, stackName)
 			pods, err := f.GetStatefulSetPods("alertmanager-"+stackName, e2eTestNamespace)
 			if err != nil {
@@ -529,7 +529,7 @@ func assertPDBExpectedPodsAreHealthy(t *testing.T, name, namespace string) {
 }
 
 func assertAlertmanagerReceivesAlerts(t *testing.T) {
-	ms := newMonitoringStack(t, "alerting")
+	ms := newMonitoringStack(t, "alerting-receive")
 	if err := f.K8sClient.Create(context.Background(), ms); err != nil {
 		t.Fatal(err)
 	}
@@ -538,12 +538,12 @@ func assertAlertmanagerReceivesAlerts(t *testing.T) {
 	if err := f.K8sClient.Create(context.Background(), rule); err != nil {
 		t.Fatal(err)
 	}
-	f.AssertStatefulsetReady("alertmanager-alerting", e2eTestNamespace, framework.WithTimeout(2*time.Minute))(t)
+	f.AssertStatefulsetReady("alertmanager-alerting-receive", e2eTestNamespace, framework.WithTimeout(2*time.Minute))(t)
 
 	stopChan := make(chan struct{})
 	defer close(stopChan)
 	if err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
-		err := f.StartServicePortForward("alerting-alertmanager", e2eTestNamespace, "9093", stopChan)
+		err := f.StartServicePortForward("alerting-receive-alertmanager", e2eTestNamespace, "9093", stopChan)
 		return err == nil, nil
 	}); err != nil {
 		t.Fatal(err)
