@@ -12,14 +12,18 @@ import (
 )
 
 type UIPluginInfo struct {
-	Image             string
-	Name              string
-	ConsoleName       string
-	DisplayName       string
-	Proxies           []osv1alpha1.ConsolePluginProxy
-	Role              *rbacv1.Role
-	RoleBinding       *rbacv1.RoleBinding
-	ResourceNamespace string
+	Image               string
+	Name                string
+	ConsoleName         string
+	DisplayName         string
+	ExtraArgs           []string
+	Proxies             []osv1alpha1.ConsolePluginProxy
+	Role                *rbacv1.Role
+	RoleBinding         *rbacv1.RoleBinding
+	ClusterRoles        []*rbacv1.ClusterRole
+	ClusterRoleBindings []*rbacv1.ClusterRoleBinding
+	ConfigMap           *corev1.ConfigMap
+	ResourceNamespace   string
 }
 
 func PluginInfoBuilder(plugin *uiv1alpha1.UIPlugin, pluginConf UIPluginsConfiguration, clusterVersion string) (*UIPluginInfo, error) {
@@ -33,12 +37,11 @@ func PluginInfoBuilder(plugin *uiv1alpha1.UIPlugin, pluginConf UIPluginsConfigur
 		return nil, fmt.Errorf("no image provided for plugin type %s with key %s", plugin.Spec.Type, imageKey)
 	}
 
-	name := "observability-ui-" + plugin.Name
 	namespace := pluginConf.ResourcesNamespace
-
 	switch plugin.Spec.Type {
 	case uiv1alpha1.TypeDashboards:
 		{
+			name := "observability-ui-" + plugin.Name
 			readerRoleName := plugin.Name + "-datasource-reader"
 			datasourcesNamespace := "openshift-config-managed"
 
@@ -103,6 +106,14 @@ func PluginInfoBuilder(plugin *uiv1alpha1.UIPlugin, pluginConf UIPluginsConfigur
 			}
 
 			return pluginInfo, nil
+		}
+	case uiv1alpha1.TypeTroubleshootingPanel:
+		{
+			return createTroubleshootingPanelPluginInfo(plugin, namespace, plugin.Name, image, []string{})
+		}
+	case uiv1alpha1.TypeDistributedTracing:
+		{
+			return createDistributedTracingPluginInfo(plugin, namespace, plugin.Name, image, []string{})
 		}
 	}
 

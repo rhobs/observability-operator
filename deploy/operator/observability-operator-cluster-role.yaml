@@ -249,3 +249,9 @@ rules:
   - securitycontextconstraints
   verbs:
   - use
+- apiGroups:
+  - tempo.grafana.com
+  resources:
+  - tempostacks
+  verbs:
+  - list

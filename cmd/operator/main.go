@@ -36,10 +36,12 @@ import (
 // prometheus-operator. For thanos we use the default version from
 // prometheus-operator.
 var defaultImages = map[string]string{
-	"prometheus":    "",
-	"alertmanager":  "",
-	"thanos":        obopo.DefaultThanosImage,
-	"ui-dashboards": "quay.io/openshift-observability-ui/console-dashboards-plugin:v0.1.0",
+	"prometheus":               "",
+	"alertmanager":             "",
+	"thanos":                   obopo.DefaultThanosImage,
+	"ui-dashboards":            "quay.io/openshift-observability-ui/console-dashboards-plugin:v0.1.0",
+	"ui-troubleshooting-panel": "quay.io/openshift-observability-ui/troubleshooting-panel-console-plugin:v0.1.0",
+	"ui-distributed-tracing":   "quay.io/openshift-observability-ui/distributed-tracing-console-plugin:v0.1.0",
 }
 
 func imagesUsed() []string {

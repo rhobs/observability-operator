@@ -512,6 +512,12 @@ spec:
           - securitycontextconstraints
           verbs:
           - use
+        - apiGroups:
+          - tempo.grafana.com
+          resources:
+          - tempostacks
+          verbs:
+          - list
         serviceAccountName: observability-operator-sa
       deployments:
       - label:

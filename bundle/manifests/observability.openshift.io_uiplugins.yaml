@@ -39,10 +39,51 @@ spec:
           spec:
             description: UIPluginSpec is the specification for desired state of UIPlugin.
             properties:
+              distributedTracing:
+                description: DistributedTracing contains configuration for the distributed
+                  tracing console plugin.
+                properties:
+                  timeout:
+                    description: |-
+                      Timeout is the maximum duration before a query timeout.
+
+
+                      The value is expected to be a sequence of digits followed by a unit suffix, which can be 's' (seconds)
+                      or 'm' (minutes).
+                    pattern: ^([0-9]+)([sm]{1})$
+                    type: string
+                type: object
+              troubleshootingPanel:
+                description: TroubleshootingPanel contains configuration for the troubleshooting
+                  console plugin.
+                properties:
+                  korrel8r:
+                    description: korrel8r defines the Korrel8r instance that the troubleshooting
+                      panel plugin will connect to
+                    properties:
+                      name:
+                        description: Name of the korrel8r instance
+                        type: string
+                      namespace:
+                        description: Namespace of the korrel8r instance
+                        type: string
+                    type: object
+                  timeout:
+                    description: |-
+                      Timeout is the maximum duration before a query timeout.
+
+
+                      The value is expected to be a sequence of digits followed by a unit suffix, which can be 's' (seconds)
+                      or 'm' (minutes).
+                    pattern: ^([0-9]+)([sm]{1})$
+                    type: string
+                type: object
               type:
                 description: Type defines the UI plugin.
                 enum:
                 - Dashboards
+                - TroubleshootingPanel
+                - DistributedTracing
                 type: string
             required:
             - type
