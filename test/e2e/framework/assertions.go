@@ -286,7 +286,12 @@ func (f *Framework) AssertNoReconcileErrors(t *testing.T) {
 func (f *Framework) AssertNoEventWithReason(t *testing.T, reason string) {
 	t.Helper()
 
-	evts, err := f.kubernetes.EventsV1().Events("").List(context.Background(), metav1.ListOptions{
+	c, err := f.getKubernetesClient()
+	if err != nil {
+		t.Fatalf("failed to get kubenetes client with error: %s", err)
+	}
+
+	evts, err := c.EventsV1().Events("").List(context.Background(), metav1.ListOptions{
 		FieldSelector: fmt.Sprintf("reason=%s", reason),
 	})
 	if err != nil {
