@@ -9,4 +9,4 @@ const Configuration = {
   ignores: [(msg) => /Signed-off-by: dependabot\[bot]/m.test(msg)],
 };
 
-module.exports = Configuration;
+export default Configuration
