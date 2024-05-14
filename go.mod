@@ -7,7 +7,7 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/openshift/api v0.0.0-20240301093301-ce10821dc999
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/common v0.51.1
+	github.com/prometheus/common v0.53.0
 	github.com/rhobs/obo-prometheus-operator v0.71.0-rhobs1
 	github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.71.0-rhobs1
 	go.uber.org/zap v1.27.0
