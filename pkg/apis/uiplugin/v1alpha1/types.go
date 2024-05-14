@@ -35,7 +35,7 @@ type UIPluginList struct {
 type UIPluginType string
 
 const (
-	// Dashboards deploys the Dashboards Dynamic Plugin for OpenShift Console.
+	// TypeDashboards deploys the Dashboards Dynamic Plugin for OpenShift Console.
 	TypeDashboards UIPluginType = "Dashboards"
 )
 
