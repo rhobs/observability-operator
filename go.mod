@@ -1,7 +1,8 @@
 module github.com/rhobs/observability-operator
 
-go 1.21
-toolchain go1.22.2
+go 1.22.0
+
+toolchain go1.22.3
 
 require (
 	github.com/go-logr/logr v1.4.1
