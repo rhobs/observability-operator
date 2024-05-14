@@ -251,6 +251,16 @@ spec:
             - conditions
             type: object
         type: object
+        x-kubernetes-validations:
+        - message: UIPlugin name must be 'logging' if type is Logging
+          rule: self.spec.type != 'Logging' || self.metadata.name == 'logging'
+        - message: UIPlugin name must be 'troubleshooting-panel' if type is TroubleshootingPanel
+          rule: self.spec.type != 'TroubleshootingPanel' || self.metadata.name ==
+            'troubleshooting-panel'
+        - message: UIPlugin name must be 'distributed-tracing' if type is DistributedTracing
+          rule: self.spec.type != 'DistributedTracing' || self.metadata.name == 'distributed-tracing'
+        - message: UIPlugin name must be 'dashboards' if type is Dashboards
+          rule: self.spec.type != 'Dashboards' || self.metadata.name == 'dashboards'
     served: true
     storage: true
     subresources:
