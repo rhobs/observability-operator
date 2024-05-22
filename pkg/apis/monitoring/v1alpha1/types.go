@@ -211,6 +211,9 @@ type AlertmanagerConfig struct {
 	// +optional
 	// +kubebuilder:default=false
 	Disabled bool `json:"disabled,omitempty"`
+	// Configure TLS options for the Alertmanager web server.
+	// +optional
+	WebTLSConfig *WebTLSConfig `json:"webTLSConfig,omitempty"`
 }
 
 // NamespaceSelector is a selector for selecting either all namespaces or a
