@@ -1163,6 +1163,68 @@ spec:
                     description: Default interval between scrapes.
                     pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
                     type: string
+                  webTLSConfig:
+                    description: Configure TLS options for the Prometheus web server.
+                    properties:
+                      certificate:
+                        description: Reference to the TLS public certificate for the
+                          web server.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            minLength: 1
+                            type: string
+                          name:
+                            description: The name of the secret in the object's namespace
+                              to select from.
+                            minLength: 1
+                            type: string
+                        required:
+                        - key
+                        - name
+                        type: object
+                      certificateAuthority:
+                        description: Reference to the root Certificate Authority used
+                          to verify the web server's certificate.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            minLength: 1
+                            type: string
+                          name:
+                            description: The name of the secret in the object's namespace
+                              to select from.
+                            minLength: 1
+                            type: string
+                        required:
+                        - key
+                        - name
+                        type: object
+                      privateKey:
+                        description: Reference to the TLS private key for the web
+                          server.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            minLength: 1
+                            type: string
+                          name:
+                            description: The name of the secret in the object's namespace
+                              to select from.
+                            minLength: 1
+                            type: string
+                        required:
+                        - key
+                        - name
+                        type: object
+                    required:
+                    - certificate
+                    - certificateAuthority
+                    - privateKey
+                    type: object
                 type: object
               resourceSelector:
                 description: |-
