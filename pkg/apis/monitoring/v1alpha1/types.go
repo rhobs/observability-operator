@@ -192,6 +192,9 @@ type PrometheusConfig struct {
 	// Default interval between scrapes.
 	// +optional
 	ScrapeInterval *monv1.Duration `json:"scrapeInterval,omitempty"`
+	// Configure TLS options for the web endpoint
+	// +optional
+	WebTLSConfig *WebTLSConfig `json:"webTLSConfig,omitempty"`
 }
 
 type AlertmanagerConfig struct {

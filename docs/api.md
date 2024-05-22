@@ -340,6 +340,13 @@ The resulting endpoint is /api/v1/otlp/v1/metrics.<br/>
           Default interval between scrapes.<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigwebtlsconfig">webTLSConfig</a></b></td>
+        <td>object</td>
+        <td>
+          Configure TLS options for the web endpoint<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -2275,6 +2282,149 @@ It is mandatory for `Replace`, `HashMod`, `Lowercase`, `Uppercase`,
 Regex capture groups are available.<br/>
         </td>
         <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.webTLSConfig
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfig)</sup></sup>
+
+
+
+Configure TLS options for the web endpoint
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigwebtlsconfigca">ca</a></b></td>
+        <td>object</td>
+        <td>
+          Secret containing the CA certificate to verify the server certificates<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigwebtlsconfigcert">cert</a></b></td>
+        <td>object</td>
+        <td>
+          Secret containing the TLS certificate for the server<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigwebtlsconfigkey">key</a></b></td>
+        <td>object</td>
+        <td>
+          Secret containing the TLS key for the server<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.webTLSConfig.ca
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigwebtlsconfig)</sup></sup>
+
+
+
+Secret containing the CA certificate to verify the server certificates
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          The name of the secret in the object's namespace to select from.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.webTLSConfig.cert
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigwebtlsconfig)</sup></sup>
+
+
+
+Secret containing the TLS certificate for the server
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          The name of the secret in the object's namespace to select from.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.webTLSConfig.key
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigwebtlsconfig)</sup></sup>
+
+
+
+Secret containing the TLS key for the server
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          The name of the secret in the object's namespace to select from.<br/>
+        </td>
+        <td>true</td>
       </tr></tbody>
 </table>
 
