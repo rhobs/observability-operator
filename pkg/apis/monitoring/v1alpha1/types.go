@@ -195,6 +195,9 @@ type PrometheusConfig struct {
 	// Configure TLS options for the web endpoint
 	// +optional
 	WebTLSConfig *WebTLSConfig `json:"webTLSConfig,omitempty"`
+	// Specify additional secrets to mount to the prometheus container
+	// +optional
+	Secrets []string `json:"secrets,omitempty"`
 }
 
 type AlertmanagerConfig struct {

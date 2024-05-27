@@ -1050,6 +1050,12 @@ spec:
                     description: Default interval between scrapes.
                     pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
                     type: string
+                  secrets:
+                    description: Specify additional secrets to mount to the prometheus
+                      container
+                    items:
+                      type: string
+                    type: array
                   webTLSConfig:
                     description: Configure TLS options for the web endpoint
                     properties:

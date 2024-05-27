@@ -341,6 +341,13 @@ The resulting endpoint is /api/v1/otlp/v1/metrics.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>secrets</b></td>
+        <td>[]string</td>
+        <td>
+          Specify additional secrets to mount to the prometheus container<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#monitoringstackspecprometheusconfigwebtlsconfig">webTLSConfig</a></b></td>
         <td>object</td>
         <td>

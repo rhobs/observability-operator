@@ -2,6 +2,7 @@ package monitoringstack
 
 import (
 	"reflect"
+	"slices"
 
 	monv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -246,6 +247,13 @@ func newPrometheus(
 
 	if config.ScrapeInterval != nil {
 		prometheus.Spec.ScrapeInterval = *ms.Spec.PrometheusConfig.ScrapeInterval
+	}
+	if len(ms.Spec.PrometheusConfig.Secrets) > 0 {
+		for _, secret := range ms.Spec.PrometheusConfig.Secrets {
+			if !slices.Contains(prometheus.Spec.Secrets, secret) {
+				prometheus.Spec.Secrets = append(prometheus.Spec.Secrets, secret)
+			}
+		}
 	}
 
 	return prometheus
