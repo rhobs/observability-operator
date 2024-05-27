@@ -5,6 +5,7 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -42,6 +43,23 @@ const (
 	// TroubleshootingPanel deploys the Troubleshooting Panel Dynamic Plugin for the OpenShift Console
 	TypeTroubleshootingPanel UIPluginType = "TroubleshootingPanel"
 )
+
+// DeploymentConfig contains options allowing the customization of the deployment hosting the UI Plugin.
+type DeploymentConfig struct {
+	// Define a label-selector for nodes which the Pods should be scheduled on.
+	//
+	// When no selector is specified it will default to a value only selecting Linux nodes ("kubernetes.io/os=linux").
+	//
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Node Selector",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:nodeSelector"}
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
+	// Define the tolerations used for the deployment.
+	//
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Pod Tolerations",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Toleration"}
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+}
 
 // TroubleshootingPanelConfig contains options for configuring the Troubleshooting Panel  plugin
 type TroubleshootingPanelConfig struct {
@@ -94,6 +112,11 @@ type UIPluginSpec struct {
 	// +required
 	// +kubebuilder:validation:Required
 	Type UIPluginType `json:"type"`
+
+	// Deployment allows customizing aspects of the generated deployment hosting the UI Plugin.
+	//
+	// +kubebuilder:validation:Optional
+	Deployment *DeploymentConfig `json:"deployment,omitempty"`
 
 	// TroubleshootingPanel contains configuration for the troubleshooting console plugin.
 	//

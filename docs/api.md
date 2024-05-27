@@ -2858,6 +2858,13 @@ UIPluginSpec is the specification for desired state of UIPlugin.
         </td>
         <td>true</td>
       </tr><tr>
+        <td><b><a href="#uipluginspecdeployment">deployment</a></b></td>
+        <td>object</td>
+        <td>
+          Deployment allows customizing aspects of the generated deployment hosting the UI Plugin.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#uipluginspecdistributedtracing">distributedTracing</a></b></td>
         <td>object</td>
         <td>
@@ -2869,6 +2876,110 @@ UIPluginSpec is the specification for desired state of UIPlugin.
         <td>object</td>
         <td>
           TroubleshootingPanel contains configuration for the troubleshooting console plugin.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### UIPlugin.spec.deployment
+<sup><sup>[↩ Parent](#uipluginspec)</sup></sup>
+
+
+
+Deployment allows customizing aspects of the generated deployment hosting the UI Plugin.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>nodeSelector</b></td>
+        <td>map[string]string</td>
+        <td>
+          Define a label-selector for nodes which the Pods should be scheduled on.
+
+
+When no selector is specified it will default to a value only selecting Linux nodes ("kubernetes.io/os=linux").<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#uipluginspecdeploymenttolerationsindex">tolerations</a></b></td>
+        <td>[]object</td>
+        <td>
+          Define the tolerations used for the deployment.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### UIPlugin.spec.deployment.tolerations[index]
+<sup><sup>[↩ Parent](#uipluginspecdeployment)</sup></sup>
+
+
+
+The pod this Toleration is attached to tolerates any taint that matches
+the triple <key,value,effect> using the matching operator <operator>.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>effect</b></td>
+        <td>string</td>
+        <td>
+          Effect indicates the taint effect to match. Empty means match all taint effects.
+When specified, allowed values are NoSchedule, PreferNoSchedule and NoExecute.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key is the taint key that the toleration applies to. Empty means match all taint keys.
+If the key is empty, operator must be Exists; this combination means to match all values and all keys.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>operator</b></td>
+        <td>string</td>
+        <td>
+          Operator represents a key's relationship to the value.
+Valid operators are Exists and Equal. Defaults to Equal.
+Exists is equivalent to wildcard for value, so that a pod can
+tolerate all taints of a particular category.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>tolerationSeconds</b></td>
+        <td>integer</td>
+        <td>
+          TolerationSeconds represents the period of time the toleration (which must be
+of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
+it is not set, which means tolerate the taint forever (do not evict). Zero and
+negative values will be treated as 0 (evict immediately) by the system.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>value</b></td>
+        <td>string</td>
+        <td>
+          Value is the taint value the toleration matches to.
+If the operator is Exists, the value should be empty, otherwise just a regular string.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

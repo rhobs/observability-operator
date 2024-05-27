@@ -21,12 +21,18 @@ const (
 	servingCertVolumeName = "serving-cert"
 )
 
+var (
+	defaultNodeSelector = map[string]string{
+		"kubernetes.io/os": "linux",
+	}
+)
+
 func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPluginInfo) []reconciler.Reconciler {
 	namespace := pluginInfo.ResourceNamespace
 
 	components := []reconciler.Reconciler{
 		reconciler.NewUpdater(newServiceAccount(pluginInfo, namespace), plugin),
-		reconciler.NewUpdater(newDeployment(pluginInfo, namespace), plugin),
+		reconciler.NewUpdater(newDeployment(pluginInfo, namespace, plugin.Spec.Deployment), plugin),
 		reconciler.NewUpdater(newService(pluginInfo, namespace), plugin),
 		reconciler.NewUpdater(newConsolePlugin(pluginInfo, namespace), plugin),
 	}
@@ -101,7 +107,7 @@ func newConsolePlugin(info UIPluginInfo, namespace string) *osv1alpha1.ConsolePl
 	}
 }
 
-func newDeployment(info UIPluginInfo, namespace string) *appsv1.Deployment {
+func newDeployment(info UIPluginInfo, namespace string, config *uiv1alpha1.DeploymentConfig) *appsv1.Deployment {
 	pluginArgs := []string{
 		fmt.Sprintf("-port=%d", port),
 		"-cert=/var/serving-cert/tls.crt",
@@ -148,6 +154,8 @@ func newDeployment(info UIPluginInfo, namespace string) *appsv1.Deployment {
 			MountPath: "/etc/plugin/config",
 		})
 	}
+
+	nodeSelector, tolerations := createNodeSelectorAndTolerations(config)
 
 	plugin := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
@@ -196,10 +204,9 @@ func newDeployment(info UIPluginInfo, namespace string) *appsv1.Deployment {
 							Args:         pluginArgs,
 						},
 					},
-					Volumes: volumes,
-					NodeSelector: map[string]string{
-						"kubernetes.io/os": "linux",
-					},
+					Volumes:       volumes,
+					NodeSelector:  nodeSelector,
+					Tolerations:   tolerations,
 					RestartPolicy: "Always",
 					DNSPolicy:     "ClusterFirst",
 					SecurityContext: &corev1.PodSecurityContext{
@@ -215,6 +222,19 @@ func newDeployment(info UIPluginInfo, namespace string) *appsv1.Deployment {
 	}
 
 	return plugin
+}
+
+func createNodeSelectorAndTolerations(config *uiv1alpha1.DeploymentConfig) (map[string]string, []corev1.Toleration) {
+	if config == nil {
+		return defaultNodeSelector, nil
+	}
+
+	nodeSelector := config.NodeSelector
+	if nodeSelector == nil {
+		nodeSelector = defaultNodeSelector
+	}
+
+	return nodeSelector, config.Tolerations
 }
 
 func newService(info UIPluginInfo, namespace string) *corev1.Service {
