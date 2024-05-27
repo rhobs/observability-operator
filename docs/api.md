@@ -2648,6 +2648,13 @@ deduplicate.
           <br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b><a href="#thanosquerierspecwebtlsconfig">webTLSConfig</a></b></td>
+        <td>object</td>
+        <td>
+          Configure TLS options for the web endpoint<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -2765,6 +2772,149 @@ list restricting them.<br/>
           List of namespace names.<br/>
         </td>
         <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ThanosQuerier.spec.webTLSConfig
+<sup><sup>[↩ Parent](#thanosquerierspec)</sup></sup>
+
+
+
+Configure TLS options for the web endpoint
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#thanosquerierspecwebtlsconfigca">ca</a></b></td>
+        <td>object</td>
+        <td>
+          Secret containing the CA certificate to verify the server certificates<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#thanosquerierspecwebtlsconfigcert">cert</a></b></td>
+        <td>object</td>
+        <td>
+          Secret containing the TLS certificate for the server<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#thanosquerierspecwebtlsconfigkey">key</a></b></td>
+        <td>object</td>
+        <td>
+          Secret containing the TLS key for the server<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ThanosQuerier.spec.webTLSConfig.ca
+<sup><sup>[↩ Parent](#thanosquerierspecwebtlsconfig)</sup></sup>
+
+
+
+Secret containing the CA certificate to verify the server certificates
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          The name of the secret in the object's namespace to select from.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ThanosQuerier.spec.webTLSConfig.cert
+<sup><sup>[↩ Parent](#thanosquerierspecwebtlsconfig)</sup></sup>
+
+
+
+Secret containing the TLS certificate for the server
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          The name of the secret in the object's namespace to select from.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ThanosQuerier.spec.webTLSConfig.key
+<sup><sup>[↩ Parent](#thanosquerierspecwebtlsconfig)</sup></sup>
+
+
+
+Secret containing the TLS key for the server
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          The name of the secret in the object's namespace to select from.<br/>
+        </td>
+        <td>true</td>
       </tr></tbody>
 </table>
 

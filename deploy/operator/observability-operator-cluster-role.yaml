@@ -75,6 +75,7 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - configmaps
   - serviceaccounts
   - services
   verbs:
