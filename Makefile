@@ -38,7 +38,7 @@ lint-jsonnet: $(JSONNET_LINT) jsonnet-vendor
 	| xargs -n 1 -- $(JSONNET_LINT) -J $(JSONNET_VENDOR)
 
 .PHONY: lint-shell
-lint-shell:
+lint-shell: $(SHELLCHECK)
 	find -name "*.sh" -print0 | xargs --null $(SHELLCHECK)
 
 .PHONY: fmt-jsonnet
