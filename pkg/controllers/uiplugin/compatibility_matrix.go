@@ -34,7 +34,7 @@ func getImageKeyForPluginType(pluginType uiv1alpha1.UIPluginType, clusterVersion
 
 	// No console plugins are supported before 4.11
 	if semver.Compare(clusterVersion, "v4.11") < 0 {
-		return "", fmt.Errorf("dynamic pluings not supported before 4.11")
+		return "", fmt.Errorf("dynamic plugins not supported before 4.11")
 	}
 
 	for _, entry := range compatibilityMatrix {
@@ -43,7 +43,7 @@ func getImageKeyForPluginType(pluginType uiv1alpha1.UIPluginType, clusterVersion
 				return entry.ImageKey, nil
 			}
 
-			if semver.Compare(clusterVersion, entry.MinClusterVersion) >= 0 && semver.Compare(clusterVersion, entry.MaxClusterVersion) < 0 {
+			if semver.Compare(clusterVersion, entry.MinClusterVersion) >= 0 && semver.Compare(clusterVersion, entry.MaxClusterVersion) <= 0 {
 				return entry.ImageKey, nil
 			}
 		}

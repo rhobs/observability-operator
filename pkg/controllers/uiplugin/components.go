@@ -22,18 +22,24 @@ const (
 )
 
 func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPluginInfo) []reconciler.Reconciler {
-	hasRole := pluginInfo.Role != nil
-	hasRoleBinding := pluginInfo.RoleBinding != nil
 	namespace := pluginInfo.ResourceNamespace
 
-	return []reconciler.Reconciler{
+	components := []reconciler.Reconciler{
 		reconciler.NewUpdater(newServiceAccount(pluginInfo, namespace), plugin),
-		reconciler.NewOptionalUpdater(newRole(pluginInfo), plugin, hasRole),
-		reconciler.NewOptionalUpdater(newRoleBinding(pluginInfo), plugin, hasRoleBinding),
 		reconciler.NewUpdater(newDeployment(pluginInfo, namespace), plugin),
 		reconciler.NewUpdater(newService(pluginInfo, namespace), plugin),
 		reconciler.NewUpdater(newConsolePlugin(pluginInfo, namespace), plugin),
 	}
+
+	if pluginInfo.Role != nil {
+		components = append(components, reconciler.NewUpdater(newRole(pluginInfo), plugin))
+	}
+
+	if pluginInfo.RoleBinding != nil {
+		components = append(components, reconciler.NewUpdater(newRoleBinding(pluginInfo), plugin))
+	}
+
+	return components
 }
 
 func newServiceAccount(info UIPluginInfo, namespace string) *corev1.ServiceAccount {
