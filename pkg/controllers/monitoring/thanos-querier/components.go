@@ -19,11 +19,37 @@ func thanosComponentReconcilers(thanos *msoapi.ThanosQuerier, sidecarUrls []stri
 		reconciler.NewUpdater(newServiceAccount(name, thanos.Namespace), thanos),
 		reconciler.NewUpdater(newThanosQuerierDeployment(name, thanos, sidecarUrls, thanosCfg), thanos),
 		reconciler.NewUpdater(newService(name, thanos.Namespace), thanos),
-		reconciler.NewUpdater(newServiceMonitor(name, thanos.Namespace), thanos),
+		reconciler.NewUpdater(newServiceMonitor(name, thanos.Namespace, thanos), thanos),
+		reconciler.NewOptionalUpdater(newHttpConfConfigMap(name, thanos), thanos, thanos.Spec.WebTLSConfig != nil),
 	}
 }
 
+func newHttpConfConfigMap(name string, thanos *msoapi.ThanosQuerier) *corev1.ConfigMap {
+	httpConf := &corev1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "ConfigMap",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("%s-http-conf", name),
+			Namespace: thanos.Namespace,
+		},
+	}
+	if thanos.Spec.WebTLSConfig != nil {
+		httpConf.Data = map[string]string{
+			"http.conf": `
+tls_server_config:
+  cert_file: /etc/thanos/tls-assets/web-cert-secret/` + thanos.Spec.WebTLSConfig.Certificate.Key + `
+  key_file: /etc/thanos/tls-assets/web-key-secret/` + thanos.Spec.WebTLSConfig.PrivateKey.Key,
+		}
+	}
+
+	return httpConf
+}
+
 func newThanosQuerierDeployment(name string, spec *msoapi.ThanosQuerier, sidecarUrls []string, thanosCfg ThanosConfiguration) *appsv1.Deployment {
+	httpConfCMName := fmt.Sprintf("%s-http-conf", name)
+
 	args := []string{
 		"query",
 		"--log.format=logfmt",
@@ -36,6 +62,10 @@ func newThanosQuerierDeployment(name string, spec *msoapi.ThanosQuerier, sidecar
 
 	for _, rl := range spec.Spec.ReplicaLabels {
 		args = append(args, fmt.Sprintf("--query.replica-label=%s", rl))
+	}
+
+	if spec.Spec.WebTLSConfig != nil {
+		args = append(args, "--http.config=/etc/thanos/tls-assets/web-http-conf-cm/http.conf")
 	}
 
 	thanos := &appsv1.Deployment{
@@ -102,6 +132,53 @@ func newThanosQuerierDeployment(name string, spec *msoapi.ThanosQuerier, sidecar
 			ProgressDeadlineSeconds: ptr.To(int32(300)),
 		},
 	}
+	if spec.Spec.WebTLSConfig != nil {
+		thanos.Spec.Template.Spec.Volumes = append(thanos.Spec.Template.Spec.Volumes, []corev1.Volume{
+			{
+				Name: "thanos-web-tls-key",
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: spec.Spec.WebTLSConfig.PrivateKey.Name,
+					},
+				},
+			},
+			{
+				Name: "thanos-web-tls-cert",
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: spec.Spec.WebTLSConfig.Certificate.Name,
+					},
+				},
+			},
+			{
+				Name: "thanos-web-http-conf",
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: httpConfCMName,
+						},
+					},
+				},
+			},
+		}...)
+		thanos.Spec.Template.Spec.Containers[0].VolumeMounts = append(thanos.Spec.Template.Spec.Containers[0].VolumeMounts, []corev1.VolumeMount{
+			{
+				Name:      "thanos-web-tls-key",
+				MountPath: "/etc/thanos/tls-assets/web-cert-secret",
+				ReadOnly:  true,
+			},
+			{
+				Name:      "thanos-web-tls-cert",
+				MountPath: "/etc/thanos/tls-assets/web-key-secret",
+				ReadOnly:  true,
+			},
+			{
+				Name:      "thanos-web-http-conf",
+				MountPath: "/etc/thanos/tls-assets/web-http-conf-cm",
+				ReadOnly:  true,
+			},
+		}...)
+	}
 
 	return thanos
 }
@@ -144,8 +221,8 @@ func newService(name string, namespace string) *corev1.Service {
 	}
 }
 
-func newServiceMonitor(name string, namespace string) *monv1.ServiceMonitor {
-	return &monv1.ServiceMonitor{
+func newServiceMonitor(name string, namespace string, thanos *msoapi.ThanosQuerier) *monv1.ServiceMonitor {
+	serviceMonitor := &monv1.ServiceMonitor{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: monv1.SchemeGroupVersion.String(),
 			Kind:       "ServiceMonitor",
@@ -169,6 +246,23 @@ func newServiceMonitor(name string, namespace string) *monv1.ServiceMonitor {
 			},
 		},
 	}
+	if thanos.Spec.WebTLSConfig != nil {
+		serviceMonitor.Spec.Endpoints[0].Scheme = "https"
+		serviceMonitor.Spec.Endpoints[0].TLSConfig = &monv1.TLSConfig{
+			SafeTLSConfig: monv1.SafeTLSConfig{
+				CA: monv1.SecretOrConfigMap{
+					Secret: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: thanos.Spec.WebTLSConfig.CertificateAuthority.Name,
+						},
+						Key: thanos.Spec.WebTLSConfig.CertificateAuthority.Key,
+					},
+				},
+				ServerName: ptr.To(name),
+			},
+		}
+	}
+	return serviceMonitor
 }
 
 func componentLabels(querierName string) map[string]string {

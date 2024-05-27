@@ -63,7 +63,7 @@ type Options struct {
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=list;watch;create;update;patch;delete
 
 // RBAC for managing core resources
-//+kubebuilder:rbac:groups=core,resources=services;serviceaccounts,verbs=list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=services;serviceaccounts;configmaps,verbs=list;watch;create;update;patch;delete
 
 // RBAC for managing Prometheus Operator CRs
 //+kubebuilder:rbac:groups=monitoring.rhobs,resources=servicemonitors,verbs=list;watch;create;update;patch;delete
