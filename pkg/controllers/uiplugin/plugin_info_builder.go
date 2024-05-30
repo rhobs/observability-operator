@@ -1,18 +1,22 @@
 package uiplugin
 
 import (
+	"context"
 	"fmt"
 
 	osv1alpha1 "github.com/openshift/api/console/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 )
 
 type UIPluginInfo struct {
 	Image               string
+	Korrel8rImage       string
+	LokiServiceNames    map[string]string
 	Name                string
 	ConsoleName         string
 	DisplayName         string
@@ -26,7 +30,7 @@ type UIPluginInfo struct {
 	ResourceNamespace   string
 }
 
-func PluginInfoBuilder(plugin *uiv1alpha1.UIPlugin, pluginConf UIPluginsConfiguration, clusterVersion string) (*UIPluginInfo, error) {
+func PluginInfoBuilder(ctx context.Context, k client.Client, plugin *uiv1alpha1.UIPlugin, pluginConf UIPluginsConfiguration, clusterVersion string) (*UIPluginInfo, error) {
 	compatibilityInfo, err := lookupImageAndFeatures(plugin.Spec.Type, clusterVersion)
 	if err != nil {
 		return nil, err
@@ -108,7 +112,17 @@ func PluginInfoBuilder(plugin *uiv1alpha1.UIPlugin, pluginConf UIPluginsConfigur
 			return pluginInfo, nil
 		}
 	case uiv1alpha1.TypeTroubleshootingPanel:
-		return createTroubleshootingPanelPluginInfo(plugin, namespace, plugin.Name, image, []string{})
+		{
+			pluginInfo, err := createTroubleshootingPanelPluginInfo(plugin, namespace, plugin.Name, image, []string{})
+			if err == nil {
+				pluginInfo.Korrel8rImage = pluginConf.Images["korrel8r"]
+				pluginInfo.LokiServiceNames[OpenshiftLoggingNs], err = getLokiServiceName(ctx, k, OpenshiftLoggingNs)
+			}
+			if err == nil {
+				pluginInfo.LokiServiceNames[OpenshiftNetobservNs], err = getLokiServiceName(ctx, k, OpenshiftNetobservNs)
+			}
+			return pluginInfo, err
+		}
 	case uiv1alpha1.TypeDistributedTracing:
 		return createDistributedTracingPluginInfo(plugin, namespace, plugin.Name, image, []string{})
 	case uiv1alpha1.TypeLogging:

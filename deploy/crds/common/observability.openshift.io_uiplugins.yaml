@@ -148,17 +148,6 @@ spec:
                 description: TroubleshootingPanel contains configuration for the troubleshooting
                   console plugin.
                 properties:
-                  korrel8r:
-                    description: korrel8r defines the Korrel8r instance that the troubleshooting
-                      panel plugin will connect to
-                    properties:
-                      name:
-                        description: Name of the korrel8r instance
-                        type: string
-                      namespace:
-                        description: Namespace of the korrel8r instance
-                        type: string
-                    type: object
                   timeout:
                     description: |-
                       Timeout is the maximum duration before a query timeout.

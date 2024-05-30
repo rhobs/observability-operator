@@ -25,7 +25,7 @@ spec:
 
 ### Troubleshooting Panel
 
-The plugin will connect to a Korrel8r instance named `korrel8r` in the `korrel8r` namespace. A "Troubleshooting Panel" button is added to the alerts page, which will convert the current alert into a Korrel8r query, then retrieve related neighbors and display them in a topology view.
+The plugin will connect to a Korrel8r service named `korrel8r` in the  namespace where the observability operator(and Korrel8r) is deployed. A "Troubleshooting Panel" button is added to the alerts page, which will convert the current alert into a Korrel8r query, then retrieve related neighbors and display them in a topology view.
 
 To enable the troubleshooting panel console plugin, create a `UIPlugin` CR. The following example shows how to create a CR to enable the troubleshooting panel console plugin:
 

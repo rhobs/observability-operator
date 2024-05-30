@@ -3124,13 +3124,6 @@ TroubleshootingPanel contains configuration for the troubleshooting console plug
         </tr>
     </thead>
     <tbody><tr>
-        <td><b><a href="#uipluginspectroubleshootingpanelkorrel8r">korrel8r</a></b></td>
-        <td>object</td>
-        <td>
-          korrel8r defines the Korrel8r instance that the troubleshooting panel plugin will connect to<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b>timeout</b></td>
         <td>string</td>
         <td>
@@ -3139,40 +3132,6 @@ TroubleshootingPanel contains configuration for the troubleshooting console plug
 
 The value is expected to be a sequence of digits followed by a unit suffix, which can be 's' (seconds)
 or 'm' (minutes).<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-### UIPlugin.spec.troubleshootingPanel.korrel8r
-<sup><sup>[↩ Parent](#uipluginspectroubleshootingpanel)</sup></sup>
-
-
-
-korrel8r defines the Korrel8r instance that the troubleshooting panel plugin will connect to
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>name</b></td>
-        <td>string</td>
-        <td>
-          Name of the korrel8r instance<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>namespace</b></td>
-        <td>string</td>
-        <td>
-          Namespace of the korrel8r instance<br/>
         </td>
         <td>false</td>
       </tr></tbody>
