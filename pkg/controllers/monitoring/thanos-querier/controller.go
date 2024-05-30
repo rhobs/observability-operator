@@ -14,6 +14,7 @@ package thanos_querier
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"time"
 
@@ -23,6 +24,8 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -51,6 +54,12 @@ type Options struct {
 	Thanos ThanosConfiguration
 }
 
+const (
+	thanosTLSKeySecretNameField = ".spec.webTLSConfig.key.name"
+	thanosTLSCertSecretNameField = ".spec.webTLSConfig.cert.name"
+	thanosTLSCASecretNameField = ".spec.webTLSConfig.ca.name"
+)
+
 // RBAC for watching monitoring stacks
 //+kubebuilder:rbac:groups=monitoring.rhobs,resources=monitoringstacks,verbs=list;watch
 
@@ -64,6 +73,7 @@ type Options struct {
 
 // RBAC for managing core resources
 //+kubebuilder:rbac:groups=core,resources=services;serviceaccounts;configmaps,verbs=list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=secrets,verbs=list;watch
 
 // RBAC for managing Prometheus Operator CRs
 //+kubebuilder:rbac:groups=monitoring.rhobs,resources=servicemonitors,verbs=list;watch;create;update;patch;delete
@@ -79,16 +89,55 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 		thanos: opts.Thanos,
 	}
 
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &msoapi.ThanosQuerier{}, thanosTLSKeySecretNameField, func(rawObj client.Object) []string {
+		// Extract the secret name from the spec, if one is provided
+		cr := rawObj.(*msoapi.ThanosQuerier)
+		if cr.Spec.WebTLSConfig == nil {
+			return nil
+		}
+		return []string{cr.Spec.WebTLSConfig.Key.Name}
+	}); err != nil {
+		return err
+	}
+
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &msoapi.ThanosQuerier{}, thanosTLSCertSecretNameField, func(rawObj client.Object) []string {
+		// Extract the secret name from the spec, if one is provided
+		cr := rawObj.(*msoapi.ThanosQuerier)
+		if cr.Spec.WebTLSConfig == nil {
+			return nil
+		}
+		return []string{cr.Spec.WebTLSConfig.Cert.Name}
+	}); err != nil {
+		return err
+	}
+
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &msoapi.ThanosQuerier{}, thanosTLSCASecretNameField, func(rawObj client.Object) []string {
+		// Extract the secret name from the spec, if one is provided
+		cr := rawObj.(*msoapi.ThanosQuerier)
+		if cr.Spec.WebTLSConfig == nil {
+			return nil
+		}
+		return []string{cr.Spec.WebTLSConfig.CA.Name}
+	}); err != nil {
+		return err
+	}
+
 	p := predicate.GenerationChangedPredicate{}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&msoapi.ThanosQuerier{}).
 		Owns(&appsv1.Deployment{}).WithEventFilter(p).
 		Owns(&corev1.ServiceAccount{}).WithEventFilter(p).
 		Owns(&corev1.Service{}).WithEventFilter(p).
+		Owns(&corev1.ConfigMap{}).WithEventFilter(p).
 		Watches(
 			&msoapi.MonitoringStack{},
 			handler.EnqueueRequestsFromMapFunc(rm.findQueriersForMonitoringStack),
 			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{}),
+		).
+		Watches(
+			&corev1.Secret{},
+			handler.EnqueueRequestsFromMapFunc(rm.findQueriersForTLSSecrets),
+			builder.WithPredicates(predicate.GenerationChangedPredicate{}),
 		).
 		Complete(rm)
 }
@@ -113,7 +162,15 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{RequeueAfter: 10 * time.Second}, err
 	}
 
-	reconcilers := thanosComponentReconcilers(querier, sidecarServices, rm.thanos)
+	tlsHash := ""
+	if querier.Spec.WebTLSConfig != nil {
+		tlsHash, err = rm.hashOfTLSSecrets(querier)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
+	reconcilers := thanosComponentReconcilers(querier, sidecarServices, rm.thanos, tlsHash)
 	for _, reconciler := range reconcilers {
 		err := reconciler.Reconcile(ctx, rm, rm.scheme)
 		// handle creation / updation errors that can happen due to a stale cache by
@@ -156,6 +213,39 @@ func (rm resourceManager) findSidecarServices(ctx context.Context, tQuerier *mso
 	return sidecarUrls, nil
 }
 
+func (rm resourceManager) hashOfTLSSecrets(thanos *msoapi.ThanosQuerier) (string, error) {
+	var caSecret corev1.Secret
+	var keySecret corev1.Secret
+	var certSecret corev1.Secret
+	err := rm.Get(context.Background(), types.NamespacedName{
+		Name:      thanos.Spec.WebTLSConfig.CA.Name,
+		Namespace: thanos.Namespace,
+	}, &caSecret)
+	if err != nil {
+		return "", fmt.Errorf("Couldn't get TLS CA secret: %s", err)
+	}
+
+	err = rm.Get(context.Background(), types.NamespacedName{
+		Name:      thanos.Spec.WebTLSConfig.Key.Name,
+		Namespace: thanos.Namespace,
+	}, &keySecret)
+	if err != nil {
+		return "", fmt.Errorf("Couldn't get TLS key secret: %s", err)
+	}
+
+	err = rm.Get(context.Background(), types.NamespacedName{
+		Name:      thanos.Spec.WebTLSConfig.Cert.Name,
+		Namespace: thanos.Namespace,
+	}, &certSecret)
+	if err != nil {
+		return "", fmt.Errorf("Couldn't get TLS certificate secret: %s", err)
+	}
+	data := append(caSecret.Data[thanos.Spec.WebTLSConfig.CA.Key], keySecret.Data[thanos.Spec.WebTLSConfig.Key.Key]...)
+	data = append(data, certSecret.Data[thanos.Spec.WebTLSConfig.Cert.Key]...)
+	hash := sha256.Sum256(data)
+	return rand.SafeEncodeString(fmt.Sprint(hash)), nil
+}
+
 // Given a Service object, return a url to use as value for --store/--endpoint.
 func getEndpointUrl(serviceName string, namespace string) string {
 	return fmt.Sprintf("dnssrv+_grpc._tcp.%s.%s.svc.cluster.local", serviceName, namespace)
@@ -189,5 +279,45 @@ func (rm resourceManager) findQueriersForMonitoringStack(ctx context.Context, ms
 			})
 		}
 	}
+	return requests
+}
+
+// Find all ThanosQueriers, whose TLS secrets fit the given Secret and
+// return a list of reconcile requests, one for each ThanosQuerier.
+func (rm resourceManager) findQueriersForTLSSecrets(ctx context.Context, src client.Object) []reconcile.Request {
+	requests := []reconcile.Request{}
+
+	logger := rm.logger.WithValues("Secret", src.GetNamespace()+"/"+src.GetName())
+	logger.Info("watched Secret changed, checking for matching querier")
+
+	thanosWatchFields := []string{
+		thanosTLSCASecretNameField,
+		thanosTLSCertSecretNameField,
+		thanosTLSKeySecretNameField,
+	}
+
+	for _, field := range thanosWatchFields {
+		crList := &msoapi.ThanosQuerierList{}
+		listOps := &client.ListOptions{
+			FieldSelector: fields.OneTermEqualSelector(field, src.GetName()),
+			Namespace:     src.GetNamespace(),
+		}
+		err := rm.Client.List(ctx, crList, listOps)
+		if err != nil {
+			logger.Error(err, "Failed to list Thanosqueriers")
+			return []reconcile.Request{}
+		}
+
+		for _, item := range crList.Items {
+			logger.Info("Found querier, scheduling sync")
+			requests = append(requests, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      item.GetName(),
+					Namespace: item.GetNamespace(),
+				},
+			})
+		}
+	}
+
 	return requests
 }

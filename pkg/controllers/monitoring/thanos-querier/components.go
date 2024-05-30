@@ -13,11 +13,11 @@ import (
 	"github.com/rhobs/observability-operator/pkg/reconciler"
 )
 
-func thanosComponentReconcilers(thanos *msoapi.ThanosQuerier, sidecarUrls []string, thanosCfg ThanosConfiguration) []reconciler.Reconciler {
+func thanosComponentReconcilers(thanos *msoapi.ThanosQuerier, sidecarUrls []string, thanosCfg ThanosConfiguration, tlsHash string) []reconciler.Reconciler {
 	name := "thanos-querier-" + thanos.Name
 	return []reconciler.Reconciler{
 		reconciler.NewUpdater(newServiceAccount(name, thanos.Namespace), thanos),
-		reconciler.NewUpdater(newThanosQuerierDeployment(name, thanos, sidecarUrls, thanosCfg), thanos),
+		reconciler.NewUpdater(newThanosQuerierDeployment(name, thanos, sidecarUrls, thanosCfg, tlsHash), thanos),
 		reconciler.NewUpdater(newService(name, thanos.Namespace), thanos),
 		reconciler.NewUpdater(newServiceMonitor(name, thanos.Namespace, thanos), thanos),
 		reconciler.NewOptionalUpdater(newHttpConfConfigMap(name, thanos), thanos, thanos.Spec.WebTLSConfig != nil),
@@ -47,7 +47,7 @@ tls_server_config:
 	return httpConf
 }
 
-func newThanosQuerierDeployment(name string, spec *msoapi.ThanosQuerier, sidecarUrls []string, thanosCfg ThanosConfiguration) *appsv1.Deployment {
+func newThanosQuerierDeployment(name string, spec *msoapi.ThanosQuerier, sidecarUrls []string, thanosCfg ThanosConfiguration, tlsHash string) *appsv1.Deployment {
 	httpConfCMName := fmt.Sprintf("%s-http-conf", name)
 
 	args := []string{
@@ -95,6 +95,12 @@ func newThanosQuerierDeployment(name string, spec *msoapi.ThanosQuerier, sidecar
 					Containers: []corev1.Container{
 						{
 							Name:  "thanos-querier",
+							Env: []corev1.EnvVar{
+								{
+									Name: "TLS_CONFIG_HASH",
+									Value: tlsHash,
+								},
+							},
 							Args:  args,
 							Image: thanosCfg.Image,
 							Ports: []corev1.ContainerPort{
