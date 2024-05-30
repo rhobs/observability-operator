@@ -13,11 +13,16 @@ import (
 	"github.com/rhobs/observability-operator/pkg/reconciler"
 )
 
-func thanosComponentReconcilers(thanos *msoapi.ThanosQuerier, sidecarUrls []string, thanosCfg ThanosConfiguration) []reconciler.Reconciler {
+func thanosComponentReconcilers(
+	thanos *msoapi.ThanosQuerier,
+	sidecarUrls []string,
+	thanosCfg ThanosConfiguration,
+	tlsHashes map[string]string,
+) []reconciler.Reconciler {
 	name := "thanos-querier-" + thanos.Name
 	return []reconciler.Reconciler{
 		reconciler.NewUpdater(newServiceAccount(name, thanos.Namespace), thanos),
-		reconciler.NewUpdater(newThanosQuerierDeployment(name, thanos, sidecarUrls, thanosCfg), thanos),
+		reconciler.NewUpdater(newThanosQuerierDeployment(name, thanos, sidecarUrls, thanosCfg, tlsHashes), thanos),
 		reconciler.NewUpdater(newService(name, thanos.Namespace), thanos),
 		reconciler.NewUpdater(newServiceMonitor(name, thanos.Namespace, thanos), thanos),
 		reconciler.NewOptionalUpdater(newHttpConfConfigMap(name, thanos), thanos, thanos.Spec.WebTLSConfig != nil),
@@ -47,7 +52,13 @@ tls_server_config:
 	return httpConf
 }
 
-func newThanosQuerierDeployment(name string, spec *msoapi.ThanosQuerier, sidecarUrls []string, thanosCfg ThanosConfiguration) *appsv1.Deployment {
+func newThanosQuerierDeployment(
+	name string,
+	spec *msoapi.ThanosQuerier,
+	sidecarUrls []string,
+	thanosCfg ThanosConfiguration,
+	tlsHashes map[string]string,
+) *appsv1.Deployment {
 	httpConfCMName := fmt.Sprintf("%s-http-conf", name)
 
 	args := []string{
@@ -74,9 +85,9 @@ func newThanosQuerierDeployment(name string, spec *msoapi.ThanosQuerier, sidecar
 			Kind:       "Deployment",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: spec.Namespace,
-			Labels:    componentLabels(name),
+			Name:        name,
+			Namespace:   spec.Namespace,
+			Labels:      componentLabels(name),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptr.To(int32(1)),
@@ -94,7 +105,7 @@ func newThanosQuerierDeployment(name string, spec *msoapi.ThanosQuerier, sidecar
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:  "thanos-querier",
+							Name: "thanos-querier",
 							Args:  args,
 							Image: thanosCfg.Image,
 							Ports: []corev1.ContainerPort{
@@ -178,6 +189,11 @@ func newThanosQuerierDeployment(name string, spec *msoapi.ThanosQuerier, sidecar
 				ReadOnly:  true,
 			},
 		}...)
+		tlsAnnotations := map[string]string{}
+		for name, hash := range tlsHashes {
+			tlsAnnotations[fmt.Sprintf("monitoring.openshift.io/%s-hash", name)] = hash
+		}
+		thanos.ObjectMeta.Annotations = tlsAnnotations
 	}
 
 	return thanos
