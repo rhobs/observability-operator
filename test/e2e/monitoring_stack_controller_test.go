@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os/exec"
+	"strings"
 	"testing"
 	"time"
 
@@ -76,8 +78,8 @@ func TestMonitoringStackController(t *testing.T) {
 		name:     "single prometheus replica has no pdb",
 		scenario: singlePrometheusReplicaHasNoPDB,
 	}, {
-		name:     "Prometheus stacks can scrape themselves",
-		scenario: assertPrometheusScrapesItself,
+		name:     "Prometheus stacks can scrape themselves and web UI works",
+		scenario: assertPrometheusScrapesItselfAndWebUI,
 	}, {
 		name:     "Alertmanager receives alerts from the Prometheus instance",
 		scenario: assertAlertmanagerReceivesAlerts,
@@ -113,7 +115,6 @@ func TestMonitoringStackController(t *testing.T) {
 		name:     "managed fields in Prometheus object",
 		scenario: assertPrometheusManagedFields,
 	}}
-
 	for _, tc := range ts {
 		t.Run(tc.name, tc.scenario)
 	}
@@ -393,7 +394,7 @@ func singlePrometheusReplicaHasNoPDB(t *testing.T) {
 	f.AssertResourceAbsent(pdbName, ms.Namespace, &pdb)(t)
 }
 
-func assertPrometheusScrapesItself(t *testing.T) {
+func assertPrometheusScrapesItselfAndWebUI(t *testing.T) {
 	ms := newMonitoringStack(t, "self-scrape")
 	err := f.K8sClient.Create(context.Background(), ms)
 	assert.NilError(t, err)
@@ -440,6 +441,13 @@ func assertPrometheusScrapesItself(t *testing.T) {
 		return correct == len(expectedResults), nil
 	}); err != nil {
 		t.Fatal(fmt.Errorf("Could not query prometheus: %w", err))
+	}
+
+	curlCommand := "curl http://localhost:9090/graph"
+	curlOutput, err := exec.Command("bash", "-c", curlCommand).Output()
+	assert.NilError(t, err)
+	if !strings.Contains(string(curlOutput), "<title>Prometheus Time Series Collection and Processing Server</title>") {
+		t.Errorf("Prometheus web ui default page content is wrong")
 	}
 }
 
