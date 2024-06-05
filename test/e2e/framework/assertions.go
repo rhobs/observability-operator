@@ -21,6 +21,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
+	"github.com/rhobs/observability-operator/pkg/apis/shared"
 )
 
 // default ForeverTestTimeout is 30, some test fail because they take more than 30s
@@ -322,8 +323,8 @@ func (f *Framework) GetStackWhenAvailable(t *testing.T, name, namespace string) 
 			lastErr = err
 			return false, nil
 		}
-		availableC := getConditionByType(ms.Status.Conditions, v1alpha1.AvailableCondition)
-		if availableC != nil && availableC.Status == v1alpha1.ConditionTrue {
+		availableC := getConditionByType(ms.Status.Conditions, shared.AvailableCondition)
+		if availableC != nil && availableC.Status == shared.ConditionTrue {
 			return true, nil
 		}
 		return false, nil
@@ -353,7 +354,7 @@ func (f *Framework) AssertAlertmanagerAbsent(t *testing.T, name, namespace strin
 	}
 }
 
-func getConditionByType(conditions []v1alpha1.Condition, ctype v1alpha1.ConditionType) *v1alpha1.Condition {
+func getConditionByType(conditions []shared.Condition, ctype shared.ConditionType) *shared.Condition {
 	for _, c := range conditions {
 		if c.Type == ctype {
 			return &c
