@@ -69,6 +69,9 @@ const (
 // RBAC for reading cluster version
 // +kubebuilder:rbac:groups=config.openshift.io,resources=clusterversions,verbs=get;list;watch
 
+// RBAC for distributed tracing
+// +kubebuilder:rbac:groups=tempo.grafana.com,resources=tempostacks,verbs=list
+
 func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 	logger := ctrl.Log.WithName("observability-ui")
 
@@ -251,7 +254,8 @@ func (rm resourceManager) registerPluginWithConsole(ctx context.Context, pluginI
 			OperatorSpec: operatorv1.OperatorSpec{
 				ManagementState: operatorv1.Managed,
 			},
-			Plugins: clusterPlugins,
+			Plugins:       clusterPlugins,
+			Customization: *cluster.Spec.Customization.DeepCopy(),
 		},
 	}
 

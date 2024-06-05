@@ -31,13 +31,62 @@ type UIPluginList struct {
 	Items           []UIPlugin `json:"items"`
 }
 
-// +kubebuilder:validation:Enum=Dashboards
+// +kubebuilder:validation:Enum=Dashboards;TroubleshootingPanel;DistributedTracing
 type UIPluginType string
 
 const (
 	// TypeDashboards deploys the Dashboards Dynamic Plugin for OpenShift Console.
 	TypeDashboards UIPluginType = "Dashboards"
+	// DistributedTracing deploys the Distributed Tracing Dynamic Plugin for the OpenShift Console
+	TypeDistributedTracing UIPluginType = "DistributedTracing"
+	// TroubleshootingPanel deploys the Troubleshooting Panel Dynamic Plugin for the OpenShift Console
+	TypeTroubleshootingPanel UIPluginType = "TroubleshootingPanel"
 )
+
+// TroubleshootingPanelConfig contains options for configuring the Troubleshooting Panel  plugin
+type TroubleshootingPanelConfig struct {
+	// Timeout is the maximum duration before a query timeout.
+	//
+	// The value is expected to be a sequence of digits followed by a unit suffix, which can be 's' (seconds)
+	// or 'm' (minutes).
+	//
+	// +optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OCP Console Query Timeout",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:ocpConsoleTimeout"}
+	// +kubebuilder:validation:Pattern:="^([0-9]+)([sm]{1})$"
+	Timeout string `json:"timeout,omitempty"`
+	// korrel8r defines the Korrel8r instance that the troubleshooting panel plugin will connect to
+	//
+	// +optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Korrel8r Instance"
+	Korrel8r TroubleshootingPanelKorrel8rConfig `json:"korrel8r,omitempty"`
+}
+
+type TroubleshootingPanelKorrel8rConfig struct {
+	// Name of the korrel8r instance
+	//
+	// +optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Korrel8r Instance Name"
+	Name string `json:"name,omitempty"`
+
+	// Namespace of the korrel8r instance
+	//
+	// +optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Korrel8r Instance Namespace"
+	Namespace string `json:"namespace,omitempty"`
+}
+
+// DistributedTracingConfig contains options for configuring the Distributed Tracing plugin
+type DistributedTracingConfig struct {
+	// Timeout is the maximum duration before a query timeout.
+	//
+	// The value is expected to be a sequence of digits followed by a unit suffix, which can be 's' (seconds)
+	// or 'm' (minutes).
+	//
+	// +optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OCP Console Query Timeout",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:ocpConsoleTimeout"}
+	// +kubebuilder:validation:Pattern:="^([0-9]+)([sm]{1})$"
+	Timeout string `json:"timeout,omitempty"`
+}
 
 // UIPluginSpec is the specification for desired state of UIPlugin.
 type UIPluginSpec struct {
@@ -45,6 +94,16 @@ type UIPluginSpec struct {
 	// +required
 	// +kubebuilder:validation:Required
 	Type UIPluginType `json:"type"`
+
+	// TroubleshootingPanel contains configuration for the troubleshooting console plugin.
+	//
+	// +kubebuilder:validation:Optional
+	TroubleshootingPanel *TroubleshootingPanelConfig `json:"troubleshootingPanel,omitempty"`
+
+	// DistributedTracing contains configuration for the distributed tracing console plugin.
+	//
+	// +kubebuilder:validation:Optional
+	DistributedTracing *DistributedTracingConfig `json:"distributedTracing,omitempty"`
 }
 
 // UIPluginStatus defines the observed state of UIPlugin.

@@ -25,6 +25,22 @@ var compatibilityMatrix = []CompatibilityEntry{
 		ImageKey:          "ui-dashboards",
 		Features:          []string{},
 	},
+	{
+		PluginType: uiv1alpha1.TypeTroubleshootingPanel,
+		// This plugin requires changes made in the monitoring-plugin for OpenShift 4.16
+		// to render the "Troubleshooting Panel" button on the alert details page.
+		MinClusterVersion: "v4.16",
+		MaxClusterVersion: "",
+		ImageKey:          "ui-troubleshooting-panel",
+		Features:          []string{},
+	},
+	{
+		PluginType:        uiv1alpha1.TypeDistributedTracing,
+		MinClusterVersion: "v4.11",
+		MaxClusterVersion: "",
+		ImageKey:          "ui-distributed-tracing",
+		Features:          []string{},
+	},
 }
 
 func getImageKeyForPluginType(pluginType uiv1alpha1.UIPluginType, clusterVersion string) (string, error) {

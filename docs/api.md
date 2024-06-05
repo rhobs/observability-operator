@@ -2854,9 +2854,126 @@ UIPluginSpec is the specification for desired state of UIPlugin.
         <td>
           Type defines the UI plugin.<br/>
           <br/>
-            <i>Enum</i>: Dashboards<br/>
+            <i>Enum</i>: Dashboards, TroubleshootingPanel, DistributedTracing<br/>
         </td>
         <td>true</td>
+      </tr><tr>
+        <td><b><a href="#uipluginspecdistributedtracing">distributedTracing</a></b></td>
+        <td>object</td>
+        <td>
+          DistributedTracing contains configuration for the distributed tracing console plugin.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#uipluginspectroubleshootingpanel">troubleshootingPanel</a></b></td>
+        <td>object</td>
+        <td>
+          TroubleshootingPanel contains configuration for the troubleshooting console plugin.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### UIPlugin.spec.distributedTracing
+<sup><sup>[↩ Parent](#uipluginspec)</sup></sup>
+
+
+
+DistributedTracing contains configuration for the distributed tracing console plugin.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>timeout</b></td>
+        <td>string</td>
+        <td>
+          Timeout is the maximum duration before a query timeout.
+
+
+The value is expected to be a sequence of digits followed by a unit suffix, which can be 's' (seconds)
+or 'm' (minutes).<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### UIPlugin.spec.troubleshootingPanel
+<sup><sup>[↩ Parent](#uipluginspec)</sup></sup>
+
+
+
+TroubleshootingPanel contains configuration for the troubleshooting console plugin.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#uipluginspectroubleshootingpanelkorrel8r">korrel8r</a></b></td>
+        <td>object</td>
+        <td>
+          korrel8r defines the Korrel8r instance that the troubleshooting panel plugin will connect to<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeout</b></td>
+        <td>string</td>
+        <td>
+          Timeout is the maximum duration before a query timeout.
+
+
+The value is expected to be a sequence of digits followed by a unit suffix, which can be 's' (seconds)
+or 'm' (minutes).<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### UIPlugin.spec.troubleshootingPanel.korrel8r
+<sup><sup>[↩ Parent](#uipluginspectroubleshootingpanel)</sup></sup>
+
+
+
+korrel8r defines the Korrel8r instance that the troubleshooting panel plugin will connect to
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the korrel8r instance<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          Namespace of the korrel8r instance<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 

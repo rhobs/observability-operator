@@ -39,6 +39,22 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 		components = append(components, reconciler.NewUpdater(newRoleBinding(pluginInfo), plugin))
 	}
 
+	if pluginInfo.ConfigMap != nil {
+		components = append(components, reconciler.NewUpdater(pluginInfo.ConfigMap, plugin))
+	}
+
+	for _, role := range pluginInfo.ClusterRoles {
+		if role != nil {
+			components = append(components, reconciler.NewUpdater(role, plugin))
+		}
+	}
+
+	for _, roleBinding := range pluginInfo.ClusterRoleBindings {
+		if roleBinding != nil {
+			components = append(components, reconciler.NewUpdater(roleBinding, plugin))
+		}
+	}
+
 	return components
 }
 
@@ -86,6 +102,53 @@ func newConsolePlugin(info UIPluginInfo, namespace string) *osv1alpha1.ConsolePl
 }
 
 func newDeployment(info UIPluginInfo, namespace string) *appsv1.Deployment {
+	pluginArgs := []string{
+		fmt.Sprintf("-port=%d", port),
+		"-cert=/var/serving-cert/tls.crt",
+		"-key=/var/serving-cert/tls.key",
+	}
+
+	if len(info.ExtraArgs) > 0 {
+		pluginArgs = append(pluginArgs, info.ExtraArgs...)
+	}
+
+	volumes := []corev1.Volume{
+		{
+			Name: servingCertVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  info.Name,
+					DefaultMode: ptr.To(int32(420)),
+				},
+			},
+		},
+	}
+	volumeMounts := []corev1.VolumeMount{
+		{
+			Name:      servingCertVolumeName,
+			ReadOnly:  true,
+			MountPath: "/var/serving-cert",
+		},
+	}
+
+	if info.ConfigMap != nil {
+		volumes = append(volumes, corev1.Volume{
+			Name: "plugin-config",
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: info.Name,
+					},
+				},
+			},
+		})
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{
+			Name:      "plugin-config",
+			ReadOnly:  true,
+			MountPath: "/etc/plugin/config",
+		})
+	}
+
 	plugin := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: appsv1.SchemeGroupVersion.String(),
@@ -129,33 +192,21 @@ func newDeployment(info UIPluginInfo, namespace string) *appsv1.Deployment {
 									},
 								},
 							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      servingCertVolumeName,
-									ReadOnly:  true,
-									MountPath: "/var/serving-cert",
-								},
-							},
-							Args: []string{
-								fmt.Sprintf("-port=%d", port),
-								"-cert=/var/serving-cert/tls.crt",
-								"-key=/var/serving-cert/tls.key",
-							},
+							VolumeMounts: volumeMounts,
+							Args:         pluginArgs,
 						},
 					},
-					Volumes: []corev1.Volume{
-						{
-							Name: servingCertVolumeName,
-							VolumeSource: corev1.VolumeSource{
-								Secret: &corev1.SecretVolumeSource{
-									SecretName:  info.Name,
-									DefaultMode: ptr.To(int32(420)),
-								},
-							},
-						},
-					},
+					Volumes: volumes,
 					NodeSelector: map[string]string{
 						"kubernetes.io/os": "linux",
+					},
+					RestartPolicy: "Always",
+					DNSPolicy:     "ClusterFirst",
+					SecurityContext: &corev1.PodSecurityContext{
+						RunAsNonRoot: ptr.To(true),
+						SeccompProfile: &corev1.SeccompProfile{
+							Type: corev1.SeccompProfileTypeRuntimeDefault,
+						},
 					},
 				},
 			},

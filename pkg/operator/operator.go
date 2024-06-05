@@ -131,6 +131,9 @@ func New(cfg *OperatorConfiguration) (*Operator, error) {
 		if err := uictrl.RegisterWithManager(mgr, uictrl.Options{PluginsConf: cfg.UIPlugins}); err != nil {
 			return nil, fmt.Errorf("unable to register observability-ui-plugin controller: %w", err)
 		}
+	} else {
+		setupLog := ctrl.Log.WithName("setup")
+		setupLog.Info("OpenShift feature gate is disabled, UIPlugins are not enabled")
 	}
 
 	if err := mgr.AddHealthzCheck("health probe", healthz.Ping); err != nil {

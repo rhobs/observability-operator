@@ -35,6 +35,44 @@ func TestCompatibilityMatrixSpec(t *testing.T) {
 			expectedErr:    nil,
 		},
 		{
+			pluginType: uiv1alpha1.TypeTroubleshootingPanel,
+			// This plugin requires changes made in the monitoring-plugin for Openshift 4.16
+			// to render the "Troubleshooting Panel" button on the alert details page.
+			clusterVersion: "4.15",
+			expectedKey:    "",
+			expectedErr:    fmt.Errorf("no compatible image found for plugin type %s and cluster version %s", uiv1alpha1.TypeTroubleshootingPanel, "4.15"),
+		},
+		{
+			pluginType:     uiv1alpha1.TypeTroubleshootingPanel,
+			clusterVersion: "4.16",
+			expectedKey:    "ui-troubleshooting-panel",
+			expectedErr:    nil,
+		},
+		{
+			pluginType:     uiv1alpha1.TypeTroubleshootingPanel,
+			clusterVersion: "4.24.0-0.nightly-2024-03-11-200348",
+			expectedKey:    "ui-troubleshooting-panel",
+			expectedErr:    nil,
+		},
+		{
+			pluginType:     uiv1alpha1.TypeDistributedTracing,
+			clusterVersion: "4.10",
+			expectedKey:    "",
+			expectedErr:    fmt.Errorf("dynamic plugins not supported before 4.11"),
+		},
+		{
+			pluginType:     uiv1alpha1.TypeDistributedTracing,
+			clusterVersion: "4.11",
+			expectedKey:    "ui-troubleshooting-panel",
+			expectedErr:    nil,
+		},
+		{
+			pluginType:     uiv1alpha1.TypeDistributedTracing,
+			clusterVersion: "4.24.0-0.nightly-2024-03-11-200348",
+			expectedKey:    "ui-distributed-tracing",
+			expectedErr:    nil,
+		},
+		{
 			pluginType:     "non-existent-plugin",
 			clusterVersion: "4.24.0-0.nightly-2024-03-11-200348",
 			expectedKey:    "",
