@@ -181,6 +181,12 @@ spec:
             - type
             type: object
             x-kubernetes-validations:
+            - message: Troubleshooting Panel configuration is only supported with
+                the TroubleshootingPanel type
+              rule: self.type == 'TroubleshootingPanel' || !has(self.troubleshootingPanel)
+            - message: Distributed Tracing configuration is only supported with the
+                DistributedTracing type
+              rule: self.type == 'DistributedTracing' || !has(self.distributedTracing)
             - message: Logging configuration is required if type is Logging
               rule: self.type != 'Logging' || has(self.logging)
           status:

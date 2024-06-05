@@ -149,6 +149,8 @@ type LokiStackReference struct {
 
 // UIPluginSpec is the specification for desired state of UIPlugin.
 //
+// +kubebuilder:validation:XValidation:rule="self.type == 'TroubleshootingPanel' || !has(self.troubleshootingPanel)", message="Troubleshooting Panel configuration is only supported with the TroubleshootingPanel type"
+// +kubebuilder:validation:XValidation:rule="self.type == 'DistributedTracing' || !has(self.distributedTracing)", message="Distributed Tracing configuration is only supported with the DistributedTracing type"
 // +kubebuilder:validation:XValidation:rule="self.type != 'Logging' || has(self.logging)", message="Logging configuration is required if type is Logging"
 type UIPluginSpec struct {
 	// Type defines the UI plugin.
