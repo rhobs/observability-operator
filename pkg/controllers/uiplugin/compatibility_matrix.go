@@ -92,11 +92,11 @@ func lookupImageAndFeatures(pluginType uiv1alpha1.UIPluginType, clusterVersion s
 
 	for _, entry := range compatibilityMatrix {
 		if entry.PluginType == pluginType {
-			if entry.MaxClusterVersion == "" && semver.Compare(clusterVersion, entry.MinClusterVersion) >= 0 {
-				return entry, nil
-			}
+			canonicalMinClusterVersion := fmt.Sprintf("%s-0", semver.Canonical(entry.MinClusterVersion))
 
-			if semver.Compare(clusterVersion, entry.MinClusterVersion) >= 0 && semver.Compare(clusterVersion, entry.MaxClusterVersion) <= 0 {
+			if entry.MaxClusterVersion == "" && semver.Compare(clusterVersion, canonicalMinClusterVersion) >= 0 {
+				return entry, nil
+			} else if semver.Compare(clusterVersion, canonicalMinClusterVersion) >= 0 && semver.Compare(clusterVersion, entry.MaxClusterVersion) <= 0 {
 				return entry, nil
 			}
 		}
