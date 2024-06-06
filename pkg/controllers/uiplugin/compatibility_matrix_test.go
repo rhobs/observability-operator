@@ -46,7 +46,7 @@ func TestLookupImageAndFeatures(t *testing.T) {
 			// to render the "Troubleshooting Panel" button on the alert details page.
 			clusterVersion: "4.15",
 			expectedKey:    "",
-			expectedErr:    fmt.Errorf("no compatible image found for plugin type %s and cluster version %s", uiv1alpha1.TypeTroubleshootingPanel, "4.15"),
+			expectedErr:    fmt.Errorf("no compatible image found for plugin type %s and cluster version %s", uiv1alpha1.TypeTroubleshootingPanel, "v4.15"),
 		},
 		{
 			pluginType:     uiv1alpha1.TypeTroubleshootingPanel,
@@ -69,7 +69,7 @@ func TestLookupImageAndFeatures(t *testing.T) {
 		{
 			pluginType:     uiv1alpha1.TypeDistributedTracing,
 			clusterVersion: "4.11",
-			expectedKey:    "ui-troubleshooting-panel",
+			expectedKey:    "ui-distributed-tracing",
 			expectedErr:    nil,
 		},
 		{
