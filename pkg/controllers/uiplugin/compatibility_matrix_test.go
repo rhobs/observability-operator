@@ -9,7 +9,7 @@ import (
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 )
 
-func TestCompatibilityMatrixSpec(t *testing.T) {
+func TestLookupImageAndFeatures(t *testing.T) {
 	tt := []struct {
 		pluginType     uiv1alpha1.UIPluginType
 		clusterVersion string
@@ -32,6 +32,12 @@ func TestCompatibilityMatrixSpec(t *testing.T) {
 			pluginType:     uiv1alpha1.TypeDashboards,
 			clusterVersion: "4.24.0-0.nightly-2024-03-11-200348",
 			expectedKey:    "ui-dashboards",
+			expectedErr:    nil,
+		},
+		{
+			pluginType:     uiv1alpha1.TypeLogging,
+			clusterVersion: "4.11",
+			expectedKey:    "ui-logging",
 			expectedErr:    nil,
 		},
 		{
@@ -81,8 +87,9 @@ func TestCompatibilityMatrixSpec(t *testing.T) {
 	}
 
 	for _, tc := range tt {
-		actualKey, err := getImageKeyForPluginType(tc.pluginType, tc.clusterVersion)
-		assert.Equal(t, tc.expectedKey, actualKey)
+		info, err := lookupImageAndFeatures(tc.pluginType, tc.clusterVersion)
+
+		assert.Equal(t, tc.expectedKey, info.ImageKey)
 
 		if tc.expectedErr != nil {
 			assert.Error(t, err, tc.expectedErr.Error())

@@ -27,14 +27,14 @@ type UIPluginInfo struct {
 }
 
 func PluginInfoBuilder(plugin *uiv1alpha1.UIPlugin, pluginConf UIPluginsConfiguration, clusterVersion string) (*UIPluginInfo, error) {
-	imageKey, err := getImageKeyForPluginType(plugin.Spec.Type, clusterVersion)
+	compatibilityInfo, err := lookupImageAndFeatures(plugin.Spec.Type, clusterVersion)
 	if err != nil {
 		return nil, err
 	}
 
-	image := pluginConf.Images[imageKey]
+	image := pluginConf.Images[compatibilityInfo.ImageKey]
 	if image == "" {
-		return nil, fmt.Errorf("no image provided for plugin type %s with key %s", plugin.Spec.Type, imageKey)
+		return nil, fmt.Errorf("no image provided for plugin type %s with key %s", plugin.Spec.Type, compatibilityInfo.ImageKey)
 	}
 
 	namespace := pluginConf.ResourcesNamespace
@@ -108,13 +108,11 @@ func PluginInfoBuilder(plugin *uiv1alpha1.UIPlugin, pluginConf UIPluginsConfigur
 			return pluginInfo, nil
 		}
 	case uiv1alpha1.TypeTroubleshootingPanel:
-		{
-			return createTroubleshootingPanelPluginInfo(plugin, namespace, plugin.Name, image, []string{})
-		}
+		return createTroubleshootingPanelPluginInfo(plugin, namespace, plugin.Name, image, []string{})
 	case uiv1alpha1.TypeDistributedTracing:
-		{
-			return createDistributedTracingPluginInfo(plugin, namespace, plugin.Name, image, []string{})
-		}
+		return createDistributedTracingPluginInfo(plugin, namespace, plugin.Name, image, []string{})
+	case uiv1alpha1.TypeLogging:
+		return createLoggingPluginInfo(plugin, namespace, plugin.Name, image, compatibilityInfo.Features)
 	}
 
 	return nil, fmt.Errorf("plugin type not supported: %s", plugin.Spec.Type)

@@ -94,6 +94,14 @@ rules:
   - list
   - watch
 - apiGroups:
+  - loki.grafana.com
+  resources:
+  - application
+  - audit
+  - infrastructure
+  verbs:
+  - get
+- apiGroups:
   - monitoring.rhobs
   resources:
   - alertmanagers

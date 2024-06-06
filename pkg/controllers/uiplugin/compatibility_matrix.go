@@ -41,29 +41,66 @@ var compatibilityMatrix = []CompatibilityEntry{
 		ImageKey:          "ui-distributed-tracing",
 		Features:          []string{},
 	},
+	{
+		PluginType:        uiv1alpha1.TypeLogging,
+		MinClusterVersion: "v4.11",
+		MaxClusterVersion: "v4.11",
+		ImageKey:          "ui-logging",
+		Features:          []string{},
+	},
+	{
+		PluginType:        uiv1alpha1.TypeLogging,
+		MinClusterVersion: "v4.12",
+		MaxClusterVersion: "v4.12",
+		ImageKey:          "ui-logging",
+		Features: []string{
+			"dev-console",
+		},
+	},
+	{
+		PluginType:        uiv1alpha1.TypeLogging,
+		MinClusterVersion: "v4.13",
+		MaxClusterVersion: "v4.13",
+		ImageKey:          "ui-logging",
+		Features: []string{
+			"dev-console",
+			"alerts",
+		},
+	},
+	{
+		PluginType:        uiv1alpha1.TypeLogging,
+		MinClusterVersion: "v4.14",
+		MaxClusterVersion: "",
+		ImageKey:          "ui-logging",
+		Features: []string{
+			"dev-console",
+			"alerts",
+			"dev-alerts",
+		},
+	},
 }
 
-func getImageKeyForPluginType(pluginType uiv1alpha1.UIPluginType, clusterVersion string) (string, error) {
+func lookupImageAndFeatures(pluginType uiv1alpha1.UIPluginType, clusterVersion string) (CompatibilityEntry, error) {
 	if !strings.HasPrefix(clusterVersion, "v") {
 		clusterVersion = "v" + clusterVersion
 	}
 
 	// No console plugins are supported before 4.11
 	if semver.Compare(clusterVersion, "v4.11") < 0 {
-		return "", fmt.Errorf("dynamic plugins not supported before 4.11")
+		return CompatibilityEntry{}, fmt.Errorf("dynamic plugins not supported before 4.11")
 	}
 
 	for _, entry := range compatibilityMatrix {
 		if entry.PluginType == pluginType {
 			if entry.MaxClusterVersion == "" && semver.Compare(clusterVersion, entry.MinClusterVersion) >= 0 {
-				return entry.ImageKey, nil
+				return entry, nil
 			}
 
 			if semver.Compare(clusterVersion, entry.MinClusterVersion) >= 0 && semver.Compare(clusterVersion, entry.MaxClusterVersion) <= 0 {
-				return entry.ImageKey, nil
+				return entry, nil
 			}
 		}
 	}
 
-	return "", fmt.Errorf("no compatible image found for plugin type %s and cluster version %s", pluginType, clusterVersion)
+	return CompatibilityEntry{}, fmt.Errorf("no compatible image found for plugin type %s and cluster version %s", pluginType, clusterVersion)
 }
