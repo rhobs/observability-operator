@@ -378,10 +378,10 @@ func newKorrel8rDeployment(name string, namespace string, info UIPluginInfo) *ap
 						{
 							Name:    name,
 							Image:   info.Korrel8rImage,
-							Command: []string{"korrel8r", "web", "--https=:8443", "--cert=/secrets/tls.crt", "--key=/secrets/tls.key", "--config=/config/korrel8r.yaml"},
+							Command: []string{"korrel8r", "web", fmt.Sprintf("--https=:%d", port), "--cert=/secrets/tls.crt", "--key=/secrets/tls.key", "--config=/config/korrel8r.yaml"},
 							Ports: []corev1.ContainerPort{
 								{
-									ContainerPort: 8443,
+									ContainerPort: port,
 									Protocol:      corev1.ProtocolTCP,
 								},
 							},
