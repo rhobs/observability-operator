@@ -75,25 +75,6 @@ type TroubleshootingPanelConfig struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OCP Console Query Timeout",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:ocpConsoleTimeout"}
 	// +kubebuilder:validation:Pattern:="^([0-9]+)([sm]{1})$"
 	Timeout string `json:"timeout,omitempty"`
-	// korrel8r defines the Korrel8r instance that the troubleshooting panel plugin will connect to
-	//
-	// +optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Korrel8r Instance"
-	Korrel8r TroubleshootingPanelKorrel8rConfig `json:"korrel8r,omitempty"`
-}
-
-type TroubleshootingPanelKorrel8rConfig struct {
-	// Name of the korrel8r instance
-	//
-	// +optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Korrel8r Instance Name"
-	Name string `json:"name,omitempty"`
-
-	// Namespace of the korrel8r instance
-	//
-	// +optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Korrel8r Instance Namespace"
-	Namespace string `json:"namespace,omitempty"`
 }
 
 // DistributedTracingConfig contains options for configuring the Distributed Tracing plugin

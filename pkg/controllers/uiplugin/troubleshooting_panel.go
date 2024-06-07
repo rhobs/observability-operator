@@ -2,6 +2,7 @@ package uiplugin
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"strings"
 
@@ -9,12 +10,14 @@ import (
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 )
 
 func createTroubleshootingPanelPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string) (*UIPluginInfo, error) {
 	troubleshootingPanelConfig := plugin.Spec.TroubleshootingPanel
+	korrel8rSvcName := "korrel8r"
 
 	configYaml, err := marshalTroubleshootingPanelPluginConfig(troubleshootingPanelConfig)
 	if err != nil {
@@ -29,23 +32,13 @@ func createTroubleshootingPanelPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace
 		extraArgs = append(extraArgs, fmt.Sprintf("-features=%s", strings.Join(features, ",")))
 	}
 
-	proxyName, proxyNamespace := "korrel8r", "korrel8r"
-
-	if plugin.Spec.TroubleshootingPanel != nil {
-		if plugin.Spec.TroubleshootingPanel.Korrel8r.Name != "" {
-			proxyName = plugin.Spec.TroubleshootingPanel.Korrel8r.Name
-		}
-		if plugin.Spec.TroubleshootingPanel.Korrel8r.Namespace != "" {
-			proxyNamespace = plugin.Spec.TroubleshootingPanel.Korrel8r.Namespace
-		}
-	}
-
 	pluginInfo := &UIPluginInfo{
 		Image:             image,
 		Name:              plugin.Name,
 		ConsoleName:       "troubleshooting-panel-console-plugin",
 		DisplayName:       "Troubleshooting Panel Console Plugin",
 		ResourceNamespace: namespace,
+		LokiServiceNames:  make(map[string]string),
 		ExtraArgs:         extraArgs,
 		Proxies: []osv1alpha1.ConsolePluginProxy{
 			{
@@ -53,9 +46,9 @@ func createTroubleshootingPanelPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace
 				Alias:     "korrel8r",
 				Authorize: false,
 				Service: osv1alpha1.ConsolePluginProxyServiceConfig{
-					Name:      proxyName,
-					Namespace: proxyNamespace,
-					Port:      8443,
+					Name:      korrel8rSvcName,
+					Namespace: namespace,
+					Port:      9443,
 				},
 			},
 		},
@@ -98,4 +91,24 @@ func marshalTroubleshootingPanelPluginConfig(cfg *uiv1alpha1.TroubleshootingPane
 	}
 
 	return buf.String(), nil
+}
+
+func getLokiServiceName(ctx context.Context, k client.Client, ns string) (string, error) {
+
+	serviceList := &corev1.ServiceList{}
+	if err := k.List(ctx, serviceList, client.InNamespace(ns)); err != nil {
+		return "", err
+	}
+
+	// Accumulate services that contain "gateway" in their names
+	var gatewayServices []corev1.Service
+	for _, service := range serviceList.Items {
+		if strings.Contains(service.Name, "gateway") {
+			gatewayServices = append(gatewayServices, service)
+		}
+	}
+	if len(gatewayServices) > 0 {
+		return gatewayServices[0].Name, nil
+	}
+	return "", nil
 }
