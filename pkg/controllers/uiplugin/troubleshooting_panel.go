@@ -44,7 +44,7 @@ func createTroubleshootingPanelPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace
 			{
 				Type:      osv1alpha1.ProxyTypeService,
 				Alias:     "korrel8r",
-				Authorize: false,
+				Authorize: true,
 				Service: osv1alpha1.ConsolePluginProxyServiceConfig{
 					Name:      korrel8rSvcName,
 					Namespace: namespace,
