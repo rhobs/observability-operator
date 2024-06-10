@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0](https://github.com/rhobs/monitoring-stack-operator/commit/) (2024-06-10)
+
+
+### Features
+
+* add distributed tracing and troubleshooting panel uiplugins ([#480](https://github.com/rhobs/monitoring-stack-operator/issues/480)) ([db0b62f](https://github.com/rhobs/monitoring-stack-operator/commit/db0b62f8be16d4ff549abd789c3f26218342590e))
+* add Korrel8r plugin to UITroubleshootPanel ([#497](https://github.com/rhobs/monitoring-stack-operator/issues/497)) ([02690af](https://github.com/rhobs/monitoring-stack-operator/commit/02690afbee4d3b2bd9daf2e1aa4674ee29def5e2))
+* support logging as ui-plugin ([#477](https://github.com/rhobs/monitoring-stack-operator/issues/477)) ([9ecc7fc](https://github.com/rhobs/monitoring-stack-operator/commit/9ecc7fcd21c305296b7ee82cbcb71f6345fb950a))
+
+
+### Bug Fixes
+
+* bind service with correct container port for korrel8r ([#504](https://github.com/rhobs/monitoring-stack-operator/issues/504)) ([4edf774](https://github.com/rhobs/monitoring-stack-operator/commit/4edf774d2044b9fd0d12ee792a0bcb170e2fad40))
+* compatibility matrix unit tests ([#499](https://github.com/rhobs/monitoring-stack-operator/issues/499)) ([f3c6a61](https://github.com/rhobs/monitoring-stack-operator/commit/f3c6a61051c44198999e681cffe77183d1b77a14))
+* compatibility matrix version validation ([#501](https://github.com/rhobs/monitoring-stack-operator/issues/501)) ([facefdc](https://github.com/rhobs/monitoring-stack-operator/commit/facefdcb72f8cfc16843663e1a25a702d7170c56))
+* default goal in makefile and add goal for unit tests ([#475](https://github.com/rhobs/monitoring-stack-operator/issues/475)) ([b6ed9c5](https://github.com/rhobs/monitoring-stack-operator/commit/b6ed9c5f718d1242929157d950e908650799f892))
+* duplicate monitoringstack name caused case unstable ([#478](https://github.com/rhobs/monitoring-stack-operator/issues/478)) ([6d91f2e](https://github.com/rhobs/monitoring-stack-operator/commit/6d91f2e576966c38e07b5647a7f2f45d67e3bbbc))
+* fix UIPLugin console registration to avoid mutating existing cluster configuration ([#503](https://github.com/rhobs/monitoring-stack-operator/issues/503)) ([414e4f5](https://github.com/rhobs/monitoring-stack-operator/commit/414e4f565818775a1961ddaa5ea695d17b14d00f))
+* include service proxy in distributed_tracing.go ([#502](https://github.com/rhobs/monitoring-stack-operator/issues/502)) ([d359118](https://github.com/rhobs/monitoring-stack-operator/commit/d3591180366b8b4ec2f0da05a01c459b35cfe6e5))
+* install shellcheck for lint target ([#493](https://github.com/rhobs/monitoring-stack-operator/issues/493)) ([3b6f58c](https://github.com/rhobs/monitoring-stack-operator/commit/3b6f58c81e615e9fcc4c6267ae02ee7f6a8b76f1))
+* null pointer error of case NoOwnerRefInvalidNamespaceReasonEvent ([#479](https://github.com/rhobs/monitoring-stack-operator/issues/479)) ([646a8ba](https://github.com/rhobs/monitoring-stack-operator/commit/646a8ba6df5e92f2abcd87393bce71f1dee39b1a))
+* prevent other plugin types from using tracing and troubleshooting configurations ([#498](https://github.com/rhobs/monitoring-stack-operator/issues/498)) ([07ae4ef](https://github.com/rhobs/monitoring-stack-operator/commit/07ae4efe3d6684209ebd950ebb0951ae65f082eb))
+* prevent reconcile loop for troubleshooting panel uiplugin ([#505](https://github.com/rhobs/monitoring-stack-operator/issues/505)) ([994ad0b](https://github.com/rhobs/monitoring-stack-operator/commit/994ad0b42e3ef86aea55d99464ab528a6a75e3d7))
+* remove duplicate target in kustomize configuration ([#476](https://github.com/rhobs/monitoring-stack-operator/issues/476)) ([06027cf](https://github.com/rhobs/monitoring-stack-operator/commit/06027cfdb40f8e1dba9e8b13be677781da387c0f))
+* Some typos and reconciliation of optional UIPlugin components ([#491](https://github.com/rhobs/monitoring-stack-operator/issues/491)) ([09dd760](https://github.com/rhobs/monitoring-stack-operator/commit/09dd760df805879f9d3967f3f769975ae9cbfa0d))
+
 ## [0.2.0](https://github.com/rhobs/monitoring-stack-operator/commit/) (2024-04-22)
 
 
