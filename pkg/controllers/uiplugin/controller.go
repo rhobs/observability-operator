@@ -245,22 +245,7 @@ func (rm resourceManager) registerPluginWithConsole(ctx context.Context, pluginI
 	clusterPlugins := append(cluster.Spec.Plugins, pluginInfo.ConsoleName)
 
 	// Register the plugin with the console
-	cluster = &operatorv1.Console{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: operatorv1.GroupVersion.String(),
-			Kind:       "Console",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "cluster",
-		},
-		Spec: operatorv1.ConsoleSpec{
-			OperatorSpec: operatorv1.OperatorSpec{
-				ManagementState: operatorv1.Managed,
-			},
-			Plugins:       clusterPlugins,
-			Customization: *cluster.Spec.Customization.DeepCopy(),
-		},
-	}
+	cluster.Spec.Plugins = clusterPlugins
 
 	if err := reconciler.NewMerger(cluster).Reconcile(ctx, rm.k8sClient, rm.scheme); err != nil {
 		return err
