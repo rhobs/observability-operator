@@ -28,7 +28,9 @@ import (
 	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -36,6 +38,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
+	"github.com/rhobs/observability-operator/pkg/assets"
 )
 
 type resourceManager struct {
@@ -133,6 +136,42 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := rm.logger.WithValues("stack", req.NamespacedName)
 	logger.Info("Reconciling monitoring stack")
+
+	gRPCSecret := v1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: v1.SchemeGroupVersion.String(),
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      assets.GRPCSecretName,
+			Namespace: req.Namespace,
+		},
+		Data: map[string][]byte{},
+	}
+	err := rm.k8sClient.Get(ctx,
+				types.NamespacedName{
+					Name: assets.GRPCSecretName,
+					Namespace: req.Namespace,
+				},
+				&gRPCSecret)
+	if client.IgnoreNotFound(err) != nil {
+		return ctrl.Result{}, err
+	}
+
+	rotate, err := assets.RotateGRPCSecret(&gRPCSecret, logger)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	if rotate {
+		err = rm.k8sClient.Update(ctx, &gRPCSecret)
+		if errors.IsNotFound(err) {
+			err = rm.k8sClient.Create(ctx, &gRPCSecret)
+		}
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
 	ms, err := rm.getStack(ctx, req)
 	if err != nil {
 		// retry since some error has occured

@@ -13,6 +13,7 @@ import (
 
 	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 	"github.com/rhobs/observability-operator/pkg/reconciler"
+	"github.com/rhobs/observability-operator/pkg/assets"
 )
 
 const AdditionalScrapeConfigsSelfScrapeKey = "self-scrape-config"
@@ -189,12 +190,33 @@ func newPrometheus(
 					}
 					return []string{}
 				}(),
+				Volumes: []corev1.Volume{
+					{
+						Name: "thanos-tls-assets",
+						VolumeSource: corev1.VolumeSource{
+							Secret: &corev1.SecretVolumeSource{
+								SecretName: assets.GRPCSecretName,
+							},
+						},
+					},
+				},
 			},
 			Retention:             ms.Spec.Retention,
 			RuleSelector:          prometheusSelector,
 			RuleNamespaceSelector: ms.Spec.NamespaceSelector,
 			Thanos: &monv1.ThanosSpec{
 				Image: ptr.To(thanosCfg.Image),
+				GRPCServerTLSConfig: &monv1.TLSConfig{
+					CAFile: "/etc/thanos/tls-assets/ca.crt",
+					CertFile: "/etc/thanos/tls-assets/prometheus-server.crt",
+					KeyFile: "/etc/thanos/tls-assets/prometheus-server.key",
+				},
+				VolumeMounts: []corev1.VolumeMount{
+					{
+						Name: "thanos-tls-assets",
+						MountPath: "/etc/thanos/tls-assets",
+					},
+				},
 			},
 		},
 	}
