@@ -8,6 +8,7 @@ require (
 	github.com/go-logr/logr v1.4.2
 	github.com/google/go-cmp v0.6.0
 	github.com/openshift/api v0.0.0-20240301093301-ce10821dc999
+	github.com/openshift/library-go v0.0.0-20240216151214-738f3fa4ccf8
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/common v0.55.0
 	github.com/rhobs/obo-prometheus-operator v0.74.0-rhobs1
@@ -20,6 +21,7 @@ require (
 	k8s.io/api v0.30.2
 	k8s.io/apiextensions-apiserver v0.30.2
 	k8s.io/apimachinery v0.30.2
+	k8s.io/apiserver v0.30.2
 	k8s.io/client-go v0.30.2
 	k8s.io/component-base v0.30.2
 	k8s.io/utils v0.0.0-20240310230437-4693a0247e57
