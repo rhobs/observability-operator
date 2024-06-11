@@ -954,6 +954,11 @@ const oboManagedFieldsJson = `
   "f:image": {},
   "f:logLevel": {},
   "f:podMetadata": {
+    "f:annotations": {
+      "f:monitoring.openshift.io/thanos-grpc-secret-ca.crt-hash": {},
+      "f:monitoring.openshift.io/thanos-grpc-secret-prometheus-server.crt-hash": {},
+      "f:monitoring.openshift.io/thanos-grpc-secret-prometheus-server.key-hash": {}
+    },
     "f:labels": {
       "f:app.kubernetes.io/component": {},
       "f:app.kubernetes.io/part-of": {}
@@ -1000,9 +1005,18 @@ const oboManagedFieldsJson = `
     }
   },
   "f:thanos": {
+    "f:grpcServerTlsConfig": {
+      "f:ca": {},
+      "f:caFile": {},
+      "f:cert": {},
+      "f:certFile": {},
+      "f:keyFile": {}
+    },
     "f:image": {},
-    "f:resources": {}
+    "f:resources": {},
+    "f:volumeMounts": {}
   },
+  "f:volumes": {},
   "f:web": {
     "f:tlsConfig": {
       "f:cert": {
