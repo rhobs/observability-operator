@@ -188,8 +188,8 @@ $(SHELLCHECK) shellcheck: $(TOOLS_DIR)
 		set -ex ;\
 		[[ -f $(SHELLCHECK) ]] && exit 0 ;\
 		cd $$(mktemp -d) ;\
-		OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) && \
-		curl -sSLo shellcheck-stable.tar.xz "https://github.com/koalaman/shellcheck/releases/download/stable/shellcheck-stable.$$(OS).$$(ARCH).tar.xz";\
+		OS=$(shell go env GOOS) && ARCH=$(shell uname -m) && \
+		curl -sSLo shellcheck-stable.tar.xz https://github.com/koalaman/shellcheck/releases/download/stable/shellcheck-stable.$${OS}.$${ARCH}.tar.xz ;\
 		tar -xJf shellcheck-stable.tar.xz ;\
 		cp shellcheck-stable/shellcheck $(SHELLCHECK) ;\
 		version=$(SHELLCHECK_VERSION) ;\
