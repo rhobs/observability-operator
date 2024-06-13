@@ -9,6 +9,7 @@ import (
 	osv1alpha1 "github.com/openshift/api/console/v1alpha1"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -18,6 +19,9 @@ import (
 func createTroubleshootingPanelPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string) (*UIPluginInfo, error) {
 	troubleshootingPanelConfig := plugin.Spec.TroubleshootingPanel
 	korrel8rSvcName := "korrel8r"
+	monitorClusterroleName := "cluster-monitoring"
+	alertmanagerRoleName := "monitoring-alertmanager-view"
+	monitoringNamespace := "openshift-monitoring"
 
 	configYaml, err := marshalTroubleshootingPanelPluginConfig(troubleshootingPanelConfig)
 	if err != nil {
@@ -65,6 +69,36 @@ func createTroubleshootingPanelPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace
 				"config.yaml": configYaml,
 			},
 		},
+		RoleBinding: &rbacv1.RoleBinding{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: rbacv1.SchemeGroupVersion.String(),
+				Kind:       "RoleBinding",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      alertmanagerRoleName + "-rolebinding",
+				Namespace: monitoringNamespace,
+			},
+			Subjects: []rbacv1.Subject{
+				{
+					APIGroup:  corev1.SchemeGroupVersion.Group,
+					Kind:      "ServiceAccount",
+					Name:      plugin.Name + "-sa",
+					Namespace: namespace,
+				},
+			},
+			RoleRef: rbacv1.RoleRef{
+				APIGroup: rbacv1.SchemeGroupVersion.Group,
+				Kind:     "Role",
+				Name:     alertmanagerRoleName,
+			},
+		},
+		ClusterRoles: []*rbacv1.ClusterRole{
+			korrel8rClusterRole(korrel8rSvcName),
+		},
+		ClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
+			korrel8rClusterRoleBinding(monitorClusterroleName, plugin.Name, namespace),
+			korrel8rClusterRoleBinding(korrel8rSvcName, plugin.Name, namespace),
+		},
 	}
 
 	return pluginInfo, nil
@@ -100,11 +134,97 @@ func getLokiServiceName(ctx context.Context, k client.Client, ns string) (string
 		return "", err
 	}
 
-	// Accumulate services that contain "gateway" in their names
+	// Accumulate services that contain "gateway-http" in their names
 	for _, service := range serviceList.Items {
 		if strings.Contains(service.Name, "gateway-http") && service.Labels["app.kubernetes.io/component"] == "lokistack-gateway" {
 			return service.Name, nil
 		}
 	}
 	return "", nil
+}
+
+func korrel8rClusterRole(name string) *rbacv1.ClusterRole {
+	korrel8rClusterroleName := name + "-view"
+	return &rbacv1.ClusterRole{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: rbacv1.SchemeGroupVersion.String(),
+			Kind:       "ClusterRole",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: korrel8rClusterroleName,
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{""},
+				Resources: []string{"configmaps", "endpoints", "events", "namespaces", "nodes", "pods", "persistentvolumeclaims", "persistentvolumes", "replicationcontrollers", "secrets", "serviceaccounts", "services"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{"rbac.authorization.k8s.io"},
+				Resources: []string{"roles", "rolebindings", "clusterroles", "clusterrolebindings"},
+				Verbs:     []string{"list", "watch"},
+			},
+			{
+				APIGroups: []string{"apps"},
+				Resources: []string{"statefulsets", "daemonsets", "deployments", "replicasets"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{"batch"},
+				Resources: []string{"cronjobs", "jobs"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{"autoscaling"},
+				Resources: []string{"horizontalpodautoscalers"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{"policy"},
+				Resources: []string{"poddisruptionbudgets"},
+				Verbs:     []string{"list", "watch"},
+			},
+			{
+				APIGroups: []string{"storage.k8s.io"},
+				Resources: []string{"storageclasses", "volumeattachments"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{"networking.k8s.io"},
+				Resources: []string{"networkpolicies", "ingresses"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{"loki.grafana.com"},
+				Resources: []string{"application", "audit", "infrastructure", "network"},
+				Verbs:     []string{"get"},
+			},
+		},
+	}
+}
+
+func korrel8rClusterRoleBinding(name string, serviceAccountName string, namespace string) *rbacv1.ClusterRoleBinding {
+	korrel8rClusterroleBindingName := name + "-view"
+	return &rbacv1.ClusterRoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: rbacv1.SchemeGroupVersion.String(),
+			Kind:       "ClusterRoleBinding",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: korrel8rClusterroleBindingName,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				APIGroup:  corev1.SchemeGroupVersion.Group,
+				Kind:      "ServiceAccount",
+				Name:      serviceAccountName + "-sa",
+				Namespace: namespace,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: rbacv1.SchemeGroupVersion.Group,
+			Kind:     "ClusterRole",
+			Name:     korrel8rClusterroleBindingName,
+		},
+	}
 }

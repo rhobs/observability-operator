@@ -75,6 +75,20 @@ const (
 // RBAC for logging view plugin
 // +kubebuilder:rbac:groups=loki.grafana.com,resources=application;infrastructure;audit,verbs=get
 
+// RBAC for korrel8r
+//+kubebuilder:rbac:groups=apps,resources=daemonsets;deployments;replicasets;statefulsets,verbs=get;list;watch
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles;rolebindings;clusterroles;clusterrolebindings,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=configmaps;endpoints;events;namespaces;nodes;persistentvolumeclaims;persistentvolumes;pods;replicationcontrollers;secrets;serviceaccounts;services,verbs=get;list;watch
+//+kubebuilder:rbac:groups=batch,resources=cronjobs;jobs,verbs=get;list;watch
+//+kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch
+//+kubebuilder:rbac:groups=policy,resources=poddisruptionbudgets,verbs=get;list;watch
+//+kubebuilder:rbac:groups=storage.k8s.io,resources=storageclasses;volumeattachments,verbs=get;list;watch
+//+kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies;ingresses,verbs=get;list;watch
+//+kubebuilder:rbac:groups=loki.grafana.com,resources=application;infrastructure;audit;network,verbs=get
+//+kubebuilder:rbac:groups=monitoring.coreos.com,resources=prometheuses/api,resourceNames=k8s,verbs=get;create;update
+//+kubebuilder:rbac:groups=monitoring.coreos.com,resources=alertmanagers/api,resourceNames=main,verbs=get;list
+
+// RegisterWithManager registers the controller with Manager
 func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 	logger := ctrl.Log.WithName("observability-ui")
 
