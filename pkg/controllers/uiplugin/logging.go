@@ -62,6 +62,16 @@ func createLoggingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image
 					Port:      8080,
 				},
 			},
+			{
+				Type:      "Service",
+				Alias:     "korrel8r",
+				Authorize: true,
+				Service: osv1alpha1.ConsolePluginProxyServiceConfig{
+					Name:      korrel8rName,
+					Namespace: namespace,
+					Port:      port,
+				},
+			},
 		},
 		ConfigMap: &corev1.ConfigMap{
 			TypeMeta: metav1.TypeMeta{
