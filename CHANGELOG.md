@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.1](https://github.com/rhobs/monitoring-stack-operator/commit/) (2024-06-13)
+
+
+### Bug Fixes
+
+* shellcheck wrong curl ([#510](https://github.com/rhobs/monitoring-stack-operator/issues/510)) ([250dcbc](https://github.com/rhobs/monitoring-stack-operator/commit/250dcbce715df203905f14344be1e9acbc2884b4))
+
 ## [0.3.0](https://github.com/rhobs/monitoring-stack-operator/commit/) (2024-06-10)
 
 
