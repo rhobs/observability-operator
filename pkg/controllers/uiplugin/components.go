@@ -25,6 +25,7 @@ const (
 	port                   = 9443
 	serviceAccountSuffix   = "-sa"
 	servingCertVolumeName  = "serving-cert"
+	korrel8rName           = "korrel8r"
 	Korrel8rConfigFileName = "korrel8r.yaml"
 	Korrel8rConfigMountDir = "/config/"
 	OpenshiftLoggingNs     = "openshift-logging"
@@ -79,12 +80,11 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 	}
 
 	if pluginInfo.Korrel8rImage != "" {
-		kname := "korrel8r"
-		components = append(components, reconciler.NewUpdater(newKorrel8rService(kname, namespace), plugin))
-		korrel8rCm, err := newKorrel8rConfigMap(kname, namespace, pluginInfo)
+		components = append(components, reconciler.NewUpdater(newKorrel8rService(korrel8rName, namespace), plugin))
+		korrel8rCm, err := newKorrel8rConfigMap(korrel8rName, namespace, pluginInfo)
 		if err == nil && korrel8rCm != nil {
 			components = append(components, reconciler.NewUpdater(korrel8rCm, plugin))
-			components = append(components, reconciler.NewUpdater(newKorrel8rDeployment(kname, namespace, pluginInfo), plugin))
+			components = append(components, reconciler.NewUpdater(newKorrel8rDeployment(korrel8rName, namespace, pluginInfo), plugin))
 		}
 	}
 
