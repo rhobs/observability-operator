@@ -1008,8 +1008,14 @@ Selects a key of a Secret in the namespace that contains the credentials for aut
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1059,7 +1065,7 @@ Cannot be set at the same time as `authorization`, `basicAuth`, `oauth2`, or `si
         <td>object</td>
         <td>
           ManagedIdentity defines the Azure User-assigned Managed identity.
-Cannot be set at the same time as `oauth`.<br/>
+Cannot be set at the same time as `oauth` or `sdk`.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1067,10 +1073,22 @@ Cannot be set at the same time as `oauth`.<br/>
         <td>object</td>
         <td>
           OAuth defines the oauth config that is being used to authenticate.
-Cannot be set at the same time as `managedIdentity`.
+Cannot be set at the same time as `managedIdentity` or `sdk`.
 
 
 It requires Prometheus >= v2.48.0.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexazureadsdk">sdk</a></b></td>
+        <td>object</td>
+        <td>
+          SDK defines the Azure SDK config that is being used to authenticate.
+See https://learn.microsoft.com/en-us/azure/developer/go/azure-sdk-authentication
+Cannot be set at the same time as `oauth` or `managedIdentity`.
+
+
+It requires Prometheus >= 2.52.0.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1083,7 +1101,7 @@ It requires Prometheus >= v2.48.0.<br/>
 
 
 ManagedIdentity defines the Azure User-assigned Managed identity.
-Cannot be set at the same time as `oauth`.
+Cannot be set at the same time as `oauth` or `sdk`.
 
 <table>
     <thead>
@@ -1111,7 +1129,7 @@ Cannot be set at the same time as `oauth`.
 
 
 OAuth defines the oauth config that is being used to authenticate.
-Cannot be set at the same time as `managedIdentity`.
+Cannot be set at the same time as `managedIdentity` or `sdk`.
 
 
 It requires Prometheus >= v2.48.0.
@@ -1143,7 +1161,7 @@ It requires Prometheus >= v2.48.0.
         <td><b>tenantId</b></td>
         <td>string</td>
         <td>
-          `tenantID` is the tenant ID of the Azure Active Directory application that is being used to authenticate.<br/>
+          `tenantId` is the tenant ID of the Azure Active Directory application that is being used to authenticate.<br/>
         </td>
         <td>true</td>
       </tr></tbody>
@@ -1178,8 +1196,14 @@ It requires Prometheus >= v2.48.0.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1187,6 +1211,38 @@ TODO: Add other useful fields. apiVersion, kind, uid?<br/>
         <td>boolean</td>
         <td>
           Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].azureAd.sdk
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindexazuread)</sup></sup>
+
+
+
+SDK defines the Azure SDK config that is being used to authenticate.
+See https://learn.microsoft.com/en-us/azure/developer/go/azure-sdk-authentication
+Cannot be set at the same time as `oauth` or `managedIdentity`.
+
+
+It requires Prometheus >= 2.52.0.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>tenantId</b></td>
+        <td>string</td>
+        <td>
+          `tenantId` is the tenant ID of the azure active directory application that is being used to authenticate.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1261,8 +1317,14 @@ authentication.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1305,8 +1367,14 @@ authentication.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1481,8 +1549,14 @@ ConfigMap containing data to use for the targets.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1524,8 +1598,14 @@ Secret containing data to use for the targets.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1568,8 +1648,14 @@ client's secret.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1661,7 +1747,18 @@ dropping them.<br/>
         <td>boolean</td>
         <td>
           Retry upon receiving a 429 status code from the remote-write storage.
-This is experimental feature and might change in the future.<br/>
+
+
+This is an *experimental feature*, it may change in any upcoming release
+in a breaking way.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>sampleAgeLimit</b></td>
+        <td>string</td>
+        <td>
+          SampleAgeLimit drops samples older than the limit.
+It requires Prometheus >= v2.50.0.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1760,8 +1857,14 @@ AccessKey is the AWS API key. If not specified, the environment variable
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1804,8 +1907,14 @@ variable `AWS_SECRET_ACCESS_KEY` is used.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1957,8 +2066,14 @@ ConfigMap containing data to use for the targets.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2000,8 +2115,14 @@ Secret containing data to use for the targets.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2077,8 +2198,14 @@ ConfigMap containing data to use for the targets.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2120,8 +2247,14 @@ Secret containing data to use for the targets.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2163,8 +2296,14 @@ Secret containing the client key file for the targets.
         <td>string</td>
         <td>
           Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Add other useful fields. apiVersion, kind, uid?<br/>
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
         </td>
         <td>false</td>
       </tr><tr>
