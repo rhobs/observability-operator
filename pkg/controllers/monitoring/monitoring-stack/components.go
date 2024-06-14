@@ -183,11 +183,11 @@ func newPrometheus(
 				RemoteWrite:               config.RemoteWrite,
 				ExternalLabels:            config.ExternalLabels,
 				EnableRemoteWriteReceiver: config.EnableRemoteWriteReceiver,
-				EnableFeatures: func() []string {
+				EnableFeatures: func() []monv1.EnableFeature {
 					if config.EnableOtlpHttpReceiver != nil && *config.EnableOtlpHttpReceiver {
-						return []string{"otlp-write-receiver"}
+						return []monv1.EnableFeature{"otlp-write-receiver"}
 					}
-					return []string{}
+					return []monv1.EnableFeature{}
 				}(),
 			},
 			Retention:             ms.Spec.Retention,
