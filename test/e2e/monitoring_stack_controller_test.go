@@ -686,7 +686,7 @@ const oboManagedFieldsJson = `
   "f:probeSelector": {},
   "f:remoteWrite": {},
   "f:enableFeatures": {
-    v:"otlp-write-receiver": {}
+    "v:\"otlp-write-receiver\"": {}
   },
   "f:replicas": {},
   "f:resources": {},
