@@ -23,11 +23,10 @@ runs:
         wait: 300s
         config: ./hack/kind/config.yaml
 
-    - uses: actions/setup-go@v3
+    - uses: actions/setup-go@v5
       with:
         go-version-file: 'go.mod'
         check-latest: true
-        cache: true
 
     - name: Install required tools
       uses: ./.github/tools-cache
