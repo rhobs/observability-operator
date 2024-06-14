@@ -1,5 +1,5 @@
 # Decide between Pre-Release and Development Release
-name: release
+name: Release
 on:
   push:
     branches: [main]
@@ -33,7 +33,6 @@ jobs:
         with:
           go-version-file: 'go.mod'
           check-latest: true
-          cache: true
 
       - name: Set version
         id: version
@@ -98,7 +97,6 @@ jobs:
         with:
           go-version-file: 'go.mod'
           check-latest: true
-          cache: true
 
       - name: Generate release notes
         run: |
@@ -142,7 +140,6 @@ jobs:
         with:
           go-version-file: 'go.mod'
           check-latest: true
-          cache: true
 
       - name: Set version
         id: version

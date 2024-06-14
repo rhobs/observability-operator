@@ -1,9 +1,10 @@
-name: checks
+name: Pre-submit tests
 on:
   pull_request:
 
 jobs:
   commit-lint:
+    name: Lint the commit messages
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -12,15 +13,15 @@ jobs:
       - uses: wagoid/commitlint-github-action@v6
 
   github-actions-yaml-lint:
+    name: Lint Github Action
     runs-on: ubuntu-latest
-    name: Github Actions yaml linter
     steps:
       - uses: actions/checkout@v4
       - uses: reviewdog/action-actionlint@v1
 
   lint:
+    name: Lint code
     runs-on: ubuntu-latest
-    name: Run all lints
     steps:
       - uses: actions/checkout@v4
 
@@ -28,26 +29,22 @@ jobs:
         with:
           go-version-file: 'go.mod'
           check-latest: true
-          cache: true
 
       - name: Use tools cache
         uses: ./.github/tools-cache
 
-      - name: golangci-lint
+      - name: Lint Go code
         run: make lint-golang
 
-      - name: jsonnet-fmt
-        run: make fmt-jsonnet && git diff --exit-code
+      - name: Lint Jsonnet code
+        run: make fmt-jsonnet lint-jsonnet && git diff --exit-code
 
-      - name: jsonnet-lint
-        run: make lint-jsonnet
-
-      - name: shellcheck
+      - name: Lint Shell scripts
         run: make lint-shell
 
   generate:
+    name: Verify generated code
     runs-on: ubuntu-latest
-    name: Generate and format
     steps:
       - uses: actions/checkout@v4
 
@@ -55,11 +52,8 @@ jobs:
         with:
           go-version-file: 'go.mod'
           check-latest: true
-          cache: true
 
-      - run: make --always-make generate && git diff --exit-code
-
-      - run: make --always-make bundle && git diff --exit-code
+      - run: make --always-make generate bundle && git diff --exit-code
 
   tool-versions:
     runs-on: ubuntu-latest
@@ -71,14 +65,14 @@ jobs:
         with:
           go-version-file: 'go.mod'
           check-latest: true
-          cache: true
 
-      - name: Use tools cache
+      - name: Install tools
         uses: ./.github/tools-cache
 
       - run: make --always-make tools && git diff --exit-code
 
   build-bundle-image:
+    name: Build bundle image
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -97,6 +91,7 @@ jobs:
         run: make bundle-image
 
   e2e-tests-olm:
+    name: Run end-to-end tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

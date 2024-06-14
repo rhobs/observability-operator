@@ -1,9 +1,9 @@
 name: tools-cache
-description: Caches develoment tools
+description: Caches development tools
 runs:
   using: composite
   steps:
-    - uses: actions/cache@v3
+    - uses: actions/cache@v4
       id: tools-cache
       with:
         path: ./tmp/bin
@@ -14,7 +14,7 @@ runs:
       shell: bash
       run: make tools
 
-    - name: Show version info of tools
+    - name: Show versions of the installed tools
       shell: bash
       run: |
         ls ./tmp/bin
