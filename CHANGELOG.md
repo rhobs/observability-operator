@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.2](https://github.com/rhobs/monitoring-stack-operator/commit/) (2024-06-17)
+
+
+### Features
+
+* bump Prometheus operator to v0.74.0 ([#518](https://github.com/rhobs/monitoring-stack-operator/issues/518)) ([abd2f03](https://github.com/rhobs/monitoring-stack-operator/commit/abd2f03741eb2d1de696136f0161557c09d5a7e7))
+
+
+### Bug Fixes
+
+* add korrel8r proxy configuration to logging view plugin ([#515](https://github.com/rhobs/monitoring-stack-operator/issues/515)) ([a1f0de3](https://github.com/rhobs/monitoring-stack-operator/commit/a1f0de357c38e45849f0ce33fdff3b0ef71917a2))
+
 ### [0.3.1](https://github.com/rhobs/monitoring-stack-operator/commit/) (2024-06-13)
 
 
