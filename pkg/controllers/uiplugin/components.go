@@ -444,10 +444,10 @@ func newKorrel8rConfigMap(name string, namespace string, info UIPluginInfo) (*co
 	korrel8rData := map[string]string{"Metric": "thanos-querier", "MetricAlert": "alertmanager-main", "Log": "logging-loki-gateway-http", "Netflow": "loki-gateway-http", "MonitoringNs": "openshift-monitoring", "LoggingNs": OpenshiftLoggingNs, "NetobservNs": OpenshiftNetobservNs}
 
 	if info.LokiServiceNames[OpenshiftLoggingNs] != "" {
-		korrel8rData["LoggingNs"] = info.LokiServiceNames[OpenshiftLoggingNs]
+		korrel8rData["Log"] = info.LokiServiceNames[OpenshiftLoggingNs]
 	}
 	if info.LokiServiceNames[OpenshiftNetobservNs] != "" {
-		korrel8rData["NetobservNs"] = info.LokiServiceNames[OpenshiftNetobservNs]
+		korrel8rData["Netflow"] = info.LokiServiceNames[OpenshiftNetobservNs]
 	}
 
 	var korrel8rConfigYAMLTmpl = template.Must(template.ParseFS(korrel8rConfigYAMLTmplFile, "config/korrel8r.yaml"))
