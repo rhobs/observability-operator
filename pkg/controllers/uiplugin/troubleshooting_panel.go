@@ -101,14 +101,10 @@ func getLokiServiceName(ctx context.Context, k client.Client, ns string) (string
 	}
 
 	// Accumulate services that contain "gateway" in their names
-	var gatewayServices []corev1.Service
 	for _, service := range serviceList.Items {
-		if strings.Contains(service.Name, "gateway") {
-			gatewayServices = append(gatewayServices, service)
+		if strings.Contains(service.Name, "gateway-http") && service.Labels["app.kubernetes.io/component"] == "lokistack-gateway" {
+			return service.Name, nil
 		}
-	}
-	if len(gatewayServices) > 0 {
-		return gatewayServices[0].Name, nil
 	}
 	return "", nil
 }
