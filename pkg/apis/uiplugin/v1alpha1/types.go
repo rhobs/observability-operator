@@ -15,6 +15,10 @@ import (
 // +k8s:openapi-gen=true
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:subresource:status
+// +kubebuilder:validation:XValidation:rule="self.spec.type != 'Logging' || self.metadata.name == 'logging'",message="UIPlugin name must be 'logging' if type is Logging"
+// +kubebuilder:validation:XValidation:rule="self.spec.type != 'TroubleshootingPanel' || self.metadata.name == 'troubleshooting-panel'",message="UIPlugin name must be 'troubleshooting-panel' if type is TroubleshootingPanel"
+// +kubebuilder:validation:XValidation:rule="self.spec.type != 'DistributedTracing' || self.metadata.name == 'distributed-tracing'",message="UIPlugin name must be 'distributed-tracing' if type is DistributedTracing"
+// +kubebuilder:validation:XValidation:rule="self.spec.type != 'Dashboards' || self.metadata.name == 'dashboards'",message="UIPlugin name must be 'dashboards' if type is Dashboards"
 type UIPlugin struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
