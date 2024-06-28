@@ -271,6 +271,25 @@ spec:
           - ""
           resources:
           - configmaps
+          - endpoints
+          - events
+          - namespaces
+          - nodes
+          - persistentvolumeclaims
+          - persistentvolumes
+          - pods
+          - replicationcontrollers
+          - secrets
+          - serviceaccounts
+          - services
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
           - serviceaccounts
           - services
           verbs:
@@ -307,6 +326,17 @@ spec:
         - apiGroups:
           - apps
           resources:
+          - daemonsets
+          - deployments
+          - replicasets
+          - statefulsets
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - apps
+          resources:
           - deployments
           verbs:
           - create
@@ -314,6 +344,23 @@ spec:
           - list
           - patch
           - update
+          - watch
+        - apiGroups:
+          - autoscaling
+          resources:
+          - horizontalpodautoscalers
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - batch
+          resources:
+          - cronjobs
+          - jobs
+          verbs:
+          - get
+          - list
           - watch
         - apiGroups:
           - config.openshift.io
@@ -364,6 +411,34 @@ spec:
           - infrastructure
           verbs:
           - get
+        - apiGroups:
+          - loki.grafana.com
+          resources:
+          - application
+          - audit
+          - infrastructure
+          - network
+          verbs:
+          - get
+        - apiGroups:
+          - monitoring.coreos.com
+          resourceNames:
+          - main
+          resources:
+          - alertmanagers/api
+          verbs:
+          - get
+          - list
+        - apiGroups:
+          - monitoring.coreos.com
+          resourceNames:
+          - k8s
+          resources:
+          - prometheuses/api
+          verbs:
+          - create
+          - get
+          - update
         - apiGroups:
           - monitoring.rhobs
           resources:
@@ -439,6 +514,15 @@ spec:
           - patch
           - update
         - apiGroups:
+          - networking.k8s.io
+          resources:
+          - ingresses
+          - networkpolicies
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
           - observability.openshift.io
           resources:
           - uiplugins
@@ -481,6 +565,7 @@ spec:
           verbs:
           - create
           - delete
+          - get
           - list
           - patch
           - update
@@ -495,6 +580,7 @@ spec:
           verbs:
           - create
           - delete
+          - get
           - list
           - patch
           - update
@@ -520,6 +606,15 @@ spec:
           - securitycontextconstraints
           verbs:
           - use
+        - apiGroups:
+          - storage.k8s.io
+          resources:
+          - storageclasses
+          - volumeattachments
+          verbs:
+          - get
+          - list
+          - watch
         - apiGroups:
           - tempo.grafana.com
           resources:
