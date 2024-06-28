@@ -78,6 +78,29 @@ func newAlertmanager(
 	if alertmanagerCfg.Image != "" {
 		am.Spec.Image = ptr.To(alertmanagerCfg.Image)
 	}
+	if ms.Spec.AlertmanagerConfig.WebTLSConfig != nil {
+		tlsConfig := ms.Spec.AlertmanagerConfig.WebTLSConfig
+		am.Spec.Web = &monv1.AlertmanagerWebSpec{
+			WebConfigFileFields: monv1.WebConfigFileFields{
+				TLSConfig: &monv1.WebTLSConfig{
+					KeySecret: corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: tlsConfig.Key.Name,
+						},
+						Key: tlsConfig.Key.Key,
+					},
+					Cert: monv1.SecretOrConfigMap{
+						Secret: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: tlsConfig.Cert.Name,
+							},
+							Key: tlsConfig.Cert.Key,
+						},
+					},
+				},
+			},
+		}
+	}
 	return am
 }
 
