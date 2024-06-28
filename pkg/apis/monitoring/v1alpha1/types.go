@@ -263,9 +263,34 @@ type ThanosQuerierSpec struct {
 	// Selector to select which namespaces the Monitoring Stack objects are discovered from.
 	NamespaceSelector NamespaceSelector `json:"namespaceSelector,omitempty"`
 	ReplicaLabels     []string          `json:"replicaLabels,omitempty"`
+	// Configure TLS options for the web endpoint
+	// +optional
+	WebTLSConfig *WebTLSConfig `json:"webTLSConfig,omitempty"`
 }
 
 // ThanosQuerierStatus defines the observed state of ThanosQuerier.
 // It should always be reconstructable from the state of the cluster and/or outside world.
 type ThanosQuerierStatus struct {
+}
+
+// SecretKeySelector selects a key of a secret
+type SecretKeySelector struct {
+	// The name of the secret in the object's namespace to select from.
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:Required
+	Name string `json:"name"`
+	// The key of the secret to select from.  Must be a valid secret key.
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:Required
+	Key string `json:"key"`
+}
+
+// WebTLSConfig contains configuration to enable TLS on web endpoints
+type WebTLSConfig struct {
+	// Secret containing the TLS key for the server
+	Key SecretKeySelector `json:"key"`
+	// Secret containing the TLS certificate for the server
+	Cert SecretKeySelector `json:"cert"`
+	// Secret containing the CA certificate to verify the server certificates
+	CA SecretKeySelector `json:"ca"`
 }

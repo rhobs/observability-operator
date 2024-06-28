@@ -122,6 +122,7 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - configmaps
   - serviceaccounts
   - services
   verbs:
@@ -130,6 +131,13 @@ rules:
   - list
   - patch
   - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - list
   - watch
 - apiGroups:
   - extensions

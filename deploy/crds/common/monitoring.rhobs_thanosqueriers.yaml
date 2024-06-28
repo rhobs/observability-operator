@@ -109,6 +109,66 @@ spec:
                     type: object
                 type: object
                 x-kubernetes-map-type: atomic
+              webTLSConfig:
+                description: Configure TLS options for the web endpoint
+                properties:
+                  ca:
+                    description: Secret containing the CA certificate to verify the
+                      server certificates
+                    properties:
+                      key:
+                        description: The key of the secret to select from.  Must be
+                          a valid secret key.
+                        minLength: 1
+                        type: string
+                      name:
+                        description: The name of the secret in the object's namespace
+                          to select from.
+                        minLength: 1
+                        type: string
+                    required:
+                    - key
+                    - name
+                    type: object
+                  cert:
+                    description: Secret containing the TLS certificate for the server
+                    properties:
+                      key:
+                        description: The key of the secret to select from.  Must be
+                          a valid secret key.
+                        minLength: 1
+                        type: string
+                      name:
+                        description: The name of the secret in the object's namespace
+                          to select from.
+                        minLength: 1
+                        type: string
+                    required:
+                    - key
+                    - name
+                    type: object
+                  key:
+                    description: Secret containing the TLS key for the server
+                    properties:
+                      key:
+                        description: The key of the secret to select from.  Must be
+                          a valid secret key.
+                        minLength: 1
+                        type: string
+                      name:
+                        description: The name of the secret in the object's namespace
+                          to select from.
+                        minLength: 1
+                        type: string
+                    required:
+                    - key
+                    - name
+                    type: object
+                required:
+                - ca
+                - cert
+                - key
+                type: object
             required:
             - selector
             type: object
