@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+	"crypto/tls"
+	"crypto/x509"
 
 	"github.com/prometheus/common/model"
 )
@@ -34,6 +36,28 @@ func NewPrometheusClient(url string) *PrometheusClient {
 			Timeout: 10 * time.Second,
 		},
 	}
+}
+
+func NewTLSPrometheusClient(url string, caCert string, serverName string) (*PrometheusClient, error) {
+	ca := x509.NewCertPool()
+	ok := ca.AppendCertsFromPEM([]byte(caCert))
+	if !ok {
+		return nil, fmt.Errorf("failed to parse ca certificate")
+	}
+	tlsConf := tls.Config{
+		RootCAs: ca,
+		ServerName: serverName,
+	}
+	transport := &http.Transport{
+		TLSClientConfig: &tlsConf,
+	}
+	return &PrometheusClient{
+		baseURL: url,
+		client: &http.Client{
+			Transport: transport,
+			Timeout: 10 * time.Second,
+		},
+	}, nil
 }
 
 func (c *PrometheusClient) Query(query string) (*PrometheusResponse, error) {
