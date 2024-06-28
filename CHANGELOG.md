@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.3](https://github.com/rhobs/monitoring-stack-operator/commit/) (2024-06-28)
+
+
+### Features
+
+* restrict UIPlugin CRD names to allow a single instance per type ([#481](https://github.com/rhobs/monitoring-stack-operator/issues/481)) ([62c1920](https://github.com/rhobs/monitoring-stack-operator/commit/62c19207cdbe085b6dc2ca274f08bd3fcb403f92))
+
+
+### Bug Fixes
+
+* add Clusterrole to allow Korrel8r to view Logs and Metrics ([#517](https://github.com/rhobs/monitoring-stack-operator/issues/517)) ([0d7afff](https://github.com/rhobs/monitoring-stack-operator/commit/0d7afff739cf7129708281d6b782713b8735f90b))
+* return the correct loki service names ([#521](https://github.com/rhobs/monitoring-stack-operator/issues/521)) ([351ead5](https://github.com/rhobs/monitoring-stack-operator/commit/351ead585f6f3fb8761df910c07c1b1d60faeeda))
+
 ### [0.3.2](https://github.com/rhobs/monitoring-stack-operator/commit/) (2024-06-17)
 
 
