@@ -44,87 +44,94 @@ func PluginInfoBuilder(ctx context.Context, k client.Client, plugin *uiv1alpha1.
 	namespace := pluginConf.ResourcesNamespace
 	switch plugin.Spec.Type {
 	case uiv1alpha1.TypeDashboards:
-		{
-			name := "observability-ui-" + plugin.Name
-			readerRoleName := plugin.Name + "-datasource-reader"
-			datasourcesNamespace := "openshift-config-managed"
+		name := "observability-ui-" + plugin.Name
+		readerRoleName := plugin.Name + "-datasource-reader"
+		datasourcesNamespace := "openshift-config-managed"
 
-			pluginInfo := &UIPluginInfo{
-				Image:             image,
-				Name:              name,
-				ConsoleName:       "console-dashboards-plugin",
-				DisplayName:       "Console Enhanced Dashboards",
-				ResourceNamespace: namespace,
-				Proxies: []osv1alpha1.ConsolePluginProxy{
+		pluginInfo := &UIPluginInfo{
+			Image:             image,
+			Name:              name,
+			ConsoleName:       "console-dashboards-plugin",
+			DisplayName:       "Console Enhanced Dashboards",
+			ResourceNamespace: namespace,
+			Proxies: []osv1alpha1.ConsolePluginProxy{
+				{
+					Type:      osv1alpha1.ProxyTypeService,
+					Alias:     "backend",
+					Authorize: true,
+					Service: osv1alpha1.ConsolePluginProxyServiceConfig{
+						Name:      name,
+						Namespace: namespace,
+						Port:      9443,
+					},
+				},
+			},
+			Role: &rbacv1.Role{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: rbacv1.SchemeGroupVersion.String(),
+					Kind:       "Role",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      readerRoleName,
+					Namespace: datasourcesNamespace,
+				},
+				Rules: []rbacv1.PolicyRule{
 					{
-						Type:      osv1alpha1.ProxyTypeService,
-						Alias:     "backend",
-						Authorize: true,
-						Service: osv1alpha1.ConsolePluginProxyServiceConfig{
-							Name:      name,
-							Namespace: namespace,
-							Port:      9443,
-						},
+						APIGroups: []string{""},
+						Resources: []string{"configmaps"},
+						Verbs:     []string{"get", "list", "watch"},
 					},
 				},
-				Role: &rbacv1.Role{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: rbacv1.SchemeGroupVersion.String(),
-						Kind:       "Role",
-					},
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      readerRoleName,
-						Namespace: datasourcesNamespace,
-					},
-					Rules: []rbacv1.PolicyRule{
-						{
-							APIGroups: []string{""},
-							Resources: []string{"configmaps"},
-							Verbs:     []string{"get", "list", "watch"},
-						},
+			},
+			RoleBinding: &rbacv1.RoleBinding{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: rbacv1.SchemeGroupVersion.String(),
+					Kind:       "RoleBinding",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      name + "-rolebinding",
+					Namespace: datasourcesNamespace,
+				},
+				Subjects: []rbacv1.Subject{
+					{
+						APIGroup:  corev1.SchemeGroupVersion.Group,
+						Kind:      "ServiceAccount",
+						Name:      name + "-sa",
+						Namespace: namespace,
 					},
 				},
-				RoleBinding: &rbacv1.RoleBinding{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: rbacv1.SchemeGroupVersion.String(),
-						Kind:       "RoleBinding",
-					},
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      name + "-rolebinding",
-						Namespace: datasourcesNamespace,
-					},
-					Subjects: []rbacv1.Subject{
-						{
-							APIGroup:  corev1.SchemeGroupVersion.Group,
-							Kind:      "ServiceAccount",
-							Name:      name + "-sa",
-							Namespace: namespace,
-						},
-					},
-					RoleRef: rbacv1.RoleRef{
-						APIGroup: rbacv1.SchemeGroupVersion.Group,
-						Kind:     "Role",
-						Name:     readerRoleName,
-					},
+				RoleRef: rbacv1.RoleRef{
+					APIGroup: rbacv1.SchemeGroupVersion.Group,
+					Kind:     "Role",
+					Name:     readerRoleName,
 				},
-			}
+			},
+		}
 
-			return pluginInfo, nil
-		}
+		return pluginInfo, nil
+
 	case uiv1alpha1.TypeTroubleshootingPanel:
-		{
-			pluginInfo, err := createTroubleshootingPanelPluginInfo(plugin, namespace, plugin.Name, image, []string{})
-			if err == nil {
-				pluginInfo.Korrel8rImage = pluginConf.Images["korrel8r"]
-				pluginInfo.LokiServiceNames[OpenshiftLoggingNs], err = getLokiServiceName(ctx, k, OpenshiftLoggingNs)
-			}
-			if err == nil {
-				pluginInfo.LokiServiceNames[OpenshiftNetobservNs], err = getLokiServiceName(ctx, k, OpenshiftNetobservNs)
-			}
-			return pluginInfo, err
+		pluginInfo, err := createTroubleshootingPanelPluginInfo(plugin, namespace, plugin.Name, image, []string{})
+		if err != nil {
+			return nil, err
 		}
+
+		pluginInfo.Korrel8rImage = pluginConf.Images["korrel8r"]
+		pluginInfo.LokiServiceNames[OpenshiftLoggingNs], err = getLokiServiceName(ctx, k, OpenshiftLoggingNs)
+		if err != nil {
+			return nil, err
+		}
+
+		pluginInfo.LokiServiceNames[OpenshiftNetobservNs], err = getLokiServiceName(ctx, k, OpenshiftNetobservNs)
+		if err != nil {
+			return nil, err
+		}
+
+		return pluginInfo, nil
+
 	case uiv1alpha1.TypeDistributedTracing:
 		return createDistributedTracingPluginInfo(plugin, namespace, plugin.Name, image, []string{})
+
 	case uiv1alpha1.TypeLogging:
 		return createLoggingPluginInfo(plugin, namespace, plugin.Name, image, compatibilityInfo.Features)
 	}
