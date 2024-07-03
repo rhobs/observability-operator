@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	osv1 "github.com/openshift/api/console/v1"
 	osv1alpha1 "github.com/openshift/api/console/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -21,7 +22,8 @@ type UIPluginInfo struct {
 	ConsoleName         string
 	DisplayName         string
 	ExtraArgs           []string
-	Proxies             []osv1alpha1.ConsolePluginProxy
+	LegacyProxies       []osv1alpha1.ConsolePluginProxy
+	Proxies             []osv1.ConsolePluginProxy
 	Role                *rbacv1.Role
 	RoleBinding         *rbacv1.RoleBinding
 	ClusterRoles        []*rbacv1.ClusterRole
@@ -54,7 +56,7 @@ func PluginInfoBuilder(ctx context.Context, k client.Client, plugin *uiv1alpha1.
 			ConsoleName:       "console-dashboards-plugin",
 			DisplayName:       "Console Enhanced Dashboards",
 			ResourceNamespace: namespace,
-			Proxies: []osv1alpha1.ConsolePluginProxy{
+			LegacyProxies: []osv1alpha1.ConsolePluginProxy{
 				{
 					Type:      osv1alpha1.ProxyTypeService,
 					Alias:     "backend",
@@ -62,7 +64,21 @@ func PluginInfoBuilder(ctx context.Context, k client.Client, plugin *uiv1alpha1.
 					Service: osv1alpha1.ConsolePluginProxyServiceConfig{
 						Name:      name,
 						Namespace: namespace,
-						Port:      9443,
+						Port:      port,
+					},
+				},
+			},
+			Proxies: []osv1.ConsolePluginProxy{
+				{
+					Alias:         "backend",
+					Authorization: "UserToken",
+					Endpoint: osv1.ConsolePluginProxyEndpoint{
+						Type: osv1.ProxyTypeService,
+						Service: &osv1.ConsolePluginProxyServiceConfig{
+							Name:      name,
+							Namespace: namespace,
+							Port:      port,
+						},
 					},
 				},
 			},

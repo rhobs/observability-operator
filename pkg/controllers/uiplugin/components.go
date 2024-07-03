@@ -7,9 +7,12 @@ import (
 	"hash/fnv"
 	"io"
 	"sort"
+	"strings"
 	"text/template"
 
+	osv1 "github.com/openshift/api/console/v1"
 	osv1alpha1 "github.com/openshift/api/console/v1alpha1"
+	"golang.org/x/mod/semver"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -45,14 +48,32 @@ var (
 	korrel8rConfigYAMLTmplFile embed.FS
 )
 
-func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPluginInfo) []reconciler.Reconciler {
+func isVersionAheadOrEqual(currentVersion, version string) bool {
+	if !strings.HasPrefix(currentVersion, "v") {
+		currentVersion = "v" + currentVersion
+	}
+	if version == "" {
+		return false
+	}
+
+	canonicalMinVersion := fmt.Sprintf("%s-0", semver.Canonical(version))
+
+	return semver.Compare(currentVersion, canonicalMinVersion) >= 0
+}
+
+func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPluginInfo, clusterVersion string) []reconciler.Reconciler {
 	namespace := pluginInfo.ResourceNamespace
 
 	components := []reconciler.Reconciler{
 		reconciler.NewUpdater(newServiceAccount(pluginInfo, namespace), plugin),
 		reconciler.NewUpdater(newDeployment(pluginInfo, namespace, plugin.Spec.Deployment), plugin),
 		reconciler.NewUpdater(newService(pluginInfo, namespace), plugin),
-		reconciler.NewUpdater(newConsolePlugin(pluginInfo, namespace), plugin),
+	}
+
+	if isVersionAheadOrEqual(clusterVersion, "v4.17") {
+		components = append(components, reconciler.NewUpdater(newConsolePlugin(pluginInfo, namespace), plugin))
+	} else {
+		components = append(components, reconciler.NewUpdater(newLegacyConsolePlugin(pluginInfo, namespace), plugin))
 	}
 
 	if pluginInfo.Role != nil {
@@ -112,7 +133,7 @@ func newRoleBinding(info UIPluginInfo) *rbacv1.RoleBinding {
 	return info.RoleBinding
 }
 
-func newConsolePlugin(info UIPluginInfo, namespace string) *osv1alpha1.ConsolePlugin {
+func newLegacyConsolePlugin(info UIPluginInfo, namespace string) *osv1alpha1.ConsolePlugin {
 	return &osv1alpha1.ConsolePlugin{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: osv1alpha1.SchemeGroupVersion.String(),
@@ -128,6 +149,31 @@ func newConsolePlugin(info UIPluginInfo, namespace string) *osv1alpha1.ConsolePl
 				Namespace: namespace,
 				Port:      port,
 				BasePath:  "/",
+			},
+			Proxy: info.LegacyProxies,
+		},
+	}
+}
+
+func newConsolePlugin(info UIPluginInfo, namespace string) *osv1.ConsolePlugin {
+	return &osv1.ConsolePlugin{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: osv1.SchemeGroupVersion.String(),
+			Kind:       "ConsolePlugin",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: info.ConsoleName,
+		},
+		Spec: osv1.ConsolePluginSpec{
+			DisplayName: info.DisplayName,
+			Backend: osv1.ConsolePluginBackend{
+				Type: osv1.Service,
+				Service: &osv1.ConsolePluginService{
+					Name:      info.Name,
+					Namespace: namespace,
+					Port:      port,
+					BasePath:  "/",
+				},
 			},
 			Proxy: info.Proxies,
 		},

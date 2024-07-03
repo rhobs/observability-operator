@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	osv1 "github.com/openshift/api/console/v1"
 	osv1alpha1 "github.com/openshift/api/console/v1alpha1"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
@@ -51,7 +52,7 @@ func createLoggingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image
 		DisplayName:       "Logging View",
 		ExtraArgs:         extraArgs,
 		ResourceNamespace: namespace,
-		Proxies: []osv1alpha1.ConsolePluginProxy{
+		LegacyProxies: []osv1alpha1.ConsolePluginProxy{
 			{
 				Type:      "Service",
 				Alias:     "backend",
@@ -70,6 +71,32 @@ func createLoggingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image
 					Name:      korrel8rName,
 					Namespace: namespace,
 					Port:      port,
+				},
+			},
+		},
+		Proxies: []osv1.ConsolePluginProxy{
+			{
+				Alias:         "backend",
+				Authorization: "UserToken",
+				Endpoint: osv1.ConsolePluginProxyEndpoint{
+					Type: osv1.ProxyTypeService,
+					Service: &osv1.ConsolePluginProxyServiceConfig{
+						Name:      fmt.Sprintf("%s-gateway-http", plugin.Spec.Logging.LokiStack.Name),
+						Namespace: "openshift-logging", // TODO decide if we want to support LokiStack in other namespaces
+						Port:      8080,
+					},
+				},
+			},
+			{
+				Alias:         "korrel8r",
+				Authorization: "UserToken",
+				Endpoint: osv1.ConsolePluginProxyEndpoint{
+					Type: osv1.ProxyTypeService,
+					Service: &osv1.ConsolePluginProxyServiceConfig{
+						Name:      korrel8rName,
+						Namespace: namespace,
+						Port:      port,
+					},
 				},
 			},
 		},

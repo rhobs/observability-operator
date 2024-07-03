@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-logr/logr"
 	configv1 "github.com/openshift/api/config/v1"
+	osv1 "github.com/openshift/api/console/v1"
 	osv1alpha1 "github.com/openshift/api/console/v1alpha1"
 	operatorv1 "github.com/openshift/api/operator/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -109,15 +110,22 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 
 	generationChanged := builder.WithPredicates(predicate.GenerationChangedPredicate{})
 
-	ctrl, err := ctrl.NewControllerManagedBy(mgr).
+	ctrlBuilder := ctrl.NewControllerManagedBy(mgr).
 		For(&uiv1alpha1.UIPlugin{}).
 		Owns(&appsv1.Deployment{}, generationChanged).
 		Owns(&v1.Service{}, generationChanged).
 		Owns(&v1.ServiceAccount{}, generationChanged).
 		Owns(&rbacv1.Role{}, generationChanged).
-		Owns(&rbacv1.RoleBinding{}, generationChanged).
-		Owns(&osv1alpha1.ConsolePlugin{}, generationChanged).
-		Build(rm)
+		Owns(&rbacv1.RoleBinding{}, generationChanged)
+
+	if isVersionAheadOrEqual(rm.clusterVersion, "v4.17") {
+		ctrlBuilder.Owns(&osv1.ConsolePlugin{}, generationChanged)
+	} else {
+		ctrlBuilder.Owns(&osv1alpha1.ConsolePlugin{}, generationChanged)
+	}
+
+	ctrl, err := ctrlBuilder.Build(rm)
+
 	if err != nil {
 		return err
 	}
@@ -135,9 +143,16 @@ func getClusterVersion(k8client client.Reader) (*configv1.ClusterVersion, error)
 	return clusterVersion, nil
 }
 
-func (rm resourceManager) consolePluginCapabilityEnabled(ctx context.Context, name types.NamespacedName) bool {
-	current := &osv1alpha1.ConsolePlugin{}
-	err := rm.k8sClient.Get(ctx, name, current)
+func (rm resourceManager) consolePluginCapabilityEnabled(ctx context.Context, name types.NamespacedName, clusterVersion string) bool {
+	var err error
+
+	if isVersionAheadOrEqual(clusterVersion, "v4.17") {
+		consolePlugin := &osv1.ConsolePlugin{}
+		err = rm.k8sClient.Get(ctx, name, consolePlugin)
+	} else {
+		legacyConsolePlugin := &osv1alpha1.ConsolePlugin{}
+		err = rm.k8sClient.Get(ctx, name, legacyConsolePlugin)
+	}
 
 	return err == nil || !metaerrors.IsNoMatchError(err)
 }
@@ -145,7 +160,7 @@ func (rm resourceManager) consolePluginCapabilityEnabled(ctx context.Context, na
 func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := rm.logger.WithValues("plugin", req.NamespacedName)
 
-	if !rm.consolePluginCapabilityEnabled(ctx, req.NamespacedName) {
+	if !rm.consolePluginCapabilityEnabled(ctx, req.NamespacedName, rm.clusterVersion) {
 		logger.Info("Cluster console plugin not supported or not accessible. Skipping observability UI plugin reconciliation")
 		return ctrl.Result{}, nil
 	}
@@ -175,7 +190,7 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, err
 	}
 
-	reconcilers := pluginComponentReconcilers(plugin, *pluginInfo)
+	reconcilers := pluginComponentReconcilers(plugin, *pluginInfo, rm.clusterVersion)
 	for _, reconciler := range reconcilers {
 		err := reconciler.Reconcile(ctx, rm.k8sClient, rm.scheme)
 		// handle creation / updation errors that can happen due to a stale cache by

@@ -1,6 +1,7 @@
 package operator
 
 import (
+	osv1 "github.com/openshift/api/console/v1"
 	osv1alpha1 "github.com/openshift/api/console/v1alpha1"
 	operatorv1 "github.com/openshift/api/operator/v1"
 	monitoringv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
@@ -23,6 +24,7 @@ func NewScheme(cfg *OperatorConfiguration) *runtime.Scheme {
 	utilruntime.Must(uiv1alpha1.AddToScheme(scheme))
 
 	if cfg.FeatureGates.OpenShift.Enabled {
+		utilruntime.Must(osv1.AddToScheme(scheme))
 		utilruntime.Must(osv1alpha1.AddToScheme(scheme))
 		utilruntime.Must(operatorv1.AddToScheme(scheme))
 	}
