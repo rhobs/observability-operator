@@ -104,7 +104,9 @@ func main() {
 	setupLog.Info("running with arguments",
 		"namespace", namespace,
 		"metrics-bind-address", metricsAddr,
-		"images", images)
+		"images", images,
+		"openshift.enabled", openShiftEnabled,
+	)
 
 	imgMap, err := validateImages(images)
 	if err != nil {
