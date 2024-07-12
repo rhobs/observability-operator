@@ -23,6 +23,7 @@ declare LOGS_DIR="tmp/e2e"
 declare OPERATORS_NS="operators"
 declare TEST_TIMEOUT="15m"
 declare RUN_REGEX=""
+declare OCP_MODE=false
 
 cleanup() {
 	info "Cleaning up ..."
@@ -155,8 +156,11 @@ run_e2e() {
 	watch_obo_errors "$obo_error_log" &
 
 	local ret=0
-	go test -v -failfast -timeout $TEST_TIMEOUT ./test/e2e/... -run "$RUN_REGEX" -count 1 | tee "$LOGS_DIR/e2e.log" || ret=1
-
+	if $OCP_MODE; then
+	  go test -v -timeout $TEST_TIMEOUT ./test/e2e/... -run "$RUN_REGEX" -count 1 -args -operatorInstallNS="$OPERATORS_NS" | tee "$LOGS_DIR/e2e.log" || ret=1
+	else
+	  go test -v -timeout $TEST_TIMEOUT ./test/e2e/... -run "$RUN_REGEX" -skip UIPlugin -count 1 | tee "$LOGS_DIR/e2e.log" || ret=1
+	fi
 	# terminte both log_events
 	{ jobs -p | xargs -I {} -- pkill -TERM -P {}; } || true
 
@@ -209,6 +213,10 @@ parse_args() {
 			RUN_REGEX=$1
 			shift
 			;;
+		--ocp)
+			OCP_MODE=true
+			shift
+			;;
 		*) return 1 ;; # show usage on everything else
 		esac
 	done
@@ -236,7 +244,7 @@ print_usage() {
 		                   for running against openshift use --ns openshift-operators
                   --run REGEX      regex to limit which tests are run. See go help testflag -run entry
                                    for details
-
+      --ocp            run on OPENSHIFT cluster, not kind cluster
 
 	EOF_HELP
 
