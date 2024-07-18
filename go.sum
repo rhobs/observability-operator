@@ -373,6 +373,8 @@ github.com/opencontainers/image-spec v1.0.2 h1:9yCKha/T5XdGtO0q9Q9a6T5NUCsTn/DrB
 github.com/opencontainers/image-spec v1.0.2/go.mod h1:BtxoFyWECRxE4U/7sNtV5W15zMzWCbyJoFRP3s7yZA0=
 github.com/openshift/api v0.0.0-20240301093301-ce10821dc999 h1:+S998xHiJApsJZjRAO8wyedU9GfqFd8mtwWly6LqHDo=
 github.com/openshift/api v0.0.0-20240301093301-ce10821dc999/go.mod h1:CxgbWAlvu2iQB0UmKTtRu1YfepRg1/vJ64n2DlIEVz4=
+github.com/openshift/library-go v0.0.0-20240216151214-738f3fa4ccf8 h1:dKtHGYiOwl0DKZEWBW4MFWFS6IYW02AVD1WSuUAVwEo=
+github.com/openshift/library-go v0.0.0-20240216151214-738f3fa4ccf8/go.mod h1:ePlaOqUiPplRc++6aYdMe+2FmXb2xTNS9Nz5laG2YmI=
 github.com/opentracing/opentracing-go v1.2.0 h1:uEJPy/1a5RIPAJ0Ov+OIO8OxWu77jEv+1B0VhjKrZUs=
 github.com/opentracing/opentracing-go v1.2.0/go.mod h1:GxEUsuufX4nBwe+T+Wl9TAgYrxe9dPLANfrWvHYVTgc=
 github.com/ovh/go-ovh v1.4.3 h1:Gs3V823zwTFpzgGLZNI6ILS4rmxZgJwJCz54Er9LwD0=
@@ -802,6 +804,8 @@ k8s.io/apiextensions-apiserver v0.30.2 h1:l7Eue2t6QiLHErfn2vwK4KgF4NeDgjQkCXtEbO
 k8s.io/apiextensions-apiserver v0.30.2/go.mod h1:lsJFLYyK40iguuinsb3nt+Sj6CmodSI4ACDLep1rgjw=
 k8s.io/apimachinery v0.30.2 h1:fEMcnBj6qkzzPGSVsAZtQThU62SmQ4ZymlXRC5yFSCg=
 k8s.io/apimachinery v0.30.2/go.mod h1:iexa2somDaxdnj7bha06bhb43Zpa6eWH8N8dbqVjTUc=
+k8s.io/apiserver v0.30.2 h1:ACouHiYl1yFI2VFI3YGM+lvxgy6ir4yK2oLOsLI1/tw=
+k8s.io/apiserver v0.30.2/go.mod h1:BOTdFBIch9Sv0ypSEcUR6ew/NUFGocRFNl72Ra7wTm8=
 k8s.io/client-go v0.30.2 h1:sBIVJdojUNPDU/jObC+18tXWcTJVcwyqS9diGdWHk50=
 k8s.io/client-go v0.30.2/go.mod h1:JglKSWULm9xlJLx4KCkfLLQ7XwtlbflV6uFFSHTMgVs=
 k8s.io/component-base v0.30.2 h1:pqGBczYoW1sno8q9ObExUqrYSKhtE5rW3y6gX88GZII=
