@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.4](https://github.com/rhobs/monitoring-stack-operator/commit/) (2024-07-29)
+
+
+### Bug Fixes
+
+* add support for ConsolePlugin v1 ([#530](https://github.com/rhobs/monitoring-stack-operator/issues/530)) ([dc492f6](https://github.com/rhobs/monitoring-stack-operator/commit/dc492f6fefcbe3a5b3388960c3351d7d75f8ed44))
+* bump obo-prometheus-operator to v0.75.2-rhobs ([#537](https://github.com/rhobs/monitoring-stack-operator/issues/537)) ([386a780](https://github.com/rhobs/monitoring-stack-operator/commit/386a7808b47576f8179c8b0c152d603a7c42e95a))
+
 ### [0.3.3](https://github.com/rhobs/monitoring-stack-operator/commit/) (2024-06-28)
 
 
