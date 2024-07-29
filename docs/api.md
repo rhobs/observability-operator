@@ -811,6 +811,16 @@ Deprecated: this will be removed in a future release. Prefer using `authorizatio
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>followRedirects</b></td>
+        <td>boolean</td>
+        <td>
+          Configure whether HTTP requests follow HTTP 3xx redirects.
+
+
+It requires Prometheus >= v2.26.0.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>headers</b></td>
         <td>map[string]string</td>
         <td>
@@ -840,6 +850,18 @@ It requires Prometheus >= v2.15.0.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>noProxy</b></td>
+        <td>string</td>
+        <td>
+          `noProxy` is a comma-separated string that can contain IPs, CIDR notation, domain names
+that should be excluded from proxying. IP and domain names can
+contain port numbers.
+
+
+It requires Prometheus >= v2.43.0.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexoauth2">oauth2</a></b></td>
         <td>object</td>
         <td>
@@ -853,10 +875,35 @@ Cannot be set at the same time as `sigv4`, `authorization`, `basicAuth`, or `azu
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexproxyconnectheaderkeyindex">proxyConnectHeader</a></b></td>
+        <td>map[string][]object</td>
+        <td>
+          ProxyConnectHeader optionally specifies headers to send to
+proxies during CONNECT requests.
+
+
+It requires Prometheus >= v2.43.0.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>proxyFromEnvironment</b></td>
+        <td>boolean</td>
+        <td>
+          Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).
+If unset, Prometheus uses its default value.
+
+
+It requires Prometheus >= v2.43.0.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>proxyUrl</b></td>
         <td>string</td>
         <td>
-          Optional ProxyURL.<br/>
+          `proxyURL` defines the HTTP proxy server to use.
+
+
+It requires Prometheus >= v2.43.0.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1626,6 +1673,55 @@ TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://git
 
 `clientSecret` specifies a key of a Secret containing the OAuth2
 client's secret.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+          <br/>
+            <i>Default</i>: <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].proxyConnectHeader[key][index]
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindex)</sup></sup>
+
+
+
+SecretKeySelector selects a key of a Secret.
 
 <table>
     <thead>
