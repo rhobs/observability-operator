@@ -604,7 +604,36 @@ func prometheusScaleDown(t *testing.T) {
 
 func assertPrometheusManagedFields(t *testing.T) {
 	numOfRep := int32(1)
-	ms := newMonitoringStack(t, "prometheus-managed-fields-test")
+
+	monitoringStackName := "prometheus-managed-fields-test"
+	prometheusServiceName := monitoringStackName + "-prometheus"
+
+	certs, key, err := cert.GenerateSelfSignedCertKey(prometheusServiceName, []net.IP{}, []string{})
+	assert.NilError(t, err)
+
+	promKey := string(key)
+	promCerts := strings.SplitAfter(string(certs), "-----END CERTIFICATE-----")
+
+	promTLSSecret := corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "prom-test-managedfields-tls-secret",
+			Namespace: e2eTestNamespace,
+		},
+		StringData: map[string]string{
+			"tls.key": promKey,
+			"tls.crt": promCerts[0],
+			"ca.crt":  promCerts[1],
+		},
+	}
+
+	err = f.K8sClient.Create(context.Background(), &promTLSSecret)
+	assert.NilError(t, err)
+
+	ms := newMonitoringStack(t, monitoringStackName)
 	var scrapeInterval monv1.Duration = "2m"
 	ms.Spec.PrometheusConfig = &stack.PrometheusConfig{
 		Replicas:       &numOfRep,
@@ -623,6 +652,20 @@ func assertPrometheusManagedFields(t *testing.T) {
 		},
 		EnableRemoteWriteReceiver: true,
 		EnableOtlpHttpReceiver:    func(b bool) *bool { return &b }(true),
+		WebTLSConfig: &stack.WebTLSConfig{
+			Certificate: stack.SecretKeySelector{
+				Name: "prom-test-managedfields-tls-secret",
+				Key:  "tls.crt",
+			},
+			PrivateKey: stack.SecretKeySelector{
+				Name: "prom-test-managedfields-tls-secret",
+				Key:  "tls.key",
+			},
+			CertificateAuthority: stack.SecretKeySelector{
+				Name: "prom-test-managedfields-tls-secret",
+				Key:  "ca.crt",
+			},
+		},
 	}
 	ms.Spec.NamespaceSelector = &metav1.LabelSelector{
 		MatchLabels: map[string]string{
@@ -630,7 +673,7 @@ func assertPrometheusManagedFields(t *testing.T) {
 		},
 	}
 
-	err := f.K8sClient.Create(context.Background(), ms)
+	err = f.K8sClient.Create(context.Background(), ms)
 	assert.NilError(t, err, "failed to create a monitoring stack")
 
 	prom := monv1.Prometheus{}
@@ -828,7 +871,7 @@ const oboManagedFieldsJson = `
     "f:image": {},
     "f:resources": {}
   },
-  "f:tsdb": {}
+  "f:tsdb": {},
   "f:web": {
     "f:tlsConfig": {
       "f:cert": {
@@ -836,6 +879,7 @@ const oboManagedFieldsJson = `
       },
       "f:client_ca": {},
       "f:keySecret": {}
+    }
   }
 }
 `
