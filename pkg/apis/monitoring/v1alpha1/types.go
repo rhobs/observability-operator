@@ -80,6 +80,14 @@ type MonitoringStackSpec struct {
 	// +kubebuilder:default={requests:{cpu: "100m", memory: "256Mi"}, limits:{memory: "512Mi", cpu: "500m"}}
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
+	// Define tolerations for Monitoring Stack Pods.
+	// +optional
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+
+	// Define node selector for Monitoring Stack Pods.
+	// +optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
 	// Define prometheus config
 	// +optional
 	// +kubebuilder:default={replicas: 2}
@@ -267,5 +275,4 @@ type ThanosQuerierSpec struct {
 
 // ThanosQuerierStatus defines the observed state of ThanosQuerier.
 // It should always be reconstructable from the state of the cluster and/or outside world.
-type ThanosQuerierStatus struct {
-}
+type ThanosQuerierStatus struct{}

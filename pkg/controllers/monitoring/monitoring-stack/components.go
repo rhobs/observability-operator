@@ -15,9 +15,11 @@ import (
 	"github.com/rhobs/observability-operator/pkg/reconciler"
 )
 
-const AdditionalScrapeConfigsSelfScrapeKey = "self-scrape-config"
-const PrometheusUserFSGroupID = int64(65534)
-const AlertmanagerUserFSGroupID = int64(65535)
+const (
+	AdditionalScrapeConfigsSelfScrapeKey = "self-scrape-config"
+	PrometheusUserFSGroupID              = int64(65534)
+	AlertmanagerUserFSGroupID            = int64(65535)
+)
 
 func stackComponentReconcilers(
 	ms *stack.MonitoringStack,
@@ -152,6 +154,8 @@ func newPrometheus(
 				ProbeNamespaceSelector:          ms.Spec.NamespaceSelector,
 				ScrapeConfigSelector:            prometheusSelector,
 				ScrapeConfigNamespaceSelector:   ms.Spec.NamespaceSelector,
+				NodeSelector:                    ms.Spec.NodeSelector,
+				Tolerations:                     ms.Spec.Tolerations,
 				Affinity: &corev1.Affinity{
 					PodAntiAffinity: &corev1.PodAntiAffinity{
 						RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
@@ -327,7 +331,6 @@ func newThanosSidecarService(ms *stack.MonitoringStack, instanceSelectorKey stri
 			Labels:    objectLabels(name, ms.Name, instanceSelectorKey, instanceSelectorValue),
 		},
 		Spec: corev1.ServiceSpec{
-
 			// NOTE: Setting this to "None" makes a "headless service" (no virtual
 			// IP), which is useful when direct endpoint connections are preferred
 			// and proxying is not required.
