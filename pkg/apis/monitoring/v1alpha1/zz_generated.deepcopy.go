@@ -131,6 +131,20 @@ func (in *MonitoringStackSpec) DeepCopyInto(out *MonitoringStackSpec) {
 		(*in).DeepCopyInto(*out)
 	}
 	in.Resources.DeepCopyInto(&out.Resources)
+	if in.Tolerations != nil {
+		in, out := &in.Tolerations, &out.Tolerations
+		*out = make([]corev1.Toleration, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
+	if in.NodeSelector != nil {
+		in, out := &in.NodeSelector, &out.NodeSelector
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.PrometheusConfig != nil {
 		in, out := &in.PrometheusConfig, &out.PrometheusConfig
 		*out = new(PrometheusConfig)
