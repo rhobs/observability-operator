@@ -44,14 +44,14 @@ var compatibilityMatrix = []CompatibilityEntry{
 	{
 		PluginType:        uiv1alpha1.TypeLogging,
 		MinClusterVersion: "v4.11",
-		MaxClusterVersion: "v4.11",
+		MaxClusterVersion: "v4.12",
 		ImageKey:          "ui-logging",
 		Features:          []string{},
 	},
 	{
 		PluginType:        uiv1alpha1.TypeLogging,
 		MinClusterVersion: "v4.12",
-		MaxClusterVersion: "v4.12",
+		MaxClusterVersion: "v4.13",
 		ImageKey:          "ui-logging",
 		Features: []string{
 			"dev-console",
@@ -60,7 +60,7 @@ var compatibilityMatrix = []CompatibilityEntry{
 	{
 		PluginType:        uiv1alpha1.TypeLogging,
 		MinClusterVersion: "v4.13",
-		MaxClusterVersion: "v4.13",
+		MaxClusterVersion: "v4.14",
 		ImageKey:          "ui-logging",
 		Features: []string{
 			"dev-console",
@@ -93,10 +93,11 @@ func lookupImageAndFeatures(pluginType uiv1alpha1.UIPluginType, clusterVersion s
 	for _, entry := range compatibilityMatrix {
 		if entry.PluginType == pluginType {
 			canonicalMinClusterVersion := fmt.Sprintf("%s-0", semver.Canonical(entry.MinClusterVersion))
+			canonicalMaxClusterVersion := semver.Canonical(entry.MaxClusterVersion)
 
 			if entry.MaxClusterVersion == "" && semver.Compare(clusterVersion, canonicalMinClusterVersion) >= 0 {
 				return entry, nil
-			} else if semver.Compare(clusterVersion, canonicalMinClusterVersion) >= 0 && semver.Compare(clusterVersion, entry.MaxClusterVersion) <= 0 {
+			} else if semver.Compare(clusterVersion, canonicalMinClusterVersion) >= 0 && semver.Compare(clusterVersion, canonicalMaxClusterVersion) < 0 {
 				return entry, nil
 			}
 		}

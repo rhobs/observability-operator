@@ -47,6 +47,49 @@ func TestLookupImageAndFeatures(t *testing.T) {
 		},
 		{
 			pluginType:     uiv1alpha1.TypeLogging,
+			clusterVersion: "v4.13.45",
+			expectedKey:    "ui-logging",
+			expectedErr:    nil,
+			expectedFeatures: []string{
+				"dev-console",
+				"alerts",
+			},
+		},
+		{
+			pluginType:     uiv1alpha1.TypeLogging,
+			clusterVersion: "v4.14",
+			expectedKey:    "ui-logging",
+			expectedErr:    nil,
+			expectedFeatures: []string{
+				"dev-console",
+				"alerts",
+				"dev-alerts",
+			},
+		},
+		{
+			pluginType:     uiv1alpha1.TypeLogging,
+			clusterVersion: "v4.14.1",
+			expectedKey:    "ui-logging",
+			expectedErr:    nil,
+			expectedFeatures: []string{
+				"dev-console",
+				"alerts",
+				"dev-alerts",
+			},
+		},
+		{
+			pluginType:     uiv1alpha1.TypeLogging,
+			clusterVersion: "v4.16.9",
+			expectedKey:    "ui-logging",
+			expectedErr:    nil,
+			expectedFeatures: []string{
+				"dev-console",
+				"alerts",
+				"dev-alerts",
+			},
+		},
+		{
+			pluginType:     uiv1alpha1.TypeLogging,
 			clusterVersion: "4.11",
 			expectedKey:    "ui-logging",
 			expectedErr:    nil,
