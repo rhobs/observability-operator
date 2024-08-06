@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	openshiftClientset "github.com/openshift/client-go/config/clientset/versioned"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -24,6 +25,7 @@ import (
 
 type Framework struct {
 	kubernetes kubernetes.Interface
+	openshift  openshiftClientset.Interface
 	Config     *rest.Config
 	K8sClient  client.Client
 	Retain     bool
@@ -124,6 +126,18 @@ func (f *Framework) getKubernetesClient() (kubernetes.Interface, error) {
 	return f.kubernetes, nil
 }
 
+func (f *Framework) getOpenshiftClient() (openshiftClientset.Interface, error) {
+	if f.openshift == nil {
+		c, err := openshiftClientset.NewForConfig(f.Config)
+		if err != nil {
+			return nil, err
+		}
+		f.openshift = c
+	}
+
+	return f.openshift, nil
+}
+
 func (f *Framework) Evict(pod *corev1.Pod, gracePeriodSeconds int64) error {
 	delOpts := metav1.DeleteOptions{
 		GracePeriodSeconds: &gracePeriodSeconds,
@@ -155,4 +169,18 @@ func (f *Framework) CleanUp(t *testing.T, cleanupFunc func()) {
 			cleanupFunc()
 		}
 	})
+}
+
+func (f *Framework) IsOpenshiftCluster() bool {
+	c, err := f.getOpenshiftClient()
+	if err != nil {
+		fmt.Printf("failed to get openshiftClient: %s", err)
+		return false
+	}
+	_, err = c.ConfigV1().ClusterVersions().Get(context.TODO(), "version", metav1.GetOptions{})
+	if err != nil {
+		fmt.Printf("non-ocp cluster and failed to get clusterversion: %s", err)
+		return false
+	}
+	return true
 }

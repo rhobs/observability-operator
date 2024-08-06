@@ -8,6 +8,7 @@ require (
 	github.com/go-logr/logr v1.4.2
 	github.com/google/go-cmp v0.6.0
 	github.com/openshift/api v0.0.0-20240301093301-ce10821dc999
+	github.com/openshift/client-go v0.0.0-20240312102544-689ec74ac4b6
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/common v0.55.0
 	github.com/rhobs/obo-prometheus-operator v0.75.2-rhobs1

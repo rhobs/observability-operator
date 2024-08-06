@@ -146,7 +146,7 @@ func (f *Framework) AssertStatefulsetReady(name, namespace string, fns ...Option
 			err := f.K8sClient.Get(context.Background(), key, pod)
 			return err == nil && pod.Status.ReadyReplicas == *pod.Spec.Replicas, nil
 		}); err != nil {
-			t.Fatal(err)
+			t.Fatal(fmt.Errorf("statefulset %s was never ready with %v", name, err))
 		}
 	}
 }
