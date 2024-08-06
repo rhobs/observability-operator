@@ -21,6 +21,10 @@ var operatorInstallNS = flag.String("operatorInstallNS", "openshift-operator", "
 var uiPluginInstallNS string
 
 func TestUIPlugin(t *testing.T) {
+	if !f.IsOpenshiftCluster() {
+		t.Skip("The tests are skipped on non-ocp cluster")
+	}
+
 	flag.Parse()
 	uiPluginInstallNS = *operatorInstallNS
 

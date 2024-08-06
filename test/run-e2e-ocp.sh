@@ -146,7 +146,7 @@ main() {
 	install_obo
 
 	local -i ret=0
-	./test/run-e2e.sh --no-deploy --ns "$OPERATORS_NS" --ci  --ocp|| ret=$?
+	./test/run-e2e.sh --no-deploy --ns "$OPERATORS_NS" --ci || ret=$?
 
 	# NOTE: delete_obo will be automatically called when script exits
 	return $ret

@@ -9,7 +9,9 @@ declare -r TEST_RESULT_DIR="/test-run-results"
 main() {
 
 	set -x
-	./e2e.test -test.v 2>"$TEST_RESULT_DIR/errors.log" |
+	# skip UIPlugin related tests for the script is used to test ObO upstream release on ROSA
+	# Upstream ObO release disabled UIPlugin by default
+	./e2e.test -test.v -test.skip UIPlugin 2>"$TEST_RESULT_DIR/errors.log" |
 		tee "$TEST_RESULT_DIR/tests.log" |
 		./go-junit-report -set-exit-code >"$TEST_RESULT_DIR/junit-obo.xml"
 
