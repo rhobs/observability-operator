@@ -42,6 +42,8 @@ func newAlertmanager(
 			Replicas:                   &replicas,
 			ServiceAccountName:         rbacResourceName,
 			AlertmanagerConfigSelector: resourceSelector,
+			NodeSelector:               ms.Spec.NodeSelector,
+			Tolerations:                ms.Spec.Tolerations,
 			Affinity: &corev1.Affinity{
 				PodAntiAffinity: &corev1.PodAntiAffinity{
 					RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
