@@ -14,7 +14,7 @@ require (
 	github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.75.2-rhobs1
 	go.uber.org/zap v1.27.0
 	golang.org/x/exp v0.0.0-20240613232115-7f521ea00fb8
-	golang.org/x/mod v0.19.0
+	golang.org/x/mod v0.20.0
 	gopkg.in/yaml.v3 v3.0.1
 	gotest.tools/v3 v3.5.1
 	k8s.io/api v0.30.3
