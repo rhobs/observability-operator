@@ -199,6 +199,9 @@ type AlertmanagerConfig struct {
 	// +optional
 	// +kubebuilder:default=false
 	Disabled bool `json:"disabled,omitempty"`
+	// Configure TLS options for the Alertmanager web server.
+	// +optional
+	WebTLSConfig *WebTLSConfig `json:"webTLSConfig,omitempty"`
 }
 
 // NamespaceSelector is a selector for selecting either all namespaces or a
@@ -268,4 +271,29 @@ type ThanosQuerierSpec struct {
 // ThanosQuerierStatus defines the observed state of ThanosQuerier.
 // It should always be reconstructable from the state of the cluster and/or outside world.
 type ThanosQuerierStatus struct {
+}
+
+// SecretKeySelector selects a key of a secret.
+type SecretKeySelector struct {
+	// The name of the secret in the object's namespace to select from.
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:Required
+	Name string `json:"name"`
+	// The key of the secret to select from.  Must be a valid secret key.
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:Required
+	Key string `json:"key"`
+}
+
+// WebTLSConfig contains configuration to enable TLS on web endpoints.
+type WebTLSConfig struct {
+	// Reference to the TLS private key for the web server.
+	// +kubebuilder:validation:Required
+	PrivateKey SecretKeySelector `json:"privateKey"`
+	// Reference to the TLS public certificate for the web server.
+	// +kubebuilder:validation:Required
+	Certificate SecretKeySelector `json:"certificate"`
+	// Reference to the root Certificate Authority used to verify the web server's certificate.
+	// +kubebuilder:validation:Required
+	CertificateAuthority SecretKeySelector `json:"certificateAuthority"`
 }

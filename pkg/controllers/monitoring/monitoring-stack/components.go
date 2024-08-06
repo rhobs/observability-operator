@@ -215,6 +215,19 @@ func newPrometheus(
 				},
 			},
 		}
+		if ms.Spec.AlertmanagerConfig.WebTLSConfig != nil {
+			caSecret := ms.Spec.AlertmanagerConfig.WebTLSConfig.CertificateAuthority
+
+			prometheus.Spec.Secrets = append(prometheus.Spec.Secrets, caSecret.Name)
+
+			prometheus.Spec.Alerting.Alertmanagers[0].Scheme = "https"
+			prometheus.Spec.Alerting.Alertmanagers[0].TLSConfig = &monv1.TLSConfig{
+				SafeTLSConfig: monv1.SafeTLSConfig{
+					ServerName: ptr.To(ms.Name + "-alertmanager"),
+				},
+				CAFile: "/etc/prometheus/secrets/" + caSecret.Name + "/" + caSecret.Key,
+			}
+		}
 	}
 
 	if config.ScrapeInterval != nil {
@@ -347,6 +360,18 @@ func newThanosSidecarService(ms *stack.MonitoringStack, instanceSelectorKey stri
 }
 
 func newAdditionalScrapeConfigsSecret(ms *stack.MonitoringStack, name string) *corev1.Secret {
+	alertmanagerScheme := "http"
+	alertmanagerTLSConfig := ""
+
+	if ms.Spec.AlertmanagerConfig.WebTLSConfig != nil {
+		amCASecret := ms.Spec.AlertmanagerConfig.WebTLSConfig.CertificateAuthority
+		alertmanagerScheme = "https"
+		alertmanagerTLSConfig = `
+  tls_config:
+    ca_file: /etc/prometheus/secrets/` + amCASecret.Name + `/` + amCASecret.Key + `
+    server_name: ` + ms.Name + `-alertmanager
+`
+	}
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),
@@ -393,7 +418,7 @@ func newAdditionalScrapeConfigsSecret(ms *stack.MonitoringStack, name string) *c
   scrape_interval: 30s
   scrape_timeout: 10s
   metrics_path: /metrics
-  scheme: http
+  scheme: ` + alertmanagerScheme + alertmanagerTLSConfig + `
   follow_redirects: true
   relabel_configs:
   - source_labels:
