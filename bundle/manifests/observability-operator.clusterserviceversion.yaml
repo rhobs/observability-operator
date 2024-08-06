@@ -41,8 +41,8 @@ metadata:
     capabilities: Basic Install
     categories: Monitoring
     certified: "false"
-    containerImage: <IMG_OBSERVABILITY_OPERATOR>
-    createdAt: "2024-08-05T15:42:15Z"
+    containerImage: observability-operator:0.3.4
+    createdAt: "2024-08-06T11:27:09Z"
     description: A Go based Kubernetes operator to setup and manage highly available
       Monitoring Stack using Prometheus, Alertmanager and Thanos Querier.
     operators.operatorframework.io/builder: operator-sdk-v1.34.1
