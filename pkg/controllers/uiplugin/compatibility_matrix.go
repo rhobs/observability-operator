@@ -10,8 +10,10 @@ import (
 )
 
 type CompatibilityEntry struct {
-	PluginType        uiv1alpha1.UIPluginType
+	PluginType uiv1alpha1.UIPluginType
+	// Minimal OpenShift version supporting this plugin (inclusive).
 	MinClusterVersion string
+	// Maximal OpenShift version supporting this plugin (exclusive).
 	MaxClusterVersion string
 	ImageKey          string
 	Features          []string
@@ -27,8 +29,9 @@ var compatibilityMatrix = []CompatibilityEntry{
 	},
 	{
 		PluginType: uiv1alpha1.TypeTroubleshootingPanel,
-		// This plugin requires changes made in the monitoring-plugin for OpenShift 4.16
-		// to render the "Troubleshooting Panel" button on the alert details page.
+		// This plugin requires the monitoring-plugin from OpenShift 4.16 (at
+		// least) to render the "Troubleshooting Panel" button on the alert
+		// details page.
 		MinClusterVersion: "v4.16",
 		MaxClusterVersion: "",
 		ImageKey:          "ui-troubleshooting-panel",
@@ -91,17 +94,21 @@ func lookupImageAndFeatures(pluginType uiv1alpha1.UIPluginType, clusterVersion s
 	}
 
 	for _, entry := range compatibilityMatrix {
-		if entry.PluginType == pluginType {
-			canonicalMinClusterVersion := fmt.Sprintf("%s-0", semver.Canonical(entry.MinClusterVersion))
-			canonicalMaxClusterVersion := semver.Canonical(entry.MaxClusterVersion)
+		if entry.PluginType != pluginType {
+			continue
+		}
 
-			if entry.MaxClusterVersion == "" && semver.Compare(clusterVersion, canonicalMinClusterVersion) >= 0 {
-				return entry, nil
-			} else if semver.Compare(clusterVersion, canonicalMinClusterVersion) >= 0 && semver.Compare(clusterVersion, canonicalMaxClusterVersion) < 0 {
-				return entry, nil
-			}
+		canonicalMinClusterVersion := fmt.Sprintf("%s-0", semver.Canonical(entry.MinClusterVersion))
+		canonicalMaxClusterVersion := semver.Canonical(entry.MaxClusterVersion)
+
+		if entry.MaxClusterVersion == "" && semver.Compare(clusterVersion, canonicalMinClusterVersion) >= 0 {
+			return entry, nil
+		}
+
+		if semver.Compare(clusterVersion, canonicalMinClusterVersion) >= 0 && semver.Compare(clusterVersion, canonicalMaxClusterVersion) < 0 {
+			return entry, nil
 		}
 	}
 
-	return CompatibilityEntry{}, fmt.Errorf("no compatible image found for plugin type %s and cluster version %s", pluginType, clusterVersion)
+	return CompatibilityEntry{}, fmt.Errorf("plugin %q: no compatible image found for cluster version %q", pluginType, clusterVersion)
 }
