@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.5](https://github.com/rhobs/monitoring-stack-operator/commit/) (2024-08-07)
+
+
+### Features
+
+* COO-261: Support tolerations and nodeselector in Monitoringstack ([#540](https://github.com/rhobs/monitoring-stack-operator/issues/540)) ([3f6d6eb](https://github.com/rhobs/monitoring-stack-operator/commit/3f6d6ebc78adc3f6b7be3adc47784b6e838e3b96))
+
+
+### Bug Fixes
+
+* adjust max version semver comparission to avoid excluding valid cluster versions ([#541](https://github.com/rhobs/monitoring-stack-operator/issues/541)) ([daee156](https://github.com/rhobs/monitoring-stack-operator/commit/daee15657d59a34daa178c4c1e1d80a8f34279b2))
+
 ### [0.3.4](https://github.com/rhobs/monitoring-stack-operator/commit/) (2024-07-29)
 
 
