@@ -4,13 +4,48 @@ import (
 	"fmt"
 	"testing"
 
+	"golang.org/x/mod/semver"
 	"gotest.tools/v3/assert"
 
+	"github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 )
 
+// Ensure that all versions parse correctly.
+func TestCompatibilityMatrixVersions(t *testing.T) {
+	for _, v := range compatibilityMatrix {
+		t.Run(string(v.PluginType), func(t *testing.T) {
+			// MinClusterVersion is always required.
+			assert.Assert(t, v.MinClusterVersion != "")
+			assert.Equal(t, semver.IsValid(v.MinClusterVersion), true)
+
+			if v.MaxClusterVersion != "" {
+				assert.Equal(t, semver.IsValid(v.MaxClusterVersion), true)
+			}
+
+			if v.MinClusterVersion != "" && v.MaxClusterVersion != "" {
+				assert.Equal(t, semver.Compare(v.MinClusterVersion, v.MaxClusterVersion), -1)
+			}
+		})
+	}
+}
+
+// Ensure that there's only one empty max version per plugin.
+func TestCompatibilityMatrixMaxVersions(t *testing.T) {
+	cm := map[v1alpha1.UIPluginType]struct{}{}
+	for _, v := range compatibilityMatrix {
+		if v.MaxClusterVersion != "" {
+			continue
+		}
+
+		_, found := cm[v.PluginType]
+		assert.Assert(t, !found, string(v.PluginType))
+		cm[v.PluginType] = struct{}{}
+	}
+}
+
 func TestLookupImageAndFeatures(t *testing.T) {
-	tt := []struct {
+	for _, tc := range []struct {
 		pluginType       uiv1alpha1.UIPluginType
 		clusterVersion   string
 		expectedKey      string
@@ -100,7 +135,7 @@ func TestLookupImageAndFeatures(t *testing.T) {
 			// to render the "Troubleshooting Panel" button on the alert details page.
 			clusterVersion: "4.15",
 			expectedKey:    "",
-			expectedErr:    fmt.Errorf("no compatible image found for plugin type %s and cluster version %s", uiv1alpha1.TypeTroubleshootingPanel, "v4.15"),
+			expectedErr:    fmt.Errorf("plugin %q: no compatible image found for cluster version %q", uiv1alpha1.TypeTroubleshootingPanel, "v4.15"),
 		},
 		{
 			pluginType:     uiv1alpha1.TypeTroubleshootingPanel,
@@ -136,7 +171,7 @@ func TestLookupImageAndFeatures(t *testing.T) {
 			pluginType:     "non-existent-plugin",
 			clusterVersion: "4.24.0-0.nightly-2024-03-11-200348",
 			expectedKey:    "",
-			expectedErr:    fmt.Errorf("no compatible image found for plugin type non-existent-plugin and cluster version v4.24.0-0.nightly-2024-03-11-200348"),
+			expectedErr:    fmt.Errorf(`plugin "non-existent-plugin": no compatible image found for cluster version "v4.24.0-0.nightly-2024-03-11-200348"`),
 		},
 		{
 			pluginType:     uiv1alpha1.TypeDistributedTracing,
@@ -150,21 +185,23 @@ func TestLookupImageAndFeatures(t *testing.T) {
 			expectedKey:    "ui-troubleshooting-panel",
 			expectedErr:    nil,
 		},
-	}
+	} {
+		t.Run(fmt.Sprintf("%s/%s", tc.pluginType, tc.clusterVersion), func(t *testing.T) {
+			info, err := lookupImageAndFeatures(tc.pluginType, tc.clusterVersion)
 
-	for _, tc := range tt {
-		info, err := lookupImageAndFeatures(tc.pluginType, tc.clusterVersion)
+			if tc.expectedErr != nil {
+				assert.Error(t, err, tc.expectedErr.Error())
+				return
+			}
 
-		assert.Equal(t, tc.expectedKey, info.ImageKey)
-
-		if tc.expectedFeatures != nil {
-			assert.DeepEqual(t, tc.expectedFeatures, info.Features)
-		}
-
-		if tc.expectedErr != nil {
-			assert.Error(t, err, tc.expectedErr.Error())
-		} else {
 			assert.NilError(t, err)
-		}
+
+			t.Logf("%s == %s", tc.expectedKey, info.ImageKey)
+			assert.Equal(t, tc.expectedKey, info.ImageKey)
+
+			if tc.expectedFeatures != nil {
+				assert.DeepEqual(t, tc.expectedFeatures, info.Features)
+			}
+		})
 	}
 }
