@@ -355,6 +355,7 @@ rules:
 - apiGroups:
   - tempo.grafana.com
   resources:
+  - tempomonolithics
   - tempostacks
   verbs:
   - list
