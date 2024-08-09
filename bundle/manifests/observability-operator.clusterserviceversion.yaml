@@ -42,7 +42,7 @@ metadata:
     categories: Monitoring
     certified: "false"
     containerImage: observability-operator:0.3.5
-    createdAt: "2024-08-07T10:19:11Z"
+    createdAt: "2024-08-09T13:29:41Z"
     description: A Go based Kubernetes operator to setup and manage highly available
       Monitoring Stack using Prometheus, Alertmanager and Thanos Querier.
     operators.operatorframework.io/builder: operator-sdk-v1.34.1
@@ -618,6 +618,7 @@ spec:
         - apiGroups:
           - tempo.grafana.com
           resources:
+          - tempomonolithics
           - tempostacks
           verbs:
           - list

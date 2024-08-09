@@ -71,7 +71,7 @@ const (
 // +kubebuilder:rbac:groups=config.openshift.io,resources=clusterversions,verbs=get;list;watch
 
 // RBAC for distributed tracing
-// +kubebuilder:rbac:groups=tempo.grafana.com,resources=tempostacks,verbs=list
+// +kubebuilder:rbac:groups=tempo.grafana.com,resources=tempostacks;tempomonolithics,verbs=list
 
 // RBAC for logging view plugin
 // +kubebuilder:rbac:groups=loki.grafana.com,resources=application;infrastructure;audit,verbs=get
