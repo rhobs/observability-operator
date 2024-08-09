@@ -90,7 +90,7 @@ func createDistributedTracingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, 
 				Rules: []rbacv1.PolicyRule{
 					{
 						APIGroups: []string{"tempo.grafana.com"},
-						Resources: []string{"tempostacks"},
+						Resources: []string{"tempostacks", "tempomonolithics"},
 						Verbs:     []string{"list"},
 					},
 				},
