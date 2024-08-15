@@ -16,6 +16,7 @@ import (
 // +k8s:openapi-gen=true
 // +kubebuilder:resource
 // +kubebuilder:subresource:status
+// +kubebuilder:metadata:annotations="observability.openshift.io/api-support=TechPreview"
 type MonitoringStack struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -222,9 +223,10 @@ type NamespaceSelector struct {
 
 // ThanosQuerier outlines the Thanos querier components, managed by this stack
 // +k8s:openapi-gen=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:resource
 // +kubebuilder:subresource:status
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:metadata:annotations="observability.openshift.io/api-support=TechPreview"
 type ThanosQuerier struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
