@@ -188,8 +188,6 @@ github.com/opencontainers/go-digest v1.0.0 h1:apOUWs51W5PlhuyGyz9FCeeBIOUDA/6nW8
 github.com/opencontainers/go-digest v1.0.0/go.mod h1:0JzlMkj0TRzQZfJkVvzbP0HBR3IKzErnv2BNG4W4MAM=
 github.com/openshift/api v0.0.0-20240301093301-ce10821dc999 h1:+S998xHiJApsJZjRAO8wyedU9GfqFd8mtwWly6LqHDo=
 github.com/openshift/api v0.0.0-20240301093301-ce10821dc999/go.mod h1:CxgbWAlvu2iQB0UmKTtRu1YfepRg1/vJ64n2DlIEVz4=
-github.com/openshift/client-go v0.0.0-20240312102544-689ec74ac4b6 h1:Wk2LxLt0ZS9TNMGhmHFeYEH48PeAQUCzaK18YnG+AEQ=
-github.com/openshift/client-go v0.0.0-20240312102544-689ec74ac4b6/go.mod h1:Y5Hp789dTrF6Fq8cA5YQlpwffmlLy8mc2un/CY0cg7Q=
 github.com/opentracing/opentracing-go v1.2.0 h1:uEJPy/1a5RIPAJ0Ov+OIO8OxWu77jEv+1B0VhjKrZUs=
 github.com/opentracing/opentracing-go v1.2.0/go.mod h1:GxEUsuufX4nBwe+T+Wl9TAgYrxe9dPLANfrWvHYVTgc=
 github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c h1:+mdjkGKdHQG3305AYmdv1U2eRNDiU2ErMBj1gwrq8eQ=
