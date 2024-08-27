@@ -481,6 +481,8 @@ entries:
   replaces:  observability-operator.v0.3.6-240813133212
 - name: observability-operator.v0.3.6-240822181511
   replaces:  observability-operator.v0.3.6-240819132053
+- name: observability-operator.v0.3.6-240827174507
+  replaces:  observability-operator.v0.3.6-240822181511
 ### DEVELOPMENT_CHANNEL_MARKER ###
 name: development
 package: observability-operator
@@ -44512,5 +44514,264 @@ relatedImages:
 - image: quay.io/rhobs/observability-operator-bundle:0.3.6-240822181511
   name: ""
 - image: quay.io/rhobs/observability-operator:0.3.6-240822181511
+  name: ""
+schema: olm.bundle
+---
+image: quay.io/rhobs/observability-operator-bundle:0.3.6-240827174507
+name: observability-operator.v0.3.6-240827174507
+package: observability-operator
+properties:
+- type: olm.gvk
+  value:
+    group: monitoring.rhobs
+    kind: Alertmanager
+    version: v1
+- type: olm.gvk
+  value:
+    group: monitoring.rhobs
+    kind: AlertmanagerConfig
+    version: v1alpha1
+- type: olm.gvk
+  value:
+    group: monitoring.rhobs
+    kind: MonitoringStack
+    version: v1alpha1
+- type: olm.gvk
+  value:
+    group: monitoring.rhobs
+    kind: PodMonitor
+    version: v1
+- type: olm.gvk
+  value:
+    group: monitoring.rhobs
+    kind: Probe
+    version: v1
+- type: olm.gvk
+  value:
+    group: monitoring.rhobs
+    kind: Prometheus
+    version: v1
+- type: olm.gvk
+  value:
+    group: monitoring.rhobs
+    kind: PrometheusAgent
+    version: v1alpha1
+- type: olm.gvk
+  value:
+    group: monitoring.rhobs
+    kind: PrometheusRule
+    version: v1
+- type: olm.gvk
+  value:
+    group: monitoring.rhobs
+    kind: ScrapeConfig
+    version: v1alpha1
+- type: olm.gvk
+  value:
+    group: monitoring.rhobs
+    kind: ServiceMonitor
+    version: v1
+- type: olm.gvk
+  value:
+    group: monitoring.rhobs
+    kind: ThanosQuerier
+    version: v1alpha1
+- type: olm.gvk
+  value:
+    group: monitoring.rhobs
+    kind: ThanosRuler
+    version: v1
+- type: olm.gvk
+  value:
+    group: observability.openshift.io
+    kind: UIPlugin
+    version: v1alpha1
+- type: olm.package
+  value:
+    packageName: observability-operator
+    version: 0.3.6-240827174507
+- type: olm.csv.metadata
+  value:
+    annotations:
+      alm-examples: |-
+        [
+          {
+            "apiVersion": "monitoring.rhobs/v1alpha1",
+            "kind": "MonitoringStack",
+            "metadata": {
+              "labels": {
+                "mso": "example"
+              },
+              "name": "sample-monitoring-stack"
+            },
+            "spec": {
+              "logLevel": "debug",
+              "resourceSelector": {
+                "matchLabels": {
+                  "app": "demo"
+                }
+              },
+              "retention": "1d"
+            }
+          },
+          {
+            "apiVersion": "monitoring.rhobs/v1alpha1",
+            "kind": "ThanosQuerier",
+            "metadata": {
+              "name": "example-thanos"
+            },
+            "spec": {
+              "selector": {
+                "matchLabels": {
+                  "mso": "example"
+                }
+              }
+            }
+          }
+        ]
+      capabilities: Basic Install
+      categories: Monitoring
+      certified: "false"
+      containerImage: quay.io/rhobs/observability-operator:0.3.6-240827174507
+      createdAt: "2024-08-27T17:47:20Z"
+      description: A Go based Kubernetes operator to setup and manage highly available
+        Monitoring Stack using Prometheus, Alertmanager and Thanos Querier.
+      operators.operatorframework.io/builder: operator-sdk-v1.34.1
+      operators.operatorframework.io/internal-objects: |-
+        [
+          "prometheuses.monitoring.rhobs", "alertmanagers.monitoring.rhobs",
+          "thanosrulers.monitoring.rhobs"
+        ]
+      operators.operatorframework.io/project_layout: unknown
+      repository: https://github.com/rhobs/observability-operator
+    apiServiceDefinitions: {}
+    crdDescriptions:
+      owned:
+      - description: AlertmanagerConfig configures the Prometheus Alertmanager, specifying
+          how alerts should be grouped, inhibited and notified to external systems
+        displayName: AlertmanagerConfig
+        kind: AlertmanagerConfig
+        name: alertmanagerconfigs.monitoring.rhobs
+        version: v1alpha1
+      - description: Alertmanager describes an Alertmanager cluster
+        displayName: Alertmanager
+        kind: Alertmanager
+        name: alertmanagers.monitoring.rhobs
+        version: v1
+      - description: MonitoringStack is the Schema for the monitoringstacks API
+        displayName: MonitoringStack
+        kind: MonitoringStack
+        name: monitoringstacks.monitoring.rhobs
+        version: v1alpha1
+      - description: PodMonitor defines monitoring for a set of pods
+        displayName: PodMonitor
+        kind: PodMonitor
+        name: podmonitors.monitoring.rhobs
+        version: v1
+      - description: Probe defines monitoring for a set of static targets or ingresses
+        displayName: Probe
+        kind: Probe
+        name: probes.monitoring.rhobs
+        version: v1
+      - description: PrometheusAgent defines a Prometheus agent deployment
+        displayName: PrometheusAgent
+        kind: PrometheusAgent
+        name: prometheusagents.monitoring.rhobs
+        version: v1alpha1
+      - description: Prometheus defines a Prometheus deployment
+        displayName: Prometheus
+        kind: Prometheus
+        name: prometheuses.monitoring.rhobs
+        version: v1
+      - description: PrometheusRule defines recording and alerting rules for a Prometheus
+          instance
+        displayName: PrometheusRule
+        kind: PrometheusRule
+        name: prometheusrules.monitoring.rhobs
+        version: v1
+      - description: ScrapeConfig defines a namespaced Prometheus scrape_config to
+          be aggregated across multiple namespaces into the Prometheus configuration
+        displayName: ScrapeConfig
+        kind: ScrapeConfig
+        name: scrapeconfigs.monitoring.rhobs
+        version: v1alpha1
+      - description: ServiceMonitor defines monitoring for a set of services
+        displayName: ServiceMonitor
+        kind: ServiceMonitor
+        name: servicemonitors.monitoring.rhobs
+        version: v1
+      - description: ThanosQuerier outlines the Thanos querier components, managed
+          by this stack
+        displayName: ThanosQuerier
+        kind: ThanosQuerier
+        name: thanosqueriers.monitoring.rhobs
+        version: v1alpha1
+      - description: ThanosRuler defines a ThanosRuler deployment
+        displayName: ThanosRuler
+        kind: ThanosRuler
+        name: thanosrulers.monitoring.rhobs
+        version: v1
+      - description: UIPlugin defines a console plugin for observability
+        displayName: UIPlugin
+        kind: UIPlugin
+        name: uiplugins.observability.openshift.io
+        version: v1alpha1
+    description: |2+
+
+      Observability Operator is a Go based Kubernetes operator to setup and manage highly available Monitoring stack using Prometheus, Alertmanager and Thanos Querier.
+      ### Supported Features
+      - Setup multiple Highly Available Monitoring stack using Prometheus, Alertmanager and Thanos Querier
+      - Customizable configuration for managing Prometheus deployments
+      - Customizable configuration for managing Alertmanager deployments
+      - Customizable configuration for managing Thanos Querier deployments
+      ### Documentation
+      - **[Documentation](https://github.com/rhobs/observability-operator/tree/main/docs)**
+      - **[Developer Docs](https://github.com/rhobs/observability-operator/blob/main/docs/developer.md)**
+      ### Contributing
+      **[See Contribution Guidelines](https://github.com/rhobs/observability-operator/blob/main/docs/developer.md#contributions)** to contribute to the project by
+      - Raising Bugs and Feature Requests
+      - Fixing Issues by opening a Pull Request
+      - Improving Documentation
+      ###  License
+      Licensed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0)
+
+    displayName: Observability Operator
+    installModes:
+    - supported: false
+      type: OwnNamespace
+    - supported: false
+      type: SingleNamespace
+    - supported: false
+      type: MultiNamespace
+    - supported: true
+      type: AllNamespaces
+    keywords:
+    - observability
+    - monitoring
+    - prometheus
+    - thanos
+    links:
+    - name: Observability Operator
+      url: https://rhobs-handbook.netlify.app/products/observability-operator
+    - name: GitHub
+      url: https://github.com/rhobs/observability-operator
+    maintainers:
+    - email: jfajersk@redhat.com
+      name: Jan Fajerski
+    - email: sthaha@redhat.com
+      name: Sunil Thaha
+    - email: spasquie@redhat.com
+      name: Simon Pasquier
+    maturity: alpha
+    provider:
+      name: Red Hat
+relatedImages:
+- image: quay.io/rhobs/obo-admission-webhook:v0.74.0-rhobs1
+  name: ""
+- image: quay.io/rhobs/obo-prometheus-operator:v0.74.0-rhobs1
+  name: ""
+- image: quay.io/rhobs/observability-operator-bundle:0.3.6-240827174507
+  name: ""
+- image: quay.io/rhobs/observability-operator:0.3.6-240827174507
   name: ""
 schema: olm.bundle
