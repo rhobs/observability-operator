@@ -53,7 +53,7 @@ To enable the troubleshooting panel console plugin, create a `UIPlugin` CR. The 
 apiVersion: observability.openshift.io/v1alpha1
 kind: UIPlugin
 metadata:
-  name: troubleshooting-panel-console-plugin
+  name: troubleshooting-panel
 spec:
   type: TroubleshootingPanel
 ```
@@ -76,7 +76,7 @@ To enable to distributed tracing console plugin, create a `UIPlugin` CR. The fol
 apiVersion: observability.openshift.io/v1alpha1
 kind: UIPlugin
 metadata:
-  name: distributed-tracing-console-plugin
+  name: distributed-tracing
 spec:
   type: DistributedTracing
 ```
