@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0](https://github.com/rhobs/monitoring-stack-operator/commit/) (2024-08-29)
+
+
+### Features
+
+* update RBAC to include listing TempoMonolithic CRs ([#545](https://github.com/rhobs/monitoring-stack-operator/issues/545)) ([3aa199d](https://github.com/rhobs/monitoring-stack-operator/commit/3aa199d90d16143f02e96006b7ec0cf8688680f2))
+
 ### [0.3.5](https://github.com/rhobs/monitoring-stack-operator/commit/) (2024-08-07)
 
 

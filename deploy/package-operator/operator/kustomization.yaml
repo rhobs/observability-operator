@@ -4,7 +4,7 @@ namespace: observability-operator
 images:
 - name: observability-operator
   newName: observability-operator
-  newTag: 0.3.5
+  newTag: 0.4.0
 commonAnnotations:
   package-operator.run/phase: operator
 resources:
