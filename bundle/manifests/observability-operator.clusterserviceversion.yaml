@@ -42,7 +42,7 @@ metadata:
     categories: Monitoring
     certified: "false"
     containerImage: observability-operator:0.3.5
-    createdAt: "2024-08-28T09:55:10Z"
+    createdAt: "2024-08-29T06:39:54Z"
     description: A Go based Kubernetes operator to setup and manage highly available
       Monitoring Stack using Prometheus, Alertmanager and Thanos Querier.
     operators.operatorframework.io/builder: operator-sdk-v1.34.1
@@ -628,7 +628,7 @@ spec:
           app.kubernetes.io/component: controller
           app.kubernetes.io/name: prometheus-operator
           app.kubernetes.io/part-of: observability-operator
-          app.kubernetes.io/version: 0.74.0-rhobs1
+          app.kubernetes.io/version: 0.75.2-rhobs1
         name: obo-prometheus-operator
         spec:
           replicas: 1
@@ -647,7 +647,7 @@ spec:
                 app.kubernetes.io/component: controller
                 app.kubernetes.io/name: prometheus-operator
                 app.kubernetes.io/part-of: observability-operator
-                app.kubernetes.io/version: 0.74.0-rhobs1
+                app.kubernetes.io/version: 0.75.2-rhobs1
             spec:
               affinity:
                 nodeAffinity:
@@ -660,14 +660,14 @@ spec:
               automountServiceAccountToken: true
               containers:
               - args:
-                - --prometheus-config-reloader=quay.io/rhobs/obo-prometheus-config-reloader:v0.74.0-rhobs1
+                - --prometheus-config-reloader=quay.io/rhobs/obo-prometheus-config-reloader:v0.75.2-rhobs1
                 - --prometheus-instance-selector=app.kubernetes.io/managed-by=observability-operator
                 - --alertmanager-instance-selector=app.kubernetes.io/managed-by=observability-operator
                 - --thanos-ruler-instance-selector=app.kubernetes.io/managed-by=observability-operator
                 env:
                 - name: GOGC
                   value: "30"
-                image: quay.io/rhobs/obo-prometheus-operator:v0.74.0-rhobs1
+                image: quay.io/rhobs/obo-prometheus-operator:v0.75.2-rhobs1
                 name: prometheus-operator
                 ports:
                 - containerPort: 8080
@@ -697,7 +697,7 @@ spec:
       - label:
           app.kubernetes.io/name: prometheus-operator-admission-webhook
           app.kubernetes.io/part-of: observability-operator
-          app.kubernetes.io/version: 0.74.0-rhobs1
+          app.kubernetes.io/version: 0.75.2-rhobs1
         name: obo-prometheus-operator-admission-webhook
         spec:
           replicas: 2
@@ -715,7 +715,7 @@ spec:
               labels:
                 app.kubernetes.io/name: prometheus-operator-admission-webhook
                 app.kubernetes.io/part-of: observability-operator
-                app.kubernetes.io/version: 0.74.0-rhobs1
+                app.kubernetes.io/version: 0.75.2-rhobs1
             spec:
               affinity:
                 nodeAffinity:
@@ -740,7 +740,7 @@ spec:
                 - --web.enable-tls=true
                 - --web.cert-file=/tmp/k8s-webhook-server/serving-certs/tls.crt
                 - --web.key-file=/tmp/k8s-webhook-server/serving-certs/tls.key
-                image: quay.io/rhobs/obo-admission-webhook:v0.74.0-rhobs1
+                image: quay.io/rhobs/obo-admission-webhook:v0.75.2-rhobs1
                 name: prometheus-operator-admission-webhook
                 ports:
                 - containerPort: 8443
