@@ -70,12 +70,3 @@ patchesStrategicMerge:
       labels:
         app.kubernetes.io/name: prometheus-operator-admission-webhook
     $patch: delete
-  # patchesJson6902:
-  # - path: patches/admission-webhook-service-namespace.yaml
-  #   target:
-  #     kind: ValidatingWebhookConfiguration
-  #     name: prometheusrules.monitoring.rhobs
-  # - path: patches/admission-webhook-service-namespace.yaml
-  #   target:
-  #     kind: ValidatingWebhookConfiguration
-  #     name: alertmanagerconfigs.monitoring.rhobs

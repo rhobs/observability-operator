@@ -42,14 +42,16 @@ metadata:
     categories: Monitoring
     certified: "false"
     containerImage: observability-operator:0.4.0
-    createdAt: "2024-08-29T09:10:03Z"
+    createdAt: "2024-08-30T12:02:05Z"
     description: A Go based Kubernetes operator to setup and manage highly available
       Monitoring Stack using Prometheus, Alertmanager and Thanos Querier.
     operators.operatorframework.io/builder: operator-sdk-v1.34.1
     operators.operatorframework.io/internal-objects: |-
       [
-        "prometheuses.monitoring.rhobs", "alertmanagers.monitoring.rhobs",
-        "thanosrulers.monitoring.rhobs"
+        "prometheuses.monitoring.rhobs",
+        "alertmanagers.monitoring.rhobs",
+        "thanosrulers.monitoring.rhobs",
+        "prometheusagents.monitoring.rhobs",
       ]
     operators.operatorframework.io/project_layout: unknown
     repository: https://github.com/rhobs/observability-operator
