@@ -28,7 +28,7 @@ To enable the console dashboards plugin, create a `UIPlugin` CR. The following e
 apiVersion: observability.openshift.io/v1alpha1
 kind: UIPlugin
 metadata:
-  name: ui-dashboards
+  name: dashboards
 spec:
   type: Dashboards
 ```
