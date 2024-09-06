@@ -11,8 +11,8 @@ Using the Observability UI, you can install and manage plugins that extend the o
 | __COO Version__ |   __OCP Versions__  | __Dashboards__ | __Distributed Tracing__ | __Logging__ | __Troubleshooting Panel__ |
 | --------------- | ------------------- | -------------- | ----------------------- | ----------- | ------------------------- |
 | 0.2.0           | 4.11                |       ✔        |             ✘           |       ✘     |             ✘             |
-| 0.3.0           | 4.11 - 4.15         |       ✔        |             ✔           |       ✔     |             ✘             |
-| 0.3.0           | 4.16+               |       ✔        |             ✔           |       ✔     |             ✔             |
+| 0.3.0+          | 4.11 - 4.15         |       ✔        |             ✔           |       ✔     |             ✘             |
+| 0.3.0+          | 4.16+               |       ✔        |             ✔           |       ✔     |             ✔             |
 
 Some plugin offer additional features that are available dependant on the cluster version. COO will always deploy all features available for the cluster it is running on.
 
