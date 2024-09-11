@@ -24,9 +24,9 @@ func NewScheme(cfg *OperatorConfiguration) *runtime.Scheme {
 	utilruntime.Must(uiv1alpha1.AddToScheme(scheme))
 
 	if cfg.FeatureGates.OpenShift.Enabled {
-		utilruntime.Must(osv1.AddToScheme(scheme))
-		utilruntime.Must(osv1alpha1.AddToScheme(scheme))
-		utilruntime.Must(operatorv1.AddToScheme(scheme))
+		utilruntime.Must(osv1.Install(scheme))
+		utilruntime.Must(osv1alpha1.Install(scheme))
+		utilruntime.Must(operatorv1.Install(scheme))
 	}
 
 	return scheme
