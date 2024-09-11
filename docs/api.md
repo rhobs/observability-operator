@@ -766,9 +766,7 @@ to a remote endpoint.
         <td>
           Authorization section for the URL.
 
-
 It requires Prometheus >= v2.26.0.
-
 
 Cannot be set at the same time as `sigv4`, `basicAuth`, `oauth2`, or `azureAd`.<br/>
         </td>
@@ -779,9 +777,7 @@ Cannot be set at the same time as `sigv4`, `basicAuth`, `oauth2`, or `azureAd`.<
         <td>
           AzureAD for the URL.
 
-
 It requires Prometheus >= v2.45.0.
-
 
 Cannot be set at the same time as `authorization`, `basicAuth`, `oauth2`, or `sigv4`.<br/>
         </td>
@@ -791,7 +787,6 @@ Cannot be set at the same time as `authorization`, `basicAuth`, `oauth2`, or `si
         <td>object</td>
         <td>
           BasicAuth configuration for the URL.
-
 
 Cannot be set at the same time as `sigv4`, `authorization`, `oauth2`, or `azureAd`.<br/>
         </td>
@@ -803,7 +798,6 @@ Cannot be set at the same time as `sigv4`, `authorization`, `oauth2`, or `azureA
           *Warning: this field shouldn't be used because the token value appears
 in clear-text. Prefer using `authorization`.*
 
-
 Deprecated: this will be removed in a future release.<br/>
         </td>
         <td>false</td>
@@ -812,7 +806,6 @@ Deprecated: this will be removed in a future release.<br/>
         <td>string</td>
         <td>
           File from which to read bearer token for the URL.
-
 
 Deprecated: this will be removed in a future release. Prefer using `authorization`.<br/>
         </td>
@@ -830,7 +823,6 @@ Deprecated: this will be removed in a future release. Prefer using `authorizatio
         <td>
           Configure whether HTTP requests follow HTTP 3xx redirects.
 
-
 It requires Prometheus >= v2.26.0.<br/>
         </td>
         <td>false</td>
@@ -840,7 +832,6 @@ It requires Prometheus >= v2.26.0.<br/>
         <td>
           Custom HTTP headers to be sent along with each remote write request.
 Be aware that headers that are set by Prometheus itself can't be overwritten.
-
 
 It requires Prometheus >= v2.25.0.<br/>
         </td>
@@ -859,7 +850,6 @@ It requires Prometheus >= v2.25.0.<br/>
           The name of the remote write queue, it must be unique if specified. The
 name is used in metrics and logging in order to differentiate queues.
 
-
 It requires Prometheus >= v2.15.0.<br/>
         </td>
         <td>false</td>
@@ -871,7 +861,6 @@ It requires Prometheus >= v2.15.0.<br/>
 that should be excluded from proxying. IP and domain names can
 contain port numbers.
 
-
 It requires Prometheus >= v2.43.0.<br/>
         </td>
         <td>false</td>
@@ -881,9 +870,7 @@ It requires Prometheus >= v2.43.0.<br/>
         <td>
           OAuth2 configuration for the URL.
 
-
 It requires Prometheus >= v2.27.0.
-
 
 Cannot be set at the same time as `sigv4`, `authorization`, `basicAuth`, or `azureAd`.<br/>
         </td>
@@ -895,7 +882,6 @@ Cannot be set at the same time as `sigv4`, `authorization`, `basicAuth`, or `azu
           ProxyConnectHeader optionally specifies headers to send to
 proxies during CONNECT requests.
 
-
 It requires Prometheus >= v2.43.0.<br/>
         </td>
         <td>false</td>
@@ -906,7 +892,6 @@ It requires Prometheus >= v2.43.0.<br/>
           Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).
 If unset, Prometheus uses its default value.
 
-
 It requires Prometheus >= v2.43.0.<br/>
         </td>
         <td>false</td>
@@ -915,7 +900,6 @@ It requires Prometheus >= v2.43.0.<br/>
         <td>string</td>
         <td>
           `proxyURL` defines the HTTP proxy server to use.
-
 
 It requires Prometheus >= v2.43.0.<br/>
         </td>
@@ -942,7 +926,6 @@ It requires Prometheus >= v2.43.0.<br/>
 exemplar-storage itself must be enabled using the `spec.enableFeature`
 option for exemplars to be scraped in the first place.
 
-
 It requires Prometheus >= v2.27.0.<br/>
         </td>
         <td>false</td>
@@ -953,7 +936,6 @@ It requires Prometheus >= v2.27.0.<br/>
           Enables sending of native histograms, also known as sparse histograms
 over remote write.
 
-
 It requires Prometheus >= v2.40.0.<br/>
         </td>
         <td>false</td>
@@ -963,9 +945,7 @@ It requires Prometheus >= v2.40.0.<br/>
         <td>
           Sigv4 allows to configures AWS's Signature Verification 4 for the URL.
 
-
 It requires Prometheus >= v2.26.0.
-
 
 Cannot be set at the same time as `authorization`, `basicAuth`, `oauth2`, or `azureAd`.<br/>
         </td>
@@ -995,9 +975,7 @@ Cannot be set at the same time as `authorization`, `basicAuth`, `oauth2`, or `az
 
 Authorization section for the URL.
 
-
 It requires Prometheus >= v2.26.0.
-
 
 Cannot be set at the same time as `sigv4`, `basicAuth`, `oauth2`, or `azureAd`.
 
@@ -1030,9 +1008,7 @@ Cannot be set at the same time as `sigv4`, `basicAuth`, `oauth2`, or `azureAd`.
         <td>
           Defines the authentication type. The value is case-insensitive.
 
-
 "Basic" is not a supported value.
-
 
 Default: "Bearer"<br/>
         </td>
@@ -1072,9 +1048,7 @@ Selects a key of a Secret in the namespace that contains the credentials for aut
 This field is effectively required, but due to backwards compatibility is
 allowed to be empty. Instances of this type with an empty value here are
 almost certainly wrong.
-TODO: Add other useful fields. apiVersion, kind, uid?
-More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
           <br/>
             <i>Default</i>: <br/>
         </td>
@@ -1097,9 +1071,7 @@ TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://git
 
 AzureAD for the URL.
 
-
 It requires Prometheus >= v2.45.0.
-
 
 Cannot be set at the same time as `authorization`, `basicAuth`, `oauth2`, or `sigv4`.
 
@@ -1136,7 +1108,6 @@ Cannot be set at the same time as `oauth` or `sdk`.<br/>
           OAuth defines the oauth config that is being used to authenticate.
 Cannot be set at the same time as `managedIdentity` or `sdk`.
 
-
 It requires Prometheus >= v2.48.0.<br/>
         </td>
         <td>false</td>
@@ -1147,7 +1118,6 @@ It requires Prometheus >= v2.48.0.<br/>
           SDK defines the Azure SDK config that is being used to authenticate.
 See https://learn.microsoft.com/en-us/azure/developer/go/azure-sdk-authentication
 Cannot be set at the same time as `oauth` or `managedIdentity`.
-
 
 It requires Prometheus >= 2.52.0.<br/>
         </td>
@@ -1191,7 +1161,6 @@ Cannot be set at the same time as `oauth` or `sdk`.
 
 OAuth defines the oauth config that is being used to authenticate.
 Cannot be set at the same time as `managedIdentity` or `sdk`.
-
 
 It requires Prometheus >= v2.48.0.
 
@@ -1260,9 +1229,7 @@ It requires Prometheus >= v2.48.0.
 This field is effectively required, but due to backwards compatibility is
 allowed to be empty. Instances of this type with an empty value here are
 almost certainly wrong.
-TODO: Add other useful fields. apiVersion, kind, uid?
-More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
           <br/>
             <i>Default</i>: <br/>
         </td>
@@ -1286,7 +1253,6 @@ TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://git
 SDK defines the Azure SDK config that is being used to authenticate.
 See https://learn.microsoft.com/en-us/azure/developer/go/azure-sdk-authentication
 Cannot be set at the same time as `oauth` or `managedIdentity`.
-
 
 It requires Prometheus >= 2.52.0.
 
@@ -1316,7 +1282,6 @@ It requires Prometheus >= 2.52.0.
 
 
 BasicAuth configuration for the URL.
-
 
 Cannot be set at the same time as `sigv4`, `authorization`, `oauth2`, or `azureAd`.
 
@@ -1381,9 +1346,7 @@ authentication.
 This field is effectively required, but due to backwards compatibility is
 allowed to be empty. Instances of this type with an empty value here are
 almost certainly wrong.
-TODO: Add other useful fields. apiVersion, kind, uid?
-More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
           <br/>
             <i>Default</i>: <br/>
         </td>
@@ -1431,9 +1394,7 @@ authentication.
 This field is effectively required, but due to backwards compatibility is
 allowed to be empty. Instances of this type with an empty value here are
 almost certainly wrong.
-TODO: Add other useful fields. apiVersion, kind, uid?
-More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
           <br/>
             <i>Default</i>: <br/>
         </td>
@@ -1490,9 +1451,7 @@ MetadataConfig configures the sending of series metadata to the remote storage.
 
 OAuth2 configuration for the URL.
 
-
 It requires Prometheus >= v2.27.0.
-
 
 Cannot be set at the same time as `sigv4`, `authorization`, `basicAuth`, or `azureAd`.
 
@@ -1613,9 +1572,7 @@ ConfigMap containing data to use for the targets.
 This field is effectively required, but due to backwards compatibility is
 allowed to be empty. Instances of this type with an empty value here are
 almost certainly wrong.
-TODO: Add other useful fields. apiVersion, kind, uid?
-More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
           <br/>
             <i>Default</i>: <br/>
         </td>
@@ -1662,9 +1619,7 @@ Secret containing data to use for the targets.
 This field is effectively required, but due to backwards compatibility is
 allowed to be empty. Instances of this type with an empty value here are
 almost certainly wrong.
-TODO: Add other useful fields. apiVersion, kind, uid?
-More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
           <br/>
             <i>Default</i>: <br/>
         </td>
@@ -1712,9 +1667,7 @@ client's secret.
 This field is effectively required, but due to backwards compatibility is
 allowed to be empty. Instances of this type with an empty value here are
 almost certainly wrong.
-TODO: Add other useful fields. apiVersion, kind, uid?
-More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
           <br/>
             <i>Default</i>: <br/>
         </td>
@@ -1761,9 +1714,7 @@ SecretKeySelector selects a key of a Secret.
 This field is effectively required, but due to backwards compatibility is
 allowed to be empty. Instances of this type with an empty value here are
 almost certainly wrong.
-TODO: Add other useful fields. apiVersion, kind, uid?
-More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
           <br/>
             <i>Default</i>: <br/>
         </td>
@@ -1858,7 +1809,6 @@ dropping them.<br/>
         <td>
           Retry upon receiving a 429 status code from the remote-write storage.
 
-
 This is an *experimental feature*, it may change in any upcoming release
 in a breaking way.<br/>
         </td>
@@ -1882,9 +1832,7 @@ It requires Prometheus >= v2.50.0.<br/>
 
 Sigv4 allows to configures AWS's Signature Verification 4 for the URL.
 
-
 It requires Prometheus >= v2.26.0.
-
 
 Cannot be set at the same time as `authorization`, `basicAuth`, `oauth2`, or `azureAd`.
 
@@ -1970,9 +1918,7 @@ AccessKey is the AWS API key. If not specified, the environment variable
 This field is effectively required, but due to backwards compatibility is
 allowed to be empty. Instances of this type with an empty value here are
 almost certainly wrong.
-TODO: Add other useful fields. apiVersion, kind, uid?
-More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
           <br/>
             <i>Default</i>: <br/>
         </td>
@@ -2020,9 +1966,7 @@ variable `AWS_SECRET_ACCESS_KEY` is used.
 This field is effectively required, but due to backwards compatibility is
 allowed to be empty. Instances of this type with an empty value here are
 almost certainly wrong.
-TODO: Add other useful fields. apiVersion, kind, uid?
-More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
           <br/>
             <i>Default</i>: <br/>
         </td>
@@ -2179,9 +2123,7 @@ ConfigMap containing data to use for the targets.
 This field is effectively required, but due to backwards compatibility is
 allowed to be empty. Instances of this type with an empty value here are
 almost certainly wrong.
-TODO: Add other useful fields. apiVersion, kind, uid?
-More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
           <br/>
             <i>Default</i>: <br/>
         </td>
@@ -2228,9 +2170,7 @@ Secret containing data to use for the targets.
 This field is effectively required, but due to backwards compatibility is
 allowed to be empty. Instances of this type with an empty value here are
 almost certainly wrong.
-TODO: Add other useful fields. apiVersion, kind, uid?
-More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
           <br/>
             <i>Default</i>: <br/>
         </td>
@@ -2311,9 +2251,7 @@ ConfigMap containing data to use for the targets.
 This field is effectively required, but due to backwards compatibility is
 allowed to be empty. Instances of this type with an empty value here are
 almost certainly wrong.
-TODO: Add other useful fields. apiVersion, kind, uid?
-More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
           <br/>
             <i>Default</i>: <br/>
         </td>
@@ -2360,9 +2298,7 @@ Secret containing data to use for the targets.
 This field is effectively required, but due to backwards compatibility is
 allowed to be empty. Instances of this type with an empty value here are
 almost certainly wrong.
-TODO: Add other useful fields. apiVersion, kind, uid?
-More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
           <br/>
             <i>Default</i>: <br/>
         </td>
@@ -2409,9 +2345,7 @@ Secret containing the client key file for the targets.
 This field is effectively required, but due to backwards compatibility is
 allowed to be empty. Instances of this type with an empty value here are
 almost certainly wrong.
-TODO: Add other useful fields. apiVersion, kind, uid?
-More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.<br/>
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
           <br/>
             <i>Default</i>: <br/>
         </td>
@@ -2435,7 +2369,6 @@ TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://git
 RelabelConfig allows dynamic rewriting of the label set for targets, alerts,
 scraped samples and remote write samples.
 
-
 More info: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config
 
 <table>
@@ -2453,10 +2386,8 @@ More info: https://prometheus.io/docs/prometheus/latest/configuration/configurat
         <td>
           Action to perform based on the regex matching.
 
-
 `Uppercase` and `Lowercase` actions require Prometheus >= v2.36.0.
 `DropEqual` and `KeepEqual` actions require Prometheus >= v2.41.0.
-
 
 Default: "Replace"<br/>
           <br/>
@@ -2469,7 +2400,6 @@ Default: "Replace"<br/>
         <td>integer</td>
         <td>
           Modulus to take of the hash of the source label values.
-
 
 Only applicable when the action is `HashMod`.<br/>
           <br/>
@@ -2489,7 +2419,6 @@ Only applicable when the action is `HashMod`.<br/>
         <td>
           Replacement value against which a Replace action is performed if the
 regular expression matches.
-
 
 Regex capture groups are available.<br/>
         </td>
@@ -2516,10 +2445,8 @@ configured regular expression.<br/>
         <td>
           Label to which the resulting string is written in a replacement.
 
-
 It is mandatory for `Replace`, `HashMod`, `Lowercase`, `Uppercase`,
 `KeepEqual` and `DropEqual` actions.
-
 
 Regex capture groups are available.<br/>
         </td>
@@ -2635,10 +2562,8 @@ Define resources requests and limits for Monitoring Stack Pods.
           Claims lists the names of resources, defined in spec.resourceClaims,
 that are used by this container.
 
-
 This is an alpha field and requires enabling the
 DynamicResourceAllocation feature gate.
-
 
 This field is immutable. It can only be set for containers.<br/>
         </td>
@@ -3193,7 +3118,6 @@ UIPluginSpec is the specification for desired state of UIPlugin.
         <td>
           Logging contains configuration for the logging console plugin.
 
-
 It only applies to UIPlugin Type: Logging.<br/>
         </td>
         <td>false</td>
@@ -3229,7 +3153,6 @@ Deployment allows customizing aspects of the generated deployment hosting the UI
         <td>map[string]string</td>
         <td>
           Define a label-selector for nodes which the Pods should be scheduled on.
-
 
 When no selector is specified it will default to a value only selecting Linux nodes ("kubernetes.io/os=linux").<br/>
         </td>
@@ -3334,7 +3257,6 @@ DistributedTracing contains configuration for the distributed tracing console pl
         <td>
           Timeout is the maximum duration before a query timeout.
 
-
 The value is expected to be a sequence of digits followed by a unit suffix, which can be 's' (seconds)
 or 'm' (minutes).<br/>
         </td>
@@ -3349,7 +3271,6 @@ or 'm' (minutes).<br/>
 
 
 Logging contains configuration for the logging console plugin.
-
 
 It only applies to UIPlugin Type: Logging.
 
@@ -3385,7 +3306,6 @@ It always references a LokiStack in the "openshift-logging" namespace.<br/>
         <td>string</td>
         <td>
           Timeout is the maximum duration before a query timeout.
-
 
 The value is expected to be a sequence of digits followed by an optional unit suffix, which can be 's' (seconds)
 or 'm' (minutes). If the unit is omitted, it defaults to seconds.<br/>
@@ -3444,7 +3364,6 @@ TroubleshootingPanel contains configuration for the troubleshooting console plug
         <td>string</td>
         <td>
           Timeout is the maximum duration before a query timeout.
-
 
 The value is expected to be a sequence of digits followed by a unit suffix, which can be 's' (seconds)
 or 'm' (minutes).<br/>

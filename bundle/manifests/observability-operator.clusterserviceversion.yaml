@@ -42,10 +42,10 @@ metadata:
     categories: Monitoring
     certified: "false"
     containerImage: observability-operator:0.4.0
-    createdAt: "2024-08-30T12:02:05Z"
+    createdAt: "2024-09-18T08:54:53Z"
     description: A Go based Kubernetes operator to setup and manage highly available
       Monitoring Stack using Prometheus, Alertmanager and Thanos Querier.
-    operators.operatorframework.io/builder: operator-sdk-v1.34.1
+    operators.operatorframework.io/builder: operator-sdk-v1.36.1
     operators.operatorframework.io/internal-objects: |-
       [
         "prometheuses.monitoring.rhobs",
@@ -273,6 +273,20 @@ spec:
           - ""
           resources:
           - configmaps
+          - secrets
+          - serviceaccounts
+          - services
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
           - endpoints
           - events
           - namespaces
@@ -281,55 +295,14 @@ spec:
           - persistentvolumes
           - pods
           - replicationcontrollers
-          - secrets
-          - serviceaccounts
-          - services
           verbs:
           - get
           - list
-          - watch
-        - apiGroups:
-          - ""
-          resources:
-          - configmaps
-          - serviceaccounts
-          - services
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - ""
-          resources:
-          - endpoints
-          - pods
-          - services
-          verbs:
-          - get
-          - list
-          - watch
-        - apiGroups:
-          - ""
-          resources:
-          - secrets
-          - serviceaccounts
-          - services
-          verbs:
-          - create
-          - delete
-          - list
-          - patch
-          - update
           - watch
         - apiGroups:
           - apps
           resources:
           - daemonsets
-          - deployments
           - replicasets
           - statefulsets
           verbs:
@@ -343,6 +316,7 @@ spec:
           verbs:
           - create
           - delete
+          - get
           - list
           - patch
           - update
@@ -385,18 +359,6 @@ spec:
           - update
           - watch
         - apiGroups:
-          - ""
-          resources:
-          - serviceaccounts
-          - services
-          verbs:
-          - create
-          - delete
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
           - extensions
           - networking.k8s.io
           resources:
@@ -405,14 +367,6 @@ spec:
           - get
           - list
           - watch
-        - apiGroups:
-          - loki.grafana.com
-          resources:
-          - application
-          - audit
-          - infrastructure
-          verbs:
-          - get
         - apiGroups:
           - loki.grafana.com
           resources:
@@ -447,6 +401,7 @@ spec:
           - alertmanagers
           - prometheuses
           - servicemonitors
+          - thanosqueriers
           verbs:
           - create
           - delete
@@ -472,35 +427,6 @@ spec:
           verbs:
           - get
           - update
-        - apiGroups:
-          - monitoring.rhobs
-          resources:
-          - monitoringstacks/status
-          verbs:
-          - get
-          - update
-        - apiGroups:
-          - monitoring.rhobs
-          resources:
-          - servicemonitors
-          verbs:
-          - create
-          - delete
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - monitoring.rhobs
-          resources:
-          - thanosqueriers
-          verbs:
-          - create
-          - delete
-          - list
-          - patch
-          - update
-          - watch
         - apiGroups:
           - monitoring.rhobs
           resources:
@@ -545,13 +471,6 @@ spec:
           - get
           - update
         - apiGroups:
-          - observability.openshift.io
-          resources:
-          - uiplugins/status
-          verbs:
-          - get
-          - update
-        - apiGroups:
           - operator.openshift.io
           resources:
           - consoles
@@ -583,18 +502,6 @@ spec:
           - create
           - delete
           - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - rbac.authorization.k8s.io
-          resources:
-          - rolebindings
-          - roles
-          verbs:
-          - create
-          - delete
           - list
           - patch
           - update

@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: v0.16.2
     observability.openshift.io/api-support: TechPreview
   name: monitoringstacks.monitoring.rhobs
 spec:
@@ -342,9 +342,7 @@ spec:
                           description: |-
                             Authorization section for the URL.
 
-
                             It requires Prometheus >= v2.26.0.
-
 
                             Cannot be set at the same time as `sigv4`, `basicAuth`, `oauth2`, or `azureAd`.
                           properties:
@@ -363,9 +361,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                                 optional:
                                   description: Specify whether the Secret or its key
@@ -383,9 +379,7 @@ spec:
                               description: |-
                                 Defines the authentication type. The value is case-insensitive.
 
-
                                 "Basic" is not a supported value.
-
 
                                 Default: "Bearer"
                               type: string
@@ -394,9 +388,7 @@ spec:
                           description: |-
                             AzureAD for the URL.
 
-
                             It requires Prometheus >= v2.45.0.
-
 
                             Cannot be set at the same time as `authorization`, `basicAuth`, `oauth2`, or `sigv4`.
                           properties:
@@ -424,7 +416,6 @@ spec:
                                 OAuth defines the oauth config that is being used to authenticate.
                                 Cannot be set at the same time as `managedIdentity` or `sdk`.
 
-
                                 It requires Prometheus >= v2.48.0.
                               properties:
                                 clientId:
@@ -450,9 +441,7 @@ spec:
                                         This field is effectively required, but due to backwards compatibility is
                                         allowed to be empty. Instances of this type with an empty value here are
                                         almost certainly wrong.
-                                        TODO: Add other useful fields. apiVersion, kind, uid?
                                         More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                        TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                       type: string
                                     optional:
                                       description: Specify whether the Secret or its
@@ -480,7 +469,6 @@ spec:
                                 See https://learn.microsoft.com/en-us/azure/developer/go/azure-sdk-authentication
                                 Cannot be set at the same time as `oauth` or `managedIdentity`.
 
-
                                 It requires Prometheus >= 2.52.0.
                               properties:
                                 tenantId:
@@ -494,7 +482,6 @@ spec:
                         basicAuth:
                           description: |-
                             BasicAuth configuration for the URL.
-
 
                             Cannot be set at the same time as `sigv4`, `authorization`, `oauth2`, or `azureAd`.
                           properties:
@@ -514,9 +501,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                                 optional:
                                   description: Specify whether the Secret or its key
@@ -542,9 +527,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                                 optional:
                                   description: Specify whether the Secret or its key
@@ -560,13 +543,11 @@ spec:
                             *Warning: this field shouldn't be used because the token value appears
                             in clear-text. Prefer using `authorization`.*
 
-
                             Deprecated: this will be removed in a future release.
                           type: string
                         bearerTokenFile:
                           description: |-
                             File from which to read bearer token for the URL.
-
 
                             Deprecated: this will be removed in a future release. Prefer using `authorization`.
                           type: string
@@ -577,7 +558,6 @@ spec:
                           description: |-
                             Configure whether HTTP requests follow HTTP 3xx redirects.
 
-
                             It requires Prometheus >= v2.26.0.
                           type: boolean
                         headers:
@@ -586,7 +566,6 @@ spec:
                           description: |-
                             Custom HTTP headers to be sent along with each remote write request.
                             Be aware that headers that are set by Prometheus itself can't be overwritten.
-
 
                             It requires Prometheus >= v2.25.0.
                           type: object
@@ -609,7 +588,6 @@ spec:
                             The name of the remote write queue, it must be unique if specified. The
                             name is used in metrics and logging in order to differentiate queues.
 
-
                             It requires Prometheus >= v2.15.0.
                           type: string
                         noProxy:
@@ -618,16 +596,13 @@ spec:
                             that should be excluded from proxying. IP and domain names can
                             contain port numbers.
 
-
                             It requires Prometheus >= v2.43.0.
                           type: string
                         oauth2:
                           description: |-
                             OAuth2 configuration for the URL.
 
-
                             It requires Prometheus >= v2.27.0.
-
 
                             Cannot be set at the same time as `sigv4`, `authorization`, `basicAuth`, or `azureAd`.
                           properties:
@@ -650,9 +625,7 @@ spec:
                                         This field is effectively required, but due to backwards compatibility is
                                         allowed to be empty. Instances of this type with an empty value here are
                                         almost certainly wrong.
-                                        TODO: Add other useful fields. apiVersion, kind, uid?
                                         More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                        TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                       type: string
                                     optional:
                                       description: Specify whether the ConfigMap or
@@ -677,9 +650,7 @@ spec:
                                         This field is effectively required, but due to backwards compatibility is
                                         allowed to be empty. Instances of this type with an empty value here are
                                         almost certainly wrong.
-                                        TODO: Add other useful fields. apiVersion, kind, uid?
                                         More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                        TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                       type: string
                                     optional:
                                       description: Specify whether the Secret or its
@@ -706,9 +677,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                                 optional:
                                   description: Specify whether the Secret or its key
@@ -757,9 +726,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                                 optional:
                                   description: Specify whether the Secret or its key
@@ -774,7 +741,6 @@ spec:
                             ProxyConnectHeader optionally specifies headers to send to
                             proxies during CONNECT requests.
 
-
                             It requires Prometheus >= v2.43.0.
                           type: object
                           x-kubernetes-map-type: atomic
@@ -783,13 +749,11 @@ spec:
                             Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).
                             If unset, Prometheus uses its default value.
 
-
                             It requires Prometheus >= v2.43.0.
                           type: boolean
                         proxyUrl:
                           description: |-
                             `proxyURL` defines the HTTP proxy server to use.
-
 
                             It requires Prometheus >= v2.43.0.
                           pattern: ^http(s)?://.+$
@@ -837,7 +801,6 @@ spec:
                               description: |-
                                 Retry upon receiving a 429 status code from the remote-write storage.
 
-
                                 This is an *experimental feature*, it may change in any upcoming release
                                 in a breaking way.
                               type: boolean
@@ -858,7 +821,6 @@ spec:
                             exemplar-storage itself must be enabled using the `spec.enableFeature`
                             option for exemplars to be scraped in the first place.
 
-
                             It requires Prometheus >= v2.27.0.
                           type: boolean
                         sendNativeHistograms:
@@ -866,16 +828,13 @@ spec:
                             Enables sending of native histograms, also known as sparse histograms
                             over remote write.
 
-
                             It requires Prometheus >= v2.40.0.
                           type: boolean
                         sigv4:
                           description: |-
                             Sigv4 allows to configures AWS's Signature Verification 4 for the URL.
 
-
                             It requires Prometheus >= v2.26.0.
-
 
                             Cannot be set at the same time as `authorization`, `basicAuth`, `oauth2`, or `azureAd`.
                           properties:
@@ -895,9 +854,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                                 optional:
                                   description: Specify whether the Secret or its key
@@ -935,9 +892,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                                 optional:
                                   description: Specify whether the Secret or its key
@@ -969,9 +924,7 @@ spec:
                                         This field is effectively required, but due to backwards compatibility is
                                         allowed to be empty. Instances of this type with an empty value here are
                                         almost certainly wrong.
-                                        TODO: Add other useful fields. apiVersion, kind, uid?
                                         More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                        TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                       type: string
                                     optional:
                                       description: Specify whether the ConfigMap or
@@ -996,9 +949,7 @@ spec:
                                         This field is effectively required, but due to backwards compatibility is
                                         allowed to be empty. Instances of this type with an empty value here are
                                         almost certainly wrong.
-                                        TODO: Add other useful fields. apiVersion, kind, uid?
                                         More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                        TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                       type: string
                                     optional:
                                       description: Specify whether the Secret or its
@@ -1031,9 +982,7 @@ spec:
                                         This field is effectively required, but due to backwards compatibility is
                                         allowed to be empty. Instances of this type with an empty value here are
                                         almost certainly wrong.
-                                        TODO: Add other useful fields. apiVersion, kind, uid?
                                         More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                        TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                       type: string
                                     optional:
                                       description: Specify whether the ConfigMap or
@@ -1058,9 +1007,7 @@ spec:
                                         This field is effectively required, but due to backwards compatibility is
                                         allowed to be empty. Instances of this type with an empty value here are
                                         almost certainly wrong.
-                                        TODO: Add other useful fields. apiVersion, kind, uid?
                                         More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                        TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                       type: string
                                     optional:
                                       description: Specify whether the Secret or its
@@ -1097,9 +1044,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                                 optional:
                                   description: Specify whether the Secret or its key
@@ -1123,7 +1068,6 @@ spec:
                               RelabelConfig allows dynamic rewriting of the label set for targets, alerts,
                               scraped samples and remote write samples.
 
-
                               More info: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config
                             properties:
                               action:
@@ -1131,10 +1075,8 @@ spec:
                                 description: |-
                                   Action to perform based on the regex matching.
 
-
                                   `Uppercase` and `Lowercase` actions require Prometheus >= v2.36.0.
                                   `DropEqual` and `KeepEqual` actions require Prometheus >= v2.41.0.
-
 
                                   Default: "Replace"
                                 enum:
@@ -1165,7 +1107,6 @@ spec:
                                 description: |-
                                   Modulus to take of the hash of the source label values.
 
-
                                   Only applicable when the action is `HashMod`.
                                 format: int64
                                 type: integer
@@ -1177,7 +1118,6 @@ spec:
                                 description: |-
                                   Replacement value against which a Replace action is performed if the
                                   regular expression matches.
-
 
                                   Regex capture groups are available.
                                 type: string
@@ -1201,10 +1141,8 @@ spec:
                                 description: |-
                                   Label to which the resulting string is written in a replacement.
 
-
                                   It is mandatory for `Replace`, `HashMod`, `Lowercase`, `Uppercase`,
                                   `KeepEqual` and `DropEqual` actions.
-
 
                                   Regex capture groups are available.
                                 type: string
@@ -1292,10 +1230,8 @@ spec:
                       Claims lists the names of resources, defined in spec.resourceClaims,
                       that are used by this container.
 
-
                       This is an alpha field and requires enabling the
                       DynamicResourceAllocation feature gate.
-
 
                       This field is immutable. It can only be set for containers.
                     items:
