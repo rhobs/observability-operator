@@ -17,6 +17,7 @@ import (
 type UIPluginInfo struct {
 	Image               string
 	Korrel8rImage       string
+	IncidentsImage      string
 	LokiServiceNames    map[string]string
 	Name                string
 	ConsoleName         string
@@ -131,6 +132,8 @@ func PluginInfoBuilder(ctx context.Context, k client.Client, plugin *uiv1alpha1.
 		if err != nil {
 			return nil, err
 		}
+
+		pluginInfo.IncidentsImage = pluginConf.Images["incidents"]
 
 		pluginInfo.Korrel8rImage = pluginConf.Images["korrel8r"]
 		pluginInfo.LokiServiceNames[OpenshiftLoggingNs], err = getLokiServiceName(ctx, k, OpenshiftLoggingNs)

@@ -109,6 +109,18 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 		}
 	}
 
+	isIncidentsEnabled := pluginInfo.IncidentsImage != ""
+	if isIncidentsEnabled {
+		serviceAccountName := plugin.Name + serviceAccountSuffix
+		// components = append(components, reconciler.NewUpdater(newIncidentsClusterRoleBinding(namespace, serviceAccountName, "cluster-monitoring-view", serviceAccountName), plugin))
+		components = append(components, reconciler.NewUpdater(newIncidentsClusterRoleBinding(namespace, serviceAccountName, "system:auth-delegator", serviceAccountName+":system:auth-delegator"), plugin))
+		components = append(components, reconciler.NewUpdater(newIncidentsPrometheusRole(namespace), plugin))
+		components = append(components, reconciler.NewUpdater(newIncidentsPrometheusRoleBinding(namespace), plugin))
+		components = append(components, reconciler.NewUpdater(newIncidentsService(namespace), plugin))
+		components = append(components, reconciler.NewUpdater(newIncidentsDeployment(namespace, serviceAccountName, pluginInfo), plugin))
+		components = append(components, reconciler.NewUpdater(newIncidentsServiceMonitor(namespace), plugin))
+	}
+
 	return components
 }
 
