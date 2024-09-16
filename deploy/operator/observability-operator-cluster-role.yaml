@@ -83,6 +83,18 @@ rules:
   - update
   - watch
 - apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+- apiGroups:
   - autoscaling
   resources:
   - horizontalpodautoscalers
@@ -175,6 +187,16 @@ rules:
   verbs:
   - create
   - get
+  - update
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - servicemonitors
+  verbs:
+  - create
+  - delete
+  - get
+  - patch
   - update
 - apiGroups:
   - monitoring.rhobs

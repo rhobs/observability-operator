@@ -89,6 +89,11 @@ const (
 //+kubebuilder:rbac:groups=monitoring.coreos.com,resources=prometheuses/api,resourceNames=k8s,verbs=get;create;update
 //+kubebuilder:rbac:groups=monitoring.coreos.com,resources=alertmanagers/api,resourceNames=main,verbs=get;list
 
+// RBAC for Incidents Detection
+//+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
+//+kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=create
+//+kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors,verbs=get;create;update;patch;delete
+
 // RegisterWithManager registers the controller with Manager
 func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 	logger := ctrl.Log.WithName("observability-ui")
