@@ -13,8 +13,10 @@ metadata:
     operators.operatorframework.io/builder: operator-sdk-v1.24.0
     operators.operatorframework.io/internal-objects: |-
       [
-        "prometheuses.monitoring.rhobs", "alertmanagers.monitoring.rhobs",
-        "thanosrulers.monitoring.rhobs"
+        "prometheuses.monitoring.rhobs",
+        "alertmanagers.monitoring.rhobs",
+        "thanosrulers.monitoring.rhobs",
+        "prometheusagents.monitoring.rhobs",
       ]
     repository: 'https://github.com/rhobs/observability-operator'
   name: observability-operator.v0.0.0
