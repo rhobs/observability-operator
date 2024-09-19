@@ -8,6 +8,20 @@ rules:
   - ""
   resources:
   - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - endpoints
   - events
   - namespaces
@@ -16,55 +30,14 @@ rules:
   - persistentvolumes
   - pods
   - replicationcontrollers
-  - secrets
-  - serviceaccounts
-  - services
   verbs:
   - get
   - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
-  - serviceaccounts
-  - services
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - endpoints
-  - pods
-  - services
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - secrets
-  - serviceaccounts
-  - services
-  verbs:
-  - create
-  - delete
-  - list
-  - patch
-  - update
   - watch
 - apiGroups:
   - apps
   resources:
   - daemonsets
-  - deployments
   - replicasets
   - statefulsets
   verbs:
@@ -78,6 +51,7 @@ rules:
   verbs:
   - create
   - delete
+  - get
   - list
   - patch
   - update
@@ -120,18 +94,6 @@ rules:
   - update
   - watch
 - apiGroups:
-  - ""
-  resources:
-  - serviceaccounts
-  - services
-  verbs:
-  - create
-  - delete
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - extensions
   - networking.k8s.io
   resources:
@@ -140,14 +102,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - loki.grafana.com
-  resources:
-  - application
-  - audit
-  - infrastructure
-  verbs:
-  - get
 - apiGroups:
   - loki.grafana.com
   resources:
@@ -182,6 +136,7 @@ rules:
   - alertmanagers
   - prometheuses
   - servicemonitors
+  - thanosqueriers
   verbs:
   - create
   - delete
@@ -207,35 +162,6 @@ rules:
   verbs:
   - get
   - update
-- apiGroups:
-  - monitoring.rhobs
-  resources:
-  - monitoringstacks/status
-  verbs:
-  - get
-  - update
-- apiGroups:
-  - monitoring.rhobs
-  resources:
-  - servicemonitors
-  verbs:
-  - create
-  - delete
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - monitoring.rhobs
-  resources:
-  - thanosqueriers
-  verbs:
-  - create
-  - delete
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - monitoring.rhobs
   resources:
@@ -280,13 +206,6 @@ rules:
   - get
   - update
 - apiGroups:
-  - observability.openshift.io
-  resources:
-  - uiplugins/status
-  verbs:
-  - get
-  - update
-- apiGroups:
   - operator.openshift.io
   resources:
   - consoles
@@ -318,18 +237,6 @@ rules:
   - create
   - delete
   - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - rolebindings
-  - roles
-  verbs:
-  - create
-  - delete
   - list
   - patch
   - update

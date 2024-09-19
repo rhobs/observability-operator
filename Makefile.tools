@@ -8,19 +8,19 @@ TOOLS_DIR = $(shell pwd)/tmp/bin
 # see: .github/tools-cache/action.yaml
 
 CONTROLLER_GEN=$(TOOLS_DIR)/controller-gen
-CONTROLLER_GEN_VERSION= v0.14.0
+CONTROLLER_GEN_VERSION= v0.16.2
 
 KUSTOMIZE=$(TOOLS_DIR)/kustomize
 KUSTOMIZE_VERSION= v4.5.2
 
 OPERATOR_SDK = $(TOOLS_DIR)/operator-sdk
-OPERATOR_SDK_VERSION = v1.34.1
+OPERATOR_SDK_VERSION = v1.36.1
 
 OPM=$(TOOLS_DIR)/opm
-OPM_VERSION = v1.39.0
+OPM_VERSION = v1.47.0
 
 GOLANGCI_LINT=$(TOOLS_DIR)/golangci-lint
-GOLANGCI_LINT_VERSION = v1.55.2
+GOLANGCI_LINT_VERSION = v1.61.0
 
 ## NOTE: promq does not have any releases, so we use a fake version starting with v0.0.1
 # thus to upgrade/invalidate the github cache, increment the value
