@@ -151,15 +151,11 @@ spec:
   - prometheus
   - thanos
   links:
-  - name: Observability Operator
-    url: https://rhobs-handbook.netlify.app/products/observability-operator
   - name: GitHub
     url: https://github.com/rhobs/observability-operator
   maintainers:
   - email: jfajersk@redhat.com
     name: Jan Fajerski
-  - email: sthaha@redhat.com
-    name: Sunil Thaha
   - email: spasquie@redhat.com
     name: Simon Pasquier
   maturity: alpha

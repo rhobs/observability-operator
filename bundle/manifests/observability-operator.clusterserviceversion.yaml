@@ -42,7 +42,7 @@ metadata:
     categories: Monitoring
     certified: "false"
     containerImage: observability-operator:0.4.0
-    createdAt: "2024-09-18T08:56:09Z"
+    createdAt: "2024-09-19T09:20:36Z"
     description: A Go based Kubernetes operator to setup and manage highly available
       Monitoring Stack using Prometheus, Alertmanager and Thanos Querier.
     operators.operatorframework.io/builder: operator-sdk-v1.36.1
@@ -761,15 +761,11 @@ spec:
   - prometheus
   - thanos
   links:
-  - name: Observability Operator
-    url: https://rhobs-handbook.netlify.app/products/observability-operator
   - name: GitHub
     url: https://github.com/rhobs/observability-operator
   maintainers:
   - email: jfajersk@redhat.com
     name: Jan Fajerski
-  - email: sthaha@redhat.com
-    name: Sunil Thaha
   - email: spasquie@redhat.com
     name: Simon Pasquier
   maturity: alpha
