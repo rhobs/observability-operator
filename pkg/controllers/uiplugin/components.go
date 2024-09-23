@@ -332,6 +332,10 @@ func createNodeSelectorAndTolerations(config *uiv1alpha1.DeploymentConfig) (map[
 }
 
 func newService(info UIPluginInfo, namespace string) *corev1.Service {
+	if info.ConsoleName == "monitoring-console-plugin" {
+		return newMonitoringService(info.Name, namespace)
+	}
+
 	annotations := map[string]string{
 		"service.alpha.openshift.io/serving-cert-secret-name": info.Name,
 	}
