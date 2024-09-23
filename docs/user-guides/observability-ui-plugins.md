@@ -7,12 +7,16 @@ Using the Observability UI, you can install and manage plugins that extend the o
 - [dashboards](#dashboards): Add enhanced dashboards to the OpenShift web console. This plugin allows you to add other Prometheus datasources present in the cluster, apart from the in-cluster one, to the default dashboards.
 - [troubleshooting-panel](#troubleshooting-panel): Add the troubleshooting panel to the OpenShift web console. This plugin adds a troubleshooting panel to the console dashboard, which queries and displays results from [Korrel8r](https://github.com/korrel8r/korrel8r) to help troubleshoot issues.
 - [distributed-tracing](#distributed-tracing): Add the Observability > Traces page to the Openshift web console. This plugin allows a user to select a [Tempo](https://docs.openshift.com/container-platform/4.13/observability/distr_tracing/distr_tracing_arch/distr-tracing-architecture.html#distr-tracing-architecture_distributed-tracing-architecture) instance and view trace data from it.
+- [monitoring](#monitoring): Add the a number of Observing pages to the Openshift web related to Alerting. This plugin allows a user to view Alerts, Silences, and Alert rules.
 
-| __COO Version__ |   __OCP Versions__  | __Dashboards__ | __Distributed Tracing__ | __Logging__ | __Troubleshooting Panel__ |
-| --------------- | ------------------- | -------------- | ----------------------- | ----------- | ------------------------- |
-| 0.2.0           | 4.11                |       ✔        |             ✘           |       ✘     |             ✘             |
-| 0.3.0+          | 4.11 - 4.15         |       ✔        |             ✔           |       ✔     |             ✘             |
-| 0.3.0+          | 4.16+               |       ✔        |             ✔           |       ✔     |             ✔             |
+| __COO Version__ |   __OCP Versions__  | __Dashboards__ | __Distributed Tracing__ | __Logging__ | __Troubleshooting Panel__ | __Monitoring__ |
+| --------------- | ------------------- | -------------- | ----------------------- | ----------- | ------------------------- | ---------------|
+| 0.2.0           | 4.11                |       ✔        |             ✘           |       ✘     |             ✘             |       ✘       |
+| 0.3.0+          | 4.11 - 4.15         |       ✔        |             ✔           |       ✔     |             ✘             |       ✘       |
+| 0.3.0 - 0.4.0   | 4.16+               |       ✔        |             ✔           |       ✔     |             ✔             |       ✘       |
+| 1.0.0+          | 4.11 - 4.13         |       ✔        |             ✔           |       ✔     |             ✘             |       ✘       |
+| 1.0.0+          | 4.14 - 4.15         |       ✔        |             ✔           |       ✔     |             ✘             |       ✔       |
+| 1.0.0+          | 4.14+               |       ✔        |             ✔           |       ✔     |             ✔             |       ✔       |
 
 Some plugin offer additional features that are available dependant on the cluster version. COO will always deploy all features available for the cluster it is running on.
 
@@ -129,3 +133,42 @@ spec:
     logsLimit: 50
     timeout: 30s
 ```
+
+### Monitoring
+
+The plugin adds monitoring related UI features to the OpenShift web console, mostly related to the ACM perspective. A number of new pages and features are enabled through this plugin. Including, but not limited to:
+- `ACM > Observe > Alerting`
+- `ACM > Observe > Alerting > Silences`
+- `ACM > Observe > Alerting > Alert rules`
+
+This plugin is only able to be deployed by COO with the `acm-alerting` configuration enabled. Other pages which are typically distributed with the monitoring-plugin, such as `Admin > Observe > Dashboards`, are only available in the monitoring-plugin when deployed through [CMO](https://github.com/openshift/cluster-monitoring-operator).
+
+#### Plugin Creation
+
+To enable to monitoring console plugin, create a `UIPlugin` CR. The following example shows how to create a CR to enable the monitoring console plugin:
+
+```yaml
+apiVersion: observability.openshift.io/v1alpha1
+kind: UIPlugin
+metadata:
+  name: monitoring
+spec:
+  type: Monitoring
+  monitoring:
+    alertmanager:
+      url: 'https://alertmanager.open-cluster-management-observability.svc:9095'
+    thanosQuerier:
+      url: 'https://rbac-query-proxy.open-cluster-management-observability.svc:8443'
+```
+
+#### Feature List
+
+| __Feature__    | __Description__                                                                                                 |
+| -------------- | --------------------------------------------------------------------------------------------------------------- |
+| `acm-alerting` | Adds alerting UI to multi-cluster view. Configures proxies to connect with any alertmanager and thanos-querier. |
+
+#### Feature Matrix
+
+| __COO Version__ |   __OCP Versions__  | __Features__   |
+| --------------- | ------------------- | -------------- |
+| 1.0.0+          | 4.14+               | `acm-alerting` |

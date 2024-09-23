@@ -19,6 +19,7 @@ import (
 // +kubebuilder:validation:XValidation:rule="self.spec.type != 'TroubleshootingPanel' || self.metadata.name == 'troubleshooting-panel'",message="UIPlugin name must be 'troubleshooting-panel' if type is TroubleshootingPanel"
 // +kubebuilder:validation:XValidation:rule="self.spec.type != 'DistributedTracing' || self.metadata.name == 'distributed-tracing'",message="UIPlugin name must be 'distributed-tracing' if type is DistributedTracing"
 // +kubebuilder:validation:XValidation:rule="self.spec.type != 'Dashboards' || self.metadata.name == 'dashboards'",message="UIPlugin name must be 'dashboards' if type is Dashboards"
+// +kubebuilder:validation:XValidation:rule="self.spec.type != 'Monitoring' || self.metadata.name == 'monitoring'",message="UIPlugin name must be 'monitoring' if type is Monitoring"
 type UIPlugin struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -36,7 +37,7 @@ type UIPluginList struct {
 	Items           []UIPlugin `json:"items"`
 }
 
-// +kubebuilder:validation:Enum=Dashboards;TroubleshootingPanel;DistributedTracing;Logging
+// +kubebuilder:validation:Enum=Dashboards;TroubleshootingPanel;DistributedTracing;Logging;Monitoring
 type UIPluginType string
 
 const (
@@ -46,6 +47,8 @@ const (
 	TypeDistributedTracing UIPluginType = "DistributedTracing"
 	// TroubleshootingPanel deploys the Troubleshooting Panel Dynamic Plugin for the OpenShift Console
 	TypeTroubleshootingPanel UIPluginType = "TroubleshootingPanel"
+	// Monitoring deploys the Monitoring Plugin for the OpenShift Console
+	TypeMonitoring UIPluginType = "Monitoring"
 
 	// TypeLogging deploys the Logging View Plugin for OpenShift Console.
 	TypeLogging UIPluginType = "Logging"
@@ -132,6 +135,43 @@ type LokiStackReference struct {
 	Name string `json:"name"`
 }
 
+// MonitoringConfig contains options for configuring the monitoring console plugin.
+type MonitoringConfig struct {
+	// Alertmanager points to the alertmanager instance of which it should create a proxy to.
+	//
+	// +kubebuilder:validation:Required
+	Alertmanager AlertmanagerReference `json:"alertmanager"`
+
+	// ThanosQuerier points to the thanos-querier service of which it should create a proxy to.
+	//
+	// +kubebuilder:validation:Required
+	ThanosQuerier ThanosQuerierReference `json:"thanosQuerier"`
+}
+
+// Alertmanager is used to configure a reference to a alertmanage that should be used
+// by the monitoring console plugin.
+//
+// +structType=atomic
+type AlertmanagerReference struct {
+	// Url of the Alertmanager to proxy to.
+	//
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength:=1
+	Url string `json:"url"`
+}
+
+// ThanosQuerier is used to configure a reference to a thanos-querier service that should be used
+// by the monitoring console plugin.
+//
+// +structType=atomic
+type ThanosQuerierReference struct {
+	// Url of the ThanosQuerier to proxy to.
+	//
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength:=1
+	Url string `json:"url"`
+}
+
 // UIPluginSpec is the specification for desired state of UIPlugin.
 //
 // +kubebuilder:validation:XValidation:rule="self.type == 'TroubleshootingPanel' || !has(self.troubleshootingPanel)", message="Troubleshooting Panel configuration is only supported with the TroubleshootingPanel type"
@@ -164,6 +204,11 @@ type UIPluginSpec struct {
 	//
 	// +kubebuilder:validation:Optional
 	Logging *LoggingConfig `json:"logging,omitempty"`
+
+	// Monitoring contains configuration for the monitoring console plugin.
+	//
+	// +kubebuilder:validation:Optional
+	Monitoring *MonitoringConfig `json:"monitoring,omitempty"`
 }
 
 // UIPluginStatus defines the observed state of UIPlugin.

@@ -176,6 +176,7 @@ func newConsolePlugin(info UIPluginInfo, namespace string) *osv1.ConsolePlugin {
 				},
 			},
 			Proxy: info.Proxies,
+			I18n:  osv1.ConsolePluginI18n{LoadType: osv1.Preload},
 		},
 	}
 }
@@ -332,6 +333,10 @@ func createNodeSelectorAndTolerations(config *uiv1alpha1.DeploymentConfig) (map[
 }
 
 func newService(info UIPluginInfo, namespace string) *corev1.Service {
+	if info.ConsoleName == "monitoring-console-plugin" {
+		return newMonitoringService(info.Name, namespace)
+	}
+
 	annotations := map[string]string{
 		"service.alpha.openshift.io/serving-cert-secret-name": info.Name,
 	}
