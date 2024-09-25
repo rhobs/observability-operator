@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"os/exec"
 	"strings"
@@ -23,6 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/util/cert"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -114,6 +116,9 @@ func TestMonitoringStackController(t *testing.T) {
 	}, {
 		name:     "managed fields in Prometheus object",
 		scenario: assertPrometheusManagedFields,
+	}, {
+		name:     "Prometheus stacks can scrape themselves behind TLS",
+		scenario: assertPrometheusScrapesItselfTLS,
 	}}
 	for _, tc := range ts {
 		t.Run(tc.name, tc.scenario)
@@ -599,7 +604,36 @@ func prometheusScaleDown(t *testing.T) {
 
 func assertPrometheusManagedFields(t *testing.T) {
 	numOfRep := int32(1)
-	ms := newMonitoringStack(t, "prometheus-managed-fields-test")
+
+	monitoringStackName := "prometheus-managed-fields-test"
+	prometheusServiceName := monitoringStackName + "-prometheus"
+
+	certs, key, err := cert.GenerateSelfSignedCertKey(prometheusServiceName, []net.IP{}, []string{})
+	assert.NilError(t, err)
+
+	promKey := string(key)
+	promCerts := strings.SplitAfter(string(certs), "-----END CERTIFICATE-----")
+
+	promTLSSecret := corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "prom-test-managedfields-tls-secret",
+			Namespace: e2eTestNamespace,
+		},
+		StringData: map[string]string{
+			"tls.key": promKey,
+			"tls.crt": promCerts[0],
+			"ca.crt":  promCerts[1],
+		},
+	}
+
+	err = f.K8sClient.Create(context.Background(), &promTLSSecret)
+	assert.NilError(t, err)
+
+	ms := newMonitoringStack(t, monitoringStackName)
 	var scrapeInterval monv1.Duration = "2m"
 	ms.Spec.PrometheusConfig = &stack.PrometheusConfig{
 		Replicas:       &numOfRep,
@@ -618,6 +652,20 @@ func assertPrometheusManagedFields(t *testing.T) {
 		},
 		EnableRemoteWriteReceiver: true,
 		EnableOtlpHttpReceiver:    func(b bool) *bool { return &b }(true),
+		WebTLSConfig: &stack.WebTLSConfig{
+			Certificate: stack.SecretKeySelector{
+				Name: "prom-test-managedfields-tls-secret",
+				Key:  "tls.crt",
+			},
+			PrivateKey: stack.SecretKeySelector{
+				Name: "prom-test-managedfields-tls-secret",
+				Key:  "tls.key",
+			},
+			CertificateAuthority: stack.SecretKeySelector{
+				Name: "prom-test-managedfields-tls-secret",
+				Key:  "ca.crt",
+			},
+		},
 	}
 	ms.Spec.NamespaceSelector = &metav1.LabelSelector{
 		MatchLabels: map[string]string{
@@ -625,7 +673,7 @@ func assertPrometheusManagedFields(t *testing.T) {
 		},
 	}
 
-	err := f.K8sClient.Create(context.Background(), ms)
+	err = f.K8sClient.Create(context.Background(), ms)
 	assert.NilError(t, err, "failed to create a monitoring stack")
 
 	prom := monv1.Prometheus{}
@@ -653,6 +701,107 @@ func assertPrometheusManagedFields(t *testing.T) {
 	_ = json.Unmarshal([]byte(oboManagedFieldsJson), &expected)
 
 	assert.DeepEqual(t, have, expected)
+}
+
+func assertPrometheusScrapesItselfTLS(t *testing.T) {
+	// TODO: Test Alertmanager TLS too once it's available
+	//       how to do this can be partialy seen at:
+	//       https://github.com/vyzigold/observability-operator/commit/adc714f4792654978f02899429e05c4e26a404ef
+
+	monitoringStackName := "self-scrape-tls"
+	prometheusServiceName := monitoringStackName + "-prometheus"
+
+	certs, key, err := cert.GenerateSelfSignedCertKey(prometheusServiceName, []net.IP{}, []string{})
+	assert.NilError(t, err)
+
+	promKey := string(key)
+	promCerts := strings.SplitAfter(string(certs), "-----END CERTIFICATE-----")
+
+	promTLSSecret := corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "prom-test-tls-secret",
+			Namespace: e2eTestNamespace,
+		},
+		StringData: map[string]string{
+			"tls.key": promKey,
+			"tls.crt": promCerts[0],
+			"ca.crt":  promCerts[1],
+		},
+	}
+
+	err = f.K8sClient.Create(context.Background(), &promTLSSecret)
+	assert.NilError(t, err)
+
+	ms := newMonitoringStack(t, monitoringStackName)
+	ms.Spec.PrometheusConfig = &stack.PrometheusConfig{
+		WebTLSConfig: &stack.WebTLSConfig{
+			Certificate: stack.SecretKeySelector{
+				Name: "prom-test-tls-secret",
+				Key:  "tls.crt",
+			},
+			PrivateKey: stack.SecretKeySelector{
+				Name: "prom-test-tls-secret",
+				Key:  "tls.key",
+			},
+			CertificateAuthority: stack.SecretKeySelector{
+				Name: "prom-test-tls-secret",
+				Key:  "ca.crt",
+			},
+		},
+	}
+	err = f.K8sClient.Create(context.Background(), ms)
+	assert.NilError(t, err)
+	f.AssertStatefulsetReady("prometheus-self-scrape-tls", e2eTestNamespace, framework.WithTimeout(5*time.Minute))(t)
+
+	stopChan := make(chan struct{})
+	defer close(stopChan)
+	if err = wait.PollUntilContextTimeout(context.Background(), 5*time.Second, 2*time.Minute, true, func(ctx context.Context) (bool, error) {
+		err = f.StartServicePortForward(prometheusServiceName, e2eTestNamespace, "9090", stopChan)
+		return err == nil, nil
+	}); err != nil {
+		t.Fatal(fmt.Errorf("Failed to poll for port-forward: %w", err))
+	}
+
+	promClient, err := framework.NewTLSPrometheusClient("https://localhost:9090", promCerts[1], prometheusServiceName)
+	expectedResults := map[string]int{
+		"prometheus_build_info":   2, // scrapes from both endpoints
+		"alertmanager_build_info": 2,
+	}
+	if err != nil {
+		t.Fatal(fmt.Errorf("Failed to create prometheus client: %s", err))
+	}
+	if err = wait.PollUntilContextTimeout(context.Background(), 5*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
+		correct := 0
+		for query, value := range expectedResults {
+			result, err := promClient.Query(query)
+			if err != nil {
+				return false, nil
+			}
+
+			if len(result.Data.Result) == 0 {
+				return false, nil
+			}
+
+			if len(result.Data.Result) > value {
+				resultErr := fmt.Errorf("invalid result for query %s, got %d, want %d", query, len(result.Data.Result), value)
+				return true, resultErr
+			}
+
+			if len(result.Data.Result) != value {
+				return false, nil
+			}
+
+			correct++
+		}
+
+		return correct == len(expectedResults), nil
+	}); err != nil {
+		t.Fatal(fmt.Errorf("Could not query prometheus: %w", err))
+	}
 }
 
 // Update this json when a new Prometheus field is set by MonitoringStack
@@ -699,6 +848,7 @@ const oboManagedFieldsJson = `
   "f:scrapeConfigNamespaceSelector": {},
   "f:scrapeConfigSelector": {},
   "f:scrapeInterval": {},
+  "f:secrets": {},
   "f:securityContext": {
     "f:fsGroup": {},
     "f:runAsNonRoot": {},
@@ -721,7 +871,16 @@ const oboManagedFieldsJson = `
     "f:image": {},
     "f:resources": {}
   },
-  "f:tsdb": {}
+  "f:tsdb": {},
+  "f:web": {
+    "f:tlsConfig": {
+      "f:cert": {
+        "f:secret": {}
+      },
+      "f:client_ca": {},
+      "f:keySecret": {}
+    }
+  }
 }
 `
 

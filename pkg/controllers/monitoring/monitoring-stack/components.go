@@ -203,6 +203,33 @@ func newPrometheus(
 		},
 	}
 
+	if ms.Spec.PrometheusConfig.WebTLSConfig != nil {
+		tlsConfig := ms.Spec.PrometheusConfig.WebTLSConfig
+
+		prometheus.Spec.CommonPrometheusFields.Web = &monv1.PrometheusWebSpec{
+			WebConfigFileFields: monv1.WebConfigFileFields{
+				TLSConfig: &monv1.WebTLSConfig{
+					KeySecret: corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: tlsConfig.PrivateKey.Name,
+						},
+						Key: tlsConfig.PrivateKey.Key,
+					},
+					Cert: monv1.SecretOrConfigMap{
+						Secret: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: tlsConfig.Certificate.Name,
+							},
+							Key: tlsConfig.Certificate.Key,
+						},
+					},
+				},
+			},
+		}
+		// Add a CA secret to use later for the self-scraping job
+		prometheus.Spec.Secrets = append(prometheus.Spec.Secrets, tlsConfig.CertificateAuthority.Name)
+	}
+
 	if prometheusCfg.Image != "" {
 		prometheus.Spec.CommonPrometheusFields.Image = ptr.To(prometheusCfg.Image)
 	}
@@ -350,6 +377,18 @@ func newThanosSidecarService(ms *stack.MonitoringStack, instanceSelectorKey stri
 }
 
 func newAdditionalScrapeConfigsSecret(ms *stack.MonitoringStack, name string) *corev1.Secret {
+	prometheusScheme := "http"
+	prometheusTLSConfig := ""
+
+	if ms.Spec.PrometheusConfig.WebTLSConfig != nil {
+		promCASecret := ms.Spec.PrometheusConfig.WebTLSConfig.CertificateAuthority
+		prometheusScheme = "https"
+		prometheusTLSConfig = `
+  tls_config:
+    ca_file: /etc/prometheus/secrets/` + promCASecret.Name + `/` + promCASecret.Key + `
+    server_name: ` + ms.Name + `-prometheus
+`
+	}
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),
@@ -363,6 +402,7 @@ func newAdditionalScrapeConfigsSecret(ms *stack.MonitoringStack, name string) *c
 			AdditionalScrapeConfigsSelfScrapeKey: `
 - job_name: prometheus-self
   honor_labels: true
+  scheme: ` + prometheusScheme + prometheusTLSConfig + `
   relabel_configs:
   - action: keep
     source_labels:
