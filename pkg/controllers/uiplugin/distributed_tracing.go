@@ -34,7 +34,7 @@ func createDistributedTracingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, 
 	pluginInfo := &UIPluginInfo{
 		Image:             image,
 		Name:              plugin.Name,
-		ConsoleName:       "distributed-tracing-console-plugin",
+		ConsoleName:       pluginTypeToConsoleName[plugin.Spec.Type],
 		DisplayName:       "Distributed Tracing Console Plugin",
 		ResourceNamespace: namespace,
 		ExtraArgs:         extraArgs,

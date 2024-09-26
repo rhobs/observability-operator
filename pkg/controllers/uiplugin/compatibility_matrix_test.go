@@ -7,7 +7,6 @@ import (
 	"golang.org/x/mod/semver"
 	"gotest.tools/v3/assert"
 
-	"github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 )
 
@@ -32,7 +31,7 @@ func TestCompatibilityMatrixVersions(t *testing.T) {
 
 // Ensure that there's only one empty max version per plugin.
 func TestCompatibilityMatrixMaxVersions(t *testing.T) {
-	cm := map[v1alpha1.UIPluginType]struct{}{}
+	cm := map[uiv1alpha1.UIPluginType]struct{}{}
 	for _, v := range compatibilityMatrix {
 		if v.MaxClusterVersion != "" {
 			continue
