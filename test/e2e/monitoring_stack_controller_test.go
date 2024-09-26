@@ -796,11 +796,9 @@ func assertPrometheusManagedFields(t *testing.T) {
 }
 
 func assertPrometheusScrapesItselfTLS(t *testing.T) {
-	// TODO: Test Alertmanager TLS too once it's available
-	//       how to do this can be partialy seen at:
-	//       https://github.com/vyzigold/observability-operator/commit/adc714f4792654978f02899429e05c4e26a404ef
-
 	monitoringStackName := "self-scrape-tls"
+
+	// Prometheus TLS secret
 	prometheusServiceName := monitoringStackName + "-prometheus"
 
 	certs, key, err := cert.GenerateSelfSignedCertKey(prometheusServiceName, []net.IP{}, []string{})
@@ -828,6 +826,34 @@ func assertPrometheusScrapesItselfTLS(t *testing.T) {
 	err = f.K8sClient.Create(context.Background(), &promTLSSecret)
 	assert.NilError(t, err)
 
+	// Alertmanager TLS secret
+	alertmanagerServiceName := monitoringStackName + "-alertmanager"
+
+	certs, key, err = cert.GenerateSelfSignedCertKey(alertmanagerServiceName, []net.IP{}, []string{})
+	assert.NilError(t, err)
+
+	amKey := string(key)
+	amCerts := strings.SplitAfter(string(certs), "-----END CERTIFICATE-----")
+
+	amTLSSecret := corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "am-test-tls-secret",
+			Namespace: e2eTestNamespace,
+		},
+		StringData: map[string]string{
+			"tls.key": amKey,
+			"tls.crt": amCerts[0],
+			"ca.crt":  amCerts[1],
+		},
+	}
+
+	err = f.K8sClient.Create(context.Background(), &amTLSSecret)
+	assert.NilError(t, err)
+
 	ms := newMonitoringStack(t, monitoringStackName)
 	ms.Spec.PrometheusConfig = &stack.PrometheusConfig{
 		WebTLSConfig: &stack.WebTLSConfig{
@@ -841,6 +867,22 @@ func assertPrometheusScrapesItselfTLS(t *testing.T) {
 			},
 			CertificateAuthority: stack.SecretKeySelector{
 				Name: "prom-test-tls-secret",
+				Key:  "ca.crt",
+			},
+		},
+	}
+	ms.Spec.AlertmanagerConfig = stack.AlertmanagerConfig{
+		WebTLSConfig: &stack.WebTLSConfig{
+			Certificate: stack.SecretKeySelector{
+				Name: "am-test-tls-secret",
+				Key:  "tls.crt",
+			},
+			PrivateKey: stack.SecretKeySelector{
+				Name: "am-test-tls-secret",
+				Key:  "tls.key",
+			},
+			CertificateAuthority: stack.SecretKeySelector{
+				Name: "am-test-tls-secret",
 				Key:  "ca.crt",
 			},
 		},
