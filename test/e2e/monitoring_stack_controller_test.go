@@ -909,33 +909,29 @@ func assertPrometheusScrapesItselfTLS(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Errorf("Failed to create prometheus client: %s", err))
 	}
+	var pollErr error
 	if err = wait.PollUntilContextTimeout(context.Background(), 5*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
-		correct := 0
 		for query, value := range expectedResults {
 			result, err := promClient.Query(query)
 			if err != nil {
+				pollErr = fmt.Errorf("%q: %w", query, err)
 				return false, nil
 			}
 
 			if len(result.Data.Result) == 0 {
+				pollErr = fmt.Errorf("%q: got empty result", query)
 				return false, nil
-			}
-
-			if len(result.Data.Result) > value {
-				resultErr := fmt.Errorf("invalid result for query %s, got %d, want %d", query, len(result.Data.Result), value)
-				return true, resultErr
 			}
 
 			if len(result.Data.Result) != value {
+				pollErr = fmt.Errorf("%q: expected %d, got %d", query, value, len(result.Data.Result))
 				return false, nil
 			}
-
-			correct++
 		}
 
-		return correct == len(expectedResults), nil
+		return true, nil
 	}); err != nil {
-		t.Fatal(fmt.Errorf("Could not query prometheus: %w", err))
+		t.Fatalf("Could not query prometheus: %v: %v", err, pollErr)
 	}
 }
 
