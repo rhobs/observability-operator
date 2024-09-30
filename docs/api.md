@@ -195,6 +195,156 @@ Define Alertmanager config
             <i>Default</i>: false<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b><a href="#monitoringstackspecalertmanagerconfigwebtlsconfig">webTLSConfig</a></b></td>
+        <td>object</td>
+        <td>
+          Configure TLS options for the Alertmanager web server.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.alertmanagerConfig.webTLSConfig
+<sup><sup>[↩ Parent](#monitoringstackspecalertmanagerconfig)</sup></sup>
+
+
+
+Configure TLS options for the Alertmanager web server.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#monitoringstackspecalertmanagerconfigwebtlsconfigcertificate">certificate</a></b></td>
+        <td>object</td>
+        <td>
+          Reference to the TLS public certificate for the web server.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#monitoringstackspecalertmanagerconfigwebtlsconfigcertificateauthority">certificateAuthority</a></b></td>
+        <td>object</td>
+        <td>
+          Reference to the root Certificate Authority used to verify the web server's certificate.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#monitoringstackspecalertmanagerconfigwebtlsconfigprivatekey">privateKey</a></b></td>
+        <td>object</td>
+        <td>
+          Reference to the TLS private key for the web server.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.alertmanagerConfig.webTLSConfig.certificate
+<sup><sup>[↩ Parent](#monitoringstackspecalertmanagerconfigwebtlsconfig)</sup></sup>
+
+
+
+Reference to the TLS public certificate for the web server.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          The name of the secret in the object's namespace to select from.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.alertmanagerConfig.webTLSConfig.certificateAuthority
+<sup><sup>[↩ Parent](#monitoringstackspecalertmanagerconfigwebtlsconfig)</sup></sup>
+
+
+
+Reference to the root Certificate Authority used to verify the web server's certificate.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          The name of the secret in the object's namespace to select from.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.alertmanagerConfig.webTLSConfig.privateKey
+<sup><sup>[↩ Parent](#monitoringstackspecalertmanagerconfigwebtlsconfig)</sup></sup>
+
+
+
+Reference to the TLS private key for the web server.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          The name of the secret in the object's namespace to select from.<br/>
+        </td>
+        <td>true</td>
       </tr></tbody>
 </table>
 

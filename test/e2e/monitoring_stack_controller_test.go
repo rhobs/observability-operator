@@ -2,6 +2,8 @@ package e2e
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -85,6 +87,9 @@ func TestMonitoringStackController(t *testing.T) {
 	}, {
 		name:     "Alertmanager receives alerts from the Prometheus instance",
 		scenario: assertAlertmanagerReceivesAlerts,
+	}, {
+		name:     "Alertmanager receives alerts from the Prometheus instance when Alertmanager TLS is enabled",
+		scenario: assertAlertmanagerReceivesAlertsTLS,
 	}, {
 		name: "Alertmanager runs in HA mode",
 		scenario: func(t *testing.T) {
@@ -586,6 +591,93 @@ func assertAlertmanagerReceivesAlerts(t *testing.T) {
 	}
 }
 
+func assertAlertmanagerReceivesAlertsTLS(t *testing.T) {
+	monitoringStackName := "alerting-receive-tls"
+	alertmanagerServiceName := monitoringStackName + "-alertmanager"
+
+	certs, key, err := cert.GenerateSelfSignedCertKey(alertmanagerServiceName, []net.IP{}, []string{})
+	assert.NilError(t, err)
+
+	amKey := string(key)
+	amCerts := strings.SplitAfter(string(certs), "-----END CERTIFICATE-----")
+
+	amTLSSecret := corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "am-alerting-receive-tls-secret",
+			Namespace: e2eTestNamespace,
+		},
+		StringData: map[string]string{
+			"tls.key": amKey,
+			"tls.crt": amCerts[0],
+			"ca.crt":  amCerts[1],
+		},
+	}
+
+	err = f.K8sClient.Create(context.Background(), &amTLSSecret)
+	assert.NilError(t, err)
+
+	ms := newMonitoringStack(t, monitoringStackName)
+	ms.Spec.AlertmanagerConfig.WebTLSConfig = &stack.WebTLSConfig{
+		Certificate: stack.SecretKeySelector{
+			Name: "am-alerting-receive-tls-secret",
+			Key:  "tls.crt",
+		},
+		PrivateKey: stack.SecretKeySelector{
+			Name: "am-alerting-receive-tls-secret",
+			Key:  "tls.key",
+		},
+		CertificateAuthority: stack.SecretKeySelector{
+			Name: "am-alerting-receive-tls-secret",
+			Key:  "ca.crt",
+		},
+	}
+	if err := f.K8sClient.Create(context.Background(), ms); err != nil {
+		t.Fatal(err)
+	}
+
+	rule := newAlerts(t)
+	if err := f.K8sClient.Create(context.Background(), rule); err != nil {
+		t.Fatal(err)
+	}
+	f.AssertStatefulsetReady("alertmanager-alerting-receive-tls", e2eTestNamespace, framework.WithTimeout(2*time.Minute))(t)
+
+	stopChan := make(chan struct{})
+	defer close(stopChan)
+	if err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
+		err := f.StartServicePortForward(alertmanagerServiceName, e2eTestNamespace, "9093", stopChan)
+		return err == nil, nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
+		alerts, err := getAlertmanagerAlertsTLS(amCerts[1], alertmanagerServiceName)
+		if err != nil {
+			return false, nil
+		}
+
+		if len(alerts) == 0 {
+			return false, nil
+		}
+
+		if len(alerts) != 1 {
+			return true, fmt.Errorf("too many alerts fired")
+		}
+
+		if alerts[0].Labels["alertname"] == "AlwaysOn" {
+			return true, nil
+		}
+
+		return true, fmt.Errorf("wrong alert firing, got %s, want %s", alerts[0].Labels["alertname"], "AlwaysOn")
+	}); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func prometheusScaleDown(t *testing.T) {
 	numOfRep := int32(1)
 	ms := newMonitoringStack(t, "prometheus-scale-down-test")
@@ -704,11 +796,9 @@ func assertPrometheusManagedFields(t *testing.T) {
 }
 
 func assertPrometheusScrapesItselfTLS(t *testing.T) {
-	// TODO: Test Alertmanager TLS too once it's available
-	//       how to do this can be partialy seen at:
-	//       https://github.com/vyzigold/observability-operator/commit/adc714f4792654978f02899429e05c4e26a404ef
-
 	monitoringStackName := "self-scrape-tls"
+
+	// Prometheus TLS secret
 	prometheusServiceName := monitoringStackName + "-prometheus"
 
 	certs, key, err := cert.GenerateSelfSignedCertKey(prometheusServiceName, []net.IP{}, []string{})
@@ -736,6 +826,34 @@ func assertPrometheusScrapesItselfTLS(t *testing.T) {
 	err = f.K8sClient.Create(context.Background(), &promTLSSecret)
 	assert.NilError(t, err)
 
+	// Alertmanager TLS secret
+	alertmanagerServiceName := monitoringStackName + "-alertmanager"
+
+	certs, key, err = cert.GenerateSelfSignedCertKey(alertmanagerServiceName, []net.IP{}, []string{})
+	assert.NilError(t, err)
+
+	amKey := string(key)
+	amCerts := strings.SplitAfter(string(certs), "-----END CERTIFICATE-----")
+
+	amTLSSecret := corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "am-test-tls-secret",
+			Namespace: e2eTestNamespace,
+		},
+		StringData: map[string]string{
+			"tls.key": amKey,
+			"tls.crt": amCerts[0],
+			"ca.crt":  amCerts[1],
+		},
+	}
+
+	err = f.K8sClient.Create(context.Background(), &amTLSSecret)
+	assert.NilError(t, err)
+
 	ms := newMonitoringStack(t, monitoringStackName)
 	ms.Spec.PrometheusConfig = &stack.PrometheusConfig{
 		WebTLSConfig: &stack.WebTLSConfig{
@@ -749,6 +867,22 @@ func assertPrometheusScrapesItselfTLS(t *testing.T) {
 			},
 			CertificateAuthority: stack.SecretKeySelector{
 				Name: "prom-test-tls-secret",
+				Key:  "ca.crt",
+			},
+		},
+	}
+	ms.Spec.AlertmanagerConfig = stack.AlertmanagerConfig{
+		WebTLSConfig: &stack.WebTLSConfig{
+			Certificate: stack.SecretKeySelector{
+				Name: "am-test-tls-secret",
+				Key:  "tls.crt",
+			},
+			PrivateKey: stack.SecretKeySelector{
+				Name: "am-test-tls-secret",
+				Key:  "tls.key",
+			},
+			CertificateAuthority: stack.SecretKeySelector{
+				Name: "am-test-tls-secret",
 				Key:  "ca.crt",
 			},
 		},
@@ -887,6 +1021,36 @@ const oboManagedFieldsJson = `
 func getAlertmanagerAlerts() ([]alert, error) {
 	client := http.Client{}
 	resp, err := client.Get("http://localhost:9093/api/v2/alerts")
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var alerts []alert
+	if err := json.NewDecoder(resp.Body).Decode(&alerts); err != nil {
+		return nil, err
+	}
+
+	return alerts, nil
+}
+
+func getAlertmanagerAlertsTLS(caCert string, serverName string) ([]alert, error) {
+	ca := x509.NewCertPool()
+	ok := ca.AppendCertsFromPEM([]byte(caCert))
+	if !ok {
+		return nil, fmt.Errorf("failed to parse ca certificate")
+	}
+	tlsConf := tls.Config{
+		RootCAs:    ca,
+		ServerName: serverName,
+	}
+	transport := &http.Transport{
+		TLSClientConfig: &tlsConf,
+	}
+	client := http.Client{
+		Transport: transport,
+	}
+	resp, err := client.Get("https://localhost:9093/api/v2/alerts")
 	if err != nil {
 		return nil, err
 	}
