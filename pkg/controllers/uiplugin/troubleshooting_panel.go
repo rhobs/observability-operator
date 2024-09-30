@@ -40,7 +40,7 @@ func createTroubleshootingPanelPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace
 	pluginInfo := &UIPluginInfo{
 		Image:             image,
 		Name:              plugin.Name,
-		ConsoleName:       "troubleshooting-panel-console-plugin",
+		ConsoleName:       pluginTypeToConsoleName[plugin.Spec.Type],
 		DisplayName:       "Troubleshooting Panel Console Plugin",
 		ResourceNamespace: namespace,
 		LokiServiceNames:  make(map[string]string),

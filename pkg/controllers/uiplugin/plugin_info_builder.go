@@ -32,6 +32,13 @@ type UIPluginInfo struct {
 	ResourceNamespace   string
 }
 
+var pluginTypeToConsoleName = map[uiv1alpha1.UIPluginType]string{
+	uiv1alpha1.TypeDashboards:           "console-dashboards-plugin",
+	uiv1alpha1.TypeTroubleshootingPanel: "console-troubleshooting-plugin",
+	uiv1alpha1.TypeDistributedTracing:   "console-distributed-tracing-plugin",
+	uiv1alpha1.TypeLogging:              "console-logging-plugin",
+}
+
 func PluginInfoBuilder(ctx context.Context, k client.Client, plugin *uiv1alpha1.UIPlugin, pluginConf UIPluginsConfiguration, clusterVersion string) (*UIPluginInfo, error) {
 	compatibilityInfo, err := lookupImageAndFeatures(plugin.Spec.Type, clusterVersion)
 	if err != nil {
@@ -53,7 +60,7 @@ func PluginInfoBuilder(ctx context.Context, k client.Client, plugin *uiv1alpha1.
 		pluginInfo := &UIPluginInfo{
 			Image:             image,
 			Name:              name,
-			ConsoleName:       "console-dashboards-plugin",
+			ConsoleName:       pluginTypeToConsoleName[plugin.Spec.Type],
 			DisplayName:       "Console Enhanced Dashboards",
 			ResourceNamespace: namespace,
 			LegacyProxies: []osv1alpha1.ConsolePluginProxy{

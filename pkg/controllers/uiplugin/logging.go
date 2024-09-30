@@ -48,7 +48,7 @@ func createLoggingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image
 	pluginInfo := &UIPluginInfo{
 		Image:             image,
 		Name:              name,
-		ConsoleName:       "logging-view-plugin",
+		ConsoleName:       pluginTypeToConsoleName[plugin.Spec.Type],
 		DisplayName:       "Logging View",
 		ExtraArgs:         extraArgs,
 		ResourceNamespace: namespace,

@@ -56,7 +56,7 @@ const (
 
 // RBAC for managing UIPlugins
 // +kubebuilder:rbac:groups=observability.openshift.io,resources=uiplugins,verbs=get;list;watch;create;update;delete;patch
-// +kubebuilder:rbac:groups=observability.openshift.io,resources=uiplugins/status,verbs=get;update
+// +kubebuilder:rbac:groups=observability.openshift.io,resources=uiplugins/status;uiplugins/finalizers,verbs=get;update
 
 // RBAC for managing observability ui plugin objects
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=list;watch;create;update;patch;delete
@@ -88,6 +88,8 @@ const (
 //+kubebuilder:rbac:groups=loki.grafana.com,resources=application;infrastructure;audit;network,verbs=get
 //+kubebuilder:rbac:groups=monitoring.coreos.com,resources=prometheuses/api,resourceNames=k8s,verbs=get;create;update
 //+kubebuilder:rbac:groups=monitoring.coreos.com,resources=alertmanagers/api,resourceNames=main,verbs=get;list
+
+const finalizerName = "uiplugin.observability.openshift.io/finalizer"
 
 // RegisterWithManager registers the controller with Manager
 func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
@@ -178,9 +180,33 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, nil
 	}
 
+	// Check if the plugin is being deleted
 	if !plugin.ObjectMeta.DeletionTimestamp.IsZero() {
-		logger.V(6).Info("skipping reconcile since object is already schedule for deletion")
+		logger.V(6).Info("deregistering plugin from the console")
+		if err := rm.deregisterPluginFromConsole(ctx, pluginTypeToConsoleName[plugin.Spec.Type]); err != nil {
+			return ctrl.Result{}, err
+		}
+
+		// Remove finalizer if present
+		if slices.Contains(plugin.ObjectMeta.Finalizers, finalizerName) {
+			plugin.ObjectMeta.Finalizers = slices.DeleteFunc(plugin.ObjectMeta.Finalizers, func(currentFinalizerName string) bool {
+				return currentFinalizerName == finalizerName
+			})
+			if err := rm.k8sClient.Update(ctx, plugin); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+
+		logger.V(6).Info("skipping reconcile since object is already scheduled for deletion")
 		return ctrl.Result{}, nil
+	}
+
+	// Add finalizer if not present
+	if !slices.Contains(plugin.ObjectMeta.Finalizers, finalizerName) {
+		plugin.ObjectMeta.Finalizers = append(plugin.ObjectMeta.Finalizers, finalizerName)
+		if err := rm.k8sClient.Update(ctx, plugin); err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	pluginInfo, err := PluginInfoBuilder(ctx, rm.k8sClient, plugin, rm.pluginConf, rm.clusterVersion)
@@ -274,6 +300,30 @@ func (rm resourceManager) registerPluginWithConsole(ctx context.Context, pluginI
 	clusterPlugins := append(cluster.Spec.Plugins, pluginInfo.ConsoleName)
 
 	// Register the plugin with the console
+	cluster.Spec.Plugins = clusterPlugins
+
+	if err := reconciler.NewMerger(cluster).Reconcile(ctx, rm.k8sClient, rm.scheme); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (rm resourceManager) deregisterPluginFromConsole(ctx context.Context, pluginConsoleName string) error {
+	cluster := &operatorv1.Console{}
+	if err := rm.k8sClient.Get(ctx, client.ObjectKey{Name: "cluster"}, cluster); err != nil {
+		return err
+	}
+
+	if !slices.Contains(cluster.Spec.Plugins, pluginConsoleName) {
+		return nil
+	}
+
+	clusterPlugins := slices.DeleteFunc(cluster.Spec.Plugins, func(currentPluginName string) bool {
+		return currentPluginName == pluginConsoleName
+	})
+
+	// Deregister the plugin from the console
 	cluster.Spec.Plugins = clusterPlugins
 
 	if err := reconciler.NewMerger(cluster).Reconcile(ctx, rm.k8sClient, rm.scheme); err != nil {
