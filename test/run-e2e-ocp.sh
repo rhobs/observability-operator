@@ -46,6 +46,30 @@ install_obo() {
 		subscription.operators.coreos.com observability-operator --timeout=60s
 
 	ok "ObO subscription is ready"
+	wait_for_operators_ready "$OPERATORS_NS"
+
+	enable_ocp
+}
+
+enable_ocp() {
+  # Get ObO CSV json file
+	CSV_NAME=$(oc -n "$OPERATORS_NS" get sub observability-operator -o jsonpath='{.status.installedCSV}')
+	CSV_JSON_FILE=$(mktemp /tmp/"$CSV_NAME".json)
+	if [ -e "$CSV_JSON_FILE" ]; then
+		rm -f "$CSV_JSON_FILE"
+	fi
+	oc -n "$OPERATORS_NS" get csv "${CSV_NAME}" -o json > "$CSV_JSON_FILE"
+	# Update CSV json file to enable OCP mode
+	ARGS_JSON=$(printf '%s\n' "--openshift.enabled=true" | jq -R . | jq -s .)
+	jq --arg container_name operator --argjson args "$ARGS_JSON" '
+      (.spec.install.spec.deployments[].spec.template.spec.containers[] | select(.name == $container_name) | .args) += $args
+    ' "$CSV_JSON_FILE" > /tmp/tmp.$$.json && mv /tmp/tmp.$$.json "$CSV_JSON_FILE"
+  ok "Added arguments to container operator in '$CSV_JSON_FILE'."
+
+	oc apply -f "$CSV_JSON_FILE"
+	rm -f "$CSV_JSON_FILE"
+	oc wait --for=condition=Established crd/uiplugins.observability.openshift.io --timeout=60s
+	ok "Enable OCP mode successfully"
 }
 
 delete_obo() {
@@ -120,7 +144,6 @@ main() {
 
 	cd "$PROJECT_ROOT"
 	install_obo
-	wait_for_operators_ready "$OPERATORS_NS"
 
 	local -i ret=0
 	./test/run-e2e.sh --no-deploy --ns "$OPERATORS_NS" --ci || ret=$?

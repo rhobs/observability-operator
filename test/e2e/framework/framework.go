@@ -23,10 +23,11 @@ import (
 )
 
 type Framework struct {
-	kubernetes kubernetes.Interface
-	Config     *rest.Config
-	K8sClient  client.Client
-	Retain     bool
+	kubernetes         kubernetes.Interface
+	Config             *rest.Config
+	K8sClient          client.Client
+	Retain             bool
+	IsOpenshiftCluster bool
 }
 
 // StartPortForward initiates a port forwarding connection to a pod on the localhost interface.

@@ -155,7 +155,7 @@ run_e2e() {
 	watch_obo_errors "$obo_error_log" &
 
 	local ret=0
-	go test -v -failfast -timeout $TEST_TIMEOUT ./test/e2e/... -run "$RUN_REGEX" -count 1 | tee "$LOGS_DIR/e2e.log" || ret=1
+	go test -v -timeout $TEST_TIMEOUT ./test/e2e/... -run "$RUN_REGEX" -count 1 -args -operatorInstallNS="$OPERATORS_NS" | tee "$LOGS_DIR/e2e.log" || ret=1
 
 	# terminte both log_events
 	{ jobs -p | xargs -I {} -- pkill -TERM -P {}; } || true
@@ -236,7 +236,6 @@ print_usage() {
 		                   for running against openshift use --ns openshift-operators
                   --run REGEX      regex to limit which tests are run. See go help testflag -run entry
                                    for details
-
 
 	EOF_HELP
 

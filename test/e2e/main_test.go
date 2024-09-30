@@ -3,11 +3,14 @@ package e2e
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"testing"
 
+	configv1 "github.com/openshift/api/config/v1"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -83,17 +86,28 @@ func main(m *testing.M) int {
 
 func setupFramework() error {
 	cfg := config.GetConfigOrDie()
+	scheme := operator.NewScheme(&operator.OperatorConfiguration{})
+	err := configv1.Install(scheme)
+	if err != nil {
+		return fmt.Errorf("failed to register configv1 to scheme %w", err)
+	}
 	k8sClient, err := client.New(cfg, client.Options{
-		Scheme: operator.NewScheme(&operator.OperatorConfiguration{}),
+		Scheme: scheme,
 	})
 	if err != nil {
 		return err
 	}
 
+	isOpenshiftCluster, err := isOpenshiftCluster(k8sClient)
+	if err != nil {
+		return err
+	}
+
 	f = &framework.Framework{
-		K8sClient: k8sClient,
-		Config:    cfg,
-		Retain:    *retain,
+		K8sClient:          k8sClient,
+		Config:             cfg,
+		Retain:             *retain,
+		IsOpenshiftCluster: isOpenshiftCluster,
 	}
 
 	return nil
@@ -118,4 +132,16 @@ func createNamespace(name string) (func(), error) {
 	}
 
 	return cleanup, nil
+}
+
+func isOpenshiftCluster(k8sClient client.Client) (bool, error) {
+	clusterVersion := &configv1.ClusterVersion{}
+	err := k8sClient.Get(context.Background(), client.ObjectKey{Name: "version"}, clusterVersion)
+	if err == nil {
+		return true, nil
+	} else if meta.IsNoMatchError(err) {
+		return false, nil
+	} else {
+		return false, fmt.Errorf("failed to get clusterversion %w", err)
+	}
 }
