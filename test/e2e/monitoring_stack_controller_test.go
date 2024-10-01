@@ -790,9 +790,10 @@ func assertPrometheusManagedFields(t *testing.T) {
 	have := objmap["f:spec"]
 
 	var expected map[string]interface{}
-	_ = json.Unmarshal([]byte(oboManagedFieldsJson), &expected)
+	err = json.Unmarshal([]byte(oboManagedFieldsJson), &expected)
+	assert.NilError(t, err)
 
-	assert.DeepEqual(t, have, expected)
+	assert.DeepEqual(t, expected, have)
 }
 
 func assertPrometheusScrapesItselfTLS(t *testing.T) {
@@ -982,7 +983,9 @@ const oboManagedFieldsJson = `
   "f:scrapeConfigNamespaceSelector": {},
   "f:scrapeConfigSelector": {},
   "f:scrapeInterval": {},
-  "f:secrets": {},
+  "f:secrets": {
+    "v:\"prom-test-managedfields-tls-secret\"": {}
+  },
   "f:securityContext": {
     "f:fsGroup": {},
     "f:runAsNonRoot": {},
@@ -1005,7 +1008,6 @@ const oboManagedFieldsJson = `
     "f:image": {},
     "f:resources": {}
   },
-  "f:tsdb": {},
   "f:web": {
     "f:tlsConfig": {
       "f:cert": {
