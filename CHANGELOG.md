@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.4.1](https://github.com/rhobs/monitoring-stack-operator/commit/) (2024-10-02)
+
+
+### Features
+
+* TLS support for the Alertmanager web endpoint ([#495](https://github.com/rhobs/monitoring-stack-operator/issues/495)) ([a6f1387](https://github.com/rhobs/monitoring-stack-operator/commit/a6f13878a5273cc75d4d3b5189fa36565f2617f3))
+* TLS support for the Prometheus web endpoint ([#492](https://github.com/rhobs/monitoring-stack-operator/issues/492)) ([1b494d1](https://github.com/rhobs/monitoring-stack-operator/commit/1b494d17ebaea9f78df772208dc62462820fa53d))
+
+
+### Bug Fixes
+
+* add finalizer to cleanup the console after uiplugin is deleted ([#576](https://github.com/rhobs/monitoring-stack-operator/issues/576)) ([4ce18d9](https://github.com/rhobs/monitoring-stack-operator/commit/4ce18d98ec93542f1bea400ec320f66bf2ceeaa3))
+
 ## [0.4.0](https://github.com/rhobs/monitoring-stack-operator/commit/) (2024-08-29)
 
 
