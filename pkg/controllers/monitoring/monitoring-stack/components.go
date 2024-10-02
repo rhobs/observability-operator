@@ -240,7 +240,7 @@ func newPrometheus(
 				{
 					APIVersion: "v2",
 					Name:       ms.Name + "-alertmanager",
-					Namespace:  ms.Namespace,
+					Namespace:  ptr.To(ms.Namespace),
 					Scheme:     "http",
 					Port:       intstr.FromString("web"),
 				},
