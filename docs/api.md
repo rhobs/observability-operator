@@ -623,7 +623,7 @@ If the resource referred to by volumeAttributesClass does not exist, this Persis
 set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
 exists.
 More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
-(Alpha) Using this field requires the VolumeAttributesClass feature gate to be enabled.<br/>
+(Beta) Using this field requires the VolumeAttributesClass feature gate to be enabled (off by default).<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1018,7 +1018,7 @@ It requires Prometheus >= v2.15.0.<br/>
 that should be excluded from proxying. IP and domain names can
 contain port numbers.
 
-It requires Prometheus >= v2.43.0.<br/>
+It requires Prometheus >= v2.43.0 or Alertmanager >= 0.25.0.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1039,7 +1039,7 @@ Cannot be set at the same time as `sigv4`, `authorization`, `basicAuth`, or `azu
           ProxyConnectHeader optionally specifies headers to send to
 proxies during CONNECT requests.
 
-It requires Prometheus >= v2.43.0.<br/>
+It requires Prometheus >= v2.43.0 or Alertmanager >= 0.25.0.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1047,18 +1047,15 @@ It requires Prometheus >= v2.43.0.<br/>
         <td>boolean</td>
         <td>
           Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).
-If unset, Prometheus uses its default value.
 
-It requires Prometheus >= v2.43.0.<br/>
+It requires Prometheus >= v2.43.0 or Alertmanager >= 0.25.0.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>proxyUrl</b></td>
         <td>string</td>
         <td>
-          `proxyURL` defines the HTTP proxy server to use.
-
-It requires Prometheus >= v2.43.0.<br/>
+          `proxyURL` defines the HTTP proxy server to use.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1653,10 +1650,55 @@ URL.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>noProxy</b></td>
+        <td>string</td>
+        <td>
+          `noProxy` is a comma-separated string that can contain IPs, CIDR notation, domain names
+that should be excluded from proxying. IP and domain names can
+contain port numbers.
+
+It requires Prometheus >= v2.43.0 or Alertmanager >= 0.25.0.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexoauth2proxyconnectheaderkeyindex">proxyConnectHeader</a></b></td>
+        <td>map[string][]object</td>
+        <td>
+          ProxyConnectHeader optionally specifies headers to send to
+proxies during CONNECT requests.
+
+It requires Prometheus >= v2.43.0 or Alertmanager >= 0.25.0.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>proxyFromEnvironment</b></td>
+        <td>boolean</td>
+        <td>
+          Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).
+
+It requires Prometheus >= v2.43.0 or Alertmanager >= 0.25.0.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>proxyUrl</b></td>
+        <td>string</td>
+        <td>
+          `proxyURL` defines the HTTP proxy server to use.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>scopes</b></td>
         <td>[]string</td>
         <td>
           `scopes` defines the OAuth2 scopes used for the token request.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexoauth2tlsconfig">tlsConfig</a></b></td>
+        <td>object</td>
+        <td>
+          TLS configuration to use when connecting to the OAuth2 server.
+It requires Prometheus >= v2.43.0.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1799,6 +1841,434 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
 
 `clientSecret` specifies a key of a Secret containing the OAuth2
 client's secret.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
+          <br/>
+            <i>Default</i>: <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].oauth2.proxyConnectHeader[key][index]
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindexoauth2)</sup></sup>
+
+
+
+SecretKeySelector selects a key of a Secret.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
+          <br/>
+            <i>Default</i>: <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].oauth2.tlsConfig
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindexoauth2)</sup></sup>
+
+
+
+TLS configuration to use when connecting to the OAuth2 server.
+It requires Prometheus >= v2.43.0.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexoauth2tlsconfigca">ca</a></b></td>
+        <td>object</td>
+        <td>
+          Certificate authority used when verifying server certificates.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexoauth2tlsconfigcert">cert</a></b></td>
+        <td>object</td>
+        <td>
+          Client certificate to present when doing client-authentication.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>insecureSkipVerify</b></td>
+        <td>boolean</td>
+        <td>
+          Disable target certificate validation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexoauth2tlsconfigkeysecret">keySecret</a></b></td>
+        <td>object</td>
+        <td>
+          Secret containing the client key file for the targets.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>maxVersion</b></td>
+        <td>enum</td>
+        <td>
+          Maximum acceptable TLS version.
+
+It requires Prometheus >= v2.41.0.<br/>
+          <br/>
+            <i>Enum</i>: TLS10, TLS11, TLS12, TLS13<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>minVersion</b></td>
+        <td>enum</td>
+        <td>
+          Minimum acceptable TLS version.
+
+It requires Prometheus >= v2.35.0.<br/>
+          <br/>
+            <i>Enum</i>: TLS10, TLS11, TLS12, TLS13<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>serverName</b></td>
+        <td>string</td>
+        <td>
+          Used to verify the hostname for the targets.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].oauth2.tlsConfig.ca
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindexoauth2tlsconfig)</sup></sup>
+
+
+
+Certificate authority used when verifying server certificates.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexoauth2tlsconfigcaconfigmap">configMap</a></b></td>
+        <td>object</td>
+        <td>
+          ConfigMap containing data to use for the targets.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexoauth2tlsconfigcasecret">secret</a></b></td>
+        <td>object</td>
+        <td>
+          Secret containing data to use for the targets.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].oauth2.tlsConfig.ca.configMap
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindexoauth2tlsconfigca)</sup></sup>
+
+
+
+ConfigMap containing data to use for the targets.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key to select.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
+          <br/>
+            <i>Default</i>: <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the ConfigMap or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].oauth2.tlsConfig.ca.secret
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindexoauth2tlsconfigca)</sup></sup>
+
+
+
+Secret containing data to use for the targets.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
+          <br/>
+            <i>Default</i>: <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].oauth2.tlsConfig.cert
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindexoauth2tlsconfig)</sup></sup>
+
+
+
+Client certificate to present when doing client-authentication.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexoauth2tlsconfigcertconfigmap">configMap</a></b></td>
+        <td>object</td>
+        <td>
+          ConfigMap containing data to use for the targets.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexoauth2tlsconfigcertsecret">secret</a></b></td>
+        <td>object</td>
+        <td>
+          Secret containing data to use for the targets.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].oauth2.tlsConfig.cert.configMap
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindexoauth2tlsconfigcert)</sup></sup>
+
+
+
+ConfigMap containing data to use for the targets.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key to select.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
+          <br/>
+            <i>Default</i>: <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the ConfigMap or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].oauth2.tlsConfig.cert.secret
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindexoauth2tlsconfigcert)</sup></sup>
+
+
+
+Secret containing data to use for the targets.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          The key of the secret to select from.  Must be a valid secret key.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names<br/>
+          <br/>
+            <i>Default</i>: <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>optional</b></td>
+        <td>boolean</td>
+        <td>
+          Specify whether the Secret or its key must be defined<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.remoteWrite[index].oauth2.tlsConfig.keySecret
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigremotewriteindexoauth2tlsconfig)</sup></sup>
+
+
+
+Secret containing the client key file for the targets.
 
 <table>
     <thead>
@@ -2202,6 +2672,28 @@ TLS Config to use for the URL.
         <td>object</td>
         <td>
           Secret containing the client key file for the targets.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>maxVersion</b></td>
+        <td>enum</td>
+        <td>
+          Maximum acceptable TLS version.
+
+It requires Prometheus >= v2.41.0.<br/>
+          <br/>
+            <i>Enum</i>: TLS10, TLS11, TLS12, TLS13<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>minVersion</b></td>
+        <td>enum</td>
+        <td>
+          Minimum acceptable TLS version.
+
+It requires Prometheus >= v2.35.0.<br/>
+          <br/>
+            <i>Enum</i>: TLS10, TLS11, TLS12, TLS13<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2915,6 +3407,15 @@ the Pod where this field is used. It makes that resource available
 inside a container.<br/>
         </td>
         <td>true</td>
+      </tr><tr>
+        <td><b>request</b></td>
+        <td>string</td>
+        <td>
+          Request is the name chosen for a request in the referenced claim.
+If empty, everything from the claim is made available, otherwise
+only the result of this request.<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
