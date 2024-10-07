@@ -126,7 +126,7 @@ $(OC) oc: $(TOOLS_DIR)
 		[[ -f $(OC) ]] && exit 0 ;\
 		OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) && \
 		if [[ $${OS} == "darwin" ]]; then OS="mac"; fi ;\
-		curl -sSLo $(OC).tar.gz https://mirror.openshift.com/pub/openshift-v4/$${ARCH}/clients/ocp/stable-4.16/openshift-client-$${OS}.tar.gz ;\
+		curl -sSLo $(OC).tar.gz https://mirror.openshift.com/pub/openshift-v4/$${ARCH}/clients/ocp/stable-$$(echo $(OC_VERSION) | cut -d. -f1,2)/openshift-client-$${OS}.tar.gz ;\
 		tar -xf $(OC).tar.gz -C $(TOOLS_DIR) ;\
 		rm -f $(OC).tar.gz ;\
 		rm -f $(TOOLS_DIR)/-.md ;\
