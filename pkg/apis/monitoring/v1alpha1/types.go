@@ -279,9 +279,6 @@ type ThanosQuerierSpec struct {
 	// Selector to select which namespaces the Monitoring Stack objects are discovered from.
 	NamespaceSelector NamespaceSelector `json:"namespaceSelector,omitempty"`
 	ReplicaLabels     []string          `json:"replicaLabels,omitempty"`
-	// Configure TLS options for the Thanos web server.
-	// +optional
-	WebTLSConfig *WebTLSConfig `json:"webTLSConfig,omitempty"`
 }
 
 // ThanosQuerierStatus defines the observed state of ThanosQuerier.
