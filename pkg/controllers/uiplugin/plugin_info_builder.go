@@ -34,9 +34,9 @@ type UIPluginInfo struct {
 
 var pluginTypeToConsoleName = map[uiv1alpha1.UIPluginType]string{
 	uiv1alpha1.TypeDashboards:           "console-dashboards-plugin",
-	uiv1alpha1.TypeTroubleshootingPanel: "console-troubleshooting-plugin",
-	uiv1alpha1.TypeDistributedTracing:   "console-distributed-tracing-plugin",
-	uiv1alpha1.TypeLogging:              "console-logging-plugin",
+	uiv1alpha1.TypeTroubleshootingPanel: "troubleshooting-panel-console-plugin",
+	uiv1alpha1.TypeDistributedTracing:   "distributed-tracing-console-plugin",
+	uiv1alpha1.TypeLogging:              "logging-view-plugin",
 }
 
 func PluginInfoBuilder(ctx context.Context, k client.Client, plugin *uiv1alpha1.UIPlugin, pluginConf UIPluginsConfiguration, clusterVersion string) (*UIPluginInfo, error) {
