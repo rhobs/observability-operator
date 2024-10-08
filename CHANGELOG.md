@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.4.2](https://github.com/rhobs/monitoring-stack-operator/commit/) (2024-10-08)
+
+
+### Bug Fixes
+
+* use expected plugin console names ([#581](https://github.com/rhobs/monitoring-stack-operator/issues/581)) ([3dbb0f6](https://github.com/rhobs/monitoring-stack-operator/commit/3dbb0f6edfb3d4f76aea7d67b40fa6a7167c3b1b))
+
 ### [0.4.1](https://github.com/rhobs/monitoring-stack-operator/commit/) (2024-10-02)
 
 
