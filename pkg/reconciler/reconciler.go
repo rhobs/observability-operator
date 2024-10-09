@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -35,6 +36,16 @@ func (r Updater) Reconcile(ctx context.Context, c client.Client, scheme *runtime
 	}
 
 	if err := c.Patch(ctx, r.resource, client.Apply, client.ForceOwnership, client.FieldOwner("observability-operator")); err != nil {
+		if apierrors.IsNotFound(err) {
+			err = c.Create(ctx, r.resource)
+			if err != nil {
+				return fmt.Errorf("%s/%s (%s): updater failed to create: %w",
+					r.resource.GetNamespace(), r.resource.GetName(),
+					r.resource.GetObjectKind().GroupVersionKind().String(), err)
+			}
+
+			return nil
+		}
 		return fmt.Errorf("%s/%s (%s): updater failed to patch: %w",
 			r.resource.GetNamespace(), r.resource.GetName(),
 			r.resource.GetObjectKind().GroupVersionKind().String(), err)
