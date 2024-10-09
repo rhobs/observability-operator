@@ -184,6 +184,26 @@ func TestLookupImageAndFeatures(t *testing.T) {
 			expectedKey:    "ui-troubleshooting-panel",
 			expectedErr:    nil,
 		},
+		{
+			pluginType:     uiv1alpha1.TypeMonitoring,
+			clusterVersion: "v4.16",
+			expectedKey:    "ui-monitoring",
+			expectedErr:    fmt.Errorf("plugin %q: no compatible image found for cluster version %q", uiv1alpha1.TypeMonitoring, "v4.16"),
+		},
+		{
+			pluginType:       uiv1alpha1.TypeMonitoring,
+			clusterVersion:   "v4.17",
+			expectedKey:      "ui-monitoring",
+			expectedFeatures: []string{"acm-alerting"},
+			expectedErr:      nil,
+		},
+		{
+			pluginType:       uiv1alpha1.TypeMonitoring,
+			clusterVersion:   "v4.17.0-0.nightly-2024-06-06-064349",
+			expectedKey:      "ui-monitoring",
+			expectedFeatures: []string{"acm-alerting"},
+			expectedErr:      nil,
+		},
 	} {
 		t.Run(fmt.Sprintf("%s/%s", tc.pluginType, tc.clusterVersion), func(t *testing.T) {
 			info, err := lookupImageAndFeatures(tc.pluginType, tc.clusterVersion)

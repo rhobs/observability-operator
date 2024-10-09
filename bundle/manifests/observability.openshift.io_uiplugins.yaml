@@ -140,6 +140,38 @@ spec:
                 required:
                 - lokiStack
                 type: object
+              monitoring:
+                description: Monitoring contains configuration for the monitoring
+                  console plugin.
+                properties:
+                  alertmanager:
+                    description: Alertmanager points to the alertmanager instance
+                      of which it should create a proxy to.
+                    properties:
+                      url:
+                        description: Url of the Alertmanager to proxy to.
+                        minLength: 1
+                        type: string
+                    required:
+                    - url
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  thanosQuerier:
+                    description: ThanosQuerier points to the thanos-querier service
+                      of which it should create a proxy to.
+                    properties:
+                      url:
+                        description: Url of the ThanosQuerier to proxy to.
+                        minLength: 1
+                        type: string
+                    required:
+                    - url
+                    type: object
+                    x-kubernetes-map-type: atomic
+                required:
+                - alertmanager
+                - thanosQuerier
+                type: object
               troubleshootingPanel:
                 description: TroubleshootingPanel contains configuration for the troubleshooting
                   console plugin.
@@ -160,6 +192,7 @@ spec:
                 - TroubleshootingPanel
                 - DistributedTracing
                 - Logging
+                - Monitoring
                 type: string
             required:
             - type
@@ -251,6 +284,8 @@ spec:
           rule: self.spec.type != 'DistributedTracing' || self.metadata.name == 'distributed-tracing'
         - message: UIPlugin name must be 'dashboards' if type is Dashboards
           rule: self.spec.type != 'Dashboards' || self.metadata.name == 'dashboards'
+        - message: UIPlugin name must be 'monitoring' if type is Monitoring
+          rule: self.spec.type != 'Monitoring' || self.metadata.name == 'monitoring'
     served: true
     storage: true
     subresources:
