@@ -1,0 +1,88 @@
+
+- job_name: prometheus-self
+  scheme: http
+  tls_config:
+    ca_file: ""
+    server_name: ""
+  relabel_configs:
+  - action: keep
+    source_labels:
+    - __meta_kubernetes_service_label_app_kubernetes_io_name
+    regex: ms-no-tls-prometheus
+  - action: keep
+    source_labels:
+    - __meta_kubernetes_endpoint_port_name
+    regex: web
+  - source_labels:
+    - __meta_kubernetes_namespace
+    target_label: namespace
+  - source_labels:
+    - __meta_kubernetes_service_name
+    target_label: service
+  - source_labels:
+    - __meta_kubernetes_pod_name
+    target_label: pod
+  - source_labels:
+    - __meta_kubernetes_pod_container_name
+    target_label: container
+  - target_label: endpoint
+    replacement: web
+  kubernetes_sd_configs:
+  - role: endpoints
+    namespaces:
+      names:
+      - ns-no-tls
+- job_name: alertmanager-self
+  scrape_interval: 30s
+  scrape_timeout: 10s
+  metrics_path: /metrics
+  scheme: http
+  tls_config:
+    ca_file: ""
+    server_name: ""
+  relabel_configs:
+  - source_labels:
+    - __meta_kubernetes_service_label_app_kubernetes_io_name
+    separator: ;
+    regex: ms-no-tls-alertmanager
+    replacement: $1
+    action: keep
+  - source_labels: [__meta_kubernetes_endpoint_port_name]
+    separator: ;
+    regex: web
+    replacement: $1
+    action: keep
+  - source_labels: [__meta_kubernetes_namespace]
+    separator: ;
+    regex: (.*)
+    target_label: namespace
+    replacement: $1
+    action: replace
+  - source_labels: [__meta_kubernetes_service_name]
+    separator: ;
+    regex: (.*)
+    target_label: service
+    replacement: $1
+    action: replace
+  - source_labels: [__meta_kubernetes_pod_name]
+    separator: ;
+    regex: (.*)
+    target_label: pod
+    replacement: $1
+    action: replace
+  - source_labels: [__meta_kubernetes_pod_container_name]
+    separator: ;
+    regex: (.*)
+    target_label: container
+    replacement: $1
+    action: replace
+  - separator: ;
+    regex: (.*)
+    target_label: endpoint
+    replacement: web
+    action: replace
+  kubernetes_sd_configs:
+  - role: endpoints
+    namespaces:
+      names:
+      - ns-no-tls

@@ -1,6 +1,8 @@
 package monitoringstack
 
 import (
+	"fmt"
+	"path/filepath"
 	"reflect"
 
 	monv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
@@ -19,6 +21,8 @@ const (
 	AdditionalScrapeConfigsSelfScrapeKey = "self-scrape-config"
 	PrometheusUserFSGroupID              = int64(65534)
 	AlertmanagerUserFSGroupID            = int64(65535)
+
+	prometheusSecretsMountPoint = "/etc/prometheus/secrets"
 )
 
 func stackComponentReconcilers(
@@ -256,7 +260,7 @@ func newPrometheus(
 				SafeTLSConfig: monv1.SafeTLSConfig{
 					ServerName: ptr.To(ms.Name + "-alertmanager"),
 				},
-				CAFile: "/etc/prometheus/secrets/" + caSecret.Name + "/" + caSecret.Key,
+				CAFile: filepath.Join(prometheusSecretsMountPoint, caSecret.Name, caSecret.Key),
 			}
 		}
 	}
@@ -390,30 +394,28 @@ func newThanosSidecarService(ms *stack.MonitoringStack, instanceSelectorKey stri
 }
 
 func newAdditionalScrapeConfigsSecret(ms *stack.MonitoringStack, name string) *corev1.Secret {
-	prometheusScheme := "http"
-	prometheusTLSConfig := ""
+	var (
+		prometheusScheme     = "http"
+		prometheusCAFile     string
+		prometheusServerName string
 
-	alertmanagerScheme := "http"
-	alertmanagerTLSConfig := ""
+		alertmanagerScheme     = "http"
+		alertmanagerCAFile     string
+		alertmanagerServerName string
+	)
 
 	if ms.Spec.PrometheusConfig.WebTLSConfig != nil {
 		promCASecret := ms.Spec.PrometheusConfig.WebTLSConfig.CertificateAuthority
 		prometheusScheme = "https"
-		prometheusTLSConfig = `
-  tls_config:
-    ca_file: /etc/prometheus/secrets/` + promCASecret.Name + `/` + promCASecret.Key + `
-    server_name: ` + ms.Name + `-prometheus
-`
+		prometheusCAFile = filepath.Join(prometheusSecretsMountPoint, promCASecret.Name, promCASecret.Key)
+		prometheusServerName = fmt.Sprintf("%s-prometheus", ms.Name)
 	}
 
 	if ms.Spec.AlertmanagerConfig.WebTLSConfig != nil {
 		amCASecret := ms.Spec.AlertmanagerConfig.WebTLSConfig.CertificateAuthority
 		alertmanagerScheme = "https"
-		alertmanagerTLSConfig = `
-  tls_config:
-    ca_file: /etc/prometheus/secrets/` + amCASecret.Name + `/` + amCASecret.Key + `
-    server_name: ` + ms.Name + `-alertmanager
-`
+		alertmanagerCAFile = filepath.Join(prometheusSecretsMountPoint, amCASecret.Name, amCASecret.Key)
+		alertmanagerServerName = fmt.Sprintf("%s-alertmanager", ms.Name)
 	}
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
@@ -425,15 +427,17 @@ func newAdditionalScrapeConfigsSecret(ms *stack.MonitoringStack, name string) *c
 			Namespace: ms.Namespace,
 		},
 		StringData: map[string]string{
-			AdditionalScrapeConfigsSelfScrapeKey: `
+			AdditionalScrapeConfigsSelfScrapeKey: fmt.Sprintf(`
 - job_name: prometheus-self
-  honor_labels: true
-  scheme: ` + prometheusScheme + prometheusTLSConfig + `
+  scheme: %s
+  tls_config:
+    ca_file: %q
+    server_name: %q
   relabel_configs:
   - action: keep
     source_labels:
     - __meta_kubernetes_service_label_app_kubernetes_io_name
-    regex: ` + ms.Name + `-prometheus
+    regex: %s
   - action: keep
     source_labels:
     - __meta_kubernetes_endpoint_port_name
@@ -456,19 +460,20 @@ func newAdditionalScrapeConfigsSecret(ms *stack.MonitoringStack, name string) *c
   - role: endpoints
     namespaces:
       names:
-      - ` + ms.Namespace + `
+      - %s
 - job_name: alertmanager-self
-  honor_timestamps: true
   scrape_interval: 30s
   scrape_timeout: 10s
   metrics_path: /metrics
-  scheme: ` + alertmanagerScheme + alertmanagerTLSConfig + `
-  follow_redirects: true
+  scheme: %s
+  tls_config:
+    ca_file: %q
+    server_name: %q
   relabel_configs:
   - source_labels:
     - __meta_kubernetes_service_label_app_kubernetes_io_name
     separator: ;
-    regex: ` + ms.Name + `-alertmanager
+    regex: %s
     replacement: $1
     action: keep
   - source_labels: [__meta_kubernetes_endpoint_port_name]
@@ -507,11 +512,20 @@ func newAdditionalScrapeConfigsSecret(ms *stack.MonitoringStack, name string) *c
     action: replace
   kubernetes_sd_configs:
   - role: endpoints
-    kubeconfig_file: ""
-    follow_redirects: true
     namespaces:
       names:
-      - ` + ms.Namespace,
+      - %s`,
+				prometheusScheme,
+				prometheusCAFile,
+				prometheusServerName,
+				fmt.Sprintf("%s-prometheus", ms.Name),
+				ms.Namespace,
+				alertmanagerScheme,
+				alertmanagerCAFile,
+				alertmanagerServerName,
+				fmt.Sprintf("%s-alertmanager", ms.Name),
+				ms.Namespace,
+			),
 		},
 	}
 }

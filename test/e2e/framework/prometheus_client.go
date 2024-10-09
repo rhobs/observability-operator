@@ -66,6 +66,7 @@ func (c *PrometheusClient) Query(query string) (*PrometheusResponse, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to query Prometheus: %v", err)
 	}
+	defer resp.Body.Close()
 
 	var result PrometheusResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
