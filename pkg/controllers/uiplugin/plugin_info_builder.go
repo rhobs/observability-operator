@@ -157,6 +157,9 @@ func PluginInfoBuilder(ctx context.Context, k client.Client, plugin *uiv1alpha1.
 
 	case uiv1alpha1.TypeLogging:
 		return createLoggingPluginInfo(plugin, namespace, plugin.Name, image, compatibilityInfo.Features)
+
+	case uiv1alpha1.TypeMonitoring:
+		return createMonitoringPluginInfo(plugin, namespace, plugin.Name, image, compatibilityInfo.Features)
 	}
 
 	return nil, fmt.Errorf("plugin type not supported: %s", plugin.Spec.Type)
