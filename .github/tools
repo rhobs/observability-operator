@@ -3,7 +3,7 @@
 golangci-lint v1.61.0
 controller-gen v0.16.2
 kustomize v4.5.2
-oc v4.8.11
+oc v4.16.10
 operator-sdk v1.36.1
 opm v1.47.0
 promq v0.0.1
@@ -13,4 +13,4 @@ jsonnetfmt v0.20.0
 jsonnet-lint v0.20.0
 jb v0.5.1
 gojsontoyaml v0.1.0
-shellcheck 0.10.0
+shellcheck v0.10.0
