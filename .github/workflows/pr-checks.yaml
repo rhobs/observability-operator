@@ -33,6 +33,9 @@ jobs:
       - name: Use tools cache
         uses: ./.github/tools-cache
 
+      - name: Run unit tests
+        run: make test-unit
+
       - name: Lint Go code
         run: make lint-golang
 
