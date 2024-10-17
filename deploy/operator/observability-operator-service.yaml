@@ -6,6 +6,8 @@ metadata:
     app.kubernetes.io/component: operator
     app.kubernetes.io/name: observability-operator
     app.kubernetes.io/part-of: observability-operator
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: observability-operator-tls
 spec:
   selector:
     app.kubernetes.io/name: observability-operator
