@@ -38,7 +38,7 @@
   metrics_path: /metrics
   scheme: https
   tls_config:
-    ca_file: "/etc/alertmanager/secrets/alertmanager-tls/ca.pem"
+    ca_file: "/etc/prometheus/secrets/alertmanager-tls/ca.pem"
     server_name: "ms-with-tls-alertmanager"
   relabel_configs:
   - source_labels:
