@@ -3,6 +3,8 @@ package framework
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -14,7 +16,7 @@ import (
 	monv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -64,7 +66,7 @@ func (f *Framework) AssertResourceNeverExists(name, namespace string, resource c
 				Name:      name,
 				Namespace: namespace,
 			}
-			if err := f.K8sClient.Get(context.Background(), key, resource); errors.IsNotFound(err) {
+			if err := f.K8sClient.Get(context.Background(), key, resource); apierrors.IsNotFound(err) {
 				return false, nil
 			}
 
@@ -93,7 +95,7 @@ func (f *Framework) AssertResourceAbsent(name, namespace string, resource client
 				Name:      name,
 				Namespace: namespace,
 			}
-			if err := f.K8sClient.Get(context.Background(), key, resource); errors.IsNotFound(err) {
+			if err := f.K8sClient.Get(context.Background(), key, resource); apierrors.IsNotFound(err) {
 				return true, nil
 			}
 
@@ -115,6 +117,7 @@ func (f *Framework) AssertResourceEventuallyExists(name, namespace string, resou
 	}
 
 	return func(t *testing.T) {
+		t.Helper()
 		if err := wait.PollUntilContextTimeout(context.Background(), option.PollInterval, option.WaitTimeout, true, func(ctx context.Context) (bool, error) {
 			key := types.NamespacedName{
 				Name:      name,
@@ -140,6 +143,7 @@ func (f *Framework) AssertStatefulsetReady(name, namespace string, fns ...Option
 		fn(&option)
 	}
 	return func(t *testing.T) {
+		t.Helper()
 		key := types.NamespacedName{Name: name, Namespace: namespace}
 		if err := wait.PollUntilContextTimeout(context.Background(), option.PollInterval, option.WaitTimeout, true, func(ctx context.Context) (bool, error) {
 			pod := &appsv1.StatefulSet{}
@@ -161,6 +165,7 @@ func (f *Framework) AssertDeploymentReady(name, namespace string, fns ...OptionF
 		fn(&option)
 	}
 	return func(t *testing.T) {
+		t.Helper()
 		key := types.NamespacedName{Name: name, Namespace: namespace}
 		if err := wait.PollUntilContextTimeout(context.Background(), option.PollInterval, option.WaitTimeout, true, func(ctx context.Context) (bool, error) {
 			deployment := &appsv1.Deployment{}
@@ -180,7 +185,7 @@ func (f *Framework) GetResourceWithRetry(t *testing.T, name, namespace string, o
 	err := wait.PollUntilContextTimeout(context.Background(), option.PollInterval, option.WaitTimeout, true, func(ctx context.Context) (bool, error) {
 		key := types.NamespacedName{Name: name, Namespace: namespace}
 
-		if err := f.K8sClient.Get(context.Background(), key, obj); errors.IsNotFound(err) {
+		if err := f.K8sClient.Get(context.Background(), key, obj); apierrors.IsNotFound(err) {
 			// retry
 			return false, nil
 		}
@@ -193,16 +198,42 @@ func (f *Framework) GetResourceWithRetry(t *testing.T, name, namespace string, o
 	}
 }
 
-func assertSamples(t *testing.T, metrics []byte, expected map[string]float64) {
-	t.Helper()
+func ParseMetrics(metrics []byte) (model.Vector, error) {
 	sDecoder := expfmt.SampleDecoder{
-		Dec: expfmt.NewDecoder(bytes.NewReader(metrics), expfmt.NewFormat(expfmt.FormatType(expfmt.TypeTextPlain))),
+		Dec: expfmt.NewDecoder(
+			bytes.NewReader(metrics),
+			expfmt.NewFormat(expfmt.FormatType(expfmt.TypeTextPlain)),
+		),
+		Opts: &expfmt.DecodeOptions{
+			Timestamp: model.TimeFromUnixNano(0),
+		},
 	}
 
-	samples := model.Vector{}
-	err := sDecoder.Decode(&samples)
+	var (
+		samples    model.Vector
+		decSamples = make(model.Vector, 0, 50)
+	)
+	for {
+		err := sDecoder.Decode(&decSamples)
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return nil, err
+		}
+		samples = append(samples, decSamples...)
+		decSamples = decSamples[:0]
+	}
+
+	return samples, nil
+}
+
+func assertSamples(t *testing.T, metrics []byte, expected map[string]float64) {
+	t.Helper()
+
+	samples, err := ParseMetrics(metrics)
 	if err != nil {
-		t.Errorf("error decoding samples")
+		t.Errorf("error decoding samples: %s", err)
 	}
 
 	for _, s := range samples {
@@ -216,12 +247,11 @@ func assertSamples(t *testing.T, metrics []byte, expected map[string]float64) {
 	}
 }
 
-// GetOperatorPod gets the operator pod assuming the operator is deployed in
-// "operators" namespace.
+// GetOperatorPod gets the operator's pod.
 func (f *Framework) GetOperatorPod(t *testing.T) *v1.Pod {
 	// get the operator deployment
 	operator := appsv1.Deployment{}
-	f.AssertResourceEventuallyExists("observability-operator", "operators", &operator)(t)
+	f.AssertResourceEventuallyExists("observability-operator", f.OperatorNamespace, &operator)(t)
 
 	selector, err := metav1.LabelSelectorAsSelector(operator.Spec.Selector)
 	if err != nil {
@@ -247,35 +277,96 @@ func (f *Framework) GetOperatorPod(t *testing.T) *v1.Pod {
 	return &pods.Items[0]
 }
 
-func (f *Framework) GetOperatorMetrics(t *testing.T) []byte {
-	pod := f.GetOperatorPod(t)
+type HTTPOptions struct {
+	scheme string
+}
 
-	stopChan := make(chan struct{})
-	defer close(stopChan)
+func WithHTTPS() func(*HTTPOptions) {
+	return func(o *HTTPOptions) {
+		o.scheme = "https"
+	}
+}
+
+func (f *Framework) GetPodMetrics(pod *v1.Pod, opts ...func(*HTTPOptions)) ([]byte, error) {
+	var (
+		pollErr error
+		b       []byte
+	)
 	if err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, DefaultTestTimeout, true, func(ctx context.Context) (bool, error) {
-		err := f.StartPortForward(pod.Name, pod.Namespace, "8080", stopChan)
-		return err == nil, nil
+		b, pollErr = f.getPodMetrics(ctx, pod, opts...)
+		if pollErr != nil {
+			return false, nil
+		}
+
+		return true, nil
 	}); err != nil {
-		t.Fatal(err)
+		return nil, fmt.Errorf("failed to get pod metrics: %w: %w", err, pollErr)
 	}
 
-	resp, err := http.Get("http://localhost:8080/metrics")
+	return b, nil
+}
+
+func (f *Framework) getPodMetrics(ctx context.Context, pod *v1.Pod, opts ...func(*HTTPOptions)) ([]byte, error) {
+	var (
+		stopChan = make(chan struct{})
+		errChan  = make(chan error, 1)
+	)
+	defer func() {
+		select {
+		case err := <-errChan:
+			fmt.Println("port-forward error:", err.Error())
+		default:
+		}
+
+		close(stopChan)
+	}()
+
+	err := f.StartPortForward(pod.Name, pod.Namespace, "8080", stopChan, errChan)
 	if err != nil {
-		t.Error(err)
+		return nil, fmt.Errorf("failed to start port-forwarding: %w", err)
+	}
+
+	httpOptions := HTTPOptions{
+		scheme: "http",
+	}
+	for _, o := range opts {
+		o(&httpOptions)
+	}
+
+	// The /metrics endpoint shouldn't need more than 5 seconds to send a response.
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s://localhost:8080/metrics", httpOptions.scheme), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	tr := http.DefaultTransport.(*http.Transport).Clone()
+	tr.TLSClientConfig = &tls.Config{
+		ServerName: fmt.Sprintf("observability-operator.%s.svc", pod.Namespace),
+		RootCAs:    f.RootCA,
+	}
+
+	resp, err := (&http.Client{Transport: tr}).Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get a response from /metrics: %w", err)
 	}
 	defer resp.Body.Close()
 
-	metrics, err := io.ReadAll(resp.Body)
-	if err != nil {
-		t.Error(err)
-	}
-	return metrics
+	return io.ReadAll(resp.Body)
 }
 
 // AssertNoReconcileErrors asserts that there are no reconcilation errors
 func (f *Framework) AssertNoReconcileErrors(t *testing.T) {
 	t.Helper()
-	metrics := f.GetOperatorMetrics(t)
+
+	pod := f.GetOperatorPod(t)
+
+	metrics, err := f.GetPodMetrics(pod)
+	if err != nil {
+		t.Fatalf("pod %s/%s: %s", pod.Namespace, pod.Name, err)
+	}
+
 	assertSamples(t, metrics,
 		map[string]float64{
 			`{__name__="controller_runtime_reconcile_errors_total", controller="monitoringstack"}`: 0,
@@ -343,7 +434,7 @@ func (f *Framework) AssertAlertmanagerAbsent(t *testing.T, name, namespace strin
 	}
 	err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, DefaultTestTimeout, true, func(ctx context.Context) (bool, error) {
 		err := f.K8sClient.Get(context.Background(), key, &am)
-		if errors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return true, nil
 		}
 		return false, nil
@@ -378,7 +469,7 @@ func (f *Framework) AssertPrometheusReplicaStatus(name, namespace string, expect
 				Name:      name,
 				Namespace: namespace,
 			}
-			if err := f.K8sClient.Get(context.Background(), key, &prom); errors.IsNotFound(err) {
+			if err := f.K8sClient.Get(context.Background(), key, &prom); apierrors.IsNotFound(err) {
 				return false, nil
 			}
 			if prom.Status.Replicas != expectedReplicas {

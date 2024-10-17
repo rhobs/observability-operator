@@ -2,8 +2,16 @@ package operator
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
+	"os"
+	"path/filepath"
+	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/apiserver/pkg/server/dynamiccertificates"
+	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -15,15 +23,23 @@ import (
 	uictrl "github.com/rhobs/observability-operator/pkg/controllers/uiplugin"
 )
 
-// NOTE: The instance selector label is hardcoded in static assets.
-// Any change to that must be reflected here as well
-const instanceSelector = "app.kubernetes.io/managed-by=observability-operator"
+const (
+	// NOTE: The instance selector label is hardcoded in static assets.
+	// Any change to that must be reflected here as well
+	instanceSelector = "app.kubernetes.io/managed-by=observability-operator"
 
-const ObservabilityOperatorName = "observability-operator"
+	ObservabilityOperatorName = "observability-operator"
 
-// Operator embedds manager and exposes only the minimal set of functions
+	// The mount path for the serving certificate seret is hardcoded in the
+	// static assets.
+	tlsMountPath = "/etc/tls/private"
+)
+
+// Operator embeds a manager and a serving certificate controller (for
+// OpenShift installations).
 type Operator struct {
-	manager manager.Manager
+	manager               manager.Manager
+	servingCertController *dynamiccertificates.DynamicServingCertificateController
 }
 
 type OpenShiftFeatureGates struct {
@@ -102,14 +118,90 @@ func NewOperatorConfiguration(opts ...func(*OperatorConfiguration)) *OperatorCon
 	return cfg
 }
 
-func New(cfg *OperatorConfiguration) (*Operator, error) {
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme: NewScheme(cfg),
-		Metrics: metricsserver.Options{
-			BindAddress: cfg.MetricsAddr,
-		},
-		HealthProbeBindAddress: cfg.HealthProbeAddr,
-	})
+func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
+	restConfig := ctrl.GetConfigOrDie()
+
+	metricsOpts := metricsserver.Options{
+		BindAddress: cfg.MetricsAddr,
+	}
+
+	var servingCertController *dynamiccertificates.DynamicServingCertificateController
+	if cfg.FeatureGates.OpenShift.Enabled {
+		// When running in OpenShift, the server uses HTTPS thanks to the
+		// service CA operator.
+		certFile := filepath.Join(tlsMountPath, "tls.crt")
+		keyFile := filepath.Join(tlsMountPath, "tls.key")
+
+		// Wait for the files to be mounted into the container.
+		var pollErr error
+		err := wait.PollUntilContextTimeout(ctx, time.Second, 30*time.Second, true, func(ctx context.Context) (bool, error) {
+			for _, f := range []string{certFile, keyFile} {
+				if _, err := os.Stat(f); err != nil {
+					pollErr = err
+					return false, nil
+				}
+			}
+
+			return true, nil
+		})
+		if err != nil {
+			return nil, fmt.Errorf("%w: %w", err, pollErr)
+		}
+
+		// DynamicCertKeyPairContent automatically reloads the certificate and key from disk.
+		certKeyProvider, err := dynamiccertificates.NewDynamicServingContentFromFiles("serving-cert", certFile, keyFile)
+		if err != nil {
+			return nil, err
+		}
+		if err := certKeyProvider.RunOnce(ctx); err != nil {
+			return nil, fmt.Errorf("failed to initialize cert/key content: %w", err)
+		}
+
+		kubeClient, err := kubernetes.NewForConfig(restConfig)
+		if err != nil {
+			return nil, err
+		}
+
+		// ConfigMapCAController automatically reloads the client CA.
+		clientCAProvider, err := dynamiccertificates.NewDynamicCAFromConfigMapController(
+			"client-ca",
+			metav1.NamespaceSystem,
+			"extension-apiserver-authentication",
+			"client-ca-file",
+			kubeClient,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to initialize client CA controller: %w", err)
+		}
+
+		servingCertController = dynamiccertificates.NewDynamicServingCertificateController(
+			&tls.Config{
+				ClientAuth: tls.NoClientCert,
+			},
+			clientCAProvider,
+			certKeyProvider,
+			nil,
+			nil,
+		)
+		if err := servingCertController.RunOnce(); err != nil {
+			return nil, fmt.Errorf("failed to initialize serving certificate controller: %w", err)
+		}
+
+		metricsOpts.SecureServing = true
+		metricsOpts.TLSOpts = []func(*tls.Config){
+			func(c *tls.Config) {
+				c.GetConfigForClient = servingCertController.GetConfigForClient
+			},
+		}
+	}
+
+	mgr, err := ctrl.NewManager(
+		restConfig,
+		ctrl.Options{
+			Scheme:                 NewScheme(cfg),
+			Metrics:                metricsOpts,
+			HealthProbeBindAddress: cfg.HealthProbeAddr,
+		})
 	if err != nil {
 		return nil, fmt.Errorf("unable to create manager: %w", err)
 	}
@@ -141,11 +233,16 @@ func New(cfg *OperatorConfiguration) (*Operator, error) {
 	}
 
 	return &Operator{
-		manager: mgr,
+		manager:               mgr,
+		servingCertController: servingCertController,
 	}, nil
 }
 
 func (o *Operator) Start(ctx context.Context) error {
+	if o.servingCertController != nil {
+		go o.servingCertController.Run(1, ctx.Done())
+	}
+
 	if err := o.manager.Start(ctx); err != nil {
 		return fmt.Errorf("unable to start manager: %w", err)
 	}
