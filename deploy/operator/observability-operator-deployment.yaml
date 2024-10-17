@@ -53,5 +53,14 @@ spec:
              httpGet:
                path: /healthz
                port: 8081
+          volumeMounts:
+          - mountPath: /etc/tls/private
+            name: observability-operator-tls
+            readOnly: true
       serviceAccountName: observability-operator-sa
+      volumes:
+      - name: observability-operator-tls
+        secret:
+          secretName: observability-operator-tls
+          optional: true
       terminationGracePeriodSeconds: 30
