@@ -269,6 +269,7 @@ func newDeployment(info UIPluginInfo, namespace string, config *uiv1alpha1.Deplo
 							TerminationMessagePolicy: "FallbackToLogsOnError",
 							SecurityContext: &corev1.SecurityContext{
 								RunAsNonRoot:             ptr.To(bool(true)),
+								RunAsUser:                ptr.To(int64(1000)),
 								AllowPrivilegeEscalation: ptr.To(bool(false)),
 								Capabilities: &corev1.Capabilities{
 									Drop: []corev1.Capability{
