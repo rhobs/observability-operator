@@ -81,6 +81,15 @@ var compatibilityMatrix = []CompatibilityEntry{
 			"dev-alerts",
 		},
 	},
+	{
+		PluginType:        uiv1alpha1.TypeMonitoring,
+		MinClusterVersion: "v4.14",
+		MaxClusterVersion: "",
+		ImageKey:          "ui-monitoring",
+		Features: []string{
+			"acm-alerting",
+		},
+	},
 }
 
 func lookupImageAndFeatures(pluginType uiv1alpha1.UIPluginType, clusterVersion string) (CompatibilityEntry, error) {
