@@ -3,16 +3,20 @@ package framework
 import (
 	"bytes"
 	"context"
+	"crypto/x509"
 	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
 	"testing"
 
+	configv1 "github.com/openshift/api/config/v1"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
@@ -28,6 +32,47 @@ type Framework struct {
 	K8sClient          client.Client
 	Retain             bool
 	IsOpenshiftCluster bool
+	RootCA             *x509.CertPool
+}
+
+// Setup finalizes the initilization of the Framework object by setting
+// parameters which are specific to OpenShift.
+func (f *Framework) Setup() error {
+	clusterVersion := &configv1.ClusterVersion{}
+	if err := f.K8sClient.Get(context.Background(), client.ObjectKey{Name: "version"}, clusterVersion); err != nil {
+		if meta.IsNoMatchError(err) {
+			return nil
+		}
+
+		return fmt.Errorf("failed to get clusterversion %w", err)
+	}
+
+	f.IsOpenshiftCluster = true
+
+	// Load the service CA operator's certificate authority.
+	var (
+		cm  v1.ConfigMap
+		key = client.ObjectKey{
+			Namespace: "openshift-config",
+			Name:      "openshift-service-ca.crt",
+		}
+	)
+	if err := f.K8sClient.Get(context.Background(), key, &cm); err != nil {
+		return err
+	}
+
+	b, found := cm.Data["service-ca.crt"]
+	if !found {
+		return errors.New("failed to find 'service-ca.crt'")
+	}
+
+	rootCA := x509.NewCertPool()
+	if !rootCA.AppendCertsFromPEM([]byte(b)) {
+		return errors.New("invalid service CA")
+	}
+	f.RootCA = rootCA
+
+	return nil
 }
 
 // StartPortForward initiates a port forwarding connection to a pod on the localhost interface.
