@@ -33,6 +33,7 @@ const (
 	Korrel8rConfigMountDir = "/config/"
 	OpenshiftLoggingNs     = "openshift-logging"
 	OpenshiftNetobservNs   = "netobserv"
+	OpenshiftTracingNs     = "openshift-tracing"
 
 	annotationPrefix = "observability.openshift.io/ui-plugin-"
 )
@@ -487,13 +488,16 @@ func newKorrel8rService(name string, namespace string) *corev1.Service {
 
 func newKorrel8rConfigMap(name string, namespace string, info UIPluginInfo) (*corev1.ConfigMap, error) {
 
-	korrel8rData := map[string]string{"Metric": "thanos-querier", "MetricAlert": "alertmanager-main", "Log": "logging-loki-gateway-http", "Netflow": "loki-gateway-http", "MonitoringNs": "openshift-monitoring", "LoggingNs": OpenshiftLoggingNs, "NetobservNs": OpenshiftNetobservNs}
+	korrel8rData := map[string]string{"Metric": "thanos-querier", "MetricAlert": "alertmanager-main", "Log": "logging-loki-gateway-http", "Netflow": "loki-gateway-http", "Trace": "tempo-platform-gateway", "MonitoringNs": "openshift-monitoring", "LoggingNs": OpenshiftLoggingNs, "NetobservNs": OpenshiftNetobservNs, "TracingNs": OpenshiftTracingNs}
 
 	if info.LokiServiceNames[OpenshiftLoggingNs] != "" {
 		korrel8rData["Log"] = info.LokiServiceNames[OpenshiftLoggingNs]
 	}
 	if info.LokiServiceNames[OpenshiftNetobservNs] != "" {
 		korrel8rData["Netflow"] = info.LokiServiceNames[OpenshiftNetobservNs]
+	}
+	if info.TempoServiceNames[OpenshiftTracingNs] != "" {
+		korrel8rData["Trace"] = info.TempoServiceNames[OpenshiftTracingNs]
 	}
 
 	var korrel8rConfigYAMLTmpl = template.Must(template.ParseFS(korrel8rConfigYAMLTmplFile, "config/korrel8r.yaml"))

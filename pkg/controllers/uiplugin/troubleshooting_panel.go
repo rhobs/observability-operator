@@ -44,6 +44,7 @@ func createTroubleshootingPanelPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace
 		DisplayName:       "Troubleshooting Panel Console Plugin",
 		ResourceNamespace: namespace,
 		LokiServiceNames:  make(map[string]string),
+		TempoServiceNames: make(map[string]string),
 		ExtraArgs:         extraArgs,
 		LegacyProxies: []osv1alpha1.ConsolePluginProxy{
 			{
@@ -152,6 +153,22 @@ func getLokiServiceName(ctx context.Context, k client.Client, ns string) (string
 	// Accumulate services that contain "gateway-http" in their names
 	for _, service := range serviceList.Items {
 		if strings.Contains(service.Name, "gateway-http") && service.Labels["app.kubernetes.io/component"] == "lokistack-gateway" {
+			return service.Name, nil
+		}
+	}
+	return "", nil
+}
+
+func getTempoServiceName(ctx context.Context, k client.Client, ns string) (string, error) {
+
+	serviceList := &corev1.ServiceList{}
+	if err := k.List(ctx, serviceList, client.InNamespace(ns)); err != nil {
+		return "", err
+	}
+
+	// Accumulate services that contain "gateway" in their names
+	for _, service := range serviceList.Items {
+		if strings.Contains(service.Name, "gateway") && service.Labels["app.kubernetes.io/component"] == "gateway" {
 			return service.Name, nil
 		}
 	}

@@ -18,6 +18,7 @@ type UIPluginInfo struct {
 	Image               string
 	Korrel8rImage       string
 	LokiServiceNames    map[string]string
+	TempoServiceNames   map[string]string
 	Name                string
 	ConsoleName         string
 	DisplayName         string
@@ -146,6 +147,11 @@ func PluginInfoBuilder(ctx context.Context, k client.Client, plugin *uiv1alpha1.
 		}
 
 		pluginInfo.LokiServiceNames[OpenshiftNetobservNs], err = getLokiServiceName(ctx, k, OpenshiftNetobservNs)
+		if err != nil {
+			return nil, err
+		}
+
+		pluginInfo.TempoServiceNames[OpenshiftTracingNs], err = getTempoServiceName(ctx, k, OpenshiftTracingNs)
 		if err != nil {
 			return nil, err
 		}
