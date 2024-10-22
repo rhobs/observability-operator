@@ -15,6 +15,9 @@ stores:
   - domain: netflow
     lokiStack: https://{{ .Netflow }}.{{ .NetobservNs }}.svc:8080
     certificateAuthority: ./run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+  - domain: trace
+    tempoStack: https://{{ .Trace }}.{{ .TracingNs }}.svc.cluster.local:8080/api/traces/v1/platform/tempo/api/search
+    certificateAuthority: ./run/secrets/kubernetes.io/serviceaccount/service-ca.crt
 
 include:
   - /etc/korrel8r/rules/all.yaml
