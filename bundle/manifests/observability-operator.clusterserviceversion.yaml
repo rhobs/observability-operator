@@ -479,6 +479,14 @@ spec:
           - get
           - update
         - apiGroups:
+          - operator.open-cluster-management.io
+          resources:
+          - multiclusterhubs
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
           - operator.openshift.io
           resources:
           - consoles
