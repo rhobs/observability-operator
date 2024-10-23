@@ -11,6 +11,15 @@ import (
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 )
 
+type SupportLevel string
+
+var (
+	DevPreview          SupportLevel = "DevPreview"
+	TechPreview         SupportLevel = "TechPreview"
+	GeneralAvailability SupportLevel = "GeneralAvailability"
+	Experimental_SSA    SupportLevel = "Experimental-SSA"
+)
+
 type CompatibilityEntry struct {
 	PluginType uiv1alpha1.UIPluginType
 	// Minimal OpenShift version supporting this plugin (inclusive).
@@ -22,6 +31,7 @@ type CompatibilityEntry struct {
 	// Maximal ACM version supporting this plugin (exclusive).
 	MaxAcmVersion string
 	ImageKey      string
+	SupportLevel  SupportLevel
 	Features      []string
 }
 
@@ -36,6 +46,7 @@ var compatibilityMatrix = []CompatibilityEntry{
 		MinAcmVersion:     "",
 		MaxAcmVersion:     "",
 		Features:          []string{},
+		SupportLevel:      DevPreview,
 	},
 	{
 		PluginType: uiv1alpha1.TypeTroubleshootingPanel,
@@ -47,6 +58,7 @@ var compatibilityMatrix = []CompatibilityEntry{
 		ImageKey:          "ui-troubleshooting-panel",
 		MinAcmVersion:     "",
 		MaxAcmVersion:     "",
+		SupportLevel:      TechPreview,
 		Features:          []string{},
 	},
 	{
@@ -56,6 +68,7 @@ var compatibilityMatrix = []CompatibilityEntry{
 		ImageKey:          "ui-distributed-tracing",
 		MinAcmVersion:     "",
 		MaxAcmVersion:     "",
+		SupportLevel:      TechPreview,
 		Features:          []string{},
 	},
 	{
@@ -65,6 +78,7 @@ var compatibilityMatrix = []CompatibilityEntry{
 		ImageKey:          "ui-logging",
 		MinAcmVersion:     "",
 		MaxAcmVersion:     "",
+		SupportLevel:      GeneralAvailability,
 		Features:          []string{},
 	},
 	{
@@ -74,6 +88,7 @@ var compatibilityMatrix = []CompatibilityEntry{
 		ImageKey:          "ui-logging",
 		MinAcmVersion:     "",
 		MaxAcmVersion:     "",
+		SupportLevel:      GeneralAvailability,
 		Features: []string{
 			"dev-console",
 		},
@@ -85,6 +100,7 @@ var compatibilityMatrix = []CompatibilityEntry{
 		ImageKey:          "ui-logging",
 		MinAcmVersion:     "",
 		MaxAcmVersion:     "",
+		SupportLevel:      GeneralAvailability,
 		Features: []string{
 			"dev-console",
 			"alerts",
@@ -97,6 +113,7 @@ var compatibilityMatrix = []CompatibilityEntry{
 		ImageKey:          "ui-logging",
 		MinAcmVersion:     "",
 		MaxAcmVersion:     "",
+		SupportLevel:      GeneralAvailability,
 		Features: []string{
 			"dev-console",
 			"alerts",
@@ -110,6 +127,7 @@ var compatibilityMatrix = []CompatibilityEntry{
 		ImageKey:          "ui-monitoring",
 		MinAcmVersion:     "v2.11",
 		MaxAcmVersion:     "",
+		SupportLevel:      DevPreview,
 		Features: []string{
 			"acm-alerting",
 		},
