@@ -5,6 +5,7 @@ import (
 	osv1alpha1 "github.com/openshift/api/console/v1alpha1"
 	operatorv1 "github.com/openshift/api/operator/v1"
 	monitoringv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
+	multiclusterhubv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -27,6 +28,7 @@ func NewScheme(cfg *OperatorConfiguration) *runtime.Scheme {
 		utilruntime.Must(osv1.Install(scheme))
 		utilruntime.Must(osv1alpha1.Install(scheme))
 		utilruntime.Must(operatorv1.Install(scheme))
+		utilruntime.Must(multiclusterhubv1.AddToScheme(scheme))
 	}
 
 	return scheme
