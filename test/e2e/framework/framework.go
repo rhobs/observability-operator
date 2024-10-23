@@ -3,16 +3,22 @@ package framework
 import (
 	"bytes"
 	"context"
+	"crypto/x509"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
+	"path"
 	"strings"
 	"testing"
 
+	configv1 "github.com/openshift/api/config/v1"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
@@ -28,27 +34,75 @@ type Framework struct {
 	K8sClient          client.Client
 	Retain             bool
 	IsOpenshiftCluster bool
+	RootCA             *x509.CertPool
+	OperatorNamespace  string
+}
+
+// Setup finalizes the initilization of the Framework object by setting
+// parameters which are specific to OpenShift.
+func (f *Framework) Setup() error {
+	clusterVersion := &configv1.ClusterVersion{}
+	if err := f.K8sClient.Get(context.Background(), client.ObjectKey{Name: "version"}, clusterVersion); err != nil {
+		if meta.IsNoMatchError(err) {
+			return nil
+		}
+
+		return fmt.Errorf("failed to get clusterversion %w", err)
+	}
+
+	f.IsOpenshiftCluster = true
+
+	// Load the service CA operator's certificate authority.
+	var (
+		cm  v1.ConfigMap
+		key = client.ObjectKey{
+			Namespace: "openshift-config",
+			Name:      "openshift-service-ca.crt",
+		}
+	)
+	if err := f.K8sClient.Get(context.Background(), key, &cm); err != nil {
+		return err
+	}
+
+	b, found := cm.Data["service-ca.crt"]
+	if !found {
+		return errors.New("failed to find 'service-ca.crt'")
+	}
+
+	rootCA := x509.NewCertPool()
+	if !rootCA.AppendCertsFromPEM([]byte(b)) {
+		return errors.New("invalid service CA")
+	}
+	f.RootCA = rootCA
+
+	return nil
 }
 
 // StartPortForward initiates a port forwarding connection to a pod on the localhost interface.
 //
 // The function call blocks until the port forwarding proxy server is ready to receive connections.
-func (f *Framework) StartPortForward(podName string, ns string, port string, stopChan chan struct{}) error {
+func (f *Framework) StartPortForward(podName string, ns string, port string, stopChan chan struct{}, out io.Writer) error {
 	roundTripper, upgrader, err := spdy.RoundTripperFor(f.Config)
 	if err != nil {
-		return errors.Wrap(err, "error creating RoundTripper")
+		return fmt.Errorf("error creating RoundTripper: %w", err)
 	}
 
-	path := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s/portforward", ns, podName)
-	hostIP := strings.TrimLeft(f.Config.Host, "htps:/")
-	serverURL := url.URL{Scheme: "https", Path: path, Host: hostIP}
-	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: roundTripper}, http.MethodPost, &serverURL)
+	u := fmt.Sprintf("https://%s", strings.TrimPrefix(strings.TrimPrefix(f.Config.Host, "http://"), "https://"))
+	serverURL, err := url.Parse(u)
+	if err != nil {
+		return err
+	}
+	serverURL.Path = path.Join(
+		serverURL.Path,
+		fmt.Sprintf("/api/v1/namespaces/%s/pods/%s/portforward", ns, podName),
+	)
+
+	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: roundTripper}, http.MethodPost, serverURL)
 
 	readyChan := make(chan struct{}, 1)
-	out, errOut := new(bytes.Buffer), new(bytes.Buffer)
-	forwarder, err := portforward.New(dialer, []string{port}, stopChan, readyChan, out, errOut)
+	forwarder, err := portforward.New(dialer, []string{port}, stopChan, readyChan, out, out)
 	if err != nil {
-		return errors.Wrap(err, "failed to create portforward")
+		return fmt.Errorf("failed to create portforward: %w", err)
 	}
 
 	go func() {
@@ -69,10 +123,17 @@ func (f *Framework) StartServicePortForward(serviceName string, ns string, port 
 	if err != nil {
 		return err
 	}
+
 	if len(pods) == 0 {
 		return fmt.Errorf("no pods found for service %s/%s", serviceName, ns)
 	}
-	return f.StartPortForward(pods[0].Name, ns, port, stopChan)
+
+	w := &bytes.Buffer{}
+	err = f.StartPortForward(pods[0].Name, ns, port, stopChan, w)
+	if err != nil {
+		fmt.Println("port-forward logs:\n", w.String())
+	}
+	return err
 }
 
 func (f *Framework) GetStatefulSetPods(name string, namespace string) ([]corev1.Pod, error) {
