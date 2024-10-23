@@ -179,7 +179,8 @@ func singleStackWithSidecarTLS(t *testing.T) {
 	thanosService := corev1.Service{}
 	f.GetResourceWithRetry(t, querierName, tq.Namespace, &thanosService)
 
-	f.AssertDeploymentReady(querierName, tq.Namespace, framework.WithTimeout(5*time.Minute))(t)
+	f.AssertDeploymentReadyAndStable(querierName, tq.Namespace, framework.WithTimeout(5*time.Minute))(t)
+
 	// Assert prometheus instance can be queried
 	stopChan := make(chan struct{})
 	defer close(stopChan)
