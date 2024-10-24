@@ -16,7 +16,7 @@ metadata:
         "prometheuses.monitoring.rhobs",
         "alertmanagers.monitoring.rhobs",
         "thanosrulers.monitoring.rhobs",
-        "prometheusagents.monitoring.rhobs",
+        "prometheusagents.monitoring.rhobs"
       ]
     repository: 'https://github.com/rhobs/observability-operator'
   name: observability-operator.v0.0.0
