@@ -3896,7 +3896,7 @@ UIPluginSpec is the specification for desired state of UIPlugin.
         <td>
           Type defines the UI plugin.<br/>
           <br/>
-            <i>Enum</i>: Dashboards, TroubleshootingPanel, DistributedTracing, Logging<br/>
+            <i>Enum</i>: Dashboards, TroubleshootingPanel, DistributedTracing, Logging, Monitoring<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -3920,6 +3920,13 @@ UIPluginSpec is the specification for desired state of UIPlugin.
           Logging contains configuration for the logging console plugin.
 
 It only applies to UIPlugin Type: Logging.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#uipluginspecmonitoring">monitoring</a></b></td>
+        <td>object</td>
+        <td>
+          Monitoring contains configuration for the monitoring console plugin.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4138,6 +4145,94 @@ It always references a LokiStack in the "openshift-logging" namespace.
         <td>string</td>
         <td>
           Name of the LokiStack resource.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### UIPlugin.spec.monitoring
+<sup><sup>[↩ Parent](#uipluginspec)</sup></sup>
+
+
+
+Monitoring contains configuration for the monitoring console plugin.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#uipluginspecmonitoringalertmanager">alertmanager</a></b></td>
+        <td>object</td>
+        <td>
+          Alertmanager points to the alertmanager instance of which it should create a proxy to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#uipluginspecmonitoringthanosquerier">thanosQuerier</a></b></td>
+        <td>object</td>
+        <td>
+          ThanosQuerier points to the thanos-querier service of which it should create a proxy to.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### UIPlugin.spec.monitoring.alertmanager
+<sup><sup>[↩ Parent](#uipluginspecmonitoring)</sup></sup>
+
+
+
+Alertmanager points to the alertmanager instance of which it should create a proxy to.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>url</b></td>
+        <td>string</td>
+        <td>
+          Url of the Alertmanager to proxy to.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### UIPlugin.spec.monitoring.thanosQuerier
+<sup><sup>[↩ Parent](#uipluginspecmonitoring)</sup></sup>
+
+
+
+ThanosQuerier points to the thanos-querier service of which it should create a proxy to.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>url</b></td>
+        <td>string</td>
+        <td>
+          Url of the ThanosQuerier to proxy to.<br/>
         </td>
         <td>true</td>
       </tr></tbody>
