@@ -227,7 +227,31 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		}
 	}
 
-	pluginInfo, err := PluginInfoBuilder(ctx, rm.k8sClient, plugin, rm.pluginConf, rm.clusterVersion, acmVersion)
+	compatibilityInfo, err := lookupImageAndFeatures(plugin.Spec.Type, rm.clusterVersion, acmVersion)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if plugin.Annotations == nil {
+		plugin.Annotations = map[string]string{}
+		plugin.Annotations["observability.openshift.io/api-support"] = string(compatibilityInfo.SupportLevel)
+
+		if err := rm.k8sClient.Update(ctx, plugin); err != nil {
+			return ctrl.Result{}, err
+		}
+		// Upon changes to the uiplugin, reconciliation will happen anyways, so just return early
+		// and let the reconciliation handle the further changes
+		return ctrl.Result{}, nil
+	} else if plugin.Annotations["observability.openshift.io/api-support"] != string(compatibilityInfo.SupportLevel) {
+		plugin.Annotations["observability.openshift.io/api-support"] = string(compatibilityInfo.SupportLevel)
+
+		if err := rm.k8sClient.Update(ctx, plugin); err != nil {
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{}, err
+	}
+
+	pluginInfo, err := PluginInfoBuilder(ctx, rm.k8sClient, plugin, rm.pluginConf, compatibilityInfo)
 
 	if err != nil {
 		logger.Error(err, "failed to reconcile plugin")
