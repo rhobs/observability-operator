@@ -25,6 +25,23 @@ const (
 	prometheusSecretsMountPoint = "/etc/prometheus/secrets"
 )
 
+var (
+	rbacVerbs = []string{"get", "list", "watch"}
+)
+
+func stackComponentCleanup(ms *stack.MonitoringStack) []reconciler.Reconciler {
+	prometheusName := ms.Name + "-prometheus"
+	alertmanagerName := ms.Name + "-alertmanager"
+	return []reconciler.Reconciler{
+		reconciler.NewDeleter(newPrometheusClusterRole(prometheusName, rbacVerbs)),
+		reconciler.NewDeleter(newClusterRoleBinding(ms, prometheusName)),
+		reconciler.NewDeleter(newRoleBindingForClusterRole(ms, prometheusName)),
+		reconciler.NewDeleter(newAlertManagerClusterRole(alertmanagerName, rbacVerbs)),
+		reconciler.NewDeleter(newClusterRoleBinding(ms, alertmanagerName)),
+		reconciler.NewDeleter(newRoleBindingForClusterRole(ms, alertmanagerName)),
+	}
+}
+
 func stackComponentReconcilers(
 	ms *stack.MonitoringStack,
 	instanceSelectorKey string,
@@ -35,7 +52,6 @@ func stackComponentReconcilers(
 ) []reconciler.Reconciler {
 	prometheusName := ms.Name + "-prometheus"
 	alertmanagerName := ms.Name + "-alertmanager"
-	rbacVerbs := []string{"get", "list", "watch"}
 	additionalScrapeConfigsSecretName := ms.Name + "-prometheus-additional-scrape-configs"
 	hasNsSelector := ms.Spec.NamespaceSelector != nil
 	deployAlertmanager := !ms.Spec.AlertmanagerConfig.Disabled
@@ -43,7 +59,7 @@ func stackComponentReconcilers(
 	return []reconciler.Reconciler{
 		// Prometheus Deployment
 		reconciler.NewUpdater(newServiceAccount(prometheusName, ms.Namespace), ms),
-		reconciler.NewUpdater(newPrometheusClusterRole(ms, prometheusName, rbacVerbs), ms),
+		reconciler.NewUpdater(newPrometheusClusterRole(prometheusName, rbacVerbs), ms),
 		reconciler.NewUpdater(newAdditionalScrapeConfigsSecret(ms, additionalScrapeConfigsSecretName), ms),
 		reconciler.NewUpdater(newPrometheus(ms, prometheusName,
 			additionalScrapeConfigsSecretName,
@@ -60,7 +76,7 @@ func stackComponentReconcilers(
 		reconciler.NewOptionalUpdater(newClusterRoleBinding(ms, prometheusName), ms, hasNsSelector),
 		reconciler.NewOptionalUpdater(newRoleBindingForClusterRole(ms, prometheusName), ms, !hasNsSelector),
 
-		reconciler.NewOptionalUpdater(newAlertManagerClusterRole(ms, alertmanagerName, rbacVerbs), ms, deployAlertmanager),
+		reconciler.NewOptionalUpdater(newAlertManagerClusterRole(alertmanagerName, rbacVerbs), ms, deployAlertmanager),
 
 		// create clusterrolebinding if alertmanager is enabled and namespace selector is also present in MonitoringStack
 		reconciler.NewOptionalUpdater(newClusterRoleBinding(ms, alertmanagerName), ms, deployAlertmanager && hasNsSelector),
@@ -72,7 +88,7 @@ func stackComponentReconcilers(
 	}
 }
 
-func newPrometheusClusterRole(ms *stack.MonitoringStack, rbacResourceName string, rbacVerbs []string) *rbacv1.ClusterRole {
+func newPrometheusClusterRole(rbacResourceName string, rbacVerbs []string) *rbacv1.ClusterRole {
 	return &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: rbacv1.SchemeGroupVersion.String(),
