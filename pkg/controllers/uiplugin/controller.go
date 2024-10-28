@@ -54,6 +54,8 @@ const (
 	FailedToReconcileReason = "UIPluginFailedToReconciled"
 	ReconciledMessage       = "Plugin reconciled successfully"
 	NoReason                = "None"
+	finalizerName           = "uiplugin.observability.openshift.io/finalizer"
+	supportAnnotationName   = "observability.openshift.io/api-support"
 )
 
 // RBAC for managing UIPlugins
@@ -94,7 +96,13 @@ const (
 //+kubebuilder:rbac:groups=monitoring.coreos.com,resources=prometheuses/api,resourceNames=k8s,verbs=get;create;update
 //+kubebuilder:rbac:groups=monitoring.coreos.com,resources=alertmanagers/api,resourceNames=main,verbs=get;list
 
-const finalizerName = "uiplugin.observability.openshift.io/finalizer"
+var apiSupportLevels = map[uiv1alpha1.UIPluginType]string{
+	"Dashboards":           "TechPreview",
+	"DistributedTracing":   "TechPreview",
+	"TroubleshootingPanel": "TechPreview",
+	"Monitoring":           "TechPreview",
+	"Logging":              "GeneralAvailability",
+}
 
 // RegisterWithManager registers the controller with Manager
 func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
@@ -206,12 +214,9 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, nil
 	}
 
-	// Add finalizer if not present
-	if !slices.Contains(plugin.ObjectMeta.Finalizers, finalizerName) {
-		plugin.ObjectMeta.Finalizers = append(plugin.ObjectMeta.Finalizers, finalizerName)
-		if err := rm.k8sClient.Update(ctx, plugin); err != nil {
-			return ctrl.Result{}, err
-		}
+	// Add finalizer and support annotations if not present
+	if err := rm.addUIPluginControllerFields(ctx, plugin); err != nil {
+		return ctrl.Result{}, err
 	}
 
 	multiClusterHubList := &mchv1.MultiClusterHubList{}
@@ -366,4 +371,17 @@ func (rm resourceManager) getUIPlugin(ctx context.Context, req ctrl.Request) (*u
 	}
 
 	return &plugin, nil
+}
+
+// addUIPluginControllerFields adds some additional fields to any UIPlugin
+// object encountered.
+func (rm resourceManager) addUIPluginControllerFields(ctx context.Context, plugin *uiv1alpha1.UIPlugin) error {
+	if !slices.Contains(plugin.ObjectMeta.Finalizers, finalizerName) {
+		plugin.ObjectMeta.Finalizers = append(plugin.ObjectMeta.Finalizers, finalizerName)
+	}
+
+	if !metav1.HasAnnotation(plugin.ObjectMeta, supportAnnotationName) {
+		plugin.ObjectMeta.Annotations[supportAnnotationName] = apiSupportLevels[plugin.Spec.Type]
+	}
+	return rm.k8sClient.Update(ctx, plugin)
 }
