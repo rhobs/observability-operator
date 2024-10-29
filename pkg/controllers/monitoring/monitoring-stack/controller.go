@@ -19,6 +19,7 @@ package monitoringstack
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -69,6 +70,8 @@ type Options struct {
 	Alertmanager     AlertmanagerConfiguration
 	Thanos           ThanosConfiguration
 }
+
+const finalizerName = "monitoring.observability.openshift.io/finalizer"
 
 // RBAC for managing monitoring stacks
 //+kubebuilder:rbac:groups=monitoring.rhobs,resources=monitoringstacks,verbs=list;watch;create;update
@@ -144,9 +147,38 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, nil
 	}
 
+	// Check if the plugin is being deleted
 	if !ms.ObjectMeta.DeletionTimestamp.IsZero() {
-		logger.V(6).Info("skipping reconcile since object is already schedule for deletion")
+		logger.V(6).Info("removing cluster scoped resources")
+
+		reconcilers := stackComponentCleanup(ms)
+		for _, reconciler := range reconcilers {
+			err := reconciler.Reconcile(ctx, rm.k8sClient, rm.scheme)
+			if err != nil {
+				logger.Error(err, "failed to cleanup monitoring stack")
+			}
+		}
+
+		// Remove finalizer if present
+		if slices.Contains(ms.ObjectMeta.Finalizers, finalizerName) {
+			ms.ObjectMeta.Finalizers = slices.DeleteFunc(ms.ObjectMeta.Finalizers, func(currentFinalizerName string) bool {
+				return currentFinalizerName == finalizerName
+			})
+			if err := rm.k8sClient.Update(ctx, ms); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+
+		logger.V(6).Info("skipping reconcile since object is already scheduled for deletion")
 		return ctrl.Result{}, nil
+	}
+
+	// Add finalizer if not present
+	if !slices.Contains(ms.ObjectMeta.Finalizers, finalizerName) {
+		ms.ObjectMeta.Finalizers = append(ms.ObjectMeta.Finalizers, finalizerName)
+		if err := rm.k8sClient.Update(ctx, ms); err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	reconcilers := stackComponentReconcilers(ms,
