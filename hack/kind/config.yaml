@@ -5,6 +5,8 @@ containerdConfigPatches:
   - |-
     [plugins."io.containerd.grpc.v1.cri".registry.mirrors."local-registry:30000"]
       endpoint = ["http://10.96.223.192:30000"]
+    [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
+      SystemdCgroup = true
 nodes:
   - role: control-plane
     image: kindest/node:v1.24.0
