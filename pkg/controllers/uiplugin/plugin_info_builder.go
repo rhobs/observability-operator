@@ -40,11 +40,7 @@ var pluginTypeToConsoleName = map[uiv1alpha1.UIPluginType]string{
 	uiv1alpha1.TypeLogging:              "logging-view-plugin",
 }
 
-func PluginInfoBuilder(ctx context.Context, k client.Client, plugin *uiv1alpha1.UIPlugin, pluginConf UIPluginsConfiguration, clusterVersion string, acmVersion string) (*UIPluginInfo, error) {
-	compatibilityInfo, err := lookupImageAndFeatures(plugin.Spec.Type, clusterVersion, acmVersion)
-	if err != nil {
-		return nil, err
-	}
+func PluginInfoBuilder(ctx context.Context, k client.Client, plugin *uiv1alpha1.UIPlugin, pluginConf UIPluginsConfiguration, compatibilityInfo CompatibilityEntry) (*UIPluginInfo, error) {
 
 	image := pluginConf.Images[compatibilityInfo.ImageKey]
 	if image == "" {
