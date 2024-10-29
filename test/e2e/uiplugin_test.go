@@ -17,7 +17,6 @@ import (
 	"github.com/rhobs/observability-operator/test/e2e/framework"
 )
 
-var operatorInstallNS = flag.String("operatorInstallNS", "openshift-operator", "The namespace where the operator is installed")
 var uiPluginInstallNS string
 
 func TestUIPlugin(t *testing.T) {

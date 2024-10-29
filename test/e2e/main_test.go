@@ -10,7 +10,6 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -25,7 +24,10 @@ var (
 
 const e2eTestNamespace = "e2e-tests"
 
-var retain = flag.Bool("retain", false, "When set, the namespace in which tests are run will not be cleaned up")
+var (
+	retain            = flag.Bool("retain", false, "When set, the namespace in which tests are run will not be cleaned up")
+	operatorInstallNS = flag.String("operatorInstallNS", "openshift-operator", "The namespace where the operator is installed")
+)
 
 func TestMain(m *testing.M) {
 	flag.Parse()
@@ -98,19 +100,14 @@ func setupFramework() error {
 		return err
 	}
 
-	isOpenshiftCluster, err := isOpenshiftCluster(k8sClient)
-	if err != nil {
-		return err
-	}
-
 	f = &framework.Framework{
-		K8sClient:          k8sClient,
-		Config:             cfg,
-		Retain:             *retain,
-		IsOpenshiftCluster: isOpenshiftCluster,
+		K8sClient:         k8sClient,
+		Config:            cfg,
+		Retain:            *retain,
+		OperatorNamespace: *operatorInstallNS,
 	}
 
-	return nil
+	return f.Setup()
 }
 
 func createNamespace(name string) (func(), error) {
@@ -132,16 +129,4 @@ func createNamespace(name string) (func(), error) {
 	}
 
 	return cleanup, nil
-}
-
-func isOpenshiftCluster(k8sClient client.Client) (bool, error) {
-	clusterVersion := &configv1.ClusterVersion{}
-	err := k8sClient.Get(context.Background(), client.ObjectKey{Name: "version"}, clusterVersion)
-	if err == nil {
-		return true, nil
-	} else if meta.IsNoMatchError(err) {
-		return false, nil
-	} else {
-		return false, fmt.Errorf("failed to get clusterversion %w", err)
-	}
 }

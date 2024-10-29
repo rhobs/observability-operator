@@ -42,7 +42,7 @@ metadata:
     categories: Monitoring
     certified: "false"
     containerImage: observability-operator:0.4.2
-    createdAt: "2024-10-29T09:23:51Z"
+    createdAt: "2024-10-29T11:40:05Z"
     description: A Go based Kubernetes operator to setup and manage highly available
       Monitoring Stack using Prometheus, Alertmanager and Thanos Querier.
     operators.operatorframework.io/builder: operator-sdk-v1.37.0
@@ -753,6 +753,10 @@ spec:
                   capabilities:
                     drop:
                     - ALL
+                volumeMounts:
+                - mountPath: /etc/tls/private
+                  name: observability-operator-tls
+                  readOnly: true
               securityContext:
                 runAsNonRoot: true
               serviceAccountName: observability-operator-sa
@@ -761,6 +765,11 @@ spec:
               - effect: NoSchedule
                 key: node-role.kubernetes.io/infra
                 operator: Exists
+              volumes:
+              - name: observability-operator-tls
+                secret:
+                  optional: true
+                  secretName: observability-operator-tls
     strategy: deployment
   installModes:
   - supported: false
