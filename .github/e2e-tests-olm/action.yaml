@@ -31,9 +31,11 @@ runs:
     - name: Install required tools
       uses: ./.github/tools-cache
 
+    # Pin to OLM v0.28.0 because v0.29.0 fails on Kind.
+    # https://github.com/operator-framework/operator-lifecycle-manager/issues/3419
     - name: Install OLM
       shell: bash
-      run: ./tmp/bin/operator-sdk olm install
+      run: ./tmp/bin/operator-sdk olm install --version 0.28.0
 
     - name: Create a local docker registry in the Kind cluster
       shell: bash
