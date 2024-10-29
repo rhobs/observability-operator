@@ -8,10 +8,13 @@ import (
 	"path/filepath"
 	"time"
 
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apiserver/pkg/server/dynamiccertificates"
 	"k8s.io/client-go/kubernetes"
+	typedv1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -40,6 +43,7 @@ const (
 type Operator struct {
 	manager               manager.Manager
 	servingCertController *dynamiccertificates.DynamicServingCertificateController
+	clientCAController    *dynamiccertificates.ConfigMapCAController
 }
 
 type OpenShiftFeatureGates struct {
@@ -51,6 +55,7 @@ type FeatureGates struct {
 }
 
 type OperatorConfiguration struct {
+	Namespace       string
 	MetricsAddr     string
 	HealthProbeAddr string
 	Prometheus      stackctrl.PrometheusConfiguration
@@ -59,6 +64,13 @@ type OperatorConfiguration struct {
 	ThanosQuerier   tqctrl.ThanosConfiguration
 	UIPlugins       uictrl.UIPluginsConfiguration
 	FeatureGates    FeatureGates
+}
+
+func WithNamespace(ns string) func(*OperatorConfiguration) {
+	return func(oc *OperatorConfiguration) {
+		oc.Namespace = ns
+		oc.UIPlugins.ResourcesNamespace = ns
+	}
 }
 
 func WithPrometheusImage(image string) func(*OperatorConfiguration) {
@@ -97,10 +109,9 @@ func WithHealthProbeAddr(addr string) func(*OperatorConfiguration) {
 	}
 }
 
-func WithUIPlugins(namespace string, images map[string]string) func(*OperatorConfiguration) {
+func WithUIPluginImages(images map[string]string) func(*OperatorConfiguration) {
 	return func(oc *OperatorConfiguration) {
 		oc.UIPlugins.Images = images
-		oc.UIPlugins.ResourcesNamespace = namespace
 	}
 }
 
@@ -120,12 +131,16 @@ func NewOperatorConfiguration(opts ...func(*OperatorConfiguration)) *OperatorCon
 
 func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 	restConfig := ctrl.GetConfigOrDie()
+	scheme := NewScheme(cfg)
 
 	metricsOpts := metricsserver.Options{
 		BindAddress: cfg.MetricsAddr,
 	}
 
-	var servingCertController *dynamiccertificates.DynamicServingCertificateController
+	var (
+		clientCAController    *dynamiccertificates.ConfigMapCAController
+		servingCertController *dynamiccertificates.DynamicServingCertificateController
+	)
 	if cfg.FeatureGates.OpenShift.Enabled {
 		// When running in OpenShift, the server uses HTTPS thanks to the
 		// service CA operator.
@@ -162,8 +177,7 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 			return nil, err
 		}
 
-		// ConfigMapCAController automatically reloads the client CA.
-		clientCAProvider, err := dynamiccertificates.NewDynamicCAFromConfigMapController(
+		clientCAController, err = dynamiccertificates.NewDynamicCAFromConfigMapController(
 			"client-ca",
 			metav1.NamespaceSystem,
 			"extension-apiserver-authentication",
@@ -174,18 +188,28 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 			return nil, fmt.Errorf("failed to initialize client CA controller: %w", err)
 		}
 
+		eventBroadcaster := record.NewBroadcaster()
+		eventBroadcaster.StartStructuredLogging(0)
+		eventBroadcaster.StartRecordingToSink(&typedv1.EventSinkImpl{Interface: kubeClient.CoreV1().Events("")})
+		eventRecorder := record.NewEventRecorderAdapter(
+			eventBroadcaster.NewRecorder(scheme, v1.EventSource{Component: "cluster-observability-operator"}),
+		)
+
 		servingCertController = dynamiccertificates.NewDynamicServingCertificateController(
 			&tls.Config{
-				ClientAuth: tls.NoClientCert,
+				ClientAuth: tls.RequireAndVerifyClientCert,
 			},
-			clientCAProvider,
+			clientCAController,
 			certKeyProvider,
 			nil,
-			nil,
+			eventRecorder,
 		)
 		if err := servingCertController.RunOnce(); err != nil {
 			return nil, fmt.Errorf("failed to initialize serving certificate controller: %w", err)
 		}
+
+		clientCAController.AddListener(servingCertController)
+		certKeyProvider.AddListener(servingCertController)
 
 		metricsOpts.SecureServing = true
 		metricsOpts.TLSOpts = []func(*tls.Config){
@@ -198,7 +222,7 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 	mgr, err := ctrl.NewManager(
 		restConfig,
 		ctrl.Options{
-			Scheme:                 NewScheme(cfg),
+			Scheme:                 scheme,
 			Metrics:                metricsOpts,
 			HealthProbeBindAddress: cfg.HealthProbeAddr,
 		})
@@ -235,10 +259,15 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 	return &Operator{
 		manager:               mgr,
 		servingCertController: servingCertController,
+		clientCAController:    clientCAController,
 	}, nil
 }
 
 func (o *Operator) Start(ctx context.Context) error {
+	if o.clientCAController != nil {
+		go o.clientCAController.Run(ctx, 1)
+	}
+
 	if o.servingCertController != nil {
 		go o.servingCertController.Run(1, ctx.Done())
 	}
