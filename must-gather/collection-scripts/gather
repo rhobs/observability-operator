@@ -1,0 +1,139 @@
+#!/bin/bash
+
+# safeguards
+set -o nounset
+set -o errexit
+set -o pipefail
+
+# global readonly constants
+declare -r BASE_COLLECTION_PATH="../must-gather"
+declare -r COLLECTION_PATH="${BASE_COLLECTION_PATH}/monitoring/observability-operator"
+
+source "$(dirname "$0")"/common.sh
+
+# init initializes global variables that need to be computed.
+# E.g. get token of the default ServiceAccount
+init() {
+  mkdir -p "${COLLECTION_PATH}"
+
+  readarray -t MON_STACK_NSS < <(
+    oc get monitoringstacks --all-namespaces --no-headers -o custom-columns=":metadata.namespace"
+  ) || true
+}
+
+operants_get() {
+  oc get pods --all-namespaces -l app.kubernetes.io/managed-by=observability-operator -o yaml > "$COLLECTION_PATH"/operants.yaml
+  oc get pods --all-namespaces -l app.kubernetes.io/part-of=observability-operator -o yaml >> "$COLLECTION_PATH"/operants.yaml
+  oc get pods --all-namespaces -l app.kubernetes.io/name=observability-operator > "$COLLECTION_PATH"/operator.yaml
+}
+
+# prom_get makes http GET requests to prometheus /api/v1/$object and stores
+# the stdout and stderr results
+prom_get() {
+  local object="$1"; shift
+  local ns=$1; shift
+  local name="$1"; shift
+  local pod
+  pod=$(get_first_ready_prom_pod "$ns" "$name")
+
+  local result_path="$COLLECTION_PATH/$ns/$name/prometheus/$object"
+  mkdir -p "$(dirname "$result_path")"
+
+  echo "INFO: Getting ${object} from ${pod}"
+  oc exec "${pod}" \
+    -c prometheus \
+    -n "$ns" \
+    -- /bin/bash -c "curl -sG http://localhost:9090/api/v1/${object}" \
+      >  "${result_path}.json" \
+      2> "${result_path}.stderr"
+}
+
+prom_get_from_replica() {
+  local replica="$1"; shift
+  local object="$1"; shift
+  local ns=$1; shift
+  local name="$1"; shift
+  local path="${1:-$object}"; shift || true
+
+  local result_path="$COLLECTION_PATH/$ns/$name/prometheus/$path"
+  mkdir -p "$(dirname "${result_path}")"
+
+  echo "INFO: Getting ${object} from ${replica}"
+  oc exec "${replica}" \
+    -c prometheus \
+    -n "$ns" \
+    -- /bin/bash -c "curl -sG http://localhost:9090/api/v1/${object}" \
+      >  "${result_path}.json" \
+      2> "${result_path}.stderr"
+}
+
+prom_get_from_replicas() {
+  local object="$1"; shift
+  local ns=$1; shift
+  local name="$1"; shift
+  local path="${1:-$object}"; shift || true
+
+  readarray -t stss < <(
+    oc get sts -n "$ns" -l app.kubernetes.io/part-of="$name" --no-headers -o custom-columns=":metadata.uid"
+    ) || true
+  for sts in "${stss[@]}"; do
+    readarray -t pods < <(
+      oc get pods -n "$ns" -l app.kubernetes.io/component=prometheus -o json | jq -r '.items[] | select(.metadata.ownerReferences[].uid | test("'"$sts"'")).metadata.name'
+      ) || true
+    for pod in "${pods[@]}"; do
+      prom_get_from_replica "${pod}" "${object}" "$ns" "$name" "${pod}/${path}" || true
+    done
+  done
+}
+
+alertmanager_get() {
+  local object="$1"; shift
+  local ns=$1; shift
+  local name="$1"; shift
+  local pod
+  pod=$(get_first_ready_alertmanager_pod "$ns" "$name")
+
+  local result_path="$COLLECTION_PATH/$ns/$name/alertmanager/$object"
+  mkdir -p "$(dirname "$result_path")"
+
+  echo "INFO: Getting ${object} from ${pod}"
+  oc exec "${pod}" \
+    -c alertmanager\
+    -n openshift-monitoring \
+    -- /bin/bash -c "curl -sG http://localhost:9093/api/v2/${object}" \
+      >  "${result_path}.json" \
+      2> "${result_path}.stderr"
+}
+
+
+monitoring_gather(){
+  init
+
+  # begin gathering
+  # NOTE || true ignores failures
+
+  operants_get || true
+
+  for ns in "${MON_STACK_NSS[@]}"; do
+    readarray -t MON_STACK_NAMES < <(
+      oc get monitoringstacks -n "$ns" --no-headers -o custom-columns=":metadata.name"
+    ) || true
+    for name in "${MON_STACK_NAMES[@]}"; do
+      prom_get alertmanagers "$ns" "$name" || true
+      prom_get rules "$ns" "$name" || true
+      prom_get status/config "$ns" "$name" || true
+      prom_get status/flags "$ns" "$name" || true
+
+     # using prom_get_from_replica as the state differs for each replica
+      prom_get_from_replicas status/runtimeinfo "$ns" "$name" || true
+      prom_get_from_replicas 'targets?state=active' "$ns" "$name" targets-active || true
+      prom_get_from_replicas status/tsdb "$ns" "$name"|| true
+
+      alertmanager_get status "$ns" "$name" || true
+    done
+  done
+
+  sync
+}
+
+monitoring_gather
