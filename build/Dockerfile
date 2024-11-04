@@ -12,6 +12,7 @@ RUN go mod download
 # Copy the go source
 COPY cmd/operator/main.go cmd/operator/main.go
 COPY pkg/ pkg/
+COPY must-gather/ must-gather/
 
 # Build
 RUN GOOS=linux GOARCH=amd64 go build -a -tags netgo,osusergo -o manager cmd/operator/main.go
@@ -22,6 +23,7 @@ FROM gcr.io/distroless/static:nonroot
 WORKDIR /
 
 COPY --from=builder /workspace/manager .
+COPY --from=builder /workspace/must-gather/collection-scripts/* .
 USER 65532:65532
 
 ENTRYPOINT ["/manager"]
