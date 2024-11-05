@@ -1,15 +1,14 @@
 module github.com/rhobs/observability-operator
 
 go 1.22.0
-
-toolchain go1.22.8
+toolchain go1.23.2
 
 require (
 	github.com/go-logr/logr v1.4.2
 	github.com/google/go-cmp v0.6.0
 	github.com/openshift/api v0.0.0-20240404200104-96ed2d49b255
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.0
+	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.78.1
 	github.com/prometheus/common v0.60.1
 	github.com/rhobs/obo-prometheus-operator v0.77.1-rhobs1
 	github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.77.1-rhobs1
