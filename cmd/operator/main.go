@@ -120,13 +120,14 @@ func main() {
 	op, err := operator.New(
 		ctx,
 		operator.NewOperatorConfiguration(
+			operator.WithNamespace(namespace),
 			operator.WithMetricsAddr(metricsAddr),
 			operator.WithHealthProbeAddr(healthProbeAddr),
 			operator.WithPrometheusImage(imgMap["prometheus"]),
 			operator.WithAlertmanagerImage(imgMap["alertmanager"]),
 			operator.WithThanosSidecarImage(imgMap["thanos"]),
 			operator.WithThanosQuerierImage(imgMap["thanos"]),
-			operator.WithUIPlugins(namespace, imgMap),
+			operator.WithUIPluginImages(imgMap),
 			operator.WithFeatureGates(operator.FeatureGates{
 				OpenShift: operator.OpenShiftFeatureGates{
 					Enabled: openShiftEnabled,

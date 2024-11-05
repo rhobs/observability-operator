@@ -345,13 +345,21 @@ func (f *Framework) getPodMetrics(ctx context.Context, pod *v1.Pod, opts ...func
 	tr.TLSClientConfig = &tls.Config{
 		ServerName: fmt.Sprintf("observability-operator.%s.svc", pod.Namespace),
 		RootCAs:    f.RootCA,
+		GetClientCertificate: func(*tls.CertificateRequestInfo) (*tls.Certificate, error) {
+			fmt.Printf("client cert: %#v\n", f.MetricsClientCert)
+			return f.MetricsClientCert, nil
+		},
 	}
 
 	resp, err := (&http.Client{Transport: tr}).Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get a response from /metrics: %w", err)
+		return nil, fmt.Errorf("failed to get a response from %q: %w", req.URL.String(), err)
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("invalid status code from %q: got %d", req.URL.String(), resp.StatusCode)
+	}
 
 	return io.ReadAll(resp.Body)
 }

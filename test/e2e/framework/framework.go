@@ -3,6 +3,7 @@ package framework
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"crypto/x509"
 	"fmt"
 	"net/http"
@@ -34,6 +35,7 @@ type Framework struct {
 	Retain             bool
 	IsOpenshiftCluster bool
 	RootCA             *x509.CertPool
+	MetricsClientCert  *tls.Certificate
 	OperatorNamespace  string
 }
 
@@ -73,6 +75,32 @@ func (f *Framework) Setup() error {
 		return errors.New("invalid service CA")
 	}
 	f.RootCA = rootCA
+
+	// Load the prometheus-k8s TLS client certificate.
+	var s v1.Secret
+	key = client.ObjectKey{
+		Namespace: "openshift-monitoring",
+		Name:      "metrics-client-certs",
+	}
+	if err := f.K8sClient.Get(context.Background(), key, &s); err != nil {
+		return err
+	}
+
+	cert, found := s.Data["tls.crt"]
+	if !found {
+		return errors.New("failed to find TLS client certificate")
+	}
+
+	k, found := s.Data["tls.key"]
+	if !found {
+		return errors.New("failed to find TLS client key")
+	}
+
+	c, err := tls.X509KeyPair(cert, k)
+	if err != nil {
+		return err
+	}
+	f.MetricsClientCert = &c
 
 	return nil
 }
