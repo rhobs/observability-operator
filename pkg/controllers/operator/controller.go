@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package operator_controller
+package operator
 
 import (
 	"context"
@@ -22,7 +22,7 @@ import (
 
 	"github.com/go-logr/logr"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
-	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -65,8 +65,8 @@ func RegisterWithManager(mgr ctrl.Manager, namespace string) error {
 	ctrl, err := ctrl.NewControllerManagedBy(mgr).
 		Owns(&monv1.ServiceMonitor{}, generationChanged).
 		Watches(
-			&appsv1.Deployment{},
-			handler.EnqueueRequestsFromMapFunc(rm.operatorDeployment),
+			&corev1.Service{},
+			handler.EnqueueRequestsFromMapFunc(rm.operatorService),
 			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{}),
 		).
 		Build(rm)
@@ -82,7 +82,7 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	logger := rm.logger.WithValues("operator", req.NamespacedName)
 	logger.Info("Reconciling operator resources")
 
-	op := &appsv1.Deployment{}
+	op := &corev1.Service{}
 	err := rm.k8sClient.Get(ctx, req.NamespacedName, op)
 	if errors.IsNotFound(err) {
 		return ctrl.Result{}, nil
@@ -107,9 +107,9 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	return ctrl.Result{}, nil
 }
-func (rm resourceManager) operatorDeployment(ctx context.Context, ms client.Object) []reconcile.Request {
+func (rm resourceManager) operatorService(ctx context.Context, _ client.Object) []reconcile.Request {
 	var requests []reconcile.Request
-	op := &appsv1.Deployment{}
+	op := &corev1.Service{}
 	err := rm.k8sClient.Get(ctx, types.NamespacedName{Name: "observability-operator", Namespace: rm.namespace}, op)
 	if errors.IsNotFound(err) {
 		return requests

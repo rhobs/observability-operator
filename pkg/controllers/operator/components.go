@@ -1,4 +1,4 @@
-package operator_controller
+package operator
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	name = "observability-operato"
+	name = "observability-operator"
 )
 
 func operatorComponentReconcilers(owner metav1.Object, namespace string) []reconciler.Reconciler {
@@ -37,7 +37,7 @@ func newServiceMonitor(namespace string) *monv1.ServiceMonitor {
 				"app.kubernetes.io/component":  "operator",
 				"app.kubernetes.io/name":       name,
 				"app.kubernetes.io/part-of":    name,
-				"openshift.io/user-monitoring": "true",
+				"openshift.io/user-monitoring": "false",
 			},
 		},
 
@@ -51,8 +51,7 @@ func newServiceMonitor(namespace string) *monv1.ServiceMonitor {
 						CertFile: "/etc/prometheus/secrets/metrics-client-certs/tls.crt",
 						KeyFile:  "/etc/prometheus/secrets/metrics-client-certs/tls.key",
 						SafeTLSConfig: monv1.SafeTLSConfig{
-							ServerName:         ptr.To(fmt.Sprintf("%s.%s.svc", name, namespace)),
-							InsecureSkipVerify: ptr.To(false),
+							ServerName: ptr.To(fmt.Sprintf("%s.%s.svc", name, namespace)),
 						},
 					},
 				},

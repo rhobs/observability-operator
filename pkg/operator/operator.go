@@ -65,7 +65,6 @@ type OperatorConfiguration struct {
 	ThanosQuerier   tqctrl.ThanosConfiguration
 	UIPlugins       uictrl.UIPluginsConfiguration
 	FeatureGates    FeatureGates
-	Namespace       string
 }
 
 func WithNamespace(ns string) func(*OperatorConfiguration) {
@@ -120,12 +119,6 @@ func WithUIPluginImages(images map[string]string) func(*OperatorConfiguration) {
 func WithFeatureGates(featureGates FeatureGates) func(*OperatorConfiguration) {
 	return func(oc *OperatorConfiguration) {
 		oc.FeatureGates = featureGates
-	}
-}
-
-func WithNamespace(ns string) func(*OperatorConfiguration) {
-	return func(oc *OperatorConfiguration) {
-		oc.Namespace = ns
 	}
 }
 
