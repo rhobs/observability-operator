@@ -23,6 +23,7 @@ import (
 
 	stackctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/monitoring-stack"
 	tqctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/thanos-querier"
+	opctrl "github.com/rhobs/observability-operator/pkg/controllers/operator"
 	uictrl "github.com/rhobs/observability-operator/pkg/controllers/uiplugin"
 )
 
@@ -250,6 +251,15 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 	} else {
 		setupLog := ctrl.Log.WithName("setup")
 		setupLog.Info("OpenShift feature gate is disabled, UIPlugins are not enabled")
+	}
+
+	if cfg.FeatureGates.OpenShift.Enabled {
+		if err := opctrl.RegisterWithManager(mgr, cfg.Namespace); err != nil {
+			return nil, fmt.Errorf("unable to register operator controller: %w", err)
+		}
+	} else {
+		setupLog := ctrl.Log.WithName("setup")
+		setupLog.Info("OpenShift feature gate is disabled, Operator controller is not enabled")
 	}
 
 	if err := mgr.AddHealthzCheck("health probe", healthz.Ping); err != nil {
