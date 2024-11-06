@@ -25,14 +25,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 type resourceManager struct {
@@ -53,7 +50,7 @@ func RegisterWithManager(mgr ctrl.Manager, namespace string) error {
 	rm := &resourceManager{
 		k8sClient: mgr.GetClient(),
 		scheme:    mgr.GetScheme(),
-		logger:    ctrl.Log.WithName("observability-operator"),
+		logger:    ctrl.Log.WithName(name),
 		namespace: namespace,
 	}
 	// We only want to trigger a reconciliation when the generation
@@ -63,12 +60,14 @@ func RegisterWithManager(mgr ctrl.Manager, namespace string) error {
 	generationChanged := builder.WithPredicates(predicate.GenerationChangedPredicate{})
 
 	ctrl, err := ctrl.NewControllerManagedBy(mgr).
-		Owns(&monv1.ServiceMonitor{}, generationChanged).
-		Watches(
+		For(
 			&corev1.Service{},
-			handler.EnqueueRequestsFromMapFunc(rm.operatorService),
-			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{}),
+			builder.WithPredicates(predicate.NewPredicateFuncs(func(object client.Object) bool {
+				return object.GetName() == name
+			})),
 		).
+		Named(name).
+		Owns(&monv1.ServiceMonitor{}, generationChanged).
 		Build(rm)
 
 	if err != nil {
@@ -106,22 +105,4 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	}
 
 	return ctrl.Result{}, nil
-}
-func (rm resourceManager) operatorService(ctx context.Context, _ client.Object) []reconcile.Request {
-	var requests []reconcile.Request
-	op := &corev1.Service{}
-	err := rm.k8sClient.Get(ctx, types.NamespacedName{Name: "observability-operator", Namespace: rm.namespace}, op)
-	if errors.IsNotFound(err) {
-		return requests
-	}
-	if err != nil {
-		return requests
-	}
-	requests = append(requests, reconcile.Request{
-		NamespacedName: types.NamespacedName{
-			Name:      op.GetName(),
-			Namespace: op.GetNamespace(),
-		},
-	})
-	return requests
 }
