@@ -4,10 +4,14 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"path"
+	"strings"
 	"testing"
 	"time"
 
@@ -267,18 +271,23 @@ func (f *Framework) GetOperatorPod(t *testing.T) *v1.Pod {
 	pods := v1.PodList{}
 	err = f.K8sClient.List(context.Background(), &pods, listOptions...)
 	if err != nil {
-		t.Error("failed to get opeator pods: ", err)
+		t.Errorf("failed to get operator pods: %s", err)
 	}
 
 	if len(pods.Items) != 1 {
-		t.Error("Expected 1 operator pod but got:", len(pods.Items))
+		t.Errorf("Expected 1 operator pod but got: %d", len(pods.Items))
 	}
 
 	return &pods.Items[0]
 }
 
 type HTTPOptions struct {
-	scheme string
+	scheme  string
+	port    string
+	method  string
+	path    string
+	body    string
+	timeout time.Duration
 }
 
 func WithHTTPS() func(*HTTPOptions) {
@@ -287,13 +296,39 @@ func WithHTTPS() func(*HTTPOptions) {
 	}
 }
 
+func WithPort(p string) func(*HTTPOptions) {
+	return func(o *HTTPOptions) {
+		o.port = p
+	}
+}
+
+func WithMethod(m string) func(*HTTPOptions) {
+	return func(o *HTTPOptions) {
+		o.method = m
+	}
+}
+
+func WithPath(p string) func(*HTTPOptions) {
+	return func(o *HTTPOptions) {
+		o.path = p
+	}
+}
+
+func WithBody(b string) func(*HTTPOptions) {
+	return func(o *HTTPOptions) {
+		o.body = b
+	}
+}
+
+// GetPodMetrics requests the /metrics endpoint from the pod.
 func (f *Framework) GetPodMetrics(pod *v1.Pod, opts ...func(*HTTPOptions)) ([]byte, error) {
 	var (
 		pollErr error
 		b       []byte
 	)
+	opts = append(opts, WithPath("/metrics"), WithPort("8080"))
 	if err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, DefaultTestTimeout, true, func(ctx context.Context) (bool, error) {
-		b, pollErr = f.getPodMetrics(ctx, pod, opts...)
+		b, pollErr = f.getRequest(ctx, pod, opts...)
 		if pollErr != nil {
 			return false, nil
 		}
@@ -306,7 +341,124 @@ func (f *Framework) GetPodMetrics(pod *v1.Pod, opts ...func(*HTTPOptions)) ([]by
 	return b, nil
 }
 
-func (f *Framework) getPodMetrics(ctx context.Context, pod *v1.Pod, opts ...func(*HTTPOptions)) ([]byte, error) {
+// AssertPromQLResult evaluates the PromQL expression against the in-cluster
+// Prometheus stack.
+// It returns an error if the request fails. Otherwise the result is passed to
+// the callback function for additional checks.
+func (f *Framework) AssertPromQLResult(t *testing.T, expr string, callback func(model.Value) error) error {
+	t.Helper()
+	var (
+		pollErr error
+		v       model.Value
+	)
+	if err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, DefaultTestTimeout, true, func(context.Context) (bool, error) {
+		v, pollErr = f.getPromQLResult(context.Background(), expr)
+		if pollErr != nil {
+			t.Logf("error from getPromQLResult(): %s", pollErr)
+			return false, nil
+		}
+
+		pollErr = callback(v)
+		if pollErr != nil {
+			return false, nil
+		}
+
+		return true, nil
+	}); err != nil {
+		return fmt.Errorf("failed to assert query %q: %w: %w", expr, err, pollErr)
+	}
+
+	return nil
+}
+
+// Copied from github.com/prometheus/client_golang/blob/api/prometheus/v1/api.go
+type apiResponse struct {
+	Status    string      `json:"status"`
+	Result    queryResult `json:"data"`
+	ErrorType string      `json:"errorType"`
+	Error     string      `json:"error"`
+	Warnings  []string    `json:"warnings,omitempty"`
+}
+
+type queryResult struct {
+	Type   model.ValueType `json:"resultType"`
+	Result interface{}     `json:"result"`
+
+	// The decoded value.
+	v model.Value
+}
+
+func (qr *queryResult) UnmarshalJSON(b []byte) error {
+	v := struct {
+		Type   model.ValueType `json:"resultType"`
+		Result json.RawMessage `json:"result"`
+	}{}
+
+	err := json.Unmarshal(b, &v)
+	if err != nil {
+		return err
+	}
+
+	switch v.Type {
+	case model.ValScalar:
+		var sv model.Scalar
+		err = json.Unmarshal(v.Result, &sv)
+		qr.v = &sv
+
+	case model.ValVector:
+		var vv model.Vector
+		err = json.Unmarshal(v.Result, &vv)
+		qr.v = vv
+
+	case model.ValMatrix:
+		var mv model.Matrix
+		err = json.Unmarshal(v.Result, &mv)
+		qr.v = mv
+
+	default:
+		err = fmt.Errorf("unexpected value type %q", v.Type)
+	}
+	return err
+}
+
+func (f *Framework) getPromQLResult(ctx context.Context, expr string) (model.Value, error) {
+	pods, err := f.getPodsForService("prometheus-k8s", "openshift-monitoring")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get prometheus pod: %w", err)
+	}
+
+	if len(pods) == 0 {
+		return nil, fmt.Errorf("no Prometheus pods found")
+	}
+
+	data := url.Values{}
+	data.Set("query", expr)
+	b, err := f.getRequest(
+		ctx,
+		&pods[0],
+		WithPort("9090"),
+		WithMethod("POST"),
+		WithPath("/api/v1/query"),
+		WithBody(data.Encode()),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query prometheus: %w", err)
+	}
+
+	var r apiResponse
+	if err := json.Unmarshal(b, &r); err != nil {
+		return nil, fmt.Errorf("failed to parse prometheus response: %w", err)
+	}
+
+	if r.Status != "success" {
+		return nil, fmt.Errorf("%q: %s (%s)", expr, r.ErrorType, r.Error)
+	}
+
+	return r.Result.v, nil
+}
+
+// getRequest makes an HTTP request to the pod via port-forward.
+func (f *Framework) getRequest(ctx context.Context, pod *v1.Pod, opts ...func(*HTTPOptions)) ([]byte, error) {
 	var (
 		stopChan = make(chan struct{})
 		errChan  = make(chan error, 1)
@@ -321,24 +473,33 @@ func (f *Framework) getPodMetrics(ctx context.Context, pod *v1.Pod, opts ...func
 		close(stopChan)
 	}()
 
-	err := f.StartPortForward(pod.Name, pod.Namespace, "8080", stopChan, errChan)
-	if err != nil {
-		return nil, fmt.Errorf("failed to start port-forwarding: %w", err)
-	}
-
 	httpOptions := HTTPOptions{
-		scheme: "http",
+		scheme:  "http",
+		method:  "GET",
+		timeout: 4 * time.Second,
 	}
 	for _, o := range opts {
 		o(&httpOptions)
 	}
 
-	// The /metrics endpoint shouldn't need more than 5 seconds to send a response.
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	err := f.StartPortForward(pod.Name, pod.Namespace, httpOptions.port, stopChan, errChan)
+	if err != nil {
+		return nil, fmt.Errorf("failed to start port-forwarding: %w", err)
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, httpOptions.timeout)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s://localhost:8080/metrics", httpOptions.scheme), nil)
+	req, err := http.NewRequestWithContext(
+		ctx,
+		httpOptions.method,
+		httpOptions.scheme+"://"+path.Join(fmt.Sprintf("localhost:%s", httpOptions.port), httpOptions.path),
+		strings.NewReader(httpOptions.body),
+	)
 	if err != nil {
 		return nil, err
+	}
+	if req.Method == "POST" {
+		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	}
 
 	tr := http.DefaultTransport.(*http.Transport).Clone()
@@ -346,7 +507,6 @@ func (f *Framework) getPodMetrics(ctx context.Context, pod *v1.Pod, opts ...func
 		ServerName: fmt.Sprintf("observability-operator.%s.svc", pod.Namespace),
 		RootCAs:    f.RootCA,
 		GetClientCertificate: func(*tls.CertificateRequestInfo) (*tls.Certificate, error) {
-			fmt.Printf("client cert: %#v\n", f.MetricsClientCert)
 			return f.MetricsClientCert, nil
 		},
 	}
@@ -357,8 +517,9 @@ func (f *Framework) getPodMetrics(ctx context.Context, pod *v1.Pod, opts ...func
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("invalid status code from %q: got %d", req.URL.String(), resp.StatusCode)
+	if resp.StatusCode/100 != 2 {
+		b, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("invalid status code from %q: got %d (%q)", req.URL.String(), resp.StatusCode, string(b))
 	}
 
 	return io.ReadAll(resp.Body)
