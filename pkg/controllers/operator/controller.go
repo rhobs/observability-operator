@@ -25,13 +25,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-	"sigs.k8s.io/controller-runtime/pkg/scheme"
 )
 
 type resourceManager struct {
@@ -48,17 +46,6 @@ type resourceManager struct {
 
 // RegisterWithManager registers the controller with Manager
 func RegisterWithManager(mgr ctrl.Manager, namespace string) error {
-
-	// GroupVersion is group version used to register these objects
-	GroupVersion := schema.GroupVersion{Group: "", Version: "v1"}
-	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
-	SchemeBuilder := &scheme.Builder{GroupVersion: GroupVersion}
-	SchemeBuilder.Register(&corev1.Service{}, &corev1.ServiceList{})
-	// GroupVersion is group version used to register these objects
-	GroupVersion = schema.GroupVersion{Group: "monitoring.coreos.com", Version: "v1"}
-	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
-	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}
-	SchemeBuilder.Register(&monv1.ServiceMonitor{}, &monv1.ServiceMonitorList{})
 
 	rm := &resourceManager{
 		k8sClient: mgr.GetClient(),
