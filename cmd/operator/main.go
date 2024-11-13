@@ -44,7 +44,7 @@ var defaultImages = map[string]string{
 	"ui-distributed-tracing":   "quay.io/openshift-observability-ui/distributed-tracing-console-plugin:v0.3.0",
 	"ui-logging":               "quay.io/openshift-observability-ui/logging-view-plugin:v6.0.0",
 	"ui-monitoring":            "quay.io/openshift-observability-ui/monitoring-console-plugin:latest",
-	"korrel8r":                 "quay.io/korrel8r/korrel8r:0.7.2",
+	"korrel8r":                 "quay.io/korrel8r/korrel8r:0.7.4",
 }
 
 func imagesUsed() []string {
