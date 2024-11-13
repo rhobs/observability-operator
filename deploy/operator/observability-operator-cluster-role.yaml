@@ -35,6 +35,13 @@ rules:
   - list
   - watch
 - apiGroups:
+  - ""
+  resources:
+  - services/finalizers
+  verbs:
+  - patch
+  - update
+- apiGroups:
   - apps
   resources:
   - daemonsets

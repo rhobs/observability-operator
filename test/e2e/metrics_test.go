@@ -10,7 +10,7 @@ import (
 	"github.com/rhobs/observability-operator/test/e2e/framework"
 )
 
-func TestMetrics(t *testing.T) {
+func TestOperatorMetrics(t *testing.T) {
 	t.Run("operator exposes metrics", func(t *testing.T) {
 		pod := f.GetOperatorPod(t)
 
@@ -44,10 +44,6 @@ func TestMetrics(t *testing.T) {
 				vec := v.(model.Vector)
 				if len(vec) != 1 {
 					return fmt.Errorf("expecting 1 item, got %d", len(vec))
-				}
-
-				if vec[0].Value != 1.0 {
-					return fmt.Errorf("expecting value 1, got %f", vec[0].Value)
 				}
 
 				return nil

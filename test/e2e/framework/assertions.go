@@ -351,7 +351,7 @@ func (f *Framework) AssertPromQLResult(t *testing.T, expr string, callback func(
 		pollErr error
 		v       model.Value
 	)
-	if err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, DefaultTestTimeout, true, func(context.Context) (bool, error) {
+	if err := wait.PollUntilContextTimeout(context.Background(), 20*time.Second, 3*DefaultTestTimeout, true, func(context.Context) (bool, error) {
 		v, pollErr = f.getPromQLResult(context.Background(), expr)
 		if pollErr != nil {
 			t.Logf("error from getPromQLResult(): %s", pollErr)

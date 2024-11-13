@@ -98,7 +98,7 @@ func newRoleBindingForPrometheusRole(namespace string) *rbacv1.RoleBinding {
 			APIGroup:  corev1.SchemeGroupVersion.Group,
 			Kind:      "ServiceAccount",
 			Name:      "prometheus-k8s",
-			Namespace: namespace,
+			Namespace: reconciler.OpenshiftMonitoringNamespace,
 		}},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: rbacv1.SchemeGroupVersion.Group,

@@ -41,8 +41,12 @@ type resourceManager struct {
 }
 
 // RBAC for managing Prometheus Operator CRs
+// The controller also needs update permission to the services/finalizers
+// subresource to set the owner reference with blockOwnerDeletion=true on the
+// ServiceMonitor resource.
 //+kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors,verbs=list;watch;create;update;delete;patch
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles;rolebindings,verbs=list;create;update;patch
+//+kubebuilder:rbac:groups="",resources=services/finalizers,verbs=update;patch
 
 // RegisterWithManager registers the controller with Manager
 func RegisterWithManager(mgr ctrl.Manager, namespace string) error {

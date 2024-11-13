@@ -15,14 +15,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
+	"github.com/rhobs/observability-operator/pkg/reconciler"
+)
+
+const (
+	korrel8rSvcName        = "korrel8r"
+	monitorClusterroleName = "cluster-monitoring"
+	alertmanagerRoleName   = "monitoring-alertmanager-view"
 )
 
 func createTroubleshootingPanelPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string) (*UIPluginInfo, error) {
 	troubleshootingPanelConfig := plugin.Spec.TroubleshootingPanel
-	korrel8rSvcName := "korrel8r"
-	monitorClusterroleName := "cluster-monitoring"
-	alertmanagerRoleName := "monitoring-alertmanager-view"
-	monitoringNamespace := "openshift-monitoring"
 
 	configYaml, err := marshalTroubleshootingPanelPluginConfig(troubleshootingPanelConfig)
 	if err != nil {
@@ -92,7 +95,7 @@ func createTroubleshootingPanelPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      alertmanagerRoleName + "-rolebinding",
-				Namespace: monitoringNamespace,
+				Namespace: reconciler.OpenshiftMonitoringNamespace,
 			},
 			Subjects: []rbacv1.Subject{
 				{

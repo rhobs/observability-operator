@@ -10,6 +10,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
+const (
+	// OpenshiftMonitoringNamespace is the namespace in which the OpenShift
+	// monitoring components are deployed.
+	OpenshiftMonitoringNamespace = "openshift-monitoring"
+)
+
 // This interface is used by the resourceManagers to reconicle the resources they
 // watch. If any component needs special treatment in the reconcile loop, create
 // a new type that implements this interface.
