@@ -8,13 +8,10 @@ import (
 	"path/filepath"
 	"time"
 
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apiserver/pkg/server/dynamiccertificates"
 	"k8s.io/client-go/kubernetes"
-	typedv1 "k8s.io/client-go/kubernetes/typed/core/v1"
-	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -189,13 +186,6 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 			return nil, fmt.Errorf("failed to initialize client CA controller: %w", err)
 		}
 
-		eventBroadcaster := record.NewBroadcaster()
-		eventBroadcaster.StartStructuredLogging(0)
-		eventBroadcaster.StartRecordingToSink(&typedv1.EventSinkImpl{Interface: kubeClient.CoreV1().Events("")})
-		eventRecorder := record.NewEventRecorderAdapter(
-			eventBroadcaster.NewRecorder(scheme, v1.EventSource{Component: "cluster-observability-operator"}),
-		)
-
 		servingCertController = dynamiccertificates.NewDynamicServingCertificateController(
 			&tls.Config{
 				ClientAuth: tls.RequireAndVerifyClientCert,
@@ -203,7 +193,9 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 			clientCAController,
 			certKeyProvider,
 			nil,
-			eventRecorder,
+			// Disabling events for now because the controller generates
+			// invalid events when used with DynamicServingContentFromFiles.
+			nil,
 		)
 		if err := servingCertController.RunOnce(); err != nil {
 			return nil, fmt.Errorf("failed to initialize serving certificate controller: %w", err)
