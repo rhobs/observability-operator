@@ -17,9 +17,8 @@ COPY must-gather/ must-gather/
 # Build
 RUN GOOS=linux GOARCH=amd64 go build -a -tags netgo,osusergo -o manager cmd/operator/main.go
 
-# Use distroless as minimal base image to package the manager binary
-# Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM gcr.io/distroless/static:nonroot
+# Use ubi. The gather script requires bash
+FROM registry.access.redhat.com/ubi8/ubi-micro
 WORKDIR /
 
 COPY --from=builder /workspace/manager .
