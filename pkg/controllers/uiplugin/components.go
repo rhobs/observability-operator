@@ -493,7 +493,16 @@ func newKorrel8rService(name string, namespace string) *corev1.Service {
 
 func newKorrel8rConfigMap(name string, namespace string, info UIPluginInfo) (*corev1.ConfigMap, error) {
 
-	korrel8rData := map[string]string{"Metric": "thanos-querier", "MetricAlert": "alertmanager-main", "Log": "logging-loki-gateway-http", "Netflow": "loki-gateway-http", "Trace": "tempo-platform-gateway", "MonitoringNs": "openshift-monitoring", "LoggingNs": OpenshiftLoggingNs, "NetobservNs": OpenshiftNetobservNs, "TracingNs": OpenshiftTracingNs}
+	korrel8rData := map[string]string{
+		"Metric":      "thanos-querier",
+		"MetricAlert": "alertmanager-main",
+		"Log":         "logging-loki-gateway-http",
+		"Netflow":     "loki-gateway-http", "Trace": "tempo-platform-gateway",
+		"MonitoringNs": reconciler.OpenshiftMonitoringNamespace,
+		"LoggingNs":    OpenshiftLoggingNs,
+		"NetobservNs":  OpenshiftNetobservNs,
+		"TracingNs":    OpenshiftTracingNs,
+	}
 
 	if info.LokiServiceNames[OpenshiftLoggingNs] != "" {
 		korrel8rData["Log"] = info.LokiServiceNames[OpenshiftLoggingNs]
