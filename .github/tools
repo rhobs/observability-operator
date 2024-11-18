@@ -8,9 +8,4 @@ operator-sdk v1.37.0
 opm v1.47.0
 promq v0.0.1
 crdoc v0.5.2
-jsonnet v0.20.0
-jsonnetfmt v0.20.0
-jsonnet-lint v0.20.0
-jb v0.5.1
-gojsontoyaml v0.1.0
 shellcheck 0.10.0

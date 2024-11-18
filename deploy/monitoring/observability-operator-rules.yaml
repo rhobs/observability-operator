@@ -1,54 +1,28 @@
 ---
-# NOTE: For PrometheusRule ObO uses platform monitoring in OpenShift
-# instead of the forked PO's CRDs. As the ObO bundle ships the forked PO's CRD,
-# these won't be available at the time OLM installs the bundle
-
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
   labels:
     app.kubernetes.io/component: operator
-    app.kubernetes.io/name: observability-operator-rules
+    app.kubernetes.io/name: observability-operator
     app.kubernetes.io/part-of: observability-operator
-    prometheus: k8s
-    role: alert-rules
-  name: observability-operator-rules
+    openshift.io/user-monitoring: "false"
+  name: observability-operator
 spec:
   groups:
-  - name: observability-operator.rules
+  - name: operator
     rules:
-    - alert: ObservabilityOperatorReconcileErrors
+    - alert: ClusterObservabilityOperatorReconciliationsFailed
       annotations:
-        description: |
-          Observability Operator controller - {{ $labels.controller }} fails to reconcile.
-          Inspect the observability-operator log for potential root causes.
-        summary: Observability Operator controller - {{ $labels.controller }} fails to reconcile
-      expr: |
-        increase(controller_runtime_reconcile_errors_total{job="observability-operator"}[15m]) > 0
+        description: |-
+          {{$value | humanize}}% of reconciliation requests are failing for the '{{ $labels.controller}}' controller.
+
+          Check the logs of the {{$labels.namespace}}/{{$labels.pod}} pod to investigate further.
+        summary: Cluster observability operator fails to reconcile resources
+      expr: |-
+        sum by(controller,pod,namespace) (rate(controller_runtime_reconcile_total{result="error",job="observability-operator"}[5m]))
+        /
+        sum by(controller,pod,namespace) (rate(controller_runtime_reconcile_total{job="observability-operator"}[5m])) > 0.1
       for: 15m
       labels:
         severity: warning
-    - alert: ObservabilityOperatorReconcileLongerThan10Min
-      annotations:
-        description: |
-          Observability Operator controller reconcilation takes longer than 10 minutes for the controller - {{ $labels.controller }}.
-          Inspect the observability-operator log for potential root causes.
-        summary: Observability Operator controller - {{ $labels.controller }} reconcilation takes too long to reconcile
-      expr: |
-        rate(controller_runtime_reconcile_time_seconds_sum{job="observability-operator"}[5m]) /
-        rate(controller_runtime_reconcile_time_seconds_count{job="observability-operator"}[5m])
-        > 600
-      for: 10m
-      labels:
-        severity: warning
-    - alert: ObservabilityOperatorBacklogNotDrained
-      annotations:
-        description: |
-          The backlog of Observability Operator controller - {{ $labels.name }} is not getting drained; an indication that reconcile loop may be stuck
-          Inspect the observability-operator log for potential root causes.
-        summary: Observability Operator controller - {{ $labels.name }} backlog is not being drained.
-      expr: |
-        rate(workqueue_depth{job="observability-operator"}[15m]) > 0
-      for: 15m
-      labels:
-        severity: critical

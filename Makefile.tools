@@ -34,21 +34,6 @@ OC_VERSION = v4.8.11
 CRDOC = $(TOOLS_DIR)/crdoc
 CRDOC_VERSION = v0.5.2
 
-# jsonnet related tools and dependencies
-JSONNET = $(TOOLS_DIR)/jsonnet
-JSONNETFMT = $(TOOLS_DIR)/jsonnetfmt
-JSONNET_LINT = $(TOOLS_DIR)/jsonnet-lint
-JSONNET_VERSION = v0.20.0
-
-JB = $(TOOLS_DIR)/jb
-JB_VERSION = v0.5.1
-
-GOJSONTOYAML = $(TOOLS_DIR)/gojsontoyaml
-GOJSONTOYAML_VERSION = v0.1.0
-
-JSONNET_VENDOR = jsonnet/vendor
-JSONNETFMT_ARGS = -n 2 --max-blank-lines 2 --string-style s --comment-style s
-
 SHELLCHECK = $(TOOLS_DIR)/shellcheck
 SHELLCHECK_VERSION = 0.10.0
 
@@ -141,47 +126,6 @@ $(CRDOC) crdoc: $(TOOLS_DIR)
 		GOBIN=$(TOOLS_DIR) go install fybrik.io/crdoc@$(CRDOC_VERSION) ;\
 	}
 
-.PHONY: jsonnet
-$(JSONNET) jsonnet: $(TOOLS_DIR)
-	@{ \
-		set -ex ;\
-		[[ -f $(JSONNET) ]] && exit 0 ;\
-		GOBIN=$(TOOLS_DIR) go install github.com/google/go-jsonnet/cmd/jsonnet@$(JSONNET_VERSION) ;\
-	}
-
-
-.PHONY: jsonnetfmt
-$(JSONNETFMT) jsonnetfmt: $(TOOLS_DIR)
-	@{ \
-		set -ex ;\
-		[[ -f $(JSONNETFMT) ]] && exit 0 ;\
-		GOBIN=$(TOOLS_DIR)  go install github.com/google/go-jsonnet/cmd/jsonnetfmt@$(JSONNET_VERSION) ;\
-	}
-
-.PHONY: jsonnet-lint
-$(JSONNET_LINT) jsonnet-lint: $(TOOLS_DIR)
-	@{ \
-		set -ex ;\
-		[[ -f $(JSONNET_LINT) ]] && exit 0 ;\
-		GOBIN=$(TOOLS_DIR)  go install github.com/google/go-jsonnet/cmd/jsonnet-lint@$(JSONNET_VERSION) ;\
-	}
-
-.PHONY: jb
-$(JB) jb: $(TOOLS_DIR)
-	@{ \
-		set -ex ;\
-		[[ -f $(JB) ]] && exit 0 ;\
-		GOBIN=$(TOOLS_DIR) go install github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb@$(JB_VERSION) ;\
-	}
-
-.PHONY: gojsontoyaml
-$(GOJSONTOYAML) gojsontoyaml: $(TOOLS_DIR)
-	@{ \
-		set -ex ;\
-		[[ -f $(GOJSONTOYAML) ]] && exit 0 ;\
-		GOBIN=$(TOOLS_DIR) go install github.com/brancz/gojsontoyaml@$(GOJSONTOYAML_VERSION) ;\
-	}
-
 .PHONY: shellcheck
 $(SHELLCHECK) shellcheck: $(TOOLS_DIR)
 	@{ \
@@ -196,9 +140,6 @@ $(SHELLCHECK) shellcheck: $(TOOLS_DIR)
 		$(SHELLCHECK) -V | grep -q $${version##v} ;\
 	}
 
-.PHONY: jsonnet-tools
-jsonnet-tools: jsonnet jsonnetfmt jsonnet-lint jb gojsontoyaml
-
 # Install all required tools
 .PHONY: tools
 tools: $(CONTROLLER_GEN) \
@@ -209,8 +150,7 @@ tools: $(CONTROLLER_GEN) \
 		$(PROMQ) \
 		$(CRDOC) \
 		$(GOLANGCI_LINT) \
-		$(SHELLCHECK) \
-		jsonnet-tools
+		$(SHELLCHECK)
 	@{ \
 		set -ex ;\
 		tools_file=.github/tools ;\
@@ -224,11 +164,6 @@ tools: $(CONTROLLER_GEN) \
 		echo  $$(basename $(OPM)) $(OPM_VERSION) >> $$tools_file ;\
 		echo  $$(basename $(PROMQ)) $(PROMQ_VERSION) >> $$tools_file ;\
 		echo  $$(basename $(CRDOC)) $(CRDOC_VERSION) >> $$tools_file ; \
-		echo  $$(basename $(JSONNET)) $(JSONNET_VERSION) >> $$tools_file ;\
-		echo  $$(basename $(JSONNETFMT)) $(JSONNET_VERSION) >> $$tools_file ;\
-		echo  $$(basename $(JSONNET_LINT)) $(JSONNET_VERSION) >> $$tools_file ;\
-		echo  $$(basename $(JB)) $(JB_VERSION) >> $$tools_file ;\
-		echo  $$(basename $(GOJSONTOYAML)) $(GOJSONTOYAML_VERSION) >> $$tools_file ;\
 		echo  $$(basename $(SHELLCHECK)) $(SHELLCHECK_VERSION) >> $$tools_file ;\
 	}
 
@@ -246,7 +181,4 @@ validate-tools:
 	@$(OPM) version
 	@$(PROMQ) --help | head -n 2
 	@$(CRDOC) --help | head -n 3
-	@$(JSONNETFMT) --version
-	@$(JSONNET_LINT) --version
-	@$(JB) --version
 	@$(SHELLCHECK) -V | head -n 2

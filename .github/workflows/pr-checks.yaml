@@ -39,9 +39,6 @@ jobs:
       - name: Lint Go code
         run: make lint-golang
 
-      - name: Lint Jsonnet code
-        run: make fmt-jsonnet lint-jsonnet && git diff --exit-code
-
       - name: Lint Shell scripts
         run: make lint-shell
 

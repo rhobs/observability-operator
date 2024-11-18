@@ -24,50 +24,23 @@ test-unit:
 	go test -cover ./cmd/... ./pkg/...
 
 .PHONY: lint
-lint: lint-golang lint-jsonnet lint-shell
+lint: lint-golang lint-shell
 
 .PHONY: lint-golang
 lint-golang: $(GOLANGCI_LINT)
 	$(GOLANGCI_LINT) run ./... --fix
 
-.PHONY: lint-jsonnet
-lint-jsonnet: $(JSONNET_LINT) jsonnet-vendor
-	find jsonnet/ -name 'vendor' -prune \
-		-o -name '*.libsonnet' -print \
-		-o -name '*.jsonnet' -print \
-	| xargs -n 1 -- $(JSONNET_LINT) -J $(JSONNET_VENDOR)
+# TODO(simonpasquier): remove this after #629 merges.
+.PHONY: lint-jsonnet fmt-jsonnet
+lint-jsonnet fmt-jsonnet:
 
 .PHONY: lint-shell
 lint-shell: $(SHELLCHECK)
 	find -name "*.sh" -print0 | xargs --null $(SHELLCHECK)
 
-.PHONY: fmt-jsonnet
-fmt-jsonnet: $(JSONNETFMT) jsonnet-vendor
-	find jsonnet/ -name 'vendor' -prune \
-		-o -name '*.libsonnet' -print \
-		-o -name '*.jsonnet' -print \
-	| xargs -n 1 -- $(JSONNETFMT) $(JSONNETFMT_ARGS) -i
-
-
 .PHONY: check-jq
 check-jq:
 	jq --version > /dev/null
-
-.PHONY: jsonnet-vendor
-jsonnet-vendor: $(JB)
-	cd jsonnet && $(JB) install
-
-.PHONY: generate-prometheus-rules
-generate-prometheus-rules: jsonnet-tools check-jq kustomize jsonnet-vendor
-	for dir in jsonnet/components/*/; do \
-		component=$$(basename $$dir) ;\
-		echo "Generating prometheusrule file for $$component" ;\
-		$(JSONNET) -J $(JSONNET_VENDOR) $$dir/main.jsonnet \
-			| jq .rule \
-			| $(GOJSONTOYAML) > deploy/monitoring/monitoring-$$component-rules.yaml ;\
-		cd deploy/monitoring && \
-		$(KUSTOMIZE) edit add resource "monitoring-$$component-rules.yaml" && cd - ;\
-	done;
 
 .PHONY: docs
 docs: $(CRDOC)
@@ -129,7 +102,7 @@ generate-deepcopy: $(CONTROLLER_GEN)
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./pkg/apis/..."
 
 .PHONY: generate
-generate: generate-crds generate-deepcopy generate-kustomize generate-package-resources generate-prometheus-rules docs
+generate: generate-crds generate-deepcopy generate-kustomize generate-package-resources docs
 
 .PHONY: operator
 operator: generate build
@@ -317,4 +290,4 @@ kind-cluster: $(OPERATOR_SDK)
 
 .PHONY: clean
 clean: clean-tools
-	rm -rf $(JSONNET_VENDOR) bundle/ bundle.Dockerfile
+	rm -rf bundle/ bundle.Dockerfile
