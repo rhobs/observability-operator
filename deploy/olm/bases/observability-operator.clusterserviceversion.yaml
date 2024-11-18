@@ -19,6 +19,7 @@ metadata:
         "prometheusagents.monitoring.rhobs"
       ]
     repository: 'https://github.com/rhobs/observability-operator'
+    operatorframework.io/cluster-monitoring: "true"
   name: observability-operator.v0.0.0
   namespace: placeholder
 spec:
