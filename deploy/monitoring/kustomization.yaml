@@ -2,6 +2,3 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
 - observability-operator-rules.yaml
-- monitoring-alertmanager-rules.yaml
-- monitoring-prometheus-rules.yaml
-- monitoring-prometheus-operator-rules.yaml
