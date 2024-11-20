@@ -20,6 +20,7 @@ metadata:
       ]
     repository: 'https://github.com/rhobs/observability-operator'
     operatorframework.io/cluster-monitoring: "true"
+    operatorframework.io/suggested-namespace: observability-operator
   name: observability-operator.v0.0.0
   namespace: placeholder
 spec:
