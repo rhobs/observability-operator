@@ -19,11 +19,11 @@ require (
 	golang.org/x/mod v0.22.0
 	gopkg.in/yaml.v3 v3.0.1
 	gotest.tools/v3 v3.5.1
-	k8s.io/api v0.31.2
+	k8s.io/api v0.31.3
 	k8s.io/apiextensions-apiserver v0.31.2
-	k8s.io/apimachinery v0.31.2
+	k8s.io/apimachinery v0.31.3
 	k8s.io/apiserver v0.31.2
-	k8s.io/client-go v0.31.2
+	k8s.io/client-go v0.31.3
 	k8s.io/component-base v0.31.2
 	k8s.io/utils v0.0.0-20240902221715-702e33fdd3c3
 	sigs.k8s.io/controller-runtime v0.19.1
