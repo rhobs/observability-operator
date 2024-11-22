@@ -8,10 +8,12 @@ import (
 	"path/filepath"
 	"time"
 
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apiserver/pkg/server/dynamiccertificates"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -186,6 +188,14 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 			return nil, fmt.Errorf("failed to initialize client CA controller: %w", err)
 		}
 
+		// Only log the events emitted by the certificate controller for now
+		// because the controller generates invalid events rejected by the
+		// Kubernetes API when used with DynamicServingContentFromFiles.
+		eventBroadcaster := record.NewBroadcaster()
+		eventBroadcaster.StartLogging(func(format string, args ...interface{}) {
+			ctrl.Log.WithName("events").Info(fmt.Sprintf(format, args...))
+		})
+
 		servingCertController = dynamiccertificates.NewDynamicServingCertificateController(
 			&tls.Config{
 				ClientAuth: tls.RequireAndVerifyClientCert,
@@ -193,9 +203,9 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 			clientCAController,
 			certKeyProvider,
 			nil,
-			// Disabling events for now because the controller generates
-			// invalid events when used with DynamicServingContentFromFiles.
-			nil,
+			record.NewEventRecorderAdapter(
+				eventBroadcaster.NewRecorder(scheme, v1.EventSource{Component: "observability-operator"}),
+			),
 		)
 		if err := servingCertController.RunOnce(); err != nil {
 			return nil, fmt.Errorf("failed to initialize serving certificate controller: %w", err)
