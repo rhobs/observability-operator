@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.0.0](https://github.com/rhobs/monitoring-stack-operator/commit/) (2024-12-11)
+
+
+### Features
+
+* add "Enable cluster monitoring" checkbox to OCP console ([#628](https://github.com/rhobs/monitoring-stack-operator/issues/628)) ([490a91d](https://github.com/rhobs/monitoring-stack-operator/commit/490a91d59fe604ff7c45bb5ad93da8400bd58903))
+* add basic gather script for monitoring components ([#614](https://github.com/rhobs/monitoring-stack-operator/issues/614)) ([75dbd91](https://github.com/rhobs/monitoring-stack-operator/commit/75dbd91af06044d963df10d2987399ea425ddd4d))
+* add monitoring-plugin uiplugin ([#575](https://github.com/rhobs/monitoring-stack-operator/issues/575)) ([48df915](https://github.com/rhobs/monitoring-stack-operator/commit/48df9151aeb735716f9c1a9fc18bf62f7de5b67d))
+* add operator controller to add ServiceMonitor ([#616](https://github.com/rhobs/monitoring-stack-operator/issues/616)) ([5f2b6e5](https://github.com/rhobs/monitoring-stack-operator/commit/5f2b6e5eb86a4186d80ae56d5957606118d10cf0))
+* add support annotation to uiplugins at runtime ([#604](https://github.com/rhobs/monitoring-stack-operator/issues/604)) ([41c578c](https://github.com/rhobs/monitoring-stack-operator/commit/41c578c8362d60f90736057e51f3282ec297f23f))
+* add Trace support in korrel8r ([#597](https://github.com/rhobs/monitoring-stack-operator/issues/597)) ([a74b4a5](https://github.com/rhobs/monitoring-stack-operator/commit/a74b4a5d71eda5328673fc4dc2f3177865578dab))
+* deploy PrometheusRule resource for the operator ([#629](https://github.com/rhobs/monitoring-stack-operator/issues/629)) ([a63fe12](https://github.com/rhobs/monitoring-stack-operator/commit/a63fe12ac4e112103d6a110e8fe89e164f0b051e))
+* enable HTTPS in OpenShift clusters ([#595](https://github.com/rhobs/monitoring-stack-operator/issues/595)) ([a826c09](https://github.com/rhobs/monitoring-stack-operator/commit/a826c093c99e29444c3c392c9438b905978443f8))
+* require TLS client certificate for /metrics ([#611](https://github.com/rhobs/monitoring-stack-operator/issues/611)) ([8cb5a11](https://github.com/rhobs/monitoring-stack-operator/commit/8cb5a11f84b01c997df0d36de5dff5576df65480))
+
+
+### Bug Fixes
+
+* add finalizers to cleanup cluster scoped resources on stack deletion ([#608](https://github.com/rhobs/monitoring-stack-operator/issues/608)) ([b243203](https://github.com/rhobs/monitoring-stack-operator/commit/b24320335991995cb0e57ad9fd80869b317e9360))
+* allow operator SA to create/update events ([#623](https://github.com/rhobs/monitoring-stack-operator/issues/623)) ([6cae01e](https://github.com/rhobs/monitoring-stack-operator/commit/6cae01e11decc5e1df12948af2099ff2e9aa534b))
+* give operator controller a name ([#618](https://github.com/rhobs/monitoring-stack-operator/issues/618)) ([21e89a0](https://github.com/rhobs/monitoring-stack-operator/commit/21e89a01f57f9d971b080378ebc485974ef49610))
+* hide Prometheus operator CRDs in UI ([#605](https://github.com/rhobs/monitoring-stack-operator/issues/605)) ([ab4338f](https://github.com/rhobs/monitoring-stack-operator/commit/ab4338fe7db8dcbf800f450fe407297a14fd48dd))
+* must-gather collection scripts should be executable ([#640](https://github.com/rhobs/monitoring-stack-operator/issues/640)) ([a130a82](https://github.com/rhobs/monitoring-stack-operator/commit/a130a82fcd9ca8839c97ab6a8313a50e3e7b17e3))
+* register scheme in operator ([#619](https://github.com/rhobs/monitoring-stack-operator/issues/619)) ([d86ab09](https://github.com/rhobs/monitoring-stack-operator/commit/d86ab09377f657acf3fd73e7ee4b6d51c10d3508))
+
 ### [0.4.2](https://github.com/rhobs/monitoring-stack-operator/commit/) (2024-10-08)
 
 
