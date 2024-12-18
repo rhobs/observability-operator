@@ -54,7 +54,7 @@ install_obo() {
 enable_ocp() {
   # Get ObO CSV json file
 	CSV_NAME=$(oc -n "$OPERATORS_NS" get sub observability-operator -o jsonpath='{.status.installedCSV}')
-	CSV_JSON_FILE=$(mktemp /tmp/"$CSV_NAME".json)
+	CSV_JSON_FILE=$(mktemp /tmp/"$CSV_NAME"XXXXXX.json)
 	if [ -e "$CSV_JSON_FILE" ]; then
 		rm -f "$CSV_JSON_FILE"
 	fi
