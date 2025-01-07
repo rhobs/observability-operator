@@ -152,8 +152,6 @@ spec:
                         description: Url of the Alertmanager to proxy to.
                         minLength: 1
                         type: string
-                    required:
-                    - url
                     type: object
                     x-kubernetes-map-type: atomic
                   thanosQuerier:
@@ -164,13 +162,9 @@ spec:
                         description: Url of the ThanosQuerier to proxy to.
                         minLength: 1
                         type: string
-                    required:
-                    - url
                     type: object
                     x-kubernetes-map-type: atomic
-                required:
-                - alertmanager
-                - thanosQuerier
+
                 type: object
               troubleshootingPanel:
                 description: TroubleshootingPanel contains configuration for the troubleshooting
