@@ -15,6 +15,7 @@ import (
 
 func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string) (*UIPluginInfo, error) {
 	config := plugin.Spec.Monitoring
+	persesDashboardsFeatureEnabled := contains(features, "perses-dashboards")
 	if config == nil {
 		return nil, fmt.Errorf("monitoring configuration can not be empty for plugin type %s", plugin.Spec.Type)
 	}
@@ -24,6 +25,10 @@ func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, im
 	}
 	if config.ThanosQuerier.Url == "" {
 		return nil, fmt.Errorf("ThanosQuerier location can not be empty for plugin type %s", plugin.Spec.Type)
+	}
+	// JZ OPEN QUESTION : Where is the PerseDashboards service URL coming from?
+	if persesDashboardsFeatureEnabled && config.PersesDashboards.Url == "" {
+		return nil, fmt.Errorf("PersesDashboards location can not be empty for plugin type %s", plugin.Spec.Type)
 	}
 
 	pluginInfo := &UIPluginInfo{
@@ -111,6 +116,35 @@ func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, im
 		},
 	}
 
+	if persesDashboardsFeatureEnabled {
+		// JZ OPEN QUESTION: Need to align on PORT number, name, and namespace...with Perses Operator?
+		proxy := osv1.ConsolePluginProxy{
+			Alias:         "perses-dashboards-proxy",
+			Authorization: "UserToken",
+			Endpoint: osv1.ConsolePluginProxyEndpoint{
+				Type: osv1.ProxyTypeService,
+				Service: &osv1.ConsolePluginProxyServiceConfig{
+					Name:      name,
+					Namespace: namespace,
+					Port:      9446,
+				},
+			},
+		}
+		legacyProxy := osv1alpha1.ConsolePluginProxy{
+			Type:      "Service",
+			Alias:     "perses-dashboards-proxy",
+			Authorize: true,
+			Service: osv1alpha1.ConsolePluginProxyServiceConfig{
+				Name:      name,
+				Namespace: namespace,
+				Port:      9446,
+			},
+		}
+		pluginInfo.ExtraArgs = append(pluginInfo.ExtraArgs, fmt.Sprintf("-perses-dashboards=%s", config.PersesDashboards.Url))
+		pluginInfo.Proxies = append(pluginInfo.Proxies, proxy)
+		pluginInfo.LegacyProxies = append(pluginInfo.LegacyProxies, legacyProxy)
+	}
+
 	return pluginInfo, nil
 }
 
@@ -149,6 +183,13 @@ func newMonitoringService(name string, namespace string) *corev1.Service {
 					Name:       "thanos-proxy",
 					Protocol:   corev1.ProtocolTCP,
 					TargetPort: intstr.FromInt32(9445),
+				},
+				// JZ OPEN QUESTION: Need to align on PORT number...with Perses Operator?
+				{
+					Port:       9446,
+					Name:       "perses-dashboards-proxy",
+					Protocol:   corev1.ProtocolTCP,
+					TargetPort: intstr.FromInt32(9446),
 				},
 			},
 			Selector: componentLabels(name),

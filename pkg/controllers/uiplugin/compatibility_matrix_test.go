@@ -30,15 +30,6 @@ func TestCompatibilityMatrixVersions(t *testing.T) {
 	}
 }
 
-func contains(array []string, value string) bool {
-	for _, v := range array {
-		if v == value {
-			return true
-		}
-	}
-	return false
-}
-
 // Ensure that there's only one empty max version per plugin.
 func TestCompatibilityMatrixMaxVersions(t *testing.T) {
 	cm := map[uiv1alpha1.UIPluginType]struct{}{}

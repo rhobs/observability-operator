@@ -146,6 +146,11 @@ type MonitoringConfig struct {
 	//
 	// +kubebuilder:validation:Required
 	ThanosQuerier ThanosQuerierReference `json:"thanosQuerier"`
+
+	// PersesDashboards points to the perses-dashboards service of which it should create a proxy to.
+	//
+	// +kubebuilder:validation:Required
+	PersesDashboards PersesDashboardsReference `json:"persesDashboards"`
 }
 
 // Alertmanager is used to configure a reference to a alertmanage that should be used
@@ -165,6 +170,18 @@ type AlertmanagerReference struct {
 //
 // +structType=atomic
 type ThanosQuerierReference struct {
+	// Url of the ThanosQuerier to proxy to.
+	//
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength:=1
+	Url string `json:"url"`
+}
+
+// PersesDashboards is used to configure a reference to a perses-dashbaords service that should be used
+// by the monitoring console plugin.
+//
+// +structType=atomic
+type PersesDashboardsReference struct {
 	// Url of the ThanosQuerier to proxy to.
 	//
 	// +kubebuilder:validation:Required
