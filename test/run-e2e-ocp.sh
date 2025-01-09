@@ -68,6 +68,10 @@ enable_ocp() {
 
 	oc apply -f "$CSV_JSON_FILE"
 	rm -f "$CSV_JSON_FILE"
+
+	# enable platform monitoring
+	oc label ns "$OPERATORS_NS" openshift.io/cluster-monitoring=true
+
 	oc wait --for=condition=Established crd/uiplugins.observability.openshift.io --timeout=60s
 	ok "Enable OCP mode successfully"
 }
