@@ -2,6 +2,7 @@ package uiplugin
 
 import (
 	"fmt"
+	"log"
 	"testing"
 
 	"golang.org/x/mod/semver"
@@ -29,11 +30,25 @@ func TestCompatibilityMatrixVersions(t *testing.T) {
 	}
 }
 
+func contains(array []string, value string) bool {
+	for _, v := range array {
+		if v == value {
+			return true
+		}
+	}
+	return false
+}
+
 // Ensure that there's only one empty max version per plugin.
 func TestCompatibilityMatrixMaxVersions(t *testing.T) {
 	cm := map[uiv1alpha1.UIPluginType]struct{}{}
 	for _, v := range compatibilityMatrix {
 		if v.MaxClusterVersion != "" {
+			continue
+		}
+
+		// exception for montioring-plugin usage of perses-dashboards
+		if v.PluginType == "Monitoring" && contains(v.Features, "perses-dashboards") {
 			continue
 		}
 
@@ -242,6 +257,46 @@ func TestLookupImageAndFeatures(t *testing.T) {
 			expectedFeatures: []string{"acm-alerting"},
 			expectedErr:      nil,
 		},
+		{
+			pluginType:       uiv1alpha1.TypeMonitoring,
+			clusterVersion:   "v4.19",
+			acmVersion:       "v2.11.3",
+			expectedKey:      "ui-monitoring",
+			expectedFeatures: []string{"perses-dashboards", "acm-alerting"},
+			expectedErr:      nil,
+		},
+		{
+			pluginType:       uiv1alpha1.TypeMonitoring,
+			clusterVersion:   "v4.19.0-0.nightly-2024-06-06-064349",
+			acmVersion:       "v2.11.3",
+			expectedKey:      "ui-monitoring",
+			expectedFeatures: []string{"perses-dashboards", "acm-alerting"},
+			expectedErr:      nil,
+		},
+		{
+			pluginType:       uiv1alpha1.TypeMonitoring,
+			clusterVersion:   "v4.19",
+			acmVersion:       "",
+			expectedKey:      "ui-monitoring",
+			expectedFeatures: []string{"perses-dashboards"},
+			expectedErr:      nil,
+		},
+		{
+			pluginType:       uiv1alpha1.TypeMonitoring,
+			clusterVersion:   "v4.19.0-0.nightly-2024-06-06-064349",
+			acmVersion:       "",
+			expectedKey:      "ui-monitoring",
+			expectedFeatures: []string{"perses-dashboards"},
+			expectedErr:      nil,
+		},
+		{
+			pluginType:       uiv1alpha1.TypeMonitoring,
+			clusterVersion:   "v4.19",
+			acmVersion:       "v2.10",
+			expectedKey:      "ui-monitoring",
+			expectedFeatures: []string{"perses-dashboards"},
+			expectedErr:      nil,
+		},
 	} {
 		t.Run(fmt.Sprintf("%s/%s", tc.pluginType, tc.clusterVersion), func(t *testing.T) {
 			info, err := lookupImageAndFeatures(tc.pluginType, tc.clusterVersion, tc.acmVersion)
@@ -252,6 +307,9 @@ func TestLookupImageAndFeatures(t *testing.T) {
 			}
 
 			assert.NilError(t, err)
+
+			log.Printf("expected Features: %s", tc.expectedFeatures)
+			log.Printf("Features: %s", info.Features)
 
 			t.Logf("%s == %s", tc.expectedKey, info.ImageKey)
 			assert.Equal(t, tc.expectedKey, info.ImageKey)
