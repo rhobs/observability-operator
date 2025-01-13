@@ -160,6 +160,16 @@ BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
 endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
+# Adjust sed command to include '' if on MacOS (Darwin)
+ifeq ($(shell uname), Darwin)
+    BUNDLE_SED_COMMAND = sed -e 's|<IMG_OBSERVABILITY_OPERATOR>|$(OPERATOR_IMG)|g' \
+                   -i '' bundle/manifests/observability-operator.clusterserviceversion.yaml
+else
+    BUNDLE_SED_COMMAND = sed -e 's|<IMG_OBSERVABILITY_OPERATOR>|$(OPERATOR_IMG)|g' \
+                   -i bundle/manifests/observability-operator.clusterserviceversion.yaml
+endif
+
+
 
 .PHONY: bundle
 bundle: $(KUSTOMIZE) $(OPERATOR_SDK) generate
@@ -170,8 +180,7 @@ bundle: $(KUSTOMIZE) $(OPERATOR_SDK) generate
 			--kustomize-dir=deploy/olm \
 			--package=observability-operator \
 		 	$(BUNDLE_METADATA_OPTS)
-	sed -e 's|<IMG_OBSERVABILITY_OPERATOR>|$(OPERATOR_IMG)|g' \
-		-i bundle/manifests/observability-operator.clusterserviceversion.yaml
+	$(BUNDLE_SED_COMMAND)
 	$(OPERATOR_SDK) bundle validate ./bundle \
 		--select-optional name=operatorhub \
 		--optional-values=k8s-version=1.21 \

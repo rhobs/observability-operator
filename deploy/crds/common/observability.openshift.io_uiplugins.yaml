@@ -160,12 +160,12 @@ spec:
                     description: PersesDashboards points to the perses-dashboards
                       service of which it should create a proxy to.
                     properties:
-                      url:
-                        description: Url of the ThanosQuerier to proxy to.
+                      serviceName:
+                        description: Name of the Perses Service to proxy to.
                         minLength: 1
                         type: string
                     required:
-                    - url
+                    - serviceName
                     type: object
                     x-kubernetes-map-type: atomic
                   thanosQuerier:

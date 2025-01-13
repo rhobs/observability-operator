@@ -4236,10 +4236,10 @@ PersesDashboards points to the perses-dashboards service of which it should crea
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>url</b></td>
+        <td><b>serviceName</b></td>
         <td>string</td>
         <td>
-          Url of the ThanosQuerier to proxy to.<br/>
+          Name of the Perses Service to proxy to.<br/>
         </td>
         <td>true</td>
       </tr></tbody>

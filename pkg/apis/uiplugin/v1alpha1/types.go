@@ -162,7 +162,7 @@ type AlertmanagerReference struct {
 	//
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinLength:=1
-	Url string `json:"url"`
+	Url string `json:"url,omitempty"`
 }
 
 // ThanosQuerier is used to configure a reference to a thanos-querier service that should be used
@@ -174,7 +174,7 @@ type ThanosQuerierReference struct {
 	//
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinLength:=1
-	Url string `json:"url"`
+	Url string `json:"url,omitempty"`
 }
 
 // PersesDashboards is used to configure a reference to a perses-dashbaords service that should be used
@@ -182,11 +182,11 @@ type ThanosQuerierReference struct {
 //
 // +structType=atomic
 type PersesDashboardsReference struct {
-	// Url of the ThanosQuerier to proxy to.
+	// Name of the Perses Service to proxy to.
 	//
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinLength:=1
-	Url string `json:"url"`
+	ServiceName string `json:"serviceName,omitempty"`
 }
 
 // UIPluginSpec is the specification for desired state of UIPlugin.
