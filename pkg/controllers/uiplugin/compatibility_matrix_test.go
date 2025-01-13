@@ -3,6 +3,7 @@ package uiplugin
 import (
 	"fmt"
 	"log"
+	"slices"
 	"testing"
 
 	"golang.org/x/mod/semver"
@@ -39,7 +40,7 @@ func TestCompatibilityMatrixMaxVersions(t *testing.T) {
 		}
 
 		// exception for montioring-plugin usage of perses-dashboards
-		if v.PluginType == "Monitoring" && contains(v.Features, "perses-dashboards") {
+		if v.PluginType == "Monitoring" && slices.Contains(v.Features, "perses-dashboards") {
 			continue
 		}
 

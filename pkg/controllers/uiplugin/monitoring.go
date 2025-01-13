@@ -2,6 +2,7 @@ package uiplugin
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	osv1 "github.com/openshift/api/console/v1"
@@ -15,7 +16,7 @@ import (
 
 func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string) (*UIPluginInfo, error) {
 	config := plugin.Spec.Monitoring
-	persesDashboardsFeatureEnabled := contains(features, "perses-dashboards")
+	persesDashboardsFeatureEnabled := slices.Contains(features, "perses-dashboards")
 	if config == nil {
 		return nil, fmt.Errorf("monitoring configuration can not be empty for plugin type %s", plugin.Spec.Type)
 	}
