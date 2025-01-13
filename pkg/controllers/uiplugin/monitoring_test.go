@@ -1,9 +1,6 @@
 package uiplugin
 
 import (
-	"encoding/json"
-	"fmt"
-	"log"
 	"testing"
 
 	"gotest.tools/v3/assert"
@@ -29,9 +26,6 @@ var plugin = &uiv1alpha1.UIPlugin{
 			},
 			ThanosQuerier: uiv1alpha1.ThanosQuerierReference{
 				Url: "https://rbac-query-proxy.open-cluster-management-observability.svc:8443",
-			},
-			PersesDashboards: uiv1alpha1.PersesDashboardsReference{
-				Url: "https://perses-dashboards.svc:8443",
 			},
 		},
 	},
