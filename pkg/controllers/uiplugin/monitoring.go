@@ -27,6 +27,9 @@ func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, im
 	if config.ThanosQuerier.Url == "" {
 		return nil, fmt.Errorf("ThanosQuerier location can not be empty for plugin type %s", plugin.Spec.Type)
 	}
+	if persesDashboardsFeatureEnabled && config.PersesDashboards.ServiceName == "" {
+		return nil, fmt.Errorf("PersesDashboards location can not be empty for plugin type %s", plugin.Spec.Type)
+	}
 
 	pluginInfo := &UIPluginInfo{
 		Image:       image,
@@ -114,6 +117,7 @@ func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, im
 	}
 
 	if persesDashboardsFeatureEnabled {
+		pluginInfo.ExtraArgs = append(pluginInfo.ExtraArgs, fmt.Sprintf("-perses-dashboards=%s", config.PersesDashboards.ServiceName))
 		pluginInfo.Proxies = append(pluginInfo.Proxies, osv1.ConsolePluginProxy{
 			Alias:         "perses",
 			Authorization: "UserToken",
