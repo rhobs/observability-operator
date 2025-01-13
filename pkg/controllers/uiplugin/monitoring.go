@@ -117,9 +117,9 @@ func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, im
 	}
 
 	if persesDashboardsFeatureEnabled {
-		// JZ OPEN QUESTION: Need to align on PORT number, name, and namespace...with Perses Operator?
-		proxy := osv1.ConsolePluginProxy{
-			Alias:         "perses-dashboards-proxy",
+		pluginInfo.ExtraArgs = append(pluginInfo.ExtraArgs, fmt.Sprintf("-perses-dashboards=%s", config.PersesDashboards.Url))
+		pluginInfo.Proxies = append(pluginInfo.Proxies, osv1.ConsolePluginProxy{
+			Alias:         "perses",
 			Authorization: "UserToken",
 			Endpoint: osv1.ConsolePluginProxyEndpoint{
 				Type: osv1.ProxyTypeService,
@@ -129,20 +129,17 @@ func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, im
 					Port:      9446,
 				},
 			},
-		}
-		legacyProxy := osv1alpha1.ConsolePluginProxy{
+		})
+		pluginInfo.LegacyProxies = append(pluginInfo.LegacyProxies, osv1alpha1.ConsolePluginProxy{
 			Type:      "Service",
-			Alias:     "perses-dashboards-proxy",
+			Alias:     "perses",
 			Authorize: true,
 			Service: osv1alpha1.ConsolePluginProxyServiceConfig{
 				Name:      name,
 				Namespace: namespace,
 				Port:      9446,
 			},
-		}
-		pluginInfo.ExtraArgs = append(pluginInfo.ExtraArgs, fmt.Sprintf("-perses-dashboards=%s", config.PersesDashboards.Url))
-		pluginInfo.Proxies = append(pluginInfo.Proxies, proxy)
-		pluginInfo.LegacyProxies = append(pluginInfo.LegacyProxies, legacyProxy)
+		})
 	}
 
 	return pluginInfo, nil
@@ -187,7 +184,7 @@ func newMonitoringService(name string, namespace string) *corev1.Service {
 				// JZ OPEN QUESTION: Need to align on PORT number...with Perses Operator?
 				{
 					Port:       9446,
-					Name:       "perses-dashboards-proxy",
+					Name:       "perses",
 					Protocol:   corev1.ProtocolTCP,
 					TargetPort: intstr.FromInt32(9446),
 				},
