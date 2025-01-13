@@ -152,6 +152,20 @@ spec:
                         description: Url of the Alertmanager to proxy to.
                         minLength: 1
                         type: string
+                    required:
+                    - url
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  persesDashboards:
+                    description: PersesDashboards points to the perses-dashboards
+                      service of which it should create a proxy to.
+                    properties:
+                      url:
+                        description: Url of the ThanosQuerier to proxy to.
+                        minLength: 1
+                        type: string
+                    required:
+                    - url
                     type: object
                     x-kubernetes-map-type: atomic
                   thanosQuerier:
@@ -162,11 +176,10 @@ spec:
                         description: Url of the ThanosQuerier to proxy to.
                         minLength: 1
                         type: string
+                    required:
+                    - url
                     type: object
                     x-kubernetes-map-type: atomic
-                required:
-                - alertmanager
-                - thanosQuerier
                 type: object
               troubleshootingPanel:
                 description: TroubleshootingPanel contains configuration for the troubleshooting

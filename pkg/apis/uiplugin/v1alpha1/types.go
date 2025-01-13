@@ -139,17 +139,17 @@ type LokiStackReference struct {
 type MonitoringConfig struct {
 	// Alertmanager points to the alertmanager instance of which it should create a proxy to.
 	//
-	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Optional
 	Alertmanager AlertmanagerReference `json:"alertmanager"`
 
 	// ThanosQuerier points to the thanos-querier service of which it should create a proxy to.
 	//
-	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Optional
 	ThanosQuerier ThanosQuerierReference `json:"thanosQuerier"`
 
 	// PersesDashboards points to the perses-dashboards service of which it should create a proxy to.
 	//
-	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Optional
 	PersesDashboards PersesDashboardsReference `json:"persesDashboards"`
 }
 
