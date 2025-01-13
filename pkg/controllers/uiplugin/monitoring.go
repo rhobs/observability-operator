@@ -117,7 +117,7 @@ func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, im
 	}
 
 	if persesDashboardsFeatureEnabled {
-		pluginInfo.ExtraArgs = append(pluginInfo.ExtraArgs, fmt.Sprintf("-perses-dashboards=%s", config.PersesDashboards.ServiceName))
+		pluginInfo.ExtraArgs = append(pluginInfo.ExtraArgs, fmt.Sprintf("-perses-dashboards-service-name=%s", config.PersesDashboards.ServiceName))
 		pluginInfo.Proxies = append(pluginInfo.Proxies, osv1.ConsolePluginProxy{
 			Alias:         "perses",
 			Authorization: "UserToken",

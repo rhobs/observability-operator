@@ -27,6 +27,9 @@ var plugin = &uiv1alpha1.UIPlugin{
 			ThanosQuerier: uiv1alpha1.ThanosQuerierReference{
 				Url: "https://rbac-query-proxy.open-cluster-management-observability.svc:8443",
 			},
+			PersesDashboards: uiv1alpha1.PersesDashboardsReference{
+				ServiceName: "perses-api-http",
+			},
 		},
 	},
 }
@@ -53,9 +56,6 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 		// JZ TO REMOVE -- for testing only to output pluginInfo object
 		// prettyJSON, err := json.MarshalIndent(pluginInfo, "", "  ")
 		// if err != nil {
-		// 	log.Fatalf("Error pretty printing JSON: %v", err)
-		// }
-		// if error != nil {
 		// 	log.Fatalf("Error pretty printing JSON: %v", err)
 		// }
 		// fmt.Println(string(prettyJSON))
