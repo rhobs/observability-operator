@@ -41,7 +41,7 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 
 		containsPersesProxy := func() bool {
 			for _, proxy := range pluginInfo.Proxies {
-				if proxy.Alias == "perses-dashboards-proxy" {
+				if proxy.Alias == "perses" {
 					return true
 				}
 			}
