@@ -14,9 +14,16 @@ import (
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 )
 
+// JZ Notes = plugin is the user generated CR
+
 func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string) (*UIPluginInfo, error) {
 	config := plugin.Spec.Monitoring
 	persesDashboardsFeatureEnabled := slices.Contains(features, "perses-dashboards")
+
+	// Default service name and namespace for Perses
+	var persesName = "perses-api-http"
+	var persesNamespace = "perses-operator"
+
 	if config == nil {
 		return nil, fmt.Errorf("monitoring configuration can not be empty for plugin type %s", plugin.Spec.Type)
 	}
@@ -27,8 +34,9 @@ func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, im
 	if config.ThanosQuerier.Url == "" {
 		return nil, fmt.Errorf("ThanosQuerier location can not be empty for plugin type %s", plugin.Spec.Type)
 	}
-	if persesDashboardsFeatureEnabled && config.PersesDashboards.ServiceName == "" {
-		return nil, fmt.Errorf("PersesDashboards location can not be empty for plugin type %s", plugin.Spec.Type)
+	if persesDashboardsFeatureEnabled && config.Perses.Name != "" && config.Perses.Namespace != "" {
+		persesName = config.Perses.Name
+		persesNamespace = config.Perses.Namespace
 	}
 
 	pluginInfo := &UIPluginInfo{
@@ -117,16 +125,15 @@ func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, im
 	}
 
 	if persesDashboardsFeatureEnabled {
-		pluginInfo.ExtraArgs = append(pluginInfo.ExtraArgs, fmt.Sprintf("-perses-dashboards-service-name=%s", config.PersesDashboards.ServiceName))
 		pluginInfo.Proxies = append(pluginInfo.Proxies, osv1.ConsolePluginProxy{
 			Alias:         "perses",
 			Authorization: "UserToken",
 			Endpoint: osv1.ConsolePluginProxyEndpoint{
 				Type: osv1.ProxyTypeService,
 				Service: &osv1.ConsolePluginProxyServiceConfig{
-					Name:      name,
-					Namespace: namespace,
-					Port:      9446,
+					Name:      persesName,
+					Namespace: persesNamespace,
+					Port:      8080,
 				},
 			},
 		})
@@ -135,9 +142,9 @@ func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, im
 			Alias:     "perses",
 			Authorize: true,
 			Service: osv1alpha1.ConsolePluginProxyServiceConfig{
-				Name:      name,
-				Namespace: namespace,
-				Port:      9446,
+				Name:      persesName,
+				Namespace: persesNamespace,
+				Port:      8080,
 			},
 		})
 	}
@@ -181,12 +188,11 @@ func newMonitoringService(name string, namespace string) *corev1.Service {
 					Protocol:   corev1.ProtocolTCP,
 					TargetPort: intstr.FromInt32(9445),
 				},
-				// JZ OPEN QUESTION: Need to align on PORT number...with Perses Operator?
 				{
-					Port:       9446,
+					Port:       8080,
 					Name:       "perses",
 					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt32(9446),
+					TargetPort: intstr.FromInt32(8080),
 				},
 			},
 			Selector: componentLabels(name),

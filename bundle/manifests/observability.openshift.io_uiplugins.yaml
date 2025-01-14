@@ -156,16 +156,21 @@ spec:
                     - url
                     type: object
                     x-kubernetes-map-type: atomic
-                  persesDashboards:
-                    description: PersesDashboards points to the perses-dashboards
-                      service of which it should create a proxy to.
+                  perses:
+                    description: Perses points to the perses instance service of which
+                      it should create a proxy to.
                     properties:
-                      serviceName:
+                      name:
                         description: Name of the Perses Service to proxy to.
                         minLength: 1
                         type: string
+                      namespace:
+                        description: Namespace of the Perses Service to proxy to.
+                        minLength: 1
+                        type: string
                     required:
-                    - serviceName
+                    - name
+                    - namespace
                     type: object
                     x-kubernetes-map-type: atomic
                   thanosQuerier:

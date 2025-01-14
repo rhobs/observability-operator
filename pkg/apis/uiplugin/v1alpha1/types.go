@@ -147,10 +147,10 @@ type MonitoringConfig struct {
 	// +kubebuilder:validation:Optional
 	ThanosQuerier ThanosQuerierReference `json:"thanosQuerier"`
 
-	// PersesDashboards points to the perses-dashboards service of which it should create a proxy to.
+	// Perses points to the perses instance service of which it should create a proxy to.
 	//
 	// +kubebuilder:validation:Optional
-	PersesDashboards PersesDashboardsReference `json:"persesDashboards"`
+	Perses PersesReference `json:"perses"`
 }
 
 // Alertmanager is used to configure a reference to a alertmanage that should be used
@@ -177,16 +177,21 @@ type ThanosQuerierReference struct {
 	Url string `json:"url,omitempty"`
 }
 
-// PersesDashboards is used to configure a reference to a perses-dashbaords service that should be used
+// Perses is used to configure a reference to a perses service that should be used
 // by the monitoring console plugin.
 //
 // +structType=atomic
-type PersesDashboardsReference struct {
+type PersesReference struct {
 	// Name of the Perses Service to proxy to.
 	//
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinLength:=1
-	ServiceName string `json:"serviceName,omitempty"`
+	Name string `json:"name,omitempty"`
+	// Namespace of the Perses Service to proxy to.
+	//
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength:=1
+	Namespace string `json:"namespace,omitempty"`
 }
 
 // UIPluginSpec is the specification for desired state of UIPlugin.

@@ -4175,10 +4175,10 @@ Monitoring contains configuration for the monitoring console plugin.
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#uipluginspecmonitoringpersesdashboards">persesDashboards</a></b></td>
+        <td><b><a href="#uipluginspecmonitoringperses">perses</a></b></td>
         <td>object</td>
         <td>
-          PersesDashboards points to the perses-dashboards service of which it should create a proxy to.<br/>
+          Perses points to the perses instance service of which it should create a proxy to.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4219,12 +4219,12 @@ Alertmanager points to the alertmanager instance of which it should create a pro
 </table>
 
 
-### UIPlugin.spec.monitoring.persesDashboards
+### UIPlugin.spec.monitoring.perses
 <sup><sup>[↩ Parent](#uipluginspecmonitoring)</sup></sup>
 
 
 
-PersesDashboards points to the perses-dashboards service of which it should create a proxy to.
+Perses points to the perses instance service of which it should create a proxy to.
 
 <table>
     <thead>
@@ -4236,10 +4236,17 @@ PersesDashboards points to the perses-dashboards service of which it should crea
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>serviceName</b></td>
+        <td><b>name</b></td>
         <td>string</td>
         <td>
           Name of the Perses Service to proxy to.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          Namespace of the Perses Service to proxy to.<br/>
         </td>
         <td>true</td>
       </tr></tbody>

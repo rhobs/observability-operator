@@ -27,8 +27,9 @@ var plugin = &uiv1alpha1.UIPlugin{
 			ThanosQuerier: uiv1alpha1.ThanosQuerierReference{
 				Url: "https://rbac-query-proxy.open-cluster-management-observability.svc:8443",
 			},
-			PersesDashboards: uiv1alpha1.PersesDashboardsReference{
-				ServiceName: "perses-api-http",
+			Perses: uiv1alpha1.PersesReference{
+				Name:      "perses-api-http",
+				Namespace: "perses-operator",
 			},
 		},
 	},
