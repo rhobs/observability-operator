@@ -2,7 +2,7 @@ package uiplugin
 
 import (
 	"fmt"
-	"log"
+	// "log"
 	"slices"
 	"testing"
 
@@ -299,9 +299,6 @@ func TestLookupImageAndFeatures(t *testing.T) {
 			}
 
 			assert.NilError(t, err)
-
-			log.Printf("expected Features: %s", tc.expectedFeatures)
-			log.Printf("Features: %s", info.Features)
 
 			t.Logf("%s == %s", tc.expectedKey, info.ImageKey)
 			assert.Equal(t, tc.expectedKey, info.ImageKey)

@@ -160,6 +160,7 @@ var compatibilityMatrix = []CompatibilityEntry{
 }
 
 func lookupImageAndFeatures(pluginType uiv1alpha1.UIPluginType, clusterVersion string, acmVersion string) (CompatibilityEntry, error) {
+
 	if !strings.HasPrefix(clusterVersion, "v") {
 		clusterVersion = "v" + clusterVersion
 	}

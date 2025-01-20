@@ -14,8 +14,6 @@ import (
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 )
 
-// JZ Notes = plugin is the user generated CR
-
 func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string) (*UIPluginInfo, error) {
 	config := plugin.Spec.Monitoring
 	persesDashboardsFeatureEnabled := slices.Contains(features, "perses-dashboards")
