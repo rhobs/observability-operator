@@ -2,6 +2,7 @@ package uiplugin
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	osv1 "github.com/openshift/api/console/v1"
@@ -15,6 +16,12 @@ import (
 
 func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string) (*UIPluginInfo, error) {
 	config := plugin.Spec.Monitoring
+	persesDashboardsFeatureEnabled := slices.Contains(features, "perses-dashboards")
+
+	// Default service name and namespace for Perses
+	var persesName = "perses-api-http"
+	var persesNamespace = "perses-operator"
+
 	if config == nil {
 		return nil, fmt.Errorf("monitoring configuration can not be empty for plugin type %s", plugin.Spec.Type)
 	}
@@ -24,6 +31,10 @@ func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, im
 	}
 	if config.ThanosQuerier.Url == "" {
 		return nil, fmt.Errorf("ThanosQuerier location can not be empty for plugin type %s", plugin.Spec.Type)
+	}
+	if persesDashboardsFeatureEnabled && config.Perses.Name != "" && config.Perses.Namespace != "" {
+		persesName = config.Perses.Name
+		persesNamespace = config.Perses.Namespace
 	}
 
 	pluginInfo := &UIPluginInfo{
@@ -111,6 +122,31 @@ func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, im
 		},
 	}
 
+	if persesDashboardsFeatureEnabled {
+		pluginInfo.Proxies = append(pluginInfo.Proxies, osv1.ConsolePluginProxy{
+			Alias:         "perses",
+			Authorization: "UserToken",
+			Endpoint: osv1.ConsolePluginProxyEndpoint{
+				Type: osv1.ProxyTypeService,
+				Service: &osv1.ConsolePluginProxyServiceConfig{
+					Name:      persesName,
+					Namespace: persesNamespace,
+					Port:      8080,
+				},
+			},
+		})
+		pluginInfo.LegacyProxies = append(pluginInfo.LegacyProxies, osv1alpha1.ConsolePluginProxy{
+			Type:      "Service",
+			Alias:     "perses",
+			Authorize: true,
+			Service: osv1alpha1.ConsolePluginProxyServiceConfig{
+				Name:      persesName,
+				Namespace: persesNamespace,
+				Port:      8080,
+			},
+		})
+	}
+
 	return pluginInfo, nil
 }
 
@@ -149,6 +185,12 @@ func newMonitoringService(name string, namespace string) *corev1.Service {
 					Name:       "thanos-proxy",
 					Protocol:   corev1.ProtocolTCP,
 					TargetPort: intstr.FromInt32(9445),
+				},
+				{
+					Port:       8080,
+					Name:       "perses",
+					Protocol:   corev1.ProtocolTCP,
+					TargetPort: intstr.FromInt32(8080),
 				},
 			},
 			Selector: componentLabels(name),

@@ -139,13 +139,18 @@ type LokiStackReference struct {
 type MonitoringConfig struct {
 	// Alertmanager points to the alertmanager instance of which it should create a proxy to.
 	//
-	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Optional
 	Alertmanager AlertmanagerReference `json:"alertmanager"`
 
 	// ThanosQuerier points to the thanos-querier service of which it should create a proxy to.
 	//
-	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Optional
 	ThanosQuerier ThanosQuerierReference `json:"thanosQuerier"`
+
+	// Perses points to the perses instance service of which it should create a proxy to.
+	//
+	// +kubebuilder:validation:Optional
+	Perses PersesReference `json:"perses"`
 }
 
 // Alertmanager is used to configure a reference to a alertmanage that should be used
@@ -157,7 +162,7 @@ type AlertmanagerReference struct {
 	//
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinLength:=1
-	Url string `json:"url"`
+	Url string `json:"url,omitempty"`
 }
 
 // ThanosQuerier is used to configure a reference to a thanos-querier service that should be used
@@ -169,7 +174,24 @@ type ThanosQuerierReference struct {
 	//
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:MinLength:=1
-	Url string `json:"url"`
+	Url string `json:"url,omitempty"`
+}
+
+// Perses is used to configure a reference to a perses service that should be used
+// by the monitoring console plugin.
+//
+// +structType=atomic
+type PersesReference struct {
+	// Name of the Perses Service to proxy to.
+	//
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength:=1
+	Name string `json:"name,omitempty"`
+	// Namespace of the Perses Service to proxy to.
+	//
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength:=1
+	Namespace string `json:"namespace,omitempty"`
 }
 
 // UIPluginSpec is the specification for desired state of UIPlugin.

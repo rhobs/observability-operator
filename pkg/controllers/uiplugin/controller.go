@@ -185,6 +185,8 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, nil
 	}
 
+	logger.Info("JZ plugin: ", plugin)
+
 	// Check if the plugin is being deleted
 	if !plugin.ObjectMeta.DeletionTimestamp.IsZero() {
 		logger.V(6).Info("deregistering plugin from the console")
@@ -227,10 +229,18 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		}
 	}
 
+	// JZ TESTING TO BE REMOVED
+	logger.Info("JZ plugin.Spec.Type", plugin.Spec.Type)
+	logger.Info("JZ rm.clusterVersion", rm.clusterVersion)
+	logger.Info("JZ acmVersion", acmVersion)
+
 	compatibilityInfo, err := lookupImageAndFeatures(plugin.Spec.Type, rm.clusterVersion, acmVersion)
 	if err != nil {
+		logger.Info("JZ ERROR compatibilityInfo: \n", compatibilityInfo)
 		return ctrl.Result{}, err
 	}
+
+	logger.Info("JZ compatibilityInfo: \n", compatibilityInfo)
 
 	if plugin.Annotations == nil {
 		plugin.Annotations = map[string]string{}

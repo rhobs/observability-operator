@@ -122,6 +122,31 @@ var compatibilityMatrix = []CompatibilityEntry{
 	},
 	{
 		PluginType:        uiv1alpha1.TypeMonitoring,
+		MinClusterVersion: "v4.19",
+		MaxClusterVersion: "",
+		ImageKey:          "ui-monitoring",
+		MinAcmVersion:     "v2.11",
+		MaxAcmVersion:     "",
+		SupportLevel:      DevPreview,
+		Features: []string{
+			"perses-dashboards",
+			"acm-alerting",
+		},
+	},
+	{
+		PluginType:        uiv1alpha1.TypeMonitoring,
+		MinClusterVersion: "v4.19",
+		MaxClusterVersion: "",
+		ImageKey:          "ui-monitoring",
+		MinAcmVersion:     "",
+		MaxAcmVersion:     "",
+		SupportLevel:      DevPreview,
+		Features: []string{
+			"perses-dashboards",
+		},
+	},
+	{
+		PluginType:        uiv1alpha1.TypeMonitoring,
 		MinClusterVersion: "v4.14",
 		MaxClusterVersion: "",
 		ImageKey:          "ui-monitoring",
@@ -135,6 +160,7 @@ var compatibilityMatrix = []CompatibilityEntry{
 }
 
 func lookupImageAndFeatures(pluginType uiv1alpha1.UIPluginType, clusterVersion string, acmVersion string) (CompatibilityEntry, error) {
+
 	if !strings.HasPrefix(clusterVersion, "v") {
 		clusterVersion = "v" + clusterVersion
 	}
