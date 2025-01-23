@@ -62,6 +62,7 @@ type OperatorConfiguration struct {
 	ThanosQuerier   tqctrl.ThanosConfiguration
 	UIPlugins       uictrl.UIPluginsConfiguration
 	FeatureGates    FeatureGates
+	ForceHTTP       bool
 }
 
 func WithNamespace(ns string) func(*OperatorConfiguration) {
@@ -119,6 +120,12 @@ func WithFeatureGates(featureGates FeatureGates) func(*OperatorConfiguration) {
 	}
 }
 
+func WithForceHTTP(forceHTTP bool) func(*OperatorConfiguration) {
+	return func(oc *OperatorConfiguration) {
+		oc.ForceHTTP = forceHTTP
+	}
+}
+
 func NewOperatorConfiguration(opts ...func(*OperatorConfiguration)) *OperatorConfiguration {
 	cfg := &OperatorConfiguration{}
 	for _, o := range opts {
@@ -139,7 +146,7 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 		clientCAController    *dynamiccertificates.ConfigMapCAController
 		servingCertController *dynamiccertificates.DynamicServingCertificateController
 	)
-	if cfg.FeatureGates.OpenShift.Enabled {
+	if cfg.FeatureGates.OpenShift.Enabled && !cfg.ForceHTTP {
 		// When running in OpenShift, the server uses HTTPS thanks to the
 		// service CA operator.
 		certFile := filepath.Join(tlsMountPath, "tls.crt")
