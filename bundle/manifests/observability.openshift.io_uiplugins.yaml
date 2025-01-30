@@ -144,33 +144,72 @@ spec:
                 description: Monitoring contains configuration for the monitoring
                   console plugin.
                 properties:
-                  alertmanager:
-                    description: Alertmanager points to the alertmanager instance
-                      of which it should create a proxy to.
+                  acm:
+                    description: ACM points to the alertmanager and thanosQuerier
+                      instance services of which it should create a proxy to.
                     properties:
-                      url:
-                        description: Url of the Alertmanager to proxy to.
-                        minLength: 1
+                      alertmanager:
+                        description: Alertmanager points to the alertmanager instance
+                          of which it should create a proxy to.
+                        properties:
+                          url:
+                            description: Url of the Alertmanager to proxy to.
+                            type: string
+                        required:
+                        - url
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      enabled:
+                        description: Indicates if ACM-related feature(s) should be
+                          enabled
+                        type: boolean
+                      thanosQuerier:
+                        description: ThanosQuerier points to the thanos-querier service
+                          of which it should create a proxy to.
+                        properties:
+                          url:
+                            description: Url of the ThanosQuerier to proxy to.
+                            type: string
+                        required:
+                        - url
+                        type: object
+                        x-kubernetes-map-type: atomic
+                    required:
+                    - alertmanager
+                    - enabled
+                    - thanosQuerier
+                    type: object
+                  incidents:
+                    description: Incidents feature flag enablement
+                    properties:
+                      enabled:
+                        description: Indicates if incidents-related feature(s) should
+                          be enabled.
+                        type: boolean
+                    required:
+                    - enabled
+                    type: object
+                  perses:
+                    description: Perses points to the perses instance service of which
+                      it should create a proxy to.
+                    properties:
+                      enabled:
+                        description: Indicates if perses-related feature(s) should
+                          be enabled
+                        type: boolean
+                      namespace:
+                        description: |-
+                          Namespace of the Perses Service to proxy to.
+                          If Enabled=true and Namespace is not included it will be initialized to a default value.
+                        type: string
+                      serviceName:
+                        description: |-
+                          ServiceName of the Perses Service to proxy to.
+                          If Enabled=true and ServiceName is not included it will be initialized to a default value.
                         type: string
                     required:
-                    - url
+                    - enabled
                     type: object
-                    x-kubernetes-map-type: atomic
-                  thanosQuerier:
-                    description: ThanosQuerier points to the thanos-querier service
-                      of which it should create a proxy to.
-                    properties:
-                      url:
-                        description: Url of the ThanosQuerier to proxy to.
-                        minLength: 1
-                        type: string
-                    required:
-                    - url
-                    type: object
-                    x-kubernetes-map-type: atomic
-                required:
-                - alertmanager
-                - thanosQuerier
                 type: object
               troubleshootingPanel:
                 description: TroubleshootingPanel contains configuration for the troubleshooting

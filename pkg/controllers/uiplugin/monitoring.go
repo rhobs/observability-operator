@@ -6,6 +6,7 @@ import (
 
 	osv1 "github.com/openshift/api/console/v1"
 	osv1alpha1 "github.com/openshift/api/console/v1alpha1"
+	"golang.org/x/mod/semver"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -13,28 +14,57 @@ import (
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 )
 
-func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string) (*UIPluginInfo, error) {
-	config := plugin.Spec.Monitoring
-	if config == nil {
-		return nil, fmt.Errorf("monitoring configuration can not be empty for plugin type %s", plugin.Spec.Type)
-	}
+/*
+Requirements for ACM enablement
+1. UIPlugin configuration requires acm.enabled, acm.thanosQuerier.Url, and acm.alertmanager.Url
+2. OpenShift Container Platform requirement: v4.14+
+3. Advanced Cluster Management: v2.11+
+*/
+func validateACMConfig(config *uiv1alpha1.MonitoringConfig, acmVersion string) bool {
+	enabled := config.ACM.Enabled
 
-	if config.Alertmanager.Url == "" {
-		return nil, fmt.Errorf("alertmanager location can not be empty for plugin type %s", plugin.Spec.Type)
-	}
-	if config.ThanosQuerier.Url == "" {
-		return nil, fmt.Errorf("ThanosQuerier location can not be empty for plugin type %s", plugin.Spec.Type)
-	}
+	// alertManager and thanosQuerier url configurations are required to enable 'acm-alerting'
+	validAlertManagerUrl := config.ACM.Alertmanager.Url != ""
+	validThanosQuerierUrl := config.ACM.ThanosQuerier.Url != ""
+	isValidAcmAlertingConfig := validAlertManagerUrl && validThanosQuerierUrl
 
-	pluginInfo := &UIPluginInfo{
+	// "acm-alerting" feature is supported in ACM v2.11+
+	if !strings.HasPrefix(acmVersion, "v") {
+		acmVersion = "v" + acmVersion
+	}
+	minACMVersionMet := semver.Compare(acmVersion, "v2.11") >= 0
+
+	return isValidAcmAlertingConfig && enabled && minACMVersionMet
+}
+
+func validatePersesConfig(config *uiv1alpha1.MonitoringConfig) bool {
+	return config.Perses.Enabled
+}
+
+func validateIncidentsConfig(config *uiv1alpha1.MonitoringConfig, clusterVersion string) bool {
+	enabled := config.Incidents.Enabled
+
+	if !strings.HasPrefix(clusterVersion, "v") {
+		clusterVersion = "v" + clusterVersion
+	}
+	canonicalClusterVersion := fmt.Sprintf("%s-0", semver.Canonical(clusterVersion))
+	minClusterVersionMet := semver.Compare(canonicalClusterVersion, "v4.18.0-0") >= 0
+
+	return enabled && minClusterVersionMet
+}
+
+func addFeatureFlags(plugin *UIPluginInfo, features []string) {
+	featureField := fmt.Sprintf("-features=%s", strings.Join(features, ","))
+	plugin.ExtraArgs = append(plugin.ExtraArgs, featureField)
+}
+
+func getBasePluginInfo(namespace, name, image string) *UIPluginInfo {
+	return &UIPluginInfo{
 		Image:       image,
 		Name:        name,
 		ConsoleName: "monitoring-console-plugin",
 		DisplayName: "Monitoring Console Plugin",
 		ExtraArgs: []string{
-			fmt.Sprintf("-features=%s", strings.Join(features, ",")),
-			fmt.Sprintf("-alertmanager=%s", config.Alertmanager.Url),
-			fmt.Sprintf("-thanos-querier=%s", config.ThanosQuerier.Url),
 			"-config-path=/opt/app-root/config",
 			"-static-path=/opt/app-root/web/dist",
 		},
@@ -52,30 +82,6 @@ func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, im
 					},
 				},
 			},
-			{
-				Alias:         "alertmanager-proxy",
-				Authorization: "UserToken",
-				Endpoint: osv1.ConsolePluginProxyEndpoint{
-					Type: osv1.ProxyTypeService,
-					Service: &osv1.ConsolePluginProxyServiceConfig{
-						Name:      name,
-						Namespace: namespace,
-						Port:      9444,
-					},
-				},
-			},
-			{
-				Alias:         "thanos-proxy",
-				Authorization: "UserToken",
-				Endpoint: osv1.ConsolePluginProxyEndpoint{
-					Type: osv1.ProxyTypeService,
-					Service: &osv1.ConsolePluginProxyServiceConfig{
-						Name:      name,
-						Namespace: namespace,
-						Port:      9445,
-					},
-				},
-			},
 		},
 		LegacyProxies: []osv1alpha1.ConsolePluginProxy{
 			{
@@ -88,28 +94,133 @@ func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, im
 					Port:      9443,
 				},
 			},
-			{
-				Type:      "Service",
-				Alias:     "alertmanager-proxy",
-				Authorize: true,
-				Service: osv1alpha1.ConsolePluginProxyServiceConfig{
+		},
+	}
+}
+
+func addPersesProxy(pluginInfo *UIPluginInfo, config *uiv1alpha1.MonitoringConfig) {
+	persesServiceName := "perses-api-http"
+	persesNamespace := "perses"
+
+	if config.Perses.ServiceName != "" {
+		persesServiceName = config.Perses.ServiceName
+	}
+	if config.Perses.Namespace != "" {
+		persesNamespace = config.Perses.Namespace
+	}
+
+	pluginInfo.Proxies = append(pluginInfo.Proxies, osv1.ConsolePluginProxy{
+		Alias:         "perses",
+		Authorization: "UserToken",
+		Endpoint: osv1.ConsolePluginProxyEndpoint{
+			Type: osv1.ProxyTypeService,
+			Service: &osv1.ConsolePluginProxyServiceConfig{
+				Name:      persesServiceName,
+				Namespace: persesNamespace,
+				Port:      8080,
+			},
+		},
+	})
+	pluginInfo.LegacyProxies = append(pluginInfo.LegacyProxies, osv1alpha1.ConsolePluginProxy{
+		Type:      "Service",
+		Alias:     "perses",
+		Authorize: true,
+		Service: osv1alpha1.ConsolePluginProxyServiceConfig{
+			Name:      persesServiceName,
+			Namespace: persesNamespace,
+			Port:      8080,
+		},
+	})
+}
+
+func addAcmAlertingProxy(pluginInfo *UIPluginInfo, name string, namespace string, config *uiv1alpha1.MonitoringConfig) {
+	pluginInfo.ExtraArgs = append(pluginInfo.ExtraArgs,
+		fmt.Sprintf("-alertmanager=%s", config.ACM.Alertmanager.Url),
+		fmt.Sprintf("-thanos-querier=%s", config.ACM.ThanosQuerier.Url),
+	)
+	pluginInfo.Proxies = append(pluginInfo.Proxies,
+		osv1.ConsolePluginProxy{
+			Alias:         "alertmanager-proxy",
+			Authorization: "UserToken",
+			Endpoint: osv1.ConsolePluginProxyEndpoint{
+				Type: osv1.ProxyTypeService,
+				Service: &osv1.ConsolePluginProxyServiceConfig{
 					Name:      name,
 					Namespace: namespace,
 					Port:      9444,
 				},
 			},
-			{
-				Type:      "Service",
-				Alias:     "thanos-proxy",
-				Authorize: true,
-				Service: osv1alpha1.ConsolePluginProxyServiceConfig{
+		},
+		osv1.ConsolePluginProxy{
+			Alias:         "thanos-proxy",
+			Authorization: "UserToken",
+			Endpoint: osv1.ConsolePluginProxyEndpoint{
+				Type: osv1.ProxyTypeService,
+				Service: &osv1.ConsolePluginProxyServiceConfig{
 					Name:      name,
 					Namespace: namespace,
 					Port:      9445,
 				},
 			},
 		},
+	)
+	pluginInfo.LegacyProxies = append(pluginInfo.LegacyProxies,
+		osv1alpha1.ConsolePluginProxy{
+			Type:      "Service",
+			Alias:     "alertmanager-proxy",
+			Authorize: true,
+			Service: osv1alpha1.ConsolePluginProxyServiceConfig{
+				Name:      name,
+				Namespace: namespace,
+				Port:      9444,
+			},
+		},
+		osv1alpha1.ConsolePluginProxy{
+			Type:      "Service",
+			Alias:     "thanos-proxy",
+			Authorize: true,
+			Service: osv1alpha1.ConsolePluginProxyServiceConfig{
+				Name:      name,
+				Namespace: namespace,
+				Port:      9445,
+			},
+		},
+	)
+}
+
+func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string, acmVersion string, clusterVersion string) (*UIPluginInfo, error) {
+	config := plugin.Spec.Monitoring
+	if config == nil {
+		return nil, fmt.Errorf("monitoring configuration can not be empty for plugin type %s", plugin.Spec.Type)
 	}
+	if !config.ACM.Enabled && !config.Perses.Enabled && !config.Incidents.Enabled {
+		return nil, fmt.Errorf("monitoring configurations did not enabled any features")
+	}
+
+	// Validate feature configuration and cluster conditions support enablement
+	isValidAcmConfig := validateACMConfig(config, acmVersion)
+	isValidPersesConfig := validatePersesConfig(config)
+	isValidIncidentsConfig := validateIncidentsConfig(config, clusterVersion)
+
+	atLeastOneValidConfig := isValidAcmConfig || isValidPersesConfig || isValidIncidentsConfig
+	if !atLeastOneValidConfig {
+		return nil, fmt.Errorf("uiplugin monitoring configurations are invalid")
+	}
+
+	//  Add proxies and feature flags
+	pluginInfo := getBasePluginInfo(namespace, name, image)
+	if isValidAcmConfig {
+		addAcmAlertingProxy(pluginInfo, name, namespace, config)
+		features = append(features, "acm-alerting")
+	}
+	if isValidPersesConfig {
+		addPersesProxy(pluginInfo, config)
+		features = append(features, "perses-dashboards")
+	}
+	if isValidIncidentsConfig {
+		features = append(features, "incidents")
+	}
+	addFeatureFlags(pluginInfo, features)
 
 	return pluginInfo, nil
 }
