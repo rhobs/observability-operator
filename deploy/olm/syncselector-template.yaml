@@ -50,7 +50,6 @@ objects:
             operator: In
             values:
               - management-cluster
-              - service-cluster
       resourceApplyMode: Sync
       resources:
         - apiVersion: operators.coreos.com/v1alpha1
