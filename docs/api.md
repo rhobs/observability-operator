@@ -4173,14 +4173,21 @@ Monitoring contains configuration for the monitoring console plugin.
         <td>
           Alertmanager points to the alertmanager instance of which it should create a proxy to.<br/>
         </td>
-        <td>true</td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#uipluginspecmonitoringperses">perses</a></b></td>
+        <td>object</td>
+        <td>
+          Perses points to the perses instance service of which it should create a proxy to.<br/>
+        </td>
+        <td>false</td>
       </tr><tr>
         <td><b><a href="#uipluginspecmonitoringthanosquerier">thanosQuerier</a></b></td>
         <td>object</td>
         <td>
           ThanosQuerier points to the thanos-querier service of which it should create a proxy to.<br/>
         </td>
-        <td>true</td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -4207,7 +4214,41 @@ Alertmanager points to the alertmanager instance of which it should create a pro
         <td>
           Url of the Alertmanager to proxy to.<br/>
         </td>
-        <td>true</td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### UIPlugin.spec.monitoring.perses
+<sup><sup>[↩ Parent](#uipluginspecmonitoring)</sup></sup>
+
+
+
+Perses points to the perses instance service of which it should create a proxy to.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name of the Perses Service to proxy to.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          Namespace of the Perses Service to proxy to.<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -4234,7 +4275,7 @@ ThanosQuerier points to the thanos-querier service of which it should create a p
         <td>
           Url of the ThanosQuerier to proxy to.<br/>
         </td>
-        <td>true</td>
+        <td>false</td>
       </tr></tbody>
 </table>
 

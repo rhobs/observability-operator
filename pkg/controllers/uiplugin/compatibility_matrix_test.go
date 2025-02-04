@@ -2,6 +2,7 @@ package uiplugin
 
 import (
 	"fmt"
+	"slices"
 	"testing"
 
 	"golang.org/x/mod/semver"
@@ -34,6 +35,11 @@ func TestCompatibilityMatrixMaxVersions(t *testing.T) {
 	cm := map[uiv1alpha1.UIPluginType]struct{}{}
 	for _, v := range compatibilityMatrix {
 		if v.MaxClusterVersion != "" {
+			continue
+		}
+
+		// exception for montioring-plugin usage of perses-dashboards
+		if v.PluginType == "Monitoring" && slices.Contains(v.Features, "perses-dashboards") {
 			continue
 		}
 
@@ -240,6 +246,46 @@ func TestLookupImageAndFeatures(t *testing.T) {
 			acmVersion:       "v2.11.3",
 			expectedKey:      "ui-monitoring",
 			expectedFeatures: []string{"acm-alerting"},
+			expectedErr:      nil,
+		},
+		{
+			pluginType:       uiv1alpha1.TypeMonitoring,
+			clusterVersion:   "v4.19",
+			acmVersion:       "v2.11.3",
+			expectedKey:      "ui-monitoring",
+			expectedFeatures: []string{"acm-alerting", "perses-dashboards"},
+			expectedErr:      nil,
+		},
+		{
+			pluginType:       uiv1alpha1.TypeMonitoring,
+			clusterVersion:   "v4.19.0-0.nightly-2024-06-06-064349",
+			acmVersion:       "v2.11.3",
+			expectedKey:      "ui-monitoring",
+			expectedFeatures: []string{"acm-alerting", "perses-dashboards"},
+			expectedErr:      nil,
+		},
+		{
+			pluginType:       uiv1alpha1.TypeMonitoring,
+			clusterVersion:   "v4.19",
+			acmVersion:       "",
+			expectedKey:      "ui-monitoring",
+			expectedFeatures: []string{"perses-dashboards"},
+			expectedErr:      nil,
+		},
+		{
+			pluginType:       uiv1alpha1.TypeMonitoring,
+			clusterVersion:   "v4.19.0-0.nightly-2024-06-06-064349",
+			acmVersion:       "",
+			expectedKey:      "ui-monitoring",
+			expectedFeatures: []string{"perses-dashboards"},
+			expectedErr:      nil,
+		},
+		{
+			pluginType:       uiv1alpha1.TypeMonitoring,
+			clusterVersion:   "v4.19",
+			acmVersion:       "v2.10",
+			expectedKey:      "ui-monitoring",
+			expectedFeatures: []string{"perses-dashboards"},
 			expectedErr:      nil,
 		},
 	} {

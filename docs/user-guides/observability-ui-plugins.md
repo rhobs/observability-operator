@@ -136,12 +136,17 @@ spec:
 
 ### Monitoring
 
-The plugin adds monitoring related UI features to the OpenShift web console, mostly related to the ACM perspective. A number of new pages and features are enabled through this plugin. Including, but not limited to:
+The plugin adds monitoring related UI features to the OpenShift web console, related to the Advance Cluster Management (ACM) perspective and [Perses](https://github.com/perses/perses). A number of new pages and features are enabled through this plugin. Including, but not limited to:
 - `ACM > Observe > Alerting`
 - `ACM > Observe > Alerting > Silences`
 - `ACM > Observe > Alerting > Alert rules`
+- `OCP > Observe > Perses Dashboards`
 
-This plugin is only able to be deployed by COO with the `acm-alerting` configuration enabled. Other pages which are typically distributed with the monitoring-plugin, such as `Admin > Observe > Dashboards`, are only available in the monitoring-plugin when deployed through [CMO](https://github.com/openshift/cluster-monitoring-operator).
+To deploy ACM related features the `acm-alerting` configuration must be enabled. In the UIPlugin Custom Resource (CR) you must pass the Alertmanager and ThanosQuerier Service endpoint (e.g. `https://alertmanager.open-cluster-management-observability.svc:9095` and `https://rbac-query-proxy.open-cluster-management-observability.svc:8443`). See the example in the next section `Plugin Creation`.
+
+Other pages which are typically distributed with the monitoring-plugin, such as `Admin > Observe > Dashboards`, are only available in the monitoring-plugin when deployed through [CMO](https://github.com/openshift/cluster-monitoring-operator).
+
+To deploy the Perses dashboard feature the `perses-dashboards` configuration must be enabled. In the UIPlugin CR you can optionally pass the service name and namespace of your Perses instance (e.g. `perses-api-http` and namespace `perses-operator`). See the example in the next section `Plugin Creation`.
 
 #### Plugin Creation
 
@@ -159,16 +164,22 @@ spec:
       url: 'https://alertmanager.open-cluster-management-observability.svc:9095'
     thanosQuerier:
       url: 'https://rbac-query-proxy.open-cluster-management-observability.svc:8443'
+    perses: 
+      name: 'perses-api-http'
+      namespace: 'perses-operator'
 ```
 
 #### Feature List
 
-| __Feature__    | __Description__                                                                                                 |
-| -------------- | --------------------------------------------------------------------------------------------------------------- |
-| `acm-alerting` | Adds alerting UI to multi-cluster view. Configures proxies to connect with any alertmanager and thanos-querier. |
+| __Feature__         | __Description__                                                                                                          |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `acm-alerting`      | Adds alerting UI to multi-cluster view. Configures proxies to connect with any alertmanager and thanos-querier.          |
+| `perses-dashboards` | Adds perses UI to `Observe` section of OpenShift Console Platform. Configures proxies to connect with a Perses instance. |
+
 
 #### Feature Matrix
 
-| __COO Version__ |   __OCP Versions__  | __Features__   |
-| --------------- | ------------------- | -------------- |
-| 1.0.0+          | 4.14+               | `acm-alerting` |
+| __COO Version__ |   __OCP Versions__  | __Features__                      |
+| --------------- | ------------------- | --------------------------------- |
+| 1.0.0+          | 4.14+               | `acm-alerting`                    |
+| 1.1.0+          | 4.19+               | `acm-alerting, perses-dashboards` |
