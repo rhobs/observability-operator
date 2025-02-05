@@ -40,8 +40,7 @@ var pluginTypeToConsoleName = map[uiv1alpha1.UIPluginType]string{
 	uiv1alpha1.TypeLogging:              "logging-view-plugin",
 }
 
-func PluginInfoBuilder(ctx context.Context, k client.Client, plugin *uiv1alpha1.UIPlugin, pluginConf UIPluginsConfiguration, compatibilityInfo CompatibilityEntry) (*UIPluginInfo, error) {
-
+func PluginInfoBuilder(ctx context.Context, k client.Client, plugin *uiv1alpha1.UIPlugin, pluginConf UIPluginsConfiguration, compatibilityInfo CompatibilityEntry, acmVersion string) (*UIPluginInfo, error) {
 	image := pluginConf.Images[compatibilityInfo.ImageKey]
 	if image == "" {
 		return nil, fmt.Errorf("no image provided for plugin type %s with key %s", plugin.Spec.Type, compatibilityInfo.ImageKey)
@@ -161,7 +160,7 @@ func PluginInfoBuilder(ctx context.Context, k client.Client, plugin *uiv1alpha1.
 		return createLoggingPluginInfo(plugin, namespace, plugin.Name, image, compatibilityInfo.Features)
 
 	case uiv1alpha1.TypeMonitoring:
-		return createMonitoringPluginInfo(plugin, namespace, plugin.Name, image, compatibilityInfo.Features)
+		return createMonitoringPluginInfo(plugin, namespace, plugin.Name, image, compatibilityInfo.Features, acmVersion)
 	}
 
 	return nil, fmt.Errorf("plugin type not supported: %s", plugin.Spec.Type)

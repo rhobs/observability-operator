@@ -227,7 +227,7 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		}
 	}
 
-	compatibilityInfo, err := lookupImageAndFeatures(plugin.Spec.Type, rm.clusterVersion, acmVersion)
+	compatibilityInfo, err := lookupImageAndFeatures(plugin.Spec.Type, rm.clusterVersion)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -251,7 +251,7 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, err
 	}
 
-	pluginInfo, err := PluginInfoBuilder(ctx, rm.k8sClient, plugin, rm.pluginConf, compatibilityInfo)
+	pluginInfo, err := PluginInfoBuilder(ctx, rm.k8sClient, plugin, rm.pluginConf, compatibilityInfo, acmVersion)
 
 	if err != nil {
 		logger.Error(err, "failed to reconcile plugin")
