@@ -1,7 +1,8 @@
 module github.com/rhobs/observability-operator
 
-go 1.22.0
-toolchain go1.23.6
+go 1.23.0
+
+toolchain go1.24.0
 
 require (
 	github.com/go-logr/logr v1.4.2
@@ -113,5 +114,3 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.2 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
-
-replace github.com/prometheus/prometheus v0.47.2 => github.com/prometheus/prometheus v0.48.0
