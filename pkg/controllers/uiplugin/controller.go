@@ -3,7 +3,6 @@ package uiplugin
 import (
 	"context"
 	"slices"
-	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -11,7 +10,6 @@ import (
 	osv1 "github.com/openshift/api/console/v1"
 	osv1alpha1 "github.com/openshift/api/console/v1alpha1"
 	operatorv1 "github.com/openshift/api/operator/v1"
-	mchv1 "github.com/stolostron/multiclusterhub-operator/api/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -74,9 +72,6 @@ const (
 
 // RBAC for distributed tracing
 // +kubebuilder:rbac:groups=tempo.grafana.com,resources=tempostacks;tempomonolithics,verbs=list
-
-// RBAC for monitoring
-// +kubebuilder:rbac:groups=operator.open-cluster-management.io,resources=multiclusterhubs,verbs=get;list;watch
 
 // RBAC for logging view plugin
 // +kubebuilder:rbac:groups=loki.grafana.com,resources=application;infrastructure;audit,verbs=get
@@ -214,19 +209,6 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		}
 	}
 
-	multiClusterHubList := &mchv1.MultiClusterHubList{}
-	acmVersion := "acm version not found"
-	err = rm.k8sClient.List(ctx, multiClusterHubList, &client.ListOptions{})
-
-	// Multiple MultiClusterHub's are undefined behavior
-	if err == nil && len(multiClusterHubList.Items) == 1 {
-		multiClusterHub := multiClusterHubList.Items[0]
-		acmVersion = multiClusterHub.Status.CurrentVersion
-		if !strings.HasPrefix(acmVersion, "v") {
-			acmVersion = "v" + acmVersion
-		}
-	}
-
 	compatibilityInfo, err := lookupImageAndFeatures(plugin.Spec.Type, rm.clusterVersion)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -251,7 +233,7 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, err
 	}
 
-	pluginInfo, err := PluginInfoBuilder(ctx, rm.k8sClient, plugin, rm.pluginConf, compatibilityInfo, acmVersion, rm.clusterVersion)
+	pluginInfo, err := PluginInfoBuilder(ctx, rm.k8sClient, plugin, rm.pluginConf, compatibilityInfo, rm.clusterVersion)
 
 	if err != nil {
 		logger.Error(err, "failed to reconcile plugin")

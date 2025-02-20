@@ -290,17 +290,16 @@ func containsProxy(pluginInfo *UIPluginInfo) (bool, bool, bool) {
 }
 
 var features = []string{}
-var acmVersion = "v2.11"
 var clusterVersion = "v4.18"
 
-func getPluginInfo(plugin *uiv1alpha1.UIPlugin, features []string, clusterVersion string, acmVersion string) (*UIPluginInfo, error) {
-	return createMonitoringPluginInfo(plugin, namespace, name, image, features, acmVersion, clusterVersion)
+func getPluginInfo(plugin *uiv1alpha1.UIPlugin, features []string, clusterVersion string) (*UIPluginInfo, error) {
+	return createMonitoringPluginInfo(plugin, namespace, name, image, features, clusterVersion)
 }
 
 func TestCreateMonitoringPluginInfo(t *testing.T) {
 	/** Postive Test - ALL  **/
 	t.Run("Test createMonitoringPluginInfo with all monitoring configurations", func(t *testing.T) {
-		pluginInfo, error := getPluginInfo(pluginConfigAll, features, clusterVersion, acmVersion)
+		pluginInfo, error := getPluginInfo(pluginConfigAll, features, clusterVersion)
 		assert.Assert(t, error == nil)
 
 		alertmanagerProxyFound, thanosProxyFound, persesProxyFound := containsProxy(pluginInfo)
@@ -316,7 +315,7 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 
 	/** Postive Test - ACM  **/
 	t.Run("Test createMonitoringPluginInfo with AMC configuration only", func(t *testing.T) {
-		pluginInfo, error := getPluginInfo(pluginConfigACM, features, clusterVersion, acmVersion)
+		pluginInfo, error := getPluginInfo(pluginConfigACM, features, clusterVersion)
 		assert.Assert(t, error == nil)
 
 		alertmanagerProxyFound, thanosProxyFound, persesProxyFound := containsProxy(pluginInfo)
@@ -330,25 +329,9 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 		assert.Assert(t, incidentsFlagFound == false)
 	})
 
-	t.Run("Test validACMConfig() with valid and invalid acmVersions", func(t *testing.T) {
-
-		// UIPlugin monitoring ACM feature is only supported in v2.11+
-		assert.Assert(t, validateACMConfig(pluginConfigACM.Spec.Monitoring, "v2.11.3") == true)
-		assert.Assert(t, validateACMConfig(pluginConfigACM.Spec.Monitoring, "v2.11") == true)
-		assert.Assert(t, validateACMConfig(pluginConfigACM.Spec.Monitoring, "2.11") == true)
-		assert.Assert(t, validateACMConfig(pluginConfigACM.Spec.Monitoring, "v2.11") == true)
-
-		assert.Assert(t, validateACMConfig(pluginConfigACM.Spec.Monitoring, "2.10") == false)
-		assert.Assert(t, validateACMConfig(pluginConfigACM.Spec.Monitoring, "v2.10") == false)
-		assert.Assert(t, validateACMConfig(pluginConfigACM.Spec.Monitoring, "1.0.0") == false)
-		assert.Assert(t, validateACMConfig(pluginConfigACM.Spec.Monitoring, "v1.0.0") == false)
-
-		assert.Assert(t, validateACMConfig(pluginConfigACM.Spec.Monitoring, "acm version not found") == false)
-	})
-
 	/** Postive Test - Perses  **/
 	t.Run("Test createMonitoringPluginInfo with Perses configuration only", func(t *testing.T) {
-		pluginInfo, error := getPluginInfo(pluginConfigPerses, features, clusterVersion, acmVersion)
+		pluginInfo, error := getPluginInfo(pluginConfigPerses, features, clusterVersion)
 		assert.Assert(t, error == nil)
 
 		alertmanagerProxyFound, thanosProxyFound, persesProxyFound := containsProxy(pluginInfo)
@@ -364,7 +347,7 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 	})
 
 	t.Run("Test createMonitoringPluginInfo with Perses default namespace and namespace", func(t *testing.T) {
-		pluginInfo, error := getPluginInfo(pluginConfigPersesDefault, features, clusterVersion, acmVersion)
+		pluginInfo, error := getPluginInfo(pluginConfigPersesDefault, features, clusterVersion)
 		assert.Assert(t, error == nil)
 
 		alertmanagerProxyFound, thanosProxyFound, persesProxyFound := containsProxy(pluginInfo)
@@ -382,7 +365,7 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 	t.Run("Test createMonitoringPluginInfo with Perses default serviceName", func(t *testing.T) {
 		// should not throw an error because serviceName is allowed to be empty
 		// a default serviceName will be assigned
-		pluginInfo, error := getPluginInfo(pluginConfigPersesDefaultServiceName, features, clusterVersion, acmVersion)
+		pluginInfo, error := getPluginInfo(pluginConfigPersesDefaultServiceName, features, clusterVersion)
 		assert.Assert(t, error == nil)
 
 		alertmanagerProxyFound, thanosProxyFound, persesProxyFound := containsProxy(pluginInfo)
@@ -399,7 +382,7 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 	t.Run("Test createMonitoringPluginInfo with Perses default namespace", func(t *testing.T) {
 		// should not throw an error because namespace is allowed to be empty
 		// a default namespace will be assigned
-		pluginInfo, error := getPluginInfo(pluginConfigPersesDefaultNamespace, features, clusterVersion, acmVersion)
+		pluginInfo, error := getPluginInfo(pluginConfigPersesDefaultNamespace, features, clusterVersion)
 		assert.Assert(t, error == nil)
 
 		alertmanagerProxyFound, thanosProxyFound, persesProxyFound := containsProxy(pluginInfo)
@@ -415,7 +398,7 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 
 	/** Postive Test - Incidients **/
 	t.Run("Test createMonitoringPluginInfo with Incidents configuration only", func(t *testing.T) {
-		pluginInfo, error := getPluginInfo(pluginConfigIncidents, features, clusterVersion, acmVersion)
+		pluginInfo, error := getPluginInfo(pluginConfigIncidents, features, clusterVersion)
 		assert.Assert(t, error == nil)
 
 		alertmanagerProxyFound, thanosProxyFound, persesProxyFound := containsProxy(pluginInfo)
@@ -456,14 +439,14 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 	/** Negative Tests - ACM **/
 	t.Run("Test createMonitoringPluginInfo with missing URL from thanos", func(t *testing.T) {
 		// this should throw an error because thanosQuerier.URL is not set
-		pluginInfo, error := getPluginInfo(pluginConfigAlertmanager, features, clusterVersion, acmVersion)
+		pluginInfo, error := getPluginInfo(pluginConfigAlertmanager, features, clusterVersion)
 		assert.Assert(t, pluginInfo == nil)
 		assert.Assert(t, error != nil)
 	})
 
 	t.Run("Test createMonitoringPluginInfo with missing URL from alertmanager ", func(t *testing.T) {
 		// this should throw an error because alertManager.URL is not set
-		pluginInfo, error := getPluginInfo(pluginConfigThanos, features, clusterVersion, acmVersion)
+		pluginInfo, error := getPluginInfo(pluginConfigThanos, features, clusterVersion)
 		assert.Assert(t, pluginInfo == nil)
 		assert.Assert(t, error != nil)
 	})
@@ -471,7 +454,7 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 	/** Negative Tests - Perses **/
 	t.Run("Test createMonitoringPluginInfo with missing Perses enabled field ", func(t *testing.T) {
 		// this should throw an error because 'enabled: true' is not set
-		pluginInfo, error := getPluginInfo(pluginConfigPersesEmpty, features, clusterVersion, acmVersion)
+		pluginInfo, error := getPluginInfo(pluginConfigPersesEmpty, features, clusterVersion)
 		assert.Assert(t, pluginInfo == nil)
 		assert.Assert(t, error != nil)
 	})
@@ -479,7 +462,7 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 	/** Negative Tests - ALL **/
 	t.Run("Test createMonitoringPluginInfo with malform UIPlugin custom resource", func(t *testing.T) {
 		// this should throw an error because UIPlugin doesn't include alertmanager, thanos, perses, or incidents
-		pluginInfo, error := getPluginInfo(pluginMalformed, features, clusterVersion, acmVersion)
+		pluginInfo, error := getPluginInfo(pluginMalformed, features, clusterVersion)
 		assert.Assert(t, pluginInfo == nil)
 		assert.Assert(t, error != nil)
 	})

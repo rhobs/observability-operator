@@ -47,7 +47,6 @@ func TestLookupImageAndFeatures(t *testing.T) {
 	for _, tc := range []struct {
 		pluginType       uiv1alpha1.UIPluginType
 		clusterVersion   string
-		acmVersion       string
 		expectedKey      string
 		expectedErr      error
 		expectedFeatures []string
@@ -201,7 +200,6 @@ func TestLookupImageAndFeatures(t *testing.T) {
 		{
 			pluginType:       uiv1alpha1.TypeMonitoring,
 			clusterVersion:   "v4.14.0-0.nightly-2024-06-06-064349",
-			acmVersion:       "v2.11.3",
 			expectedKey:      "ui-monitoring",
 			expectedFeatures: []string{},
 			expectedErr:      nil,
