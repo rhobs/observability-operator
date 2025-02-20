@@ -25,7 +25,7 @@ require (
 	k8s.io/client-go v0.32.2
 	k8s.io/component-base v0.32.2
 	k8s.io/utils v0.0.0-20241104100929-3ea5e8cea738
-	sigs.k8s.io/controller-runtime v0.19.1
+	sigs.k8s.io/controller-runtime v0.20.2
 )
 
 require (
@@ -39,7 +39,7 @@ require (
 	github.com/edsrzf/mmap-go v1.1.0 // indirect
 	github.com/efficientgo/core v1.0.0-rc.2 // indirect
 	github.com/emicklei/go-restful/v3 v3.12.1 // indirect
-	github.com/evanphx/json-patch/v5 v5.9.0 // indirect
+	github.com/evanphx/json-patch/v5 v5.9.11 // indirect
 	github.com/facette/natsort v0.0.0-20181210072756-2cd4dd1e2dcb // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
@@ -59,6 +59,7 @@ require (
 	github.com/go-openapi/validate v0.24.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
+	github.com/google/btree v1.1.3 // indirect
 	github.com/google/gnostic-models v0.6.9-0.20230804172637-c7be7c783f49 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
