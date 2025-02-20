@@ -137,6 +137,29 @@ type LokiStackReference struct {
 
 // MonitoringConfig contains options for configuring the monitoring console plugin.
 type MonitoringConfig struct {
+	// ACM points to the alertmanager and thanosQuerier instance services of which it should create a proxy to.
+	//
+	// +kubebuilder:validation:Optional
+	ACM AdvancedClusterManagementReference `json:"acm,omitempty"`
+
+	// Perses points to the perses instance service of which it should create a proxy to.
+	//
+	// +kubebuilder:validation:Optional
+	Perses PersesReference `json:"perses,omitempty"`
+
+	// Incidents feature flag enablement
+	//
+	// +kubebuilder:validation:Optional
+	Incidents IncidentsReference `json:"incidents,omitempty"`
+}
+
+// AdvancedClusterManagementReference is used to configure references to the alertmanager and thanosQuerier that should be used
+// by the monitoring console plugin.
+type AdvancedClusterManagementReference struct {
+	// Indicates if ACM-related feature(s) should be enabled
+	//
+	// +kubebuilder:validation:Required
+	Enabled bool `json:"enabled"`
 	// Alertmanager points to the alertmanager instance of which it should create a proxy to.
 	//
 	// +kubebuilder:validation:Required
@@ -148,7 +171,7 @@ type MonitoringConfig struct {
 	ThanosQuerier ThanosQuerierReference `json:"thanosQuerier"`
 }
 
-// Alertmanager is used to configure a reference to a alertmanage that should be used
+// Alertmanager is used to configure a reference to an alertmanager that should be used
 // by the monitoring console plugin.
 //
 // +structType=atomic
@@ -156,7 +179,6 @@ type AlertmanagerReference struct {
 	// Url of the Alertmanager to proxy to.
 	//
 	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:MinLength:=1
 	Url string `json:"url"`
 }
 
@@ -168,8 +190,34 @@ type ThanosQuerierReference struct {
 	// Url of the ThanosQuerier to proxy to.
 	//
 	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:MinLength:=1
 	Url string `json:"url"`
+}
+
+// PersesReference is used to configure a reference to a perses service that should be used
+// by the monitoring console plugin.
+type PersesReference struct {
+	// Indicates if perses-related feature(s) should be enabled
+	//
+	// +kubebuilder:validation:Required
+	Enabled bool `json:"enabled"`
+	// ServiceName of the Perses Service to proxy to.
+	// If Enabled=true and ServiceName is not included it will be initialized to a default value.
+	//
+	// +kubebuilder:validation:Optional
+	ServiceName string `json:"serviceName,omitempty"`
+	// Namespace of the Perses Service to proxy to.
+	// If Enabled=true and Namespace is not included it will be initialized to a default value.
+	//
+	// +kubebuilder:validation:Optional
+	Namespace string `json:"namespace,omitempty"`
+}
+
+// IncidentsReference is used to configure if the incidents feature flag should be enabled.
+type IncidentsReference struct {
+	// Indicates if incidents-related feature(s) should be enabled.
+	//
+	// +kubebuilder:validation:Required
+	Enabled bool `json:"enabled"`
 }
 
 // UIPluginSpec is the specification for desired state of UIPlugin.
