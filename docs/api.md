@@ -994,6 +994,26 @@ It requires Prometheus >= v2.25.0.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>messageVersion</b></td>
+        <td>enum</td>
+        <td>
+          The Remote Write message's version to use when writing to the endpoint.
+
+`Version1.0` corresponds to the `prometheus.WriteRequest` protobuf message introduced in Remote Write 1.0.
+`Version2.0` corresponds to the `io.prometheus.write.v2.Request` protobuf message introduced in Remote Write 2.0.
+
+When `Version2.0` is selected, Prometheus will automatically be
+configured to append the metadata of scraped metrics to the WAL.
+
+Before setting this field, consult with your remote storage provider
+what message version it supports.
+
+It requires Prometheus >= v2.54.0.<br/>
+          <br/>
+            <i>Enum</i>: V1.0, V2.0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#monitoringstackspecprometheusconfigremotewriteindexmetadataconfig">metadataConfig</a></b></td>
         <td>object</td>
         <td>
@@ -1077,7 +1097,7 @@ It requires Prometheus >= v2.43.0 or Alertmanager >= 0.25.0.<br/>
         <td>boolean</td>
         <td>
           Enables sending of exemplars over remote write. Note that
-exemplar-storage itself must be enabled using the `spec.enableFeature`
+exemplar-storage itself must be enabled using the `spec.enableFeatures`
 option for exemplars to be scraped in the first place.
 
 It requires Prometheus >= v2.27.0.<br/>
