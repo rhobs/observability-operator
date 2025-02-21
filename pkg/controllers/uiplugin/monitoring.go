@@ -18,9 +18,8 @@ import (
 Requirements for ACM enablement
 1. UIPlugin configuration requires acm.enabled, acm.thanosQuerier.Url, and acm.alertmanager.Url
 2. OpenShift Container Platform requirement: v4.14+
-3. Advanced Cluster Management: v2.11+
 */
-func validateACMConfig(config *uiv1alpha1.MonitoringConfig, acmVersion string) bool {
+func validateACMConfig(config *uiv1alpha1.MonitoringConfig) bool {
 	enabled := config.ACM.Enabled
 
 	// alertManager and thanosQuerier url configurations are required to enable 'acm-alerting'
@@ -28,13 +27,7 @@ func validateACMConfig(config *uiv1alpha1.MonitoringConfig, acmVersion string) b
 	validThanosQuerierUrl := config.ACM.ThanosQuerier.Url != ""
 	isValidAcmAlertingConfig := validAlertManagerUrl && validThanosQuerierUrl
 
-	// "acm-alerting" feature is supported in ACM v2.11+
-	if !strings.HasPrefix(acmVersion, "v") {
-		acmVersion = "v" + acmVersion
-	}
-	minACMVersionMet := semver.Compare(acmVersion, "v2.11") >= 0
-
-	return isValidAcmAlertingConfig && enabled && minACMVersionMet
+	return isValidAcmAlertingConfig && enabled
 }
 
 func validatePersesConfig(config *uiv1alpha1.MonitoringConfig) bool {
@@ -188,7 +181,7 @@ func addAcmAlertingProxy(pluginInfo *UIPluginInfo, name string, namespace string
 	)
 }
 
-func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string, acmVersion string, clusterVersion string) (*UIPluginInfo, error) {
+func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string, clusterVersion string) (*UIPluginInfo, error) {
 	config := plugin.Spec.Monitoring
 	if config == nil {
 		return nil, fmt.Errorf("monitoring configuration can not be empty for plugin type %s", plugin.Spec.Type)
@@ -198,7 +191,7 @@ func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, im
 	}
 
 	// Validate feature configuration and cluster conditions support enablement
-	isValidAcmConfig := validateACMConfig(config, acmVersion)
+	isValidAcmConfig := validateACMConfig(config)
 	isValidPersesConfig := validatePersesConfig(config)
 	isValidIncidentsConfig := validateIncidentsConfig(config, clusterVersion)
 
