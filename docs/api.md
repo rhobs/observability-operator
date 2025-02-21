@@ -4507,22 +4507,6 @@ Perses points to the perses instance service of which it should create a proxy t
           Indicates if perses-related feature(s) should be enabled<br/>
         </td>
         <td>true</td>
-      </tr><tr>
-        <td><b>namespace</b></td>
-        <td>string</td>
-        <td>
-          Namespace of the Perses Service to proxy to.
-If Enabled=true and Namespace is not included it will be initialized to a default value.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b>serviceName</b></td>
-        <td>string</td>
-        <td>
-          ServiceName of the Perses Service to proxy to.
-If Enabled=true and ServiceName is not included it will be initialized to a default value.<br/>
-        </td>
-        <td>false</td>
       </tr></tbody>
 </table>
 

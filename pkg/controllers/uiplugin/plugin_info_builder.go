@@ -32,6 +32,7 @@ type UIPluginInfo struct {
 	ClusterRoleBindings []*rbacv1.ClusterRoleBinding
 	ConfigMap           *corev1.ConfigMap
 	ResourceNamespace   string
+	PersesImage         string
 }
 
 var pluginTypeToConsoleName = map[uiv1alpha1.UIPluginType]string{
@@ -161,7 +162,7 @@ func PluginInfoBuilder(ctx context.Context, k client.Client, plugin *uiv1alpha1.
 		return createLoggingPluginInfo(plugin, namespace, plugin.Name, image, compatibilityInfo.Features)
 
 	case uiv1alpha1.TypeMonitoring:
-		return createMonitoringPluginInfo(plugin, namespace, plugin.Name, image, compatibilityInfo.Features, clusterVersion, pluginConf.Images["health-analyzer"])
+		return createMonitoringPluginInfo(plugin, namespace, plugin.Name, image, compatibilityInfo.Features, clusterVersion, pluginConf.Images["health-analyzer"], pluginConf.Images["perses"])
 	}
 
 	return nil, fmt.Errorf("plugin type not supported: %s", plugin.Spec.Type)

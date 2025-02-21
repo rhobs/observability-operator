@@ -11,8 +11,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
+	persesv1alpha1 "github.com/perses/perses-operator/api/v1alpha1"
+	persesconfig "github.com/perses/perses/pkg/model/api/config"
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 )
+
+const persesServiceName = "perses"
 
 /*
 Requirements for ACM enablement
@@ -20,7 +24,11 @@ Requirements for ACM enablement
 2. OpenShift Container Platform requirement: v4.14+
 */
 func validateACMConfig(config *uiv1alpha1.MonitoringConfig) bool {
-	enabled := config.ACM.Enabled
+	enabled := config.ACM != nil && config.ACM.Enabled
+
+	if !enabled {
+		return false
+	}
 
 	// alertManager and thanosQuerier url configurations are required to enable 'acm-alerting'
 	validAlertManagerUrl := config.ACM.Alertmanager.Url != ""
@@ -31,11 +39,11 @@ func validateACMConfig(config *uiv1alpha1.MonitoringConfig) bool {
 }
 
 func validatePersesConfig(config *uiv1alpha1.MonitoringConfig) bool {
-	return config.Perses.Enabled
+	return config.Perses != nil && config.Perses.Enabled
 }
 
 func validateIncidentsConfig(config *uiv1alpha1.MonitoringConfig, clusterVersion string) bool {
-	enabled := config.Incidents.Enabled
+	enabled := config.Incidents != nil && config.Incidents.Enabled
 
 	if !strings.HasPrefix(clusterVersion, "v") {
 		clusterVersion = "v" + clusterVersion
@@ -91,17 +99,7 @@ func getBasePluginInfo(namespace, name, image string) *UIPluginInfo {
 	}
 }
 
-func addPersesProxy(pluginInfo *UIPluginInfo, config *uiv1alpha1.MonitoringConfig) {
-	persesServiceName := "perses-api-http"
-	persesNamespace := "perses"
-
-	if config.Perses.ServiceName != "" {
-		persesServiceName = config.Perses.ServiceName
-	}
-	if config.Perses.Namespace != "" {
-		persesNamespace = config.Perses.Namespace
-	}
-
+func addPersesProxy(pluginInfo *UIPluginInfo, namespace string) {
 	pluginInfo.Proxies = append(pluginInfo.Proxies, osv1.ConsolePluginProxy{
 		Alias:         "perses",
 		Authorization: "UserToken",
@@ -109,7 +107,7 @@ func addPersesProxy(pluginInfo *UIPluginInfo, config *uiv1alpha1.MonitoringConfi
 			Type: osv1.ProxyTypeService,
 			Service: &osv1.ConsolePluginProxyServiceConfig{
 				Name:      persesServiceName,
-				Namespace: persesNamespace,
+				Namespace: namespace,
 				Port:      8080,
 			},
 		},
@@ -120,7 +118,7 @@ func addPersesProxy(pluginInfo *UIPluginInfo, config *uiv1alpha1.MonitoringConfi
 		Authorize: true,
 		Service: osv1alpha1.ConsolePluginProxyServiceConfig{
 			Name:      persesServiceName,
-			Namespace: persesNamespace,
+			Namespace: namespace,
 			Port:      8080,
 		},
 	})
@@ -181,13 +179,10 @@ func addAcmAlertingProxy(pluginInfo *UIPluginInfo, name string, namespace string
 	)
 }
 
-func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string, clusterVersion string, healthAnalyzerImage string) (*UIPluginInfo, error) {
+func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string, clusterVersion string, healthAnalyzerImage string, persesImage string) (*UIPluginInfo, error) {
 	config := plugin.Spec.Monitoring
 	if config == nil {
 		return nil, fmt.Errorf("monitoring configuration can not be empty for plugin type %s", plugin.Spec.Type)
-	}
-	if !config.ACM.Enabled && !config.Perses.Enabled && !config.Incidents.Enabled {
-		return nil, fmt.Errorf("monitoring configurations did not enabled any features")
 	}
 
 	// Validate feature configuration and cluster conditions support enablement
@@ -197,7 +192,7 @@ func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, im
 
 	atLeastOneValidConfig := isValidAcmConfig || isValidPersesConfig || isValidIncidentsConfig
 	if !atLeastOneValidConfig {
-		return nil, fmt.Errorf("uiplugin monitoring configurations are invalid")
+		return nil, fmt.Errorf("all uiplugin monitoring configurations are invalid")
 	}
 
 	//  Add proxies and feature flags
@@ -207,7 +202,8 @@ func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, im
 		features = append(features, "acm-alerting")
 	}
 	if isValidPersesConfig {
-		addPersesProxy(pluginInfo, config)
+		addPersesProxy(pluginInfo, namespace)
+		pluginInfo.PersesImage = persesImage
 		features = append(features, "perses-dashboards")
 	}
 	if isValidIncidentsConfig {
@@ -258,6 +254,49 @@ func newMonitoringService(name string, namespace string) *corev1.Service {
 			},
 			Selector: componentLabels(name),
 			Type:     corev1.ServiceTypeClusterIP,
+		},
+	}
+}
+
+func newPerses(namespace string, persesImage string) *persesv1alpha1.Perses {
+	return &persesv1alpha1.Perses{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: persesv1alpha1.GroupVersion.String(),
+			Kind:       "Perses",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "perses",
+			Namespace: namespace,
+			Labels: map[string]string{
+				"app.kubernetes.io/name":       "perses",
+				"app.kubernetes.io/instance":   "perses-observability-operator",
+				"app.kubernetes.io/component":  "perses",
+				"app.kubernetes.io/part-of":    "perses",
+				"app.kubernetes.io/managed-by": "observability-operator",
+			},
+		},
+		Spec: persesv1alpha1.PersesSpec{
+			Config: persesv1alpha1.PersesConfig{
+				Config: persesconfig.Config{
+					Security: persesconfig.Security{
+						EnableAuth: false,
+					},
+					Database: persesconfig.Database{
+						File: &persesconfig.File{
+							Folder:    "/etc/perses/storage",
+							Extension: persesconfig.YAMLExtension,
+						},
+					},
+					Schemas: persesconfig.Schemas{
+						PanelsPath:      "/etc/perses/cue/schemas/panels",
+						QueriesPath:     "/etc/perses/cue/schemas/queries",
+						DatasourcesPath: "/etc/perses/cue/schemas/datasources",
+						VariablesPath:   "/etc/perses/cue/schemas/variables",
+					},
+				},
+			},
+			Image:         persesImage,
+			ContainerPort: 8080,
 		},
 	}
 }

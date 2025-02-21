@@ -12,6 +12,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 
+	persesv1alpha1 "github.com/perses/perses-operator/api/v1alpha1"
 	rhobsv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 )
@@ -31,6 +32,7 @@ func NewScheme(cfg *OperatorConfiguration) *runtime.Scheme {
 		utilruntime.Must(operatorv1.Install(scheme))
 		utilruntime.Must(corev1.AddToScheme(scheme))
 		utilruntime.Must(monv1.AddToScheme(scheme))
+		utilruntime.Must(persesv1alpha1.AddToScheme(scheme))
 	}
 
 	return scheme

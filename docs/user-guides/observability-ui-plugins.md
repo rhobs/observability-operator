@@ -170,8 +170,6 @@ spec:
         url: 'https://rbac-query-proxy.open-cluster-management-observability.svc:8443'
     perses:
       enabled: true
-      serviceName: "perses-api-http"
-      namespace: "perses"
     incidents:
       enabled: true
 ```
@@ -183,19 +181,15 @@ spec:
 | __Feature__         | __Description__                                                                                                          |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | `acm-alerting`      | Adds alerting UI to multi-cluster view. Configures proxies to connect with any alertmanager and thanos-querier.          |
+| `incidents`         | Adds incidents UI to `Observe` section of OpenShift Console Platform. Deploys the health analyzer and configures proxies in the plugin to connect with it. |
 | `perses-dashboards` | Adds perses UI to `Observe` section of OpenShift Console Platform. Configures proxies to connect with a Perses instance. |
 | `incidents`         | [Note about Incidents](#notes-about-incidents)                                                                           |
 
 
 #### Feature Matrix
 
-| __COO Version__ |   __OCP Versions__  | __Features__                                 |
-| --------------- | ------------------- | -------------------------------------------- |
-| 1.0.0+          | 4.14+               | `acm-alerting`                               |
-| 1.1.0+          | 4.14+               | `acm-alerting, perses-dashboards`            |
+| __COO Version__ |   __OCP Versions__  | __Features__                      |
+| --------------- | ------------------- | --------------------------------- |
+| 1.0.0+          | 4.14+               | `acm-alerting`                    |
+| 1.1.0+          | 4.14+               | `acm-alerting, perses-dashboards` |
 | 1.1.0+          | 4.18+               | `acm-alerting, perses-dashboards, incidents` |
-
-See: [Note about Incidents](#notes-about-incidents)
-
-### Note about Incidents
-(February 24, 2025) Configuring incidents (e.g., `spec.monitoring.incidents.enabled: true`) does not currently deploy incidents features in the console. Further work is needed to allow the CR to directly enable incidents. The current CR configuration will only set a feature flag (e.g., `-feature='incidents'`) in the monitoring-console-plugin Deployment. In future works, the feature flag will trigger the incidents features to be displayed. 

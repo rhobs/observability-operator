@@ -22,7 +22,7 @@ var pluginConfigAll = &uiv1alpha1.UIPlugin{
 	Spec: uiv1alpha1.UIPluginSpec{
 		Type: "monitoring",
 		Monitoring: &uiv1alpha1.MonitoringConfig{
-			ACM: uiv1alpha1.AdvancedClusterManagementReference{
+			ACM: &uiv1alpha1.AdvancedClusterManagementReference{
 				Enabled: true,
 				Alertmanager: uiv1alpha1.AlertmanagerReference{
 					Url: "https://alertmanager.open-cluster-management-observability.svc:9095",
@@ -31,12 +31,10 @@ var pluginConfigAll = &uiv1alpha1.UIPlugin{
 					Url: "https://rbac-query-proxy.open-cluster-management-observability.svc:8443",
 				},
 			},
-			Perses: uiv1alpha1.PersesReference{
-				Enabled:     true,
-				ServiceName: "perses-api-http",
-				Namespace:   "perses-operator",
+			Perses: &uiv1alpha1.PersesReference{
+				Enabled: true,
 			},
-			Incidents: uiv1alpha1.IncidentsReference{
+			Incidents: &uiv1alpha1.IncidentsReference{
 				Enabled: true,
 			},
 		},
@@ -54,10 +52,8 @@ var pluginConfigPerses = &uiv1alpha1.UIPlugin{
 	Spec: uiv1alpha1.UIPluginSpec{
 		Type: "monitoring",
 		Monitoring: &uiv1alpha1.MonitoringConfig{
-			Perses: uiv1alpha1.PersesReference{
-				Enabled:     true,
-				ServiceName: "perses-api-http",
-				Namespace:   "perses-operator",
+			Perses: &uiv1alpha1.PersesReference{
+				Enabled: true,
 			},
 		},
 	},
@@ -74,47 +70,8 @@ var pluginConfigPersesDefault = &uiv1alpha1.UIPlugin{
 	Spec: uiv1alpha1.UIPluginSpec{
 		Type: "monitoring",
 		Monitoring: &uiv1alpha1.MonitoringConfig{
-			Perses: uiv1alpha1.PersesReference{
-				Enabled:   true,
-				Namespace: "perses-operator",
-			},
-		},
-	},
-}
-
-var pluginConfigPersesDefaultServiceName = &uiv1alpha1.UIPlugin{
-	TypeMeta: metav1.TypeMeta{
-		APIVersion: "observability.openshift.io/v1alpha1",
-		Kind:       "UIPlugin",
-	},
-	ObjectMeta: metav1.ObjectMeta{
-		Name: "monitoring-plugin",
-	},
-	Spec: uiv1alpha1.UIPluginSpec{
-		Type: "monitoring",
-		Monitoring: &uiv1alpha1.MonitoringConfig{
-			Perses: uiv1alpha1.PersesReference{
-				Enabled:     true,
-				ServiceName: "foo-perses-api-http",
-			},
-		},
-	},
-}
-
-var pluginConfigPersesDefaultNamespace = &uiv1alpha1.UIPlugin{
-	TypeMeta: metav1.TypeMeta{
-		APIVersion: "observability.openshift.io/v1alpha1",
-		Kind:       "UIPlugin",
-	},
-	ObjectMeta: metav1.ObjectMeta{
-		Name: "monitoring-plugin",
-	},
-	Spec: uiv1alpha1.UIPluginSpec{
-		Type: "monitoring",
-		Monitoring: &uiv1alpha1.MonitoringConfig{
-			Perses: uiv1alpha1.PersesReference{
-				Enabled:   true,
-				Namespace: "foo-perses-operator",
+			Perses: &uiv1alpha1.PersesReference{
+				Enabled: true,
 			},
 		},
 	},
@@ -131,7 +88,7 @@ var pluginConfigPersesEmpty = &uiv1alpha1.UIPlugin{
 	Spec: uiv1alpha1.UIPluginSpec{
 		Type: "monitoring",
 		Monitoring: &uiv1alpha1.MonitoringConfig{
-			Perses: uiv1alpha1.PersesReference{},
+			Perses: &uiv1alpha1.PersesReference{},
 		},
 	},
 }
@@ -147,7 +104,7 @@ var pluginConfigACM = &uiv1alpha1.UIPlugin{
 	Spec: uiv1alpha1.UIPluginSpec{
 		Type: "monitoring",
 		Monitoring: &uiv1alpha1.MonitoringConfig{
-			ACM: uiv1alpha1.AdvancedClusterManagementReference{
+			ACM: &uiv1alpha1.AdvancedClusterManagementReference{
 				Enabled: true,
 				Alertmanager: uiv1alpha1.AlertmanagerReference{
 					Url: "https://alertmanager.open-cluster-management-observability.svc:9095",
@@ -171,7 +128,7 @@ var pluginConfigThanos = &uiv1alpha1.UIPlugin{
 	Spec: uiv1alpha1.UIPluginSpec{
 		Type: "monitoring",
 		Monitoring: &uiv1alpha1.MonitoringConfig{
-			ACM: uiv1alpha1.AdvancedClusterManagementReference{
+			ACM: &uiv1alpha1.AdvancedClusterManagementReference{
 				ThanosQuerier: uiv1alpha1.ThanosQuerierReference{
 					Url: "https://rbac-query-proxy.open-cluster-management-observability.svc:8443",
 				},
@@ -191,7 +148,7 @@ var pluginConfigAlertmanager = &uiv1alpha1.UIPlugin{
 	Spec: uiv1alpha1.UIPluginSpec{
 		Type: "monitoring",
 		Monitoring: &uiv1alpha1.MonitoringConfig{
-			ACM: uiv1alpha1.AdvancedClusterManagementReference{
+			ACM: &uiv1alpha1.AdvancedClusterManagementReference{
 				Alertmanager: uiv1alpha1.AlertmanagerReference{
 					Url: "https://alertmanager.open-cluster-management-observability.svc:9095",
 				},
@@ -211,7 +168,7 @@ var pluginConfigIncidents = &uiv1alpha1.UIPlugin{
 	Spec: uiv1alpha1.UIPluginSpec{
 		Type: "monitoring",
 		Monitoring: &uiv1alpha1.MonitoringConfig{
-			Incidents: uiv1alpha1.IncidentsReference{
+			Incidents: &uiv1alpha1.IncidentsReference{
 				Enabled: true,
 			},
 		},
@@ -289,12 +246,17 @@ func containsHealthAnalyzer(pluginInfo *UIPluginInfo) bool {
 	return pluginInfo.HealthAnalyzerImage == healthAnalyzerImage
 }
 
+func containsPerses(pluginInfo *UIPluginInfo) bool {
+	return pluginInfo.PersesImage == persesImage
+}
+
 var (
 	features       = []string{}
 	clusterVersion = "v4.18"
 )
 
 const healthAnalyzerImage = "quay.io/health-analuzer-foo-test:123"
+const persesImage = "quay.io/perses-foo-test:123"
 
 func getPluginInfo(plugin *uiv1alpha1.UIPlugin, features []string, clusterVersion string) (*UIPluginInfo, error) {
 	const (
@@ -303,7 +265,7 @@ func getPluginInfo(plugin *uiv1alpha1.UIPlugin, features []string, clusterVersio
 		image     = "quay.io/monitoring-foo-test:123"
 	)
 
-	return createMonitoringPluginInfo(plugin, namespace, name, image, features, clusterVersion, healthAnalyzerImage)
+	return createMonitoringPluginInfo(plugin, namespace, name, image, features, clusterVersion, healthAnalyzerImage, persesImage)
 }
 
 func TestCreateMonitoringPluginInfo(t *testing.T) {
@@ -341,6 +303,7 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 		assert.Assert(t, incidentsFlagFound == false)
 
 		assert.Assert(t, containsHealthAnalyzer(pluginInfo) == false)
+		assert.Assert(t, containsPerses(pluginInfo) == false)
 	})
 
 	/** Postive Test - Perses  **/
@@ -359,6 +322,7 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 		assert.Assert(t, incidentsFlagFound == false)
 
 		assert.Assert(t, containsHealthAnalyzer(pluginInfo) == false)
+		assert.Assert(t, containsPerses(pluginInfo) == true)
 	})
 
 	t.Run("Test createMonitoringPluginInfo with Perses default namespace and namespace", func(t *testing.T) {
@@ -376,44 +340,7 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 		assert.Assert(t, incidentsFlagFound == false)
 
 		assert.Assert(t, containsHealthAnalyzer(pluginInfo) == false)
-	})
-
-	t.Run("Test createMonitoringPluginInfo with Perses default serviceName", func(t *testing.T) {
-		// should not throw an error because serviceName is allowed to be empty
-		// a default serviceName will be assigned
-		pluginInfo, err := getPluginInfo(pluginConfigPersesDefaultServiceName, features, clusterVersion)
-		assert.Assert(t, err == nil)
-
-		alertmanagerProxyFound, thanosProxyFound, persesProxyFound := containsProxy(pluginInfo)
-		assert.Assert(t, alertmanagerProxyFound == false)
-		assert.Assert(t, thanosProxyFound == false)
-		assert.Assert(t, persesProxyFound == true)
-
-		acmAlertingFlagFound, persesFlagFound, incidentsFlagFound := containsFeatureFlag(pluginInfo)
-		assert.Assert(t, acmAlertingFlagFound == false)
-		assert.Assert(t, persesFlagFound == true)
-		assert.Assert(t, incidentsFlagFound == false)
-
-		assert.Assert(t, containsHealthAnalyzer(pluginInfo) == false)
-	})
-
-	t.Run("Test createMonitoringPluginInfo with Perses default namespace", func(t *testing.T) {
-		// should not throw an error because namespace is allowed to be empty
-		// a default namespace will be assigned
-		pluginInfo, err := getPluginInfo(pluginConfigPersesDefaultNamespace, features, clusterVersion)
-		assert.Assert(t, err == nil)
-
-		alertmanagerProxyFound, thanosProxyFound, persesProxyFound := containsProxy(pluginInfo)
-		assert.Assert(t, alertmanagerProxyFound == false)
-		assert.Assert(t, thanosProxyFound == false)
-		assert.Assert(t, persesProxyFound == true)
-
-		acmAlertingFlagFound, persesFlagFound, incidentsFlagFound := containsFeatureFlag(pluginInfo)
-		assert.Assert(t, acmAlertingFlagFound == false)
-		assert.Assert(t, persesFlagFound == true)
-		assert.Assert(t, incidentsFlagFound == false)
-
-		assert.Assert(t, containsHealthAnalyzer(pluginInfo) == false)
+		assert.Assert(t, containsPerses(pluginInfo) == true)
 	})
 
 	/** Postive Test - Incidents **/

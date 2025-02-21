@@ -121,6 +121,10 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 		components = append(components, reconciler.NewUpdater(newHealthAnalyzerServiceMonitor(namespace), plugin))
 	}
 
+	if pluginInfo.PersesImage != "" {
+		components = append(components, reconciler.NewUpdater(newPerses(namespace, pluginInfo.PersesImage), plugin))
+	}
+
 	return components
 }
 
