@@ -11,10 +11,6 @@ import (
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 )
 
-var namespace = "openshift-operators"
-var name = "monitoring"
-var image = "quay.io/monitoring-foo-test:123"
-
 var pluginConfigAll = &uiv1alpha1.UIPlugin{
 	TypeMeta: metav1.TypeMeta{
 		APIVersion: "observability.openshift.io/v1alpha1",
@@ -289,18 +285,32 @@ func containsProxy(pluginInfo *UIPluginInfo) (bool, bool, bool) {
 	return alertmanagerFound, thanosFound, persesFound
 }
 
-var features = []string{}
-var clusterVersion = "v4.18"
+func containsHealthAnalyzer(pluginInfo *UIPluginInfo) bool {
+	return pluginInfo.HealthAnalyzerImage == healthAnalyzerImage
+}
+
+var (
+	features       = []string{}
+	clusterVersion = "v4.18"
+)
+
+const healthAnalyzerImage = "quay.io/health-analuzer-foo-test:123"
 
 func getPluginInfo(plugin *uiv1alpha1.UIPlugin, features []string, clusterVersion string) (*UIPluginInfo, error) {
-	return createMonitoringPluginInfo(plugin, namespace, name, image, features, clusterVersion)
+	const (
+		namespace = "openshift-operators"
+		name      = "monitoring"
+		image     = "quay.io/monitoring-foo-test:123"
+	)
+
+	return createMonitoringPluginInfo(plugin, namespace, name, image, features, clusterVersion, healthAnalyzerImage)
 }
 
 func TestCreateMonitoringPluginInfo(t *testing.T) {
 	/** Postive Test - ALL  **/
 	t.Run("Test createMonitoringPluginInfo with all monitoring configurations", func(t *testing.T) {
-		pluginInfo, error := getPluginInfo(pluginConfigAll, features, clusterVersion)
-		assert.Assert(t, error == nil)
+		pluginInfo, err := getPluginInfo(pluginConfigAll, features, clusterVersion)
+		assert.Assert(t, err == nil)
 
 		alertmanagerProxyFound, thanosProxyFound, persesProxyFound := containsProxy(pluginInfo)
 		assert.Assert(t, alertmanagerProxyFound == true)
@@ -311,12 +321,14 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 		assert.Assert(t, acmAlertingFlagFound == true)
 		assert.Assert(t, persesFlagFound == true)
 		assert.Assert(t, incidentsFlagFound == true)
+
+		assert.Assert(t, containsHealthAnalyzer(pluginInfo) == true)
 	})
 
 	/** Postive Test - ACM  **/
 	t.Run("Test createMonitoringPluginInfo with AMC configuration only", func(t *testing.T) {
-		pluginInfo, error := getPluginInfo(pluginConfigACM, features, clusterVersion)
-		assert.Assert(t, error == nil)
+		pluginInfo, err := getPluginInfo(pluginConfigACM, features, clusterVersion)
+		assert.Assert(t, err == nil)
 
 		alertmanagerProxyFound, thanosProxyFound, persesProxyFound := containsProxy(pluginInfo)
 		assert.Assert(t, alertmanagerProxyFound == true)
@@ -327,12 +339,14 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 		assert.Assert(t, acmAlertingFlagFound == true)
 		assert.Assert(t, persesFlagFound == false)
 		assert.Assert(t, incidentsFlagFound == false)
+
+		assert.Assert(t, containsHealthAnalyzer(pluginInfo) == false)
 	})
 
 	/** Postive Test - Perses  **/
 	t.Run("Test createMonitoringPluginInfo with Perses configuration only", func(t *testing.T) {
-		pluginInfo, error := getPluginInfo(pluginConfigPerses, features, clusterVersion)
-		assert.Assert(t, error == nil)
+		pluginInfo, err := getPluginInfo(pluginConfigPerses, features, clusterVersion)
+		assert.Assert(t, err == nil)
 
 		alertmanagerProxyFound, thanosProxyFound, persesProxyFound := containsProxy(pluginInfo)
 		assert.Assert(t, alertmanagerProxyFound == false)
@@ -344,11 +358,12 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 		assert.Assert(t, persesFlagFound == true)
 		assert.Assert(t, incidentsFlagFound == false)
 
+		assert.Assert(t, containsHealthAnalyzer(pluginInfo) == false)
 	})
 
 	t.Run("Test createMonitoringPluginInfo with Perses default namespace and namespace", func(t *testing.T) {
-		pluginInfo, error := getPluginInfo(pluginConfigPersesDefault, features, clusterVersion)
-		assert.Assert(t, error == nil)
+		pluginInfo, err := getPluginInfo(pluginConfigPersesDefault, features, clusterVersion)
+		assert.Assert(t, err == nil)
 
 		alertmanagerProxyFound, thanosProxyFound, persesProxyFound := containsProxy(pluginInfo)
 		assert.Assert(t, alertmanagerProxyFound == false)
@@ -360,13 +375,14 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 		assert.Assert(t, persesFlagFound == true)
 		assert.Assert(t, incidentsFlagFound == false)
 
+		assert.Assert(t, containsHealthAnalyzer(pluginInfo) == false)
 	})
 
 	t.Run("Test createMonitoringPluginInfo with Perses default serviceName", func(t *testing.T) {
 		// should not throw an error because serviceName is allowed to be empty
 		// a default serviceName will be assigned
-		pluginInfo, error := getPluginInfo(pluginConfigPersesDefaultServiceName, features, clusterVersion)
-		assert.Assert(t, error == nil)
+		pluginInfo, err := getPluginInfo(pluginConfigPersesDefaultServiceName, features, clusterVersion)
+		assert.Assert(t, err == nil)
 
 		alertmanagerProxyFound, thanosProxyFound, persesProxyFound := containsProxy(pluginInfo)
 		assert.Assert(t, alertmanagerProxyFound == false)
@@ -377,13 +393,15 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 		assert.Assert(t, acmAlertingFlagFound == false)
 		assert.Assert(t, persesFlagFound == true)
 		assert.Assert(t, incidentsFlagFound == false)
+
+		assert.Assert(t, containsHealthAnalyzer(pluginInfo) == false)
 	})
 
 	t.Run("Test createMonitoringPluginInfo with Perses default namespace", func(t *testing.T) {
 		// should not throw an error because namespace is allowed to be empty
 		// a default namespace will be assigned
-		pluginInfo, error := getPluginInfo(pluginConfigPersesDefaultNamespace, features, clusterVersion)
-		assert.Assert(t, error == nil)
+		pluginInfo, err := getPluginInfo(pluginConfigPersesDefaultNamespace, features, clusterVersion)
+		assert.Assert(t, err == nil)
 
 		alertmanagerProxyFound, thanosProxyFound, persesProxyFound := containsProxy(pluginInfo)
 		assert.Assert(t, alertmanagerProxyFound == false)
@@ -394,12 +412,14 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 		assert.Assert(t, acmAlertingFlagFound == false)
 		assert.Assert(t, persesFlagFound == true)
 		assert.Assert(t, incidentsFlagFound == false)
+
+		assert.Assert(t, containsHealthAnalyzer(pluginInfo) == false)
 	})
 
-	/** Postive Test - Incidients **/
+	/** Postive Test - Incidents **/
 	t.Run("Test createMonitoringPluginInfo with Incidents configuration only", func(t *testing.T) {
-		pluginInfo, error := getPluginInfo(pluginConfigIncidents, features, clusterVersion)
-		assert.Assert(t, error == nil)
+		pluginInfo, err := getPluginInfo(pluginConfigIncidents, features, clusterVersion)
+		assert.Assert(t, err == nil)
 
 		alertmanagerProxyFound, thanosProxyFound, persesProxyFound := containsProxy(pluginInfo)
 		assert.Assert(t, alertmanagerProxyFound == false)
@@ -410,6 +430,8 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 		assert.Assert(t, acmAlertingFlagFound == false)
 		assert.Assert(t, persesFlagFound == false)
 		assert.Assert(t, incidentsFlagFound == true)
+
+		assert.Assert(t, containsHealthAnalyzer(pluginInfo) == true)
 	})
 
 	t.Run("Test validateIncidentsConfig() with valid and invalid clusterVersion formats", func(t *testing.T) {
@@ -439,31 +461,31 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 	/** Negative Tests - ACM **/
 	t.Run("Test createMonitoringPluginInfo with missing URL from thanos", func(t *testing.T) {
 		// this should throw an error because thanosQuerier.URL is not set
-		pluginInfo, error := getPluginInfo(pluginConfigAlertmanager, features, clusterVersion)
+		pluginInfo, err := getPluginInfo(pluginConfigAlertmanager, features, clusterVersion)
 		assert.Assert(t, pluginInfo == nil)
-		assert.Assert(t, error != nil)
+		assert.Assert(t, err != nil)
 	})
 
 	t.Run("Test createMonitoringPluginInfo with missing URL from alertmanager ", func(t *testing.T) {
 		// this should throw an error because alertManager.URL is not set
-		pluginInfo, error := getPluginInfo(pluginConfigThanos, features, clusterVersion)
+		pluginInfo, err := getPluginInfo(pluginConfigThanos, features, clusterVersion)
 		assert.Assert(t, pluginInfo == nil)
-		assert.Assert(t, error != nil)
+		assert.Assert(t, err != nil)
 	})
 
 	/** Negative Tests - Perses **/
 	t.Run("Test createMonitoringPluginInfo with missing Perses enabled field ", func(t *testing.T) {
 		// this should throw an error because 'enabled: true' is not set
-		pluginInfo, error := getPluginInfo(pluginConfigPersesEmpty, features, clusterVersion)
+		pluginInfo, err := getPluginInfo(pluginConfigPersesEmpty, features, clusterVersion)
 		assert.Assert(t, pluginInfo == nil)
-		assert.Assert(t, error != nil)
+		assert.Assert(t, err != nil)
 	})
 
 	/** Negative Tests - ALL **/
 	t.Run("Test createMonitoringPluginInfo with malform UIPlugin custom resource", func(t *testing.T) {
 		// this should throw an error because UIPlugin doesn't include alertmanager, thanos, perses, or incidents
-		pluginInfo, error := getPluginInfo(pluginMalformed, features, clusterVersion)
+		pluginInfo, err := getPluginInfo(pluginMalformed, features, clusterVersion)
 		assert.Assert(t, pluginInfo == nil)
-		assert.Assert(t, error != nil)
+		assert.Assert(t, err != nil)
 	})
 }

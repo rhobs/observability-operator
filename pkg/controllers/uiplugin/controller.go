@@ -89,6 +89,11 @@ const (
 //+kubebuilder:rbac:groups=monitoring.coreos.com,resources=prometheuses/api,resourceNames=k8s,verbs=get;create;update
 //+kubebuilder:rbac:groups=monitoring.coreos.com,resources=alertmanagers/api,resourceNames=main,verbs=get;list
 
+// RBAC for Health Analyzer
+//+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
+//+kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=create
+//+kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors,verbs=get;create;update;patch;delete
+
 const finalizerName = "uiplugin.observability.openshift.io/finalizer"
 
 // RegisterWithManager registers the controller with Manager
