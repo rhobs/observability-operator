@@ -735,8 +735,7 @@ func assertPrometheusManagedFields(t *testing.T) {
 		},
 		RemoteWrite: []monv1.RemoteWriteSpec{
 			{
-				Name: "sample-remote-write",
-				URL:  "https://sample-url",
+				URL: "https://sample-url",
 			},
 		},
 		ExternalLabels: map[string]string{
