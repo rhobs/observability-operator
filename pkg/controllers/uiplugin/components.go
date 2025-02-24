@@ -110,7 +110,43 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 		}
 	}
 
+	if pluginInfo.HealthAnalyzerImage != "" {
+		serviceAccountName := plugin.Name + serviceAccountSuffix
+		components = append(components, reconciler.NewUpdater(newClusterRoleBinding(namespace, serviceAccountName, "cluster-monitoring-view", "cluster-monitoring-view"), plugin))
+		components = append(components, reconciler.NewUpdater(newClusterRoleBinding(namespace, serviceAccountName, "system:auth-delegator", serviceAccountName+":system:auth-delegator"), plugin))
+		components = append(components, reconciler.NewUpdater(newHealthAnalyzerPrometheusRole(namespace), plugin))
+		components = append(components, reconciler.NewUpdater(newHealthAnalyzerPrometheusRoleBinding(namespace), plugin))
+		components = append(components, reconciler.NewUpdater(newHealthAnalyzerService(namespace), plugin))
+		components = append(components, reconciler.NewUpdater(newHealthAnalyzerDeployment(namespace, serviceAccountName, pluginInfo), plugin))
+		components = append(components, reconciler.NewUpdater(newHealthAnalyzerServiceMonitor(namespace), plugin))
+	}
+
 	return components
+}
+
+func newClusterRoleBinding(namespace string, serviceAccountName string, roleName string, name string) *rbacv1.ClusterRoleBinding {
+	return &rbacv1.ClusterRoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: rbacv1.SchemeGroupVersion.String(),
+			Kind:       "ClusterRoleBinding",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				APIGroup:  corev1.SchemeGroupVersion.Group,
+				Kind:      "ServiceAccount",
+				Name:      serviceAccountName,
+				Namespace: namespace,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: rbacv1.SchemeGroupVersion.Group,
+			Kind:     "ClusterRole",
+			Name:     roleName,
+		},
+	}
 }
 
 func newServiceAccount(info UIPluginInfo, namespace string) *corev1.ServiceAccount {

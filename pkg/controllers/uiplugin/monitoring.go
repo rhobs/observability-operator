@@ -181,7 +181,7 @@ func addAcmAlertingProxy(pluginInfo *UIPluginInfo, name string, namespace string
 	)
 }
 
-func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string, clusterVersion string) (*UIPluginInfo, error) {
+func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string, clusterVersion string, healthAnalyzerImage string) (*UIPluginInfo, error) {
 	config := plugin.Spec.Monitoring
 	if config == nil {
 		return nil, fmt.Errorf("monitoring configuration can not be empty for plugin type %s", plugin.Spec.Type)
@@ -211,6 +211,7 @@ func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, im
 		features = append(features, "perses-dashboards")
 	}
 	if isValidIncidentsConfig {
+		pluginInfo.HealthAnalyzerImage = healthAnalyzerImage
 		features = append(features, "incidents")
 	}
 	addFeatureFlags(pluginInfo, features)
