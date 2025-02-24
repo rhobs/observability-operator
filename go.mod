@@ -8,7 +8,7 @@ require (
 	github.com/openshift/api v0.0.0-20240404200104-96ed2d49b255
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.80.1
-	github.com/prometheus/common v0.61.0
+	github.com/prometheus/common v0.62.0
 	github.com/rhobs/obo-prometheus-operator v0.80.1-rhobs1
 	github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.80.1-rhobs1
 	go.uber.org/zap v1.27.0
