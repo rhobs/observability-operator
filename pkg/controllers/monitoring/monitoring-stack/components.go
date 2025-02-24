@@ -258,11 +258,10 @@ func newPrometheus(
 		prometheus.Spec.Alerting = &monv1.AlertingSpec{
 			Alertmanagers: []monv1.AlertmanagerEndpoints{
 				{
-					APIVersion: "v2",
-					Name:       ms.Name + "-alertmanager",
-					Namespace:  ptr.To(ms.Namespace),
-					Scheme:     "http",
-					Port:       intstr.FromString("web"),
+					Name:      ms.Name + "-alertmanager",
+					Namespace: ptr.To(ms.Namespace),
+					Scheme:    "http",
+					Port:      intstr.FromString("web"),
 				},
 			},
 		}
