@@ -142,11 +142,13 @@ The plugin adds monitoring related UI features to the OpenShift web console, rel
 - `ACM > Observe > Alerting > Alert rules`
 - `OCP > Observe > Perses Dashboards`
 
-To deploy ACM related features the `acm-alerting` configuration must be enabled. In the UIPlugin Custom Resource (CR) you must pass the Alertmanager and ThanosQuerier Service endpoint (e.g. `https://alertmanager.open-cluster-management-observability.svc:9095` and `https://rbac-query-proxy.open-cluster-management-observability.svc:8443`). See the example in the next section `Plugin Creation`.
+To deploy ACM related features the `acm-alerting` configuration must be enabled. In the UIPlugin Custom Resource (CR) you must pass the Alertmanager and ThanosQuerier Service endpoint (e.g. `https://alertmanager.open-cluster-management-observability.svc:9095` and `https://rbac-query-proxy.open-cluster-management-observability.svc:8443`). See the example in the next section `Plugin Creation.`
 
+To deploy the Perses dashboard feature, the `perses-dashboards` configuration must be enabled. In the UIPlugin CR, you can optionally pass the service name and namespace of your Perses instance (e.g., `serviceName: perses-api-http` and `namespace: perses`). If these fields are left blank and `spec.monitoring.perses.enabled: true`, then default values will be assigned. These default values are `serviceName: perses-api-http` and `namespace: perses`. See the example in the next section, `Plugin Creation.` 
+ 
 Other pages which are typically distributed with the monitoring-plugin, such as `Admin > Observe > Dashboards`, are only available in the monitoring-plugin when deployed through [CMO](https://github.com/openshift/cluster-monitoring-operator).
 
-To deploy the Perses dashboard feature the `perses-dashboards` configuration must be enabled. In the UIPlugin CR you can optionally pass the service name and namespace of your Perses instance (e.g. `perses-api-http` and namespace `perses-operator`). See the example in the next section `Plugin Creation`.
+[Note about Incidents](#notes-about-incidents)
 
 #### Plugin Creation
 
@@ -160,14 +162,21 @@ metadata:
 spec:
   type: Monitoring
   monitoring:
-    alertmanager:
-      url: 'https://alertmanager.open-cluster-management-observability.svc:9095'
-    thanosQuerier:
-      url: 'https://rbac-query-proxy.open-cluster-management-observability.svc:8443'
-    perses: 
-      name: 'perses-api-http'
-      namespace: 'perses-operator'
+    acm:
+      enabled: true
+      alertmanager:
+        url: 'https://alertmanager.open-cluster-management-observability.svc:9095'
+      thanosQuerier:
+        url: 'https://rbac-query-proxy.open-cluster-management-observability.svc:8443'
+    perses:
+      enabled: true
+      serviceName: "perses-api-http"
+      namespace: "perses"
+    incidents:
+      enabled: true
 ```
+
+[Note about Incidents](#notes-about-incidents)
 
 #### Feature List
 
@@ -175,11 +184,18 @@ spec:
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | `acm-alerting`      | Adds alerting UI to multi-cluster view. Configures proxies to connect with any alertmanager and thanos-querier.          |
 | `perses-dashboards` | Adds perses UI to `Observe` section of OpenShift Console Platform. Configures proxies to connect with a Perses instance. |
+| `incidents`         | [Note about Incidents](#notes-about-incidents)                                                                           |
 
 
 #### Feature Matrix
 
-| __COO Version__ |   __OCP Versions__  | __Features__                      |
-| --------------- | ------------------- | --------------------------------- |
-| 1.0.0+          | 4.14+               | `acm-alerting`                    |
-| 1.1.0+          | 4.14+               | `acm-alerting, perses-dashboards` |
+| __COO Version__ |   __OCP Versions__  | __Features__                                 |
+| --------------- | ------------------- | -------------------------------------------- |
+| 1.0.0+          | 4.14+               | `acm-alerting`                               |
+| 1.1.0+          | 4.14+               | `acm-alerting, perses-dashboards`            |
+| 1.1.0+          | 4.18+               | `acm-alerting, perses-dashboards, incidents` |
+
+See: [Note about Incidents](#notes-about-incidents)
+
+### Note about Incidents
+(February 24, 2025) Configuring incidents (e.g., `spec.monitoring.incidents.enabled: true`) does not currently deploy incidents features in the console. Further work is needed to allow the CR to directly enable incidents. The current CR configuration will only set a feature flag (e.g., `-feature='incidents'`) in the monitoring-console-plugin Deployment. In future works, the feature flag will trigger the incidents features to be displayed. 
