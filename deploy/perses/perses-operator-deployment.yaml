@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: perses-operator
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/name: perses-operator
+    app.kubernetes.io/part-of: observability-operator
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: controller
+      app.kubernetes.io/name: perses-operator
+      app.kubernetes.io/part-of: observability-operator
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: perses-operator
+      labels:
+        app.kubernetes.io/component: controller
+        app.kubernetes.io/name: perses-operator
+        app.kubernetes.io/part-of: observability-operator
+    spec:
+      containers:
+      - name: perses-operator
+        image: quay.io/persesdev/perses-operator:v0.1.1
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - "ALL"
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi
+      serviceAccountName: perses-operator

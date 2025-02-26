@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
 - ../crds/common
+- ../perses
 - ../dependencies
 - ../monitoring
 - ../operator

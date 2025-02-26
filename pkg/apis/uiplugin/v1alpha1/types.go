@@ -140,17 +140,17 @@ type MonitoringConfig struct {
 	// ACM points to the alertmanager and thanosQuerier instance services of which it should create a proxy to.
 	//
 	// +kubebuilder:validation:Optional
-	ACM AdvancedClusterManagementReference `json:"acm,omitempty"`
+	ACM *AdvancedClusterManagementReference `json:"acm,omitempty"`
 
 	// Perses points to the perses instance service of which it should create a proxy to.
 	//
 	// +kubebuilder:validation:Optional
-	Perses PersesReference `json:"perses,omitempty"`
+	Perses *PersesReference `json:"perses,omitempty"`
 
 	// Incidents feature flag enablement
 	//
 	// +kubebuilder:validation:Optional
-	Incidents IncidentsReference `json:"incidents,omitempty"`
+	Incidents *IncidentsReference `json:"incidents,omitempty"`
 }
 
 // AdvancedClusterManagementReference is used to configure references to the alertmanager and thanosQuerier that should be used
@@ -200,16 +200,6 @@ type PersesReference struct {
 	//
 	// +kubebuilder:validation:Required
 	Enabled bool `json:"enabled"`
-	// ServiceName of the Perses Service to proxy to.
-	// If Enabled=true and ServiceName is not included it will be initialized to a default value.
-	//
-	// +kubebuilder:validation:Optional
-	ServiceName string `json:"serviceName,omitempty"`
-	// Namespace of the Perses Service to proxy to.
-	// If Enabled=true and Namespace is not included it will be initialized to a default value.
-	//
-	// +kubebuilder:validation:Optional
-	Namespace string `json:"namespace,omitempty"`
 }
 
 // IncidentsReference is used to configure if the incidents feature flag should be enabled.

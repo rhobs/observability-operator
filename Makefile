@@ -57,6 +57,13 @@ generate-prom-operator-crds: $(CONTROLLER_GEN)
 		output:dir=. \
 		output:crd:dir=./deploy/crds/kubernetes
 
+.PHONY: generate-perses-op-crds
+generate-perses-op-crds: $(CONTROLLER_GEN)
+	$(CONTROLLER_GEN) crd \
+		paths=github.com/perses/perses-operator/api/... \
+		output:dir=. \
+		output:crd:dir=./deploy/perses/crds
+
 .PHONY: generate-crds
 generate-crds: $(CONTROLLER_GEN) generate-prom-op-crds
 	$(CONTROLLER_GEN) crd \

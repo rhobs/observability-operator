@@ -197,16 +197,6 @@ spec:
                         description: Indicates if perses-related feature(s) should
                           be enabled
                         type: boolean
-                      namespace:
-                        description: |-
-                          Namespace of the Perses Service to proxy to.
-                          If Enabled=true and Namespace is not included it will be initialized to a default value.
-                        type: string
-                      serviceName:
-                        description: |-
-                          ServiceName of the Perses Service to proxy to.
-                          If Enabled=true and ServiceName is not included it will be initialized to a default value.
-                        type: string
                     required:
                     - enabled
                     type: object

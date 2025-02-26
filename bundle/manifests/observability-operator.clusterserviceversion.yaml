@@ -42,7 +42,7 @@ metadata:
     categories: Monitoring
     certified: "false"
     containerImage: observability-operator:1.0.0
-    createdAt: "2025-02-24T09:25:26Z"
+    createdAt: "2025-02-24T18:08:14Z"
     description: A Go based Kubernetes operator to setup and manage highly available
       Monitoring Stack using Prometheus, Alertmanager and Thanos Querier.
     operatorframework.io/cluster-monitoring: "true"
@@ -53,7 +53,8 @@ metadata:
         "prometheuses.monitoring.rhobs",
         "alertmanagers.monitoring.rhobs",
         "thanosrulers.monitoring.rhobs",
-        "prometheusagents.monitoring.rhobs"
+        "prometheusagents.monitoring.rhobs",
+        "perses.perses.dev"
       ]
     operators.operatorframework.io/project_layout: unknown
     repository: https://github.com/rhobs/observability-operator
@@ -78,6 +79,15 @@ spec:
       displayName: MonitoringStack
       kind: MonitoringStack
       name: monitoringstacks.monitoring.rhobs
+      version: v1alpha1
+    - kind: Perses
+      name: perses.perses.dev
+      version: v1alpha1
+    - kind: PersesDashboard
+      name: persesdashboards.perses.dev
+      version: v1alpha1
+    - kind: PersesDatasource
+      name: persesdatasources.perses.dev
       version: v1alpha1
     - description: PodMonitor defines monitoring for a set of pods
       displayName: PodMonitor
@@ -521,6 +531,38 @@ spec:
           - patch
           - watch
         - apiGroups:
+          - perses.dev
+          resources:
+          - perses
+          - persesdashboards
+          - persesdatasources
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - perses.dev
+          resources:
+          - perses/finalizers
+          - persesdashboards/finalizers
+          - persesdatasources/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - perses.dev
+          resources:
+          - perses/status
+          - persesdashboards/status
+          - persesdatasources/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
           - policy
           resources:
           - poddisruptionbudgets
@@ -573,6 +615,119 @@ spec:
           verbs:
           - list
         serviceAccountName: observability-operator-sa
+      - rules:
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - statefulsets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+        - apiGroups:
+          - ""
+          resources:
+          - services
+          - configmaps
+          verbs:
+          - get
+          - patch
+          - update
+          - create
+          - delete
+          - list
+          - watch
+        - apiGroups:
+          - perses.dev
+          resources:
+          - perses
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - perses.dev
+          resources:
+          - perses/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - perses.dev
+          resources:
+          - perses/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - perses.dev
+          resources:
+          - persesdashboards
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - perses.dev
+          resources:
+          - persesdashboards/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - perses.dev
+          resources:
+          - persesdashboards/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - perses.dev
+          resources:
+          - persesdatasources
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - perses.dev
+          resources:
+          - persesdatasources/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - perses.dev
+          resources:
+          - persesdatasources/status
+          verbs:
+          - get
+          - patch
+          - update
+        serviceAccountName: perses-operator
       deployments:
       - label:
           app.kubernetes.io/component: controller
@@ -795,6 +950,68 @@ spec:
                 secret:
                   optional: true
                   secretName: observability-operator-tls
+      - label:
+          app.kubernetes.io/component: controller
+          app.kubernetes.io/name: perses-operator
+          app.kubernetes.io/part-of: observability-operator
+        name: perses-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app.kubernetes.io/component: controller
+              app.kubernetes.io/name: perses-operator
+              app.kubernetes.io/part-of: observability-operator
+          strategy: {}
+          template:
+            metadata:
+              annotations:
+                kubectl.kubernetes.io/default-container: perses-operator
+              labels:
+                app.kubernetes.io/component: controller
+                app.kubernetes.io/name: perses-operator
+                app.kubernetes.io/part-of: observability-operator
+            spec:
+              affinity:
+                nodeAffinity:
+                  preferredDuringSchedulingIgnoredDuringExecution:
+                  - preference:
+                      matchExpressions:
+                      - key: node-role.kubernetes.io/infra
+                        operator: Exists
+                    weight: 1
+              containers:
+              - image: quay.io/persesdev/perses-operator:v0.1.1
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: 8081
+                  initialDelaySeconds: 15
+                  periodSeconds: 20
+                name: perses-operator
+                readinessProbe:
+                  httpGet:
+                    path: /readyz
+                    port: 8081
+                  initialDelaySeconds: 5
+                  periodSeconds: 10
+                resources:
+                  limits:
+                    cpu: 500m
+                    memory: 128Mi
+                  requests:
+                    cpu: 10m
+                    memory: 64Mi
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                    - ALL
+              serviceAccountName: perses-operator
+              tolerations:
+              - effect: NoSchedule
+                key: node-role.kubernetes.io/infra
+                operator: Exists
     strategy: deployment
   installModes:
   - supported: false
