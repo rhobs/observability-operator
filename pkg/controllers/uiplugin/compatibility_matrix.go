@@ -104,7 +104,7 @@ var compatibilityMatrix = []CompatibilityEntry{
 	},
 	{
 		PluginType:        uiv1alpha1.TypeMonitoring,
-		MinClusterVersion: "v4.14",
+		MinClusterVersion: "v4.15",
 		MaxClusterVersion: "",
 		ImageKey:          "ui-monitoring",
 		SupportLevel:      DevPreview,
