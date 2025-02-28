@@ -72,7 +72,7 @@ func TestLookupImageAndFeatures(t *testing.T) {
 		{
 			pluginType:     uiv1alpha1.TypeLogging,
 			clusterVersion: "4.13",
-			expectedKey:    "ui-logging",
+			expectedKey:    "ui-logging-pf4",
 			expectedErr:    nil,
 			expectedFeatures: []string{
 				"dev-console",
@@ -82,7 +82,7 @@ func TestLookupImageAndFeatures(t *testing.T) {
 		{
 			pluginType:     uiv1alpha1.TypeLogging,
 			clusterVersion: "v4.13.45",
-			expectedKey:    "ui-logging",
+			expectedKey:    "ui-logging-pf4",
 			expectedErr:    nil,
 			expectedFeatures: []string{
 				"dev-console",
@@ -92,7 +92,7 @@ func TestLookupImageAndFeatures(t *testing.T) {
 		{
 			pluginType:     uiv1alpha1.TypeLogging,
 			clusterVersion: "v4.14",
-			expectedKey:    "ui-logging",
+			expectedKey:    "ui-logging-pf4",
 			expectedErr:    nil,
 			expectedFeatures: []string{
 				"dev-console",
@@ -103,6 +103,17 @@ func TestLookupImageAndFeatures(t *testing.T) {
 		{
 			pluginType:     uiv1alpha1.TypeLogging,
 			clusterVersion: "v4.14.1",
+			expectedKey:    "ui-logging-pf4",
+			expectedErr:    nil,
+			expectedFeatures: []string{
+				"dev-console",
+				"alerts",
+				"dev-alerts",
+			},
+		},
+		{
+			pluginType:     uiv1alpha1.TypeLogging,
+			clusterVersion: "v4.15",
 			expectedKey:    "ui-logging",
 			expectedErr:    nil,
 			expectedFeatures: []string{
@@ -125,7 +136,7 @@ func TestLookupImageAndFeatures(t *testing.T) {
 		{
 			pluginType:     uiv1alpha1.TypeLogging,
 			clusterVersion: "4.11",
-			expectedKey:    "ui-logging",
+			expectedKey:    "ui-logging-pf4",
 			expectedErr:    nil,
 		},
 		{
@@ -157,6 +168,18 @@ func TestLookupImageAndFeatures(t *testing.T) {
 		{
 			pluginType:     uiv1alpha1.TypeDistributedTracing,
 			clusterVersion: "4.11",
+			expectedKey:    "ui-distributed-tracing-pf4",
+			expectedErr:    nil,
+		},
+		{
+			pluginType:     uiv1alpha1.TypeDistributedTracing,
+			clusterVersion: "4.14",
+			expectedKey:    "ui-distributed-tracing-pf4",
+			expectedErr:    nil,
+		},
+		{
+			pluginType:     uiv1alpha1.TypeDistributedTracing,
+			clusterVersion: "4.15",
 			expectedKey:    "ui-distributed-tracing",
 			expectedErr:    nil,
 		},
