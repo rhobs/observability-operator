@@ -56,6 +56,14 @@ var compatibilityMatrix = []CompatibilityEntry{
 	{
 		PluginType:        uiv1alpha1.TypeDistributedTracing,
 		MinClusterVersion: "v4.11",
+		MaxClusterVersion: "v4.15",
+		ImageKey:          "ui-distributed-tracing-pf4",
+		SupportLevel:      TechPreview,
+		Features:          []string{},
+	},
+	{
+		PluginType:        uiv1alpha1.TypeDistributedTracing,
+		MinClusterVersion: "v4.15",
 		MaxClusterVersion: "",
 		ImageKey:          "ui-distributed-tracing",
 		SupportLevel:      TechPreview,
@@ -65,7 +73,7 @@ var compatibilityMatrix = []CompatibilityEntry{
 		PluginType:        uiv1alpha1.TypeLogging,
 		MinClusterVersion: "v4.11",
 		MaxClusterVersion: "v4.12",
-		ImageKey:          "ui-logging",
+		ImageKey:          "ui-logging-pf4",
 		SupportLevel:      GeneralAvailability,
 		Features:          []string{},
 	},
@@ -73,7 +81,7 @@ var compatibilityMatrix = []CompatibilityEntry{
 		PluginType:        uiv1alpha1.TypeLogging,
 		MinClusterVersion: "v4.12",
 		MaxClusterVersion: "v4.13",
-		ImageKey:          "ui-logging",
+		ImageKey:          "ui-logging-pf4",
 		SupportLevel:      GeneralAvailability,
 		Features: []string{
 			"dev-console",
@@ -83,7 +91,7 @@ var compatibilityMatrix = []CompatibilityEntry{
 		PluginType:        uiv1alpha1.TypeLogging,
 		MinClusterVersion: "v4.13",
 		MaxClusterVersion: "v4.14",
-		ImageKey:          "ui-logging",
+		ImageKey:          "ui-logging-pf4",
 		SupportLevel:      GeneralAvailability,
 		Features: []string{
 			"dev-console",
@@ -93,6 +101,18 @@ var compatibilityMatrix = []CompatibilityEntry{
 	{
 		PluginType:        uiv1alpha1.TypeLogging,
 		MinClusterVersion: "v4.14",
+		MaxClusterVersion: "v4.15",
+		ImageKey:          "ui-logging-pf4",
+		SupportLevel:      GeneralAvailability,
+		Features: []string{
+			"dev-console",
+			"alerts",
+			"dev-alerts",
+		},
+	},
+	{
+		PluginType:        uiv1alpha1.TypeLogging,
+		MinClusterVersion: "v4.15",
 		MaxClusterVersion: "",
 		ImageKey:          "ui-logging",
 		SupportLevel:      GeneralAvailability,
