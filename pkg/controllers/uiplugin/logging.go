@@ -2,6 +2,7 @@ package uiplugin
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -13,6 +14,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/dynamic"
 
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 )
@@ -22,15 +26,16 @@ type loggingConfig struct {
 	Timeout   time.Duration `yaml:"timeout,omitempty"`
 }
 
-func createLoggingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string) (*UIPluginInfo, error) {
-	config := plugin.Spec.Logging
-	if config == nil {
-		return nil, fmt.Errorf("logging configuration can not be empty for plugin type %s", plugin.Spec.Type)
+func createLoggingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string, ctx context.Context, dk dynamic.Interface) (*UIPluginInfo, error) {
+	lokiStack, err := getLokiStack(plugin, ctx, dk)
+	if err != nil {
+		return nil, err
 	}
 
-	if config.LokiStack.Name == "" {
-		return nil, fmt.Errorf("LokiStack name can not be empty for plugin type %s", plugin.Spec.Type)
-	}
+	lokiStackName := lokiStack.Name
+	lokiStackNamespace := lokiStack.Namespace
+
+	config := plugin.Spec.Logging
 
 	configYaml, err := marshalLoggingPluginConfig(config)
 	if err != nil {
@@ -58,8 +63,8 @@ func createLoggingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image
 				Alias:     "backend",
 				Authorize: true,
 				Service: osv1alpha1.ConsolePluginProxyServiceConfig{
-					Name:      fmt.Sprintf("%s-gateway-http", plugin.Spec.Logging.LokiStack.Name),
-					Namespace: "openshift-logging", // TODO decide if we want to support LokiStack in other namespaces
+					Name:      fmt.Sprintf("%s-gateway-http", lokiStackName),
+					Namespace: lokiStackNamespace,
 					Port:      8080,
 				},
 			},
@@ -81,8 +86,8 @@ func createLoggingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image
 				Endpoint: osv1.ConsolePluginProxyEndpoint{
 					Type: osv1.ProxyTypeService,
 					Service: &osv1.ConsolePluginProxyServiceConfig{
-						Name:      fmt.Sprintf("%s-gateway-http", plugin.Spec.Logging.LokiStack.Name),
-						Namespace: "openshift-logging", // TODO decide if we want to support LokiStack in other namespaces
+						Name:      fmt.Sprintf("%s-gateway-http", lokiStackName),
+						Namespace: lokiStackNamespace,
 						Port:      8080,
 					},
 				},
@@ -124,6 +129,10 @@ func createLoggingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image
 }
 
 func marshalLoggingPluginConfig(cfg *uiv1alpha1.LoggingConfig) (string, error) {
+	if cfg == nil {
+		return "", nil
+	}
+
 	if cfg.LogsLimit == 0 && cfg.Timeout == "" {
 		return "", nil
 	}
@@ -190,4 +199,45 @@ func loggingClusterRole(tenant string) *rbacv1.ClusterRole {
 			},
 		},
 	}
+}
+
+var lokiStackResource = schema.GroupVersionResource{
+	Group: "loki.grafana.com", Version: "v1", Resource: "lokistacks",
+}
+
+// getLokiStack returns the LokiStack resource to use for the logging plugin.
+// It either uses the explicitly configured LokiStack or discovers one from the cluster.
+func getLokiStack(plugin *uiv1alpha1.UIPlugin, ctx context.Context, client dynamic.Interface) (*types.NamespacedName, error) {
+	config := plugin.Spec.Logging
+
+	searchNamespace := OpenshiftLoggingNs
+	if config != nil && config.LokiStack.Namespace != "" {
+		searchNamespace = config.LokiStack.Namespace
+	}
+
+	if config != nil && config.LokiStack.Name != "" {
+		lokiStack, err := client.Resource(lokiStackResource).Namespace(searchNamespace).Get(ctx, config.LokiStack.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, fmt.Errorf("failed to get LokiStack %s in namespace %s: %w", config.LokiStack.Name, searchNamespace, err)
+		}
+
+		return &types.NamespacedName{
+			Name:      lokiStack.GetName(),
+			Namespace: searchNamespace,
+		}, nil
+	}
+
+	lokiStacks, err := client.Resource(lokiStackResource).Namespace(searchNamespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list LokiStacks in namespace %s: %w", searchNamespace, err)
+	}
+
+	if len(lokiStacks.Items) == 0 {
+		return nil, fmt.Errorf("no LokiStack found in namespace %s", searchNamespace)
+	}
+
+	return &types.NamespacedName{
+		Name:      lokiStacks.Items[0].GetName(),
+		Namespace: searchNamespace,
+	}, nil
 }

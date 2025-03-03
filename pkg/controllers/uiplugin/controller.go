@@ -18,6 +18,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/dynamic"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -30,12 +31,13 @@ import (
 )
 
 type resourceManager struct {
-	k8sClient      client.Client
-	scheme         *runtime.Scheme
-	logger         logr.Logger
-	controller     controller.Controller
-	pluginConf     UIPluginsConfiguration
-	clusterVersion string
+	k8sClient        client.Client
+	k8sDynamicClient dynamic.Interface
+	scheme           *runtime.Scheme
+	logger           logr.Logger
+	controller       controller.Controller
+	pluginConf       UIPluginsConfiguration
+	clusterVersion   string
 }
 
 type UIPluginsConfiguration struct {
@@ -76,6 +78,7 @@ const (
 
 // RBAC for logging view plugin
 // +kubebuilder:rbac:groups=loki.grafana.com,resources=application;infrastructure;audit,verbs=get
+// +kubebuilder:rbac:groups=loki.grafana.com,resources=lokistacks,verbs=list;get
 
 // RBAC for perses
 // +kubebuilder:rbac:groups=perses.dev,resources=perses;persesdatasources;persesdashboards,verbs=get;list;watch;create;update;delete;patch
@@ -113,12 +116,19 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 		return err
 	}
 
+	dynamicClient, err := dynamic.NewForConfig(mgr.GetConfig())
+	if err != nil {
+		logger.Error(err, "failed to create dynamic client")
+		return err
+	}
+
 	rm := &resourceManager{
-		k8sClient:      mgr.GetClient(),
-		scheme:         mgr.GetScheme(),
-		logger:         logger,
-		pluginConf:     opts.PluginsConf,
-		clusterVersion: clusterVersion.Status.Desired.Version,
+		k8sClient:        mgr.GetClient(),
+		k8sDynamicClient: dynamicClient,
+		scheme:           mgr.GetScheme(),
+		logger:           logger,
+		pluginConf:       opts.PluginsConf,
+		clusterVersion:   clusterVersion.Status.Desired.Version,
 	}
 
 	generationChanged := builder.WithPredicates(predicate.GenerationChangedPredicate{})
@@ -247,7 +257,7 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, err
 	}
 
-	pluginInfo, err := PluginInfoBuilder(ctx, rm.k8sClient, plugin, rm.pluginConf, compatibilityInfo, rm.clusterVersion)
+	pluginInfo, err := PluginInfoBuilder(ctx, rm.k8sClient, rm.k8sDynamicClient, plugin, rm.pluginConf, compatibilityInfo, rm.clusterVersion)
 
 	if err != nil {
 		logger.Error(err, "failed to reconcile plugin")
