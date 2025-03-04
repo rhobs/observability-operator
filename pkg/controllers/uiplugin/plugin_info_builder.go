@@ -8,7 +8,7 @@ import (
 	osv1alpha1 "github.com/openshift/api/console/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
@@ -40,9 +40,10 @@ var pluginTypeToConsoleName = map[uiv1alpha1.UIPluginType]string{
 	uiv1alpha1.TypeTroubleshootingPanel: "troubleshooting-panel-console-plugin",
 	uiv1alpha1.TypeDistributedTracing:   "distributed-tracing-console-plugin",
 	uiv1alpha1.TypeLogging:              "logging-view-plugin",
+	uiv1alpha1.TypeMonitoring:           "monitoring-console-plugin",
 }
 
-func PluginInfoBuilder(ctx context.Context, k client.Client, plugin *uiv1alpha1.UIPlugin, pluginConf UIPluginsConfiguration, compatibilityInfo CompatibilityEntry, clusterVersion string) (*UIPluginInfo, error) {
+func PluginInfoBuilder(ctx context.Context, k client.Client, dk dynamic.Interface, plugin *uiv1alpha1.UIPlugin, pluginConf UIPluginsConfiguration, compatibilityInfo CompatibilityEntry, clusterVersion string) (*UIPluginInfo, error) {
 	image := pluginConf.Images[compatibilityInfo.ImageKey]
 	if image == "" {
 		return nil, fmt.Errorf("no image provided for plugin type %s with key %s", plugin.Spec.Type, compatibilityInfo.ImageKey)
@@ -51,85 +52,7 @@ func PluginInfoBuilder(ctx context.Context, k client.Client, plugin *uiv1alpha1.
 	namespace := pluginConf.ResourcesNamespace
 	switch plugin.Spec.Type {
 	case uiv1alpha1.TypeDashboards:
-		name := "observability-ui-" + plugin.Name
-		readerRoleName := plugin.Name + "-datasource-reader"
-		datasourcesNamespace := "openshift-config-managed"
-
-		pluginInfo := &UIPluginInfo{
-			Image:             image,
-			Name:              name,
-			ConsoleName:       pluginTypeToConsoleName[plugin.Spec.Type],
-			DisplayName:       "Console Enhanced Dashboards",
-			ResourceNamespace: namespace,
-			LegacyProxies: []osv1alpha1.ConsolePluginProxy{
-				{
-					Type:      osv1alpha1.ProxyTypeService,
-					Alias:     "backend",
-					Authorize: true,
-					Service: osv1alpha1.ConsolePluginProxyServiceConfig{
-						Name:      name,
-						Namespace: namespace,
-						Port:      port,
-					},
-				},
-			},
-			Proxies: []osv1.ConsolePluginProxy{
-				{
-					Alias:         "backend",
-					Authorization: "UserToken",
-					Endpoint: osv1.ConsolePluginProxyEndpoint{
-						Type: osv1.ProxyTypeService,
-						Service: &osv1.ConsolePluginProxyServiceConfig{
-							Name:      name,
-							Namespace: namespace,
-							Port:      port,
-						},
-					},
-				},
-			},
-			Role: &rbacv1.Role{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: rbacv1.SchemeGroupVersion.String(),
-					Kind:       "Role",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      readerRoleName,
-					Namespace: datasourcesNamespace,
-				},
-				Rules: []rbacv1.PolicyRule{
-					{
-						APIGroups: []string{""},
-						Resources: []string{"configmaps"},
-						Verbs:     []string{"get", "list", "watch"},
-					},
-				},
-			},
-			RoleBinding: &rbacv1.RoleBinding{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: rbacv1.SchemeGroupVersion.String(),
-					Kind:       "RoleBinding",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      name + "-rolebinding",
-					Namespace: datasourcesNamespace,
-				},
-				Subjects: []rbacv1.Subject{
-					{
-						APIGroup:  corev1.SchemeGroupVersion.Group,
-						Kind:      "ServiceAccount",
-						Name:      name + "-sa",
-						Namespace: namespace,
-					},
-				},
-				RoleRef: rbacv1.RoleRef{
-					APIGroup: rbacv1.SchemeGroupVersion.Group,
-					Kind:     "Role",
-					Name:     readerRoleName,
-				},
-			},
-		}
-
-		return pluginInfo, nil
+		return createDashboardsPluginInfo(plugin, namespace, plugin.Name, image)
 
 	case uiv1alpha1.TypeTroubleshootingPanel:
 		pluginInfo, err := createTroubleshootingPanelPluginInfo(plugin, namespace, plugin.Name, image, []string{})
@@ -159,7 +82,7 @@ func PluginInfoBuilder(ctx context.Context, k client.Client, plugin *uiv1alpha1.
 		return createDistributedTracingPluginInfo(plugin, namespace, plugin.Name, image, []string{})
 
 	case uiv1alpha1.TypeLogging:
-		return createLoggingPluginInfo(plugin, namespace, plugin.Name, image, compatibilityInfo.Features)
+		return createLoggingPluginInfo(plugin, namespace, plugin.Name, image, compatibilityInfo.Features, ctx, dk)
 
 	case uiv1alpha1.TypeMonitoring:
 		return createMonitoringPluginInfo(plugin, namespace, plugin.Name, image, compatibilityInfo.Features, clusterVersion, pluginConf.Images["health-analyzer"], pluginConf.Images["perses"])

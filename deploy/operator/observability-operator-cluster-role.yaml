@@ -131,6 +131,13 @@ rules:
   verbs:
   - get
 - apiGroups:
+  - loki.grafana.com
+  resources:
+  - lokistacks
+  verbs:
+  - get
+  - list
+- apiGroups:
   - monitoring.coreos.com
   resourceNames:
   - main

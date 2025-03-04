@@ -4262,14 +4262,6 @@ It only applies to UIPlugin Type: Logging.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b><a href="#uipluginspeclogginglokistack">lokiStack</a></b></td>
-        <td>object</td>
-        <td>
-          LokiStack points to the LokiStack instance of which logs should be displayed.
-It always references a LokiStack in the "openshift-logging" namespace.<br/>
-        </td>
-        <td>true</td>
-      </tr><tr>
         <td><b>logsLimit</b></td>
         <td>integer</td>
         <td>
@@ -4277,6 +4269,14 @@ It always references a LokiStack in the "openshift-logging" namespace.<br/>
           <br/>
             <i>Format</i>: int32<br/>
             <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#uipluginspeclogginglokistack">lokiStack</a></b></td>
+        <td>object</td>
+        <td>
+          LokiStack points to the LokiStack instance of which logs should be displayed.
+It always references a LokiStack in the "openshift-logging" namespace.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4316,7 +4316,14 @@ It always references a LokiStack in the "openshift-logging" namespace.
         <td>
           Name of the LokiStack resource.<br/>
         </td>
-        <td>true</td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 

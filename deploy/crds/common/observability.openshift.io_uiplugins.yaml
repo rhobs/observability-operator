@@ -123,10 +123,9 @@ spec:
                     properties:
                       name:
                         description: Name of the LokiStack resource.
-                        minLength: 1
                         type: string
-                    required:
-                    - name
+                      namespace:
+                        type: string
                     type: object
                     x-kubernetes-map-type: atomic
                   timeout:
@@ -137,8 +136,6 @@ spec:
                       or 'm' (minutes). If the unit is omitted, it defaults to seconds.
                     pattern: ^([0-9]+)([sm]{0,1})$
                     type: string
-                required:
-                - lokiStack
                 type: object
               monitoring:
                 description: Monitoring contains configuration for the monitoring
@@ -233,8 +230,6 @@ spec:
             - message: Distributed Tracing configuration is only supported with the
                 DistributedTracing type
               rule: self.type == 'DistributedTracing' || !has(self.distributedTracing)
-            - message: Logging configuration is required if type is Logging
-              rule: self.type != 'Logging' || has(self.logging)
           status:
             description: |-
               UIPluginStatus defines the observed state of UIPlugin.
