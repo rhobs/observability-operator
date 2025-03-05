@@ -42,7 +42,7 @@ metadata:
     categories: Monitoring
     certified: "false"
     containerImage: observability-operator:1.0.0
-    createdAt: "2025-02-24T18:08:14Z"
+    createdAt: "2025-03-03T08:38:22Z"
     description: A Go based Kubernetes operator to setup and manage highly available
       Monitoring Stack using Prometheus, Alertmanager and Thanos Querier.
     operatorframework.io/cluster-monitoring: "true"
@@ -415,6 +415,13 @@ spec:
           - network
           verbs:
           - get
+        - apiGroups:
+          - loki.grafana.com
+          resources:
+          - lokistacks
+          verbs:
+          - get
+          - list
         - apiGroups:
           - monitoring.coreos.com
           resourceNames:

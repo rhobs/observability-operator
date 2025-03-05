@@ -102,8 +102,8 @@ type LoggingConfig struct {
 	// LokiStack points to the LokiStack instance of which logs should be displayed.
 	// It always references a LokiStack in the "openshift-logging" namespace.
 	//
-	// +kubebuilder:validation:Required
-	LokiStack LokiStackReference `json:"lokiStack"`
+	// +kubebuilder:validation:Optional
+	LokiStack *LokiStackReference `json:"lokiStack"`
 
 	// LogsLimit is the max number of entries returned for a query.
 	//
@@ -130,9 +130,11 @@ type LoggingConfig struct {
 type LokiStackReference struct {
 	// Name of the LokiStack resource.
 	//
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:MinLength:=1
-	Name string `json:"name"`
+	// +kubebuilder:validation:Optional
+	Name string `json:"name,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	Namespace string `json:"namespace,omitempty"`
 }
 
 // MonitoringConfig contains options for configuring the monitoring console plugin.
@@ -214,7 +216,6 @@ type IncidentsReference struct {
 //
 // +kubebuilder:validation:XValidation:rule="self.type == 'TroubleshootingPanel' || !has(self.troubleshootingPanel)", message="Troubleshooting Panel configuration is only supported with the TroubleshootingPanel type"
 // +kubebuilder:validation:XValidation:rule="self.type == 'DistributedTracing' || !has(self.distributedTracing)", message="Distributed Tracing configuration is only supported with the DistributedTracing type"
-// +kubebuilder:validation:XValidation:rule="self.type != 'Logging' || has(self.logging)", message="Logging configuration is required if type is Logging"
 type UIPluginSpec struct {
 	// Type defines the UI plugin.
 	// +required

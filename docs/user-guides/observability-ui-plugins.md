@@ -136,19 +136,20 @@ spec:
 
 ### Monitoring
 
-The plugin adds monitoring related UI features to the OpenShift web console, related to the Advance Cluster Management (ACM) perspective and [Perses](https://github.com/perses/perses). A number of new pages and features are enabled through this plugin. Including, but not limited to:
+The plugin adds monitoring related UI features to the OpenShift web console, related to the Advance Cluster Management (ACM) perspective, incidents (cluster health analysis), and [Perses](https://github.com/perses/perses). A number of new pages and features are enabled through this plugin. Including, but not limited to:
 - `ACM > Observe > Alerting`
 - `ACM > Observe > Alerting > Silences`
 - `ACM > Observe > Alerting > Alert rules`
 - `OCP > Observe > Perses Dashboards`
+- `OCP > Observe > Incidents`
 
 To deploy ACM related features the `acm-alerting` configuration must be enabled. In the UIPlugin Custom Resource (CR) you must pass the Alertmanager and ThanosQuerier Service endpoint (e.g. `https://alertmanager.open-cluster-management-observability.svc:9095` and `https://rbac-query-proxy.open-cluster-management-observability.svc:8443`). See the example in the next section `Plugin Creation.`
 
 To deploy the Perses dashboard feature, the `perses-dashboards` configuration must be enabled. In the UIPlugin CR, you can optionally pass the service name and namespace of your Perses instance (e.g., `serviceName: perses-api-http` and `namespace: perses`). If these fields are left blank and `spec.monitoring.perses.enabled: true`, then default values will be assigned. These default values are `serviceName: perses-api-http` and `namespace: perses`. See the example in the next section, `Plugin Creation.` 
+
+To deploy the Incidents festure, the `incidents` configuration must be enabled. See the example in the next section, `Plugin Creation.` 
  
 Other pages which are typically distributed with the monitoring-plugin, such as `Admin > Observe > Dashboards`, are only available in the monitoring-plugin when deployed through [CMO](https://github.com/openshift/cluster-monitoring-operator).
-
-[Note about Incidents](#notes-about-incidents)
 
 #### Plugin Creation
 
@@ -174,16 +175,13 @@ spec:
       enabled: true
 ```
 
-[Note about Incidents](#notes-about-incidents)
-
 #### Feature List
 
 | __Feature__         | __Description__                                                                                                          |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | `acm-alerting`      | Adds alerting UI to multi-cluster view. Configures proxies to connect with any alertmanager and thanos-querier.          |
-| `incidents`         | Adds incidents UI to `Observe` section of OpenShift Console Platform. Deploys the health analyzer and configures proxies in the plugin to connect with it. |
+| `incidents`         | Adds incidents UI to `Observe` section of OpenShift Console Platform. Deploys the [Cluster Health Analyzer](https://github.com/openshift/cluster-health-analyzer) and configures proxies in the plugin to connect with it. |
 | `perses-dashboards` | Adds perses UI to `Observe` section of OpenShift Console Platform. Configures proxies to connect with a Perses instance. |
-| `incidents`         | [Note about Incidents](#notes-about-incidents)                                                                           |
 
 
 #### Feature Matrix
