@@ -66,7 +66,7 @@ enable_ocp() {
     ' "$CSV_JSON_FILE" > /tmp/tmp.$$.json && mv /tmp/tmp.$$.json "$CSV_JSON_FILE"
   ok "Added arguments to container operator in '$CSV_JSON_FILE'."
 
-	oc apply -f "$CSV_JSON_FILE"
+	oc replace -f "$CSV_JSON_FILE"
 	rm -f "$CSV_JSON_FILE"
 
 	# enable platform monitoring
