@@ -14,7 +14,6 @@ package thanos_querier
 
 import (
 	"context"
-	"crypto/sha256"
 	"fmt"
 	"time"
 
@@ -27,7 +26,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/rand"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -36,6 +34,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	msoapi "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
+	"github.com/rhobs/observability-operator/pkg/assets"
+	"github.com/rhobs/observability-operator/pkg/controllers/monitoring/utils"
 )
 
 type resourceManager struct {
@@ -139,6 +139,11 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 			handler.EnqueueRequestsFromMapFunc(rm.findQueriersForTLSSecrets),
 			builder.WithPredicates(predicate.GenerationChangedPredicate{}),
 		).
+		Watches(
+			&corev1.Secret{},
+			handler.EnqueueRequestsFromMapFunc(rm.findQueriersForGrpcTLSSecret),
+			builder.WithPredicates(predicate.GenerationChangedPredicate{}),
+		).
 		Complete(rm)
 }
 
@@ -163,6 +168,8 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	}
 
 	tlsHashes := map[string]string{}
+
+	// Web endpoint TLS hashes
 	if querier.Spec.WebTLSConfig != nil {
 		secretSelectors := []msoapi.SecretKeySelector{
 			querier.Spec.WebTLSConfig.CertificateAuthority,
@@ -170,12 +177,22 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			querier.Spec.WebTLSConfig.PrivateKey,
 		}
 		for _, secretSelector := range secretSelectors {
-			hash, err := rm.hashOfTLSSecret(secretSelector, querier.Namespace)
+			hash, err := utils.HashOfTLSSecret(secretSelector.Name, secretSelector.Key, querier.Namespace, rm)
 			if err != nil {
 				return ctrl.Result{}, err
 			}
 			tlsHashes[fmt.Sprintf("%s-%s", secretSelector.Name, secretSelector.Key)] = hash
 		}
+	}
+
+	// querier <---> sidecar mTLS hashes
+	mTLSSecretKeys := []string{"thanos-querier-client.key", "thanos-querier-client.crt", "ca.crt"}
+	for _, key := range mTLSSecretKeys {
+		hash, err := utils.HashOfTLSSecret(assets.GRPCSecretName, key, querier.Namespace, rm)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		tlsHashes[fmt.Sprintf("%s-%s", assets.GRPCSecretName, key)] = hash
 	}
 
 	reconcilers := thanosComponentReconcilers(querier, sidecarServices, rm.thanos, tlsHashes)
@@ -219,20 +236,6 @@ func (rm resourceManager) findSidecarServices(ctx context.Context, tQuerier *mso
 	}
 
 	return sidecarUrls, nil
-}
-
-func (rm resourceManager) hashOfTLSSecret(selector msoapi.SecretKeySelector, namespace string) (string, error) {
-	var secret corev1.Secret
-	err := rm.Get(context.Background(), types.NamespacedName{
-		Name:      selector.Name,
-		Namespace: namespace,
-	}, &secret)
-	if err != nil {
-		return "", fmt.Errorf("Couldn't get TLS secret %s: %s", selector.Name, err)
-	}
-
-	hash := sha256.Sum256(secret.Data[selector.Key])
-	return rand.SafeEncodeString(fmt.Sprint(hash)), nil
 }
 
 // Given a Service object, return a url to use as value for --store/--endpoint.
@@ -297,6 +300,38 @@ func (rm resourceManager) findQueriersForTLSSecrets(ctx context.Context, src cli
 		for _, item := range crList.Items {
 			logger := rm.logger.WithValues("Secret", src.GetNamespace()+"/"+src.GetName())
 			logger.Info("Found a querier whose secret changed, scheduling sync")
+			requests = append(requests, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      item.GetName(),
+					Namespace: item.GetNamespace(),
+				},
+			})
+		}
+	}
+
+	return requests
+}
+
+// Enqueue all ThanosQueriers from a namespace, where GRPC secret changed
+func (rm resourceManager) findQueriersForGrpcTLSSecret(ctx context.Context, src client.Object) []reconcile.Request {
+	requests := []reconcile.Request{}
+
+	if src.GetName() == assets.GRPCSecretName {
+		logger := rm.logger.WithValues("Secret", src.GetNamespace()+"/"+src.GetName())
+		logger.Info("watched Secret changed, checking for matching querier")
+
+		crList := &msoapi.ThanosQuerierList{}
+		listOps := &client.ListOptions{
+			Namespace: src.GetNamespace(),
+		}
+		err := rm.Client.List(ctx, crList, listOps)
+		if err != nil {
+			logger.Error(err, "Failed to list Thanosqueriers")
+			return []reconcile.Request{}
+		}
+
+		for _, item := range crList.Items {
+			logger.Info("Found querier, scheduling sync")
 			requests = append(requests, reconcile.Request{
 				NamespacedName: types.NamespacedName{
 					Name:      item.GetName(),
