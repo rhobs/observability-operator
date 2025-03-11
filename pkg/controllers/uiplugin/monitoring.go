@@ -259,13 +259,14 @@ func newMonitoringService(name string, namespace string) *corev1.Service {
 }
 
 func newPerses(namespace string, persesImage string) *persesv1alpha1.Perses {
+	name := "perses"
 	return &persesv1alpha1.Perses{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: persesv1alpha1.GroupVersion.String(),
 			Kind:       "Perses",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "perses",
+			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
 				"app.kubernetes.io/name":       "perses",
@@ -283,20 +284,37 @@ func newPerses(namespace string, persesImage string) *persesv1alpha1.Perses {
 					},
 					Database: persesconfig.Database{
 						File: &persesconfig.File{
-							Folder:    "/etc/perses/storage",
+							Folder:    "/perses",
 							Extension: persesconfig.YAMLExtension,
 						},
-					},
-					Schemas: persesconfig.Schemas{
-						PanelsPath:      "/etc/perses/cue/schemas/panels",
-						QueriesPath:     "/etc/perses/cue/schemas/queries",
-						DatasourcesPath: "/etc/perses/cue/schemas/datasources",
-						VariablesPath:   "/etc/perses/cue/schemas/variables",
 					},
 				},
 			},
 			Image:         persesImage,
 			ContainerPort: 8080,
+			TLS: &persesv1alpha1.TLS{
+				Enable: true,
+				UserCert: &persesv1alpha1.Certificate{
+					Type:        persesv1alpha1.CertificateTypeSecret,
+					Name:        name,
+					CertFile:    "tls.crt",
+					CertKeyFile: "tls.key",
+				},
+			},
+			Client: &persesv1alpha1.Client{
+				TLS: &persesv1alpha1.TLS{
+					Enable: true,
+					CaCert: &persesv1alpha1.Certificate{
+						Type:     persesv1alpha1.CertificateTypeSecret,
+						CertFile: "ca.crt",
+					},
+				},
+			},
+			Service: &persesv1alpha1.PersesService{
+				Annotations: map[string]string{
+					"service.beta.openshift.io/serving-cert-secret-name": name,
+				},
+			},
 		},
 	}
 }

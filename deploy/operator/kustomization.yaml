@@ -40,6 +40,14 @@ patches:
     version: v1
 - patch: |-
     - op: add
+      path: /spec/template/spec/containers/0/args/-
+      value: --images=perses=quay.io/persesdev/perses:v0.51.0
+  target:
+    group: apps
+    kind: Deployment
+    version: v1
+- patch: |-
+    - op: add
       path: /spec/template/spec/containers/0/resources
       value:
         requests:
