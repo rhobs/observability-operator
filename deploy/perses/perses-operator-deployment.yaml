@@ -24,12 +24,16 @@ spec:
     spec:
       containers:
       - name: perses-operator
-        image: quay.io/persesdev/perses-operator:v0.1.1
+        image: quay.io/persesdev/perses-operator:v0.1.8
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
             drop:
               - "ALL"
+        volumeMounts:
+        - name: openshift-service-ca
+          mountPath: /ca
+          readOnly: true
         livenessProbe:
           httpGet:
             path: /healthz
@@ -50,3 +54,12 @@ spec:
             cpu: 10m
             memory: 64Mi
       serviceAccountName: perses-operator
+      volumes:
+      - name: openshift-service-ca
+        configMap:
+          name: openshift-service-ca.crt
+          optional: true
+          items:
+          - key: service-ca.crt
+            path: ca.crt
+        
