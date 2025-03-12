@@ -99,11 +99,11 @@ When a __TroubleshootingPanel__ `UIPlugin` is deployed the plugin will connect t
 
 #### Feature List
 
-| __Feature__   | __Description__                                                                                                                                                            |
-| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `dev-console` | Adds the logging view to the developer perspective                                                                                                                         |
-| `alerts`      | Merges the OpenShift console alerts with log-based alerts defined in the Loki ruler. Adds a log-based metrics chart in the alert detail view                               |
-| `dev-alerts`  | Merges the OpenShift console alerts with log-based alerts defined in the Loki ruler. Adds a log-based metrics chart in the alert detail view for the developer perspective |
+| __Feature__   | __Description__                                                                                                                                                            | __Support Level__ |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| `dev-console` | Adds the logging view to the developer perspective                                                                                                                         | General Availability |
+| `alerts`      | Merges the OpenShift console alerts with log-based alerts defined in the Loki ruler. Adds a log-based metrics chart in the alert detail view                               | General Availability |
+| `dev-alerts`  | Merges the OpenShift console alerts with log-based alerts defined in the Loki ruler. Adds a log-based metrics chart in the alert detail view for the developer perspective | General Availability |
 
 #### Feature Matrix
 
@@ -177,11 +177,11 @@ spec:
 
 #### Feature List
 
-| __Feature__         | __Description__                                                                                                          |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `acm-alerting`      | Adds alerting UI to multi-cluster view. Configures proxies to connect with any alertmanager and thanos-querier.          |
-| `incidents`         | Adds incidents UI to `Observe` section of OpenShift Console Platform. Deploys the [Cluster Health Analyzer](https://github.com/openshift/cluster-health-analyzer) and configures proxies in the plugin to connect with it. |
-| `perses-dashboards` | Adds perses UI to `Observe` section of OpenShift Console Platform. Configures proxies to connect with a Perses instance. |
+| __Feature__         | __Description__                                                                                                          | __Support Level__ |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----------------- |
+| `acm-alerting`      | Adds alerting UI to multi-cluster view. Configures proxies to connect with any alertmanager and thanos-querier.          | Dev Preview      |
+| `incidents`         | Adds incidents UI to `Observe` section of OpenShift Console Platform. Deploys the [Cluster Health Analyzer](https://github.com/openshift/cluster-health-analyzer) and configures proxies in the plugin to connect with it. | Tech Preview      |
+| `perses-dashboards` | Adds perses UI to `Observe` section of OpenShift Console Platform. Configures proxies to connect with a Perses instance. | Dev Preview      |
 
 
 #### Feature Matrix
