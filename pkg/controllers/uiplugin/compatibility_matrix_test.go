@@ -124,6 +124,28 @@ func TestLookupImageAndFeatures(t *testing.T) {
 		},
 		{
 			pluginType:     uiv1alpha1.TypeLogging,
+			clusterVersion: "v4.15.0-0.nightly-2024-06-06-064349",
+			expectedKey:    "ui-logging",
+			expectedErr:    nil,
+			expectedFeatures: []string{
+				"dev-console",
+				"alerts",
+				"dev-alerts",
+			},
+		},
+		{
+			pluginType:     uiv1alpha1.TypeLogging,
+			clusterVersion: "4.15.46",
+			expectedKey:    "ui-logging",
+			expectedErr:    nil,
+			expectedFeatures: []string{
+				"dev-console",
+				"alerts",
+				"dev-alerts",
+			},
+		},
+		{
+			pluginType:     uiv1alpha1.TypeLogging,
 			clusterVersion: "v4.16.9",
 			expectedKey:    "ui-logging",
 			expectedErr:    nil,
@@ -185,6 +207,18 @@ func TestLookupImageAndFeatures(t *testing.T) {
 		},
 		{
 			pluginType:     uiv1alpha1.TypeDistributedTracing,
+			clusterVersion: "v4.15.0-0.nightly-2024-06-06-064349",
+			expectedKey:    "ui-distributed-tracing",
+			expectedErr:    nil,
+		},
+		{
+			pluginType:     uiv1alpha1.TypeDistributedTracing,
+			clusterVersion: "v4.15.46",
+			expectedKey:    "ui-distributed-tracing",
+			expectedErr:    nil,
+		},
+		{
+			pluginType:     uiv1alpha1.TypeDistributedTracing,
 			clusterVersion: "4.24.0-0.nightly-2024-03-11-200348",
 			expectedKey:    "ui-distributed-tracing",
 			expectedErr:    nil,
@@ -230,6 +264,8 @@ func TestLookupImageAndFeatures(t *testing.T) {
 	} {
 		t.Run(fmt.Sprintf("%s/%s", tc.pluginType, tc.clusterVersion), func(t *testing.T) {
 			info, err := lookupImageAndFeatures(tc.pluginType, tc.clusterVersion)
+
+			t.Log(info)
 
 			if tc.expectedErr != nil {
 				assert.Error(t, err, tc.expectedErr.Error())
