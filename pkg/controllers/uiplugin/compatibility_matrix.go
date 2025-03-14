@@ -3,6 +3,7 @@ package uiplugin
 import (
 	"context"
 	"fmt"
+	// "log"
 	"strings"
 
 	"golang.org/x/mod/semver"
@@ -160,7 +161,7 @@ func lookupImageAndFeatures(pluginType uiv1alpha1.UIPluginType, clusterVersion s
 
 func compareClusterVersion(entry CompatibilityEntry, clusterVersion string, pluginType uiv1alpha1.UIPluginType) (CompatibilityEntry, error) {
 	canonicalMinClusterVersion := fmt.Sprintf("%s-0", semver.Canonical(entry.MinClusterVersion))
-	canonicalMaxClusterVersion := semver.Canonical(entry.MaxClusterVersion)
+	canonicalMaxClusterVersion := fmt.Sprintf("%s-0", semver.Canonical(entry.MaxClusterVersion))
 
 	if entry.MaxClusterVersion == "" && semver.Compare(clusterVersion, canonicalMinClusterVersion) >= 0 {
 		return entry, nil
