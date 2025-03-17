@@ -6,6 +6,7 @@ require (
 	github.com/go-logr/logr v1.4.2
 	github.com/google/go-cmp v0.7.0
 	github.com/openshift/api v0.0.0-20240404200104-96ed2d49b255
+	github.com/openshift/library-go v0.0.0-20240216151214-738f3fa4ccf8
 	github.com/perses/perses v0.50.1
 	github.com/perses/perses-operator v0.1.2
 	github.com/pkg/errors v0.9.1
