@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
       - name: perses-operator
-        image: quay.io/persesdev/perses-operator:v0.1.8
+        image: quay.io/persesdev/perses-operator:v0.1.9
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
