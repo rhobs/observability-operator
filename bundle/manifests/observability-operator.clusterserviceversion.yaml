@@ -42,7 +42,7 @@ metadata:
     categories: Monitoring
     certified: "false"
     containerImage: observability-operator:1.1.0
-    createdAt: "2025-03-13T16:50:00Z"
+    createdAt: "2025-03-17T11:01:43Z"
     description: A Go based Kubernetes operator to setup and manage highly available
       Monitoring Stack using Prometheus, Alertmanager and Thanos Querier.
     operatorframework.io/cluster-monitoring: "true"
@@ -989,7 +989,7 @@ spec:
                         operator: Exists
                     weight: 1
               containers:
-              - image: quay.io/persesdev/perses-operator:v0.1.8
+              - image: quay.io/persesdev/perses-operator:v0.1.9
                 livenessProbe:
                   httpGet:
                     path: /healthz

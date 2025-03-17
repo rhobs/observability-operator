@@ -9,7 +9,7 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/openshift/api v0.0.0-20240404200104-96ed2d49b255
 	github.com/perses/perses v0.51.0-beta.0
-	github.com/perses/perses-operator v0.1.8
+	github.com/perses/perses-operator v0.1.9
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.80.1
 	github.com/prometheus/common v0.62.0

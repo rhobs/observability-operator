@@ -3,6 +3,7 @@ package uiplugin
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	osv1 "github.com/openshift/api/console/v1"
 	osv1alpha1 "github.com/openshift/api/console/v1alpha1"
@@ -13,6 +14,7 @@ import (
 
 	persesv1alpha1 "github.com/perses/perses-operator/api/v1alpha1"
 	persesconfig "github.com/perses/perses/pkg/model/api/config"
+	"github.com/perses/perses/pkg/model/api/v1/common"
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 )
 
@@ -287,6 +289,13 @@ func newPerses(namespace string, persesImage string) *persesv1alpha1.Perses {
 							Folder:    "/perses",
 							Extension: persesconfig.YAMLExtension,
 						},
+					},
+					Schemas: &persesconfig.Schemas{
+						PanelsPath:      "/etc/perses/cue/schemas/panels",
+						QueriesPath:     "/etc/perses/cue/schemas/queries",
+						DatasourcesPath: "/etc/perses/cue/schemas/datasources",
+						VariablesPath:   "/etc/perses/cue/schemas/variables",
+						Interval:        common.Duration(time.Hour * 6),
 					},
 				},
 			},
