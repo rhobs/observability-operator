@@ -3,7 +3,6 @@ package uiplugin
 import (
 	"context"
 	"fmt"
-	// "log"
 	"strings"
 
 	"golang.org/x/mod/semver"

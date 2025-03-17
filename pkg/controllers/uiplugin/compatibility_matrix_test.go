@@ -265,8 +265,6 @@ func TestLookupImageAndFeatures(t *testing.T) {
 		t.Run(fmt.Sprintf("%s/%s", tc.pluginType, tc.clusterVersion), func(t *testing.T) {
 			info, err := lookupImageAndFeatures(tc.pluginType, tc.clusterVersion)
 
-			t.Log(info)
-
 			if tc.expectedErr != nil {
 				assert.Error(t, err, tc.expectedErr.Error())
 				return
