@@ -8,11 +8,11 @@ require (
 	github.com/go-logr/logr v1.4.2
 	github.com/google/go-cmp v0.7.0
 	github.com/openshift/api v0.0.0-20240404200104-96ed2d49b255
-	github.com/perses/perses v0.51.0-beta.0
-	github.com/perses/perses-operator v0.1.9
+	github.com/perses/perses v0.50.3
+	github.com/perses/perses-operator v0.1.10
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.80.1
-	github.com/prometheus/common v0.62.0
+	github.com/prometheus/common v0.63.0
 	github.com/rhobs/obo-prometheus-operator v0.80.1-rhobs1
 	github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.80.1-rhobs1
 	go.uber.org/zap v1.27.0
@@ -20,21 +20,17 @@ require (
 	golang.org/x/mod v0.24.0
 	gopkg.in/yaml.v3 v3.0.1
 	gotest.tools/v3 v3.5.2
-	k8s.io/api v0.32.2
+	k8s.io/api v0.32.3
 	k8s.io/apiextensions-apiserver v0.32.2
-	k8s.io/apimachinery v0.32.2
+	k8s.io/apimachinery v0.32.3
 	k8s.io/apiserver v0.32.2
-	k8s.io/client-go v0.32.2
+	k8s.io/client-go v0.32.3
 	k8s.io/component-base v0.32.2
 	k8s.io/utils v0.0.0-20241210054802-24370beab758
 	sigs.k8s.io/controller-runtime v0.20.3
 )
 
 require (
-	cel.dev/expr v0.19.1 // indirect
-	github.com/PaesslerAG/gval v1.2.4 // indirect
-	github.com/PaesslerAG/jsonpath v0.1.2-0.20240726212847-3a740cf7976f // indirect
-	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
@@ -66,7 +62,6 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/btree v1.1.3 // indirect
-	github.com/google/cel-go v0.24.1 // indirect
 	github.com/google/gnostic-models v0.6.9 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
@@ -104,16 +99,14 @@ require (
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/prometheus/prometheus v0.301.0 // indirect
 	github.com/rhobs/obo-prometheus-operator/pkg/client v0.80.1-rhobs1 // indirect
-	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/spf13/cobra v1.9.1 // indirect
 	github.com/spf13/pflag v1.0.6 // indirect
-	github.com/stoewer/go-strcase v1.3.0 // indirect
 	github.com/stretchr/testify v1.10.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
-	github.com/zitadel/oidc/v3 v3.35.0 // indirect
+	github.com/zitadel/oidc/v3 v3.36.1 // indirect
 	github.com/zitadel/schema v1.3.0 // indirect
 	go.mongodb.org/mongo-driver v1.17.2 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
@@ -131,9 +124,7 @@ require (
 	golang.org/x/text v0.23.0 // indirect
 	golang.org/x/time v0.9.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20241216192217-9240e9c98484 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250122153221-138b5a5a4fd4 // indirect
-	google.golang.org/protobuf v1.36.4 // indirect
+	google.golang.org/protobuf v1.36.5 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

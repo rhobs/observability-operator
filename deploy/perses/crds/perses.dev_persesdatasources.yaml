@@ -38,31 +38,97 @@ spec:
             type: object
           spec:
             properties:
-              default:
-                type: boolean
-              display:
+              client:
                 properties:
-                  description:
-                    type: string
-                  name:
-                    type: string
+                  tls:
+                    description: TLS the equivalent to the tls_config for perses client
+                    properties:
+                      caCert:
+                        description: CaCert to verify the perses certificate
+                        properties:
+                          certPath:
+                            description: Path to Certificate
+                            type: string
+                          name:
+                            description: Name of certificate k8s resource (when type
+                              is secret or configmap)
+                            type: string
+                          privateKeyPath:
+                            description: Path to Private key certificate
+                            type: string
+                          type:
+                            description: Type source type of certificate
+                            enum:
+                            - secret
+                            - configmap
+                            - file
+                            type: string
+                        required:
+                        - certPath
+                        - type
+                        type: object
+                      enable:
+                        description: Enable TLS connection to perses
+                        type: boolean
+                      insecureSkipVerify:
+                        description: InsecureSkipVerify skip verify of perses certificate
+                        type: boolean
+                      userCert:
+                        description: UserCert client cert/key for mTLS
+                        properties:
+                          certPath:
+                            description: Path to Certificate
+                            type: string
+                          name:
+                            description: Name of certificate k8s resource (when type
+                              is secret or configmap)
+                            type: string
+                          privateKeyPath:
+                            description: Path to Private key certificate
+                            type: string
+                          type:
+                            description: Type source type of certificate
+                            enum:
+                            - secret
+                            - configmap
+                            - file
+                            type: string
+                        required:
+                        - certPath
+                        - type
+                        type: object
+                    required:
+                    - enable
+                    type: object
                 type: object
-              plugin:
-                description: |-
-                  Plugin will contain the datasource configuration.
-                  The data typed is available in Cue.
+              config:
                 properties:
-                  kind:
-                    type: string
-                  spec:
-                    x-kubernetes-preserve-unknown-fields: true
+                  default:
+                    type: boolean
+                  display:
+                    properties:
+                      description:
+                        type: string
+                      name:
+                        type: string
+                    type: object
+                  plugin:
+                    description: |-
+                      Plugin will contain the datasource configuration.
+                      The data typed is available in Cue.
+                    properties:
+                      kind:
+                        type: string
+                      spec:
+                        x-kubernetes-preserve-unknown-fields: true
+                    required:
+                    - kind
+                    - spec
+                    type: object
                 required:
-                - kind
-                - spec
+                - default
+                - plugin
                 type: object
-            required:
-            - default
-            - plugin
             type: object
           status:
             description: PersesDatasourceStatus defines the observed state of PersesDatasource
