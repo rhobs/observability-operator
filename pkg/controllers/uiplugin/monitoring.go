@@ -290,7 +290,7 @@ func newPerses(namespace string, persesImage string) *persesv1alpha1.Perses {
 							Extension: persesconfig.YAMLExtension,
 						},
 					},
-					Schemas: &persesconfig.Schemas{
+					Schemas: persesconfig.Schemas{
 						PanelsPath:      "/etc/perses/cue/schemas/panels",
 						QueriesPath:     "/etc/perses/cue/schemas/queries",
 						DatasourcesPath: "/etc/perses/cue/schemas/datasources",
@@ -304,10 +304,15 @@ func newPerses(namespace string, persesImage string) *persesv1alpha1.Perses {
 			TLS: &persesv1alpha1.TLS{
 				Enable: true,
 				UserCert: &persesv1alpha1.Certificate{
-					Type:        persesv1alpha1.CertificateTypeSecret,
-					Name:        name,
-					CertFile:    "tls.crt",
-					CertKeyFile: "tls.key",
+					Type:           persesv1alpha1.CertificateTypeSecret,
+					Name:           name,
+					CertPath:       "tls.crt",
+					PrivateKeyPath: "tls.key",
+				},
+				CaCert: &persesv1alpha1.Certificate{
+					Type:     persesv1alpha1.CertificateTypeConfigMap,
+					Name:     "openshift-service-ca.crt",
+					CertPath: "service-ca.crt",
 				},
 			},
 			Client: &persesv1alpha1.Client{
@@ -315,7 +320,7 @@ func newPerses(namespace string, persesImage string) *persesv1alpha1.Perses {
 					Enable: true,
 					CaCert: &persesv1alpha1.Certificate{
 						Type:     persesv1alpha1.CertificateTypeSecret,
-						CertFile: "ca.crt",
+						CertPath: "ca.crt",
 					},
 				},
 			},
