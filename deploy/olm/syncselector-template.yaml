@@ -96,6 +96,41 @@ objects:
   - apiVersion: hive.openshift.io/v1
     kind: SelectorSyncSet
     metadata:
+      name: cluster-observability-operator-hypershift
+    spec:
+      clusterDeploymentSelector:
+        matchLabels:
+          api.openshift.com/managed: 'true'
+        matchExpressions:
+          - key: ext-hypershift.openshift.io/cluster-type
+            operator: In
+            values:
+              - service-cluster
+      resourceApplyMode: Sync
+      resources:
+        - apiVersion: operators.coreos.com/v1alpha1
+          kind: Subscription
+          metadata:
+            labels:
+              operators.coreos.com/cluster-observability-operator.openshift-operators: ""
+            name: cluster-observability-operator
+            namespace: openshift-operators
+          spec:
+            channel: stable
+            name: cluster-observability-operator
+            source: redhat-operators
+            sourceNamespace: openshift-marketplace
+            config:
+              resources:
+                limits:
+                  cpu: ${RESOURCE_LIMIT_CPU}
+                  memory: ${RESOURCE_LIMIT_MEMORY}
+                requests:
+                  cpu: ${RESOURCE_REQUEST_CPU}
+                  memory: ${RESOURCE_REQUEST_MEMORY}
+  - apiVersion: hive.openshift.io/v1
+    kind: SelectorSyncSet
+    metadata:
       name: observability-operator-rhoam
     spec:
       clusterDeploymentSelector:
