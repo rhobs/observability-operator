@@ -453,7 +453,7 @@ func assertPrometheusScrapesItselfAndWebUI(t *testing.T) {
 		t.Fatal(fmt.Errorf("Could not query prometheus: %w", err))
 	}
 
-	curlCommand := "curl http://localhost:9090/graph"
+	curlCommand := "curl http://localhost:9090/alerts"
 	curlOutput, err := exec.Command("bash", "-c", curlCommand).Output()
 	assert.NilError(t, err)
 	if !strings.Contains(string(curlOutput), "<title>Prometheus Time Series Collection and Processing Server</title>") {
