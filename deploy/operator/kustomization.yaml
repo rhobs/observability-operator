@@ -46,17 +46,3 @@ patches:
     group: apps
     kind: Deployment
     version: v1
-- patch: |-
-    - op: add
-      path: /spec/template/spec/containers/0/resources
-      value:
-        requests:
-          cpu: 5m
-          memory: 50Mi
-        limits:
-          cpu: 50m
-          memory: 150Mi
-  target:
-    group: apps
-    kind: Deployment
-    version: v1

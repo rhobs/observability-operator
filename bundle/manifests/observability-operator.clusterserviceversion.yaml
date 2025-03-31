@@ -42,7 +42,7 @@ metadata:
     categories: Monitoring
     certified: "false"
     containerImage: observability-operator:1.1.0
-    createdAt: "2025-03-21T16:01:23Z"
+    createdAt: "2025-03-31T17:59:28Z"
     description: A Go based Kubernetes operator to setup and manage highly available
       Monitoring Stack using Prometheus, Alertmanager and Thanos Querier.
     operatorframework.io/cluster-monitoring: "true"
@@ -931,11 +931,11 @@ spec:
                     port: 8081
                 resources:
                   limits:
-                    cpu: 50m
-                    memory: 150Mi
+                    cpu: 400m
+                    memory: 512Mi
                   requests:
-                    cpu: 5m
-                    memory: 50Mi
+                    cpu: 100m
+                    memory: 256Mi
                 securityContext:
                   allowPrivilegeEscalation: false
                   capabilities:
@@ -1006,10 +1006,10 @@ spec:
                 resources:
                   limits:
                     cpu: 500m
-                    memory: 128Mi
+                    memory: 512Mi
                   requests:
-                    cpu: 10m
-                    memory: 64Mi
+                    cpu: 100m
+                    memory: 128Mi
                 securityContext:
                   allowPrivilegeEscalation: false
                   capabilities:
