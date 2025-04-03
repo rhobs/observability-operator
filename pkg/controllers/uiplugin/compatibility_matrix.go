@@ -127,7 +127,7 @@ var compatibilityMatrix = []CompatibilityEntry{
 		MinClusterVersion: "v4.15",
 		MaxClusterVersion: "",
 		ImageKey:          "ui-monitoring",
-		SupportLevel:      DevPreview,
+		SupportLevel:      TechPreview,
 		// feature flags for montioring are dynamically injected
 		// based on the cluster version and and UIPlugin CR configurations
 		Features: []string{},
@@ -160,7 +160,7 @@ func lookupImageAndFeatures(pluginType uiv1alpha1.UIPluginType, clusterVersion s
 
 func compareClusterVersion(entry CompatibilityEntry, clusterVersion string, pluginType uiv1alpha1.UIPluginType) (CompatibilityEntry, error) {
 	canonicalMinClusterVersion := fmt.Sprintf("%s-0", semver.Canonical(entry.MinClusterVersion))
-	canonicalMaxClusterVersion := semver.Canonical(entry.MaxClusterVersion)
+	canonicalMaxClusterVersion := fmt.Sprintf("%s-0", semver.Canonical(entry.MaxClusterVersion))
 
 	if entry.MaxClusterVersion == "" && semver.Compare(clusterVersion, canonicalMinClusterVersion) >= 0 {
 		return entry, nil

@@ -40,11 +40,11 @@ spec:
               - ALL
           resources:
             limits:
-              cpu: 200m
-              memory: 300Mi
+              cpu: 400m
+              memory: 512Mi
             requests:
               cpu: 100m
-              memory: 150Mi
+              memory: 256Mi
           readinessProbe:
              httpGet:
                path: /healthz

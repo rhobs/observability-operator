@@ -3,6 +3,7 @@ package uiplugin
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	osv1 "github.com/openshift/api/console/v1"
 	osv1alpha1 "github.com/openshift/api/console/v1alpha1"
@@ -13,6 +14,7 @@ import (
 
 	persesv1alpha1 "github.com/perses/perses-operator/api/v1alpha1"
 	persesconfig "github.com/perses/perses/pkg/model/api/config"
+	"github.com/perses/perses/pkg/model/api/v1/common"
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 )
 
@@ -259,13 +261,14 @@ func newMonitoringService(name string, namespace string) *corev1.Service {
 }
 
 func newPerses(namespace string, persesImage string) *persesv1alpha1.Perses {
+	name := "perses"
 	return &persesv1alpha1.Perses{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: persesv1alpha1.GroupVersion.String(),
 			Kind:       "Perses",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "perses",
+			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
 				"app.kubernetes.io/name":       "perses",
@@ -283,7 +286,7 @@ func newPerses(namespace string, persesImage string) *persesv1alpha1.Perses {
 					},
 					Database: persesconfig.Database{
 						File: &persesconfig.File{
-							Folder:    "/etc/perses/storage",
+							Folder:    "/perses",
 							Extension: persesconfig.YAMLExtension,
 						},
 					},
@@ -292,11 +295,40 @@ func newPerses(namespace string, persesImage string) *persesv1alpha1.Perses {
 						QueriesPath:     "/etc/perses/cue/schemas/queries",
 						DatasourcesPath: "/etc/perses/cue/schemas/datasources",
 						VariablesPath:   "/etc/perses/cue/schemas/variables",
+						Interval:        common.Duration(time.Hour * 6),
 					},
 				},
 			},
 			Image:         persesImage,
 			ContainerPort: 8080,
+			TLS: &persesv1alpha1.TLS{
+				Enable: true,
+				UserCert: &persesv1alpha1.Certificate{
+					Type:           persesv1alpha1.CertificateTypeSecret,
+					Name:           name,
+					CertPath:       "tls.crt",
+					PrivateKeyPath: "tls.key",
+				},
+				CaCert: &persesv1alpha1.Certificate{
+					Type:     persesv1alpha1.CertificateTypeConfigMap,
+					Name:     "openshift-service-ca.crt",
+					CertPath: "service-ca.crt",
+				},
+			},
+			Client: &persesv1alpha1.Client{
+				TLS: &persesv1alpha1.TLS{
+					Enable: true,
+					CaCert: &persesv1alpha1.Certificate{
+						Type:     persesv1alpha1.CertificateTypeSecret,
+						CertPath: "ca.crt",
+					},
+				},
+			},
+			Service: &persesv1alpha1.PersesService{
+				Annotations: map[string]string{
+					"service.beta.openshift.io/serving-cert-secret-name": name,
+				},
+			},
 		},
 	}
 }
