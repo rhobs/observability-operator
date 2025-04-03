@@ -3984,10 +3984,437 @@ Reference to the TLS private key for the web server.
 
 Resource Types:
 
+- [Config](#config)
+
+- [SignalManager](#signalmanager)
+
 - [UIPlugin](#uiplugin)
 
 
 
+
+## Config
+<sup><sup>[↩ Parent](#observabilityopenshiftiov1alpha1 )</sup></sup>
+
+
+
+
+
+
+Config defines an observability configuration that can deploy operators and resources for
+observability signal collectors and stores.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+      <td><b>apiVersion</b></td>
+      <td>string</td>
+      <td>observability.openshift.io/v1alpha1</td>
+      <td>true</td>
+      </tr>
+      <tr>
+      <td><b>kind</b></td>
+      <td>string</td>
+      <td>Config</td>
+      <td>true</td>
+      </tr>
+      <tr>
+      <td><b><a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta">metadata</a></b></td>
+      <td>object</td>
+      <td>Refer to the Kubernetes API documentation for the fields of the `metadata` field.</td>
+      <td>true</td>
+      </tr><tr>
+        <td><b><a href="#configspec">spec</a></b></td>
+        <td>object</td>
+        <td>
+          ConfigSpec specifies what to install.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>status</b></td>
+        <td>object</td>
+        <td>
+          FIXME Status<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Config.spec
+<sup><sup>[↩ Parent](#config)</sup></sup>
+
+
+
+ConfigSpec specifies what to install.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>defaultInstall</b></td>
+        <td>string</td>
+        <td>
+          DefaultInstall is the default install type for signals that are not listed or
+are listed without an `install` field.
+For example, `{ defaultinstall: Default }` with no `signals` field installs all signal
+types with default settings.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#configspecinstalldefinitionsindex">installDefinitions</a></b></td>
+        <td>[]object</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#configspecsignalsindex">signals</a></b></td>
+        <td>[]object</td>
+        <td>
+          Signals specifies what to install for each signal type.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Config.spec.installDefinitions[index]
+<sup><sup>[↩ Parent](#configspec)</sup></sup>
+
+
+
+InstallDefinitionSpec defines a new installation type.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>configMap</b></td>
+        <td>string</td>
+        <td>
+          ConfigMap contains deployment bundles for the install type, with key=signal type.
+FIXME: which way around? install < signal or signal < install<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>install</b></td>
+        <td>string</td>
+        <td>
+          Name of the installation type.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### Config.spec.signals[index]
+<sup><sup>[↩ Parent](#configspec)</sup></sup>
+
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>signal</b></td>
+        <td>string</td>
+        <td>
+          Name of this signal type.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>installType</b></td>
+        <td>string</td>
+        <td>
+          Install type for this signal. Optional, if absent use ..defaultInstall<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          Namespace to install to. Optional, each signal type has a default namespace.
+A signal can be listed multiple times with different `namespace` values,
+to install in multiple namespaces.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+## SignalManager
+<sup><sup>[↩ Parent](#observabilityopenshiftiov1alpha1 )</sup></sup>
+
+
+
+
+
+
+SignalManager is a custom resource to enable observability in the cluster.
+
+Each type of observability signal (logs, metrics, network events, ...) requires operators to be
+installed and resources created to configure collection, processing, and storage of signal data.
+
+The SignalManager automatically installs the operators, custom resource definitions, and
+resources to enable all the desired observability signals in a cluster with default
+configurations.
+
+This means you can get observability up and running quickly and easily,
+but still customize the details if and when you need to.
+
+## Pattern
+
+A "Pattern" is a named set of configurations for each of the observability signals.
+Choosing a pattern automatically installs required operators (if needed) _and_ creates
+working resources so you have complete, working, observability stacks.
+
+The following patterns are always available, others may be made available.
+
+  - Default:
+    Installs operators and resources suitable for the most common use cases.
+    The operator owns and manages the resources, and keeps them in the default state.
+  - Custom:
+    Installs operators, but does not create any live resources.
+    The user can create customized resources, they will not be modified by this operator.
+  - Disabled: Do not install any operators, resource definitions, or resources.
+
+Custom patterns can be defined in `spec.patterns`.
+
+## Examples
+
+Enable all observability components with default settings.
+
+	kind: SignalManager
+	spec:
+	  pattern: Default
+
+Disable all observability components except for logging.
+
+	kind: SignalManager
+	spec:
+	  pattern: Disabled
+	  signals:
+	    name: Log
+	    pattern: Default
+
+Enable most components with defaults, install the logging operators,
+but use custom logging resources (created separately)
+
+	kind: SignalManager
+	spec:
+	  pattern: Default
+	  signals:
+	    name: log
+	    pattern: Custom
+
+## Lifecycle and ownership
+
+Ownership of resources depends on the pattern:
+
+  - None: No operators installed, no resources created or reconciled.
+  - Custom: Operators installed but no resources created. User is free to create resources
+    they are not owned or reconciled by this operator.
+  - Default, or any other defined configuration:
+    This operator creates, owns, and reconciles resources to keep them consistent with the chosen
+    pattern.
+
+FIXME: Operator may reconcile only part of the resource and allow user to tweak other parts.
+Needs consideration. COO already uses server-side-apply to do this in some cases.
+
+FIXME: Patterns may need to be "parameterized" e.g. with sizing data.
+How to include such parameters without duplicating existing CRs?
+
+FIXME: Define behavior on spec changes: deleting, re-creating, updating resources.
+Change to Custom should leave resources in place so user can eddit.
+What to do on change _from_ Custom?
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+      <td><b>apiVersion</b></td>
+      <td>string</td>
+      <td>observability.openshift.io/v1alpha1</td>
+      <td>true</td>
+      </tr>
+      <tr>
+      <td><b>kind</b></td>
+      <td>string</td>
+      <td>SignalManager</td>
+      <td>true</td>
+      </tr>
+      <tr>
+      <td><b><a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#objectmeta-v1-meta">metadata</a></b></td>
+      <td>object</td>
+      <td>Refer to the Kubernetes API documentation for the fields of the `metadata` field.</td>
+      <td>true</td>
+      </tr><tr>
+        <td><b><a href="#signalmanagerspec">spec</a></b></td>
+        <td>object</td>
+        <td>
+          Lists signals and the pattern to deploy them.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>status</b></td>
+        <td>object</td>
+        <td>
+          Status of the signal manager.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### SignalManager.spec
+<sup><sup>[↩ Parent](#signalmanager)</sup></sup>
+
+
+
+Lists signals and the pattern to deploy them.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>pattern</b></td>
+        <td>string</td>
+        <td>
+          The default pattern for signals that are not listed or have no `pattern` field.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#signalmanagerspecpatternsindex">patterns</a></b></td>
+        <td>[]object</td>
+        <td>
+          Patterns is a list of custom pattern definitions.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#signalmanagerspecsignalsindex">signals</a></b></td>
+        <td>[]object</td>
+        <td>
+          Signals is a list of signal types with the desired pattern.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### SignalManager.spec.patterns[index]
+<sup><sup>[↩ Parent](#signalmanagerspec)</sup></sup>
+
+
+
+PatternSpec defines a custom pattern.
+
+on the cluster. Simplest format is a flat YAML file, but we may need more structure
+to store kustomize scripts, multi-stage deployments, health checks, metadata etc....
+Possible storage formats: ConfigMap, PersistentVolume, container image...
+
+Patterns should also be usable directly, without depending on this API.
+Preferably using only kubectl and kustomize.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>pattern</b></td>
+        <td>string</td>
+        <td>
+          Name of the pattern.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### SignalManager.spec.signals[index]
+<sup><sup>[↩ Parent](#signalmanagerspec)</sup></sup>
+
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Signal name<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          Namespace to install to.
+
+Optional, each signal type has a default namespace.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>pattern</b></td>
+        <td>string</td>
+        <td>
+          Pattern for this signal. Optional, if absent use the 'Default' pattern.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
 
 ## UIPlugin
 <sup><sup>[↩ Parent](#observabilityopenshiftiov1alpha1 )</sup></sup>

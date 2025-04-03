@@ -1,0 +1,135 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.16.2
+  name: signalmanagers.observability.openshift.io
+spec:
+  group: observability.openshift.io
+  names:
+    kind: SignalManager
+    listKind: SignalManagerList
+    plural: signalmanagers
+    singular: signalmanager
+  scope: Cluster
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: "SignalManager is a custom resource to enable observability in
+          the cluster.\n\nEach type of observability signal (logs, metrics, network
+          events, ...) requires operators to be\ninstalled and resources created to
+          configure collection, processing, and storage of signal data.\n\nThe SignalManager
+          automatically installs the operators, custom resource definitions, and\nresources
+          to enable all the desired observability signals in a cluster with default\nconfigurations.\n\nThis
+          means you can get observability up and running quickly and easily,\nbut
+          still customize the details if and when you need to.\n\n## Pattern\n\nA
+          \"Pattern\" is a named set of configurations for each of the observability
+          signals.\nChoosing a pattern automatically installs required operators (if
+          needed) _and_ creates\nworking resources so you have complete, working,
+          observability stacks.\n\nThe following patterns are always available, others
+          may be made available.\n\n  - Default:\n    Installs operators and resources
+          suitable for the most common use cases.\n    The operator owns and manages
+          the resources, and keeps them in the default state.\n  - Custom:\n    Installs
+          operators, but does not create any live resources.\n    The user can create
+          customized resources, they will not be modified by this operator.\n  - Disabled:
+          Do not install any operators, resource definitions, or resources.\n\nCustom
+          patterns can be defined in `spec.patterns`.\n\n## Examples\n\nEnable all
+          observability components with default settings.\n\n\tkind: SignalManager\n\tspec:\n\t
+          \ pattern: Default\n\nDisable all observability components except for logging.\n\n\tkind:
+          SignalManager\n\tspec:\n\t  pattern: Disabled\n\t  signals:\n\t    name:
+          Log\n\t    pattern: Default\n\nEnable most components with defaults, install
+          the logging operators,\nbut use custom logging resources (created separately)\n\n\tkind:
+          SignalManager\n\tspec:\n\t  pattern: Default\n\t  signals:\n\t    name:
+          log\n\t    pattern: Custom\n\n## Lifecycle and ownership\n\nOwnership of
+          resources depends on the pattern:\n\n  - None: No operators installed, no
+          resources created or reconciled.\n  - Custom: Operators installed but no
+          resources created. User is free to create resources\n    they are not owned
+          or reconciled by this operator.\n  - Default, or any other defined configuration:\n
+          \   This operator creates, owns, and reconciles resources to keep them consistent
+          with the chosen\n    pattern.\n\nFIXME: Operator may reconcile only part
+          of the resource and allow user to tweak other parts.\nNeeds consideration.
+          COO already uses server-side-apply to do this in some cases.\n\nFIXME: Patterns
+          may need to be \"parameterized\" e.g. with sizing data.\nHow to include
+          such parameters without duplicating existing CRs?\n\nFIXME: Define behavior
+          on spec changes: deleting, re-creating, updating resources.\nChange to Custom
+          should leave resources in place so user can eddit.\nWhat to do on change
+          _from_ Custom?"
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Lists signals and the pattern to deploy them.
+            properties:
+              pattern:
+                description: The default pattern for signals that are not listed or
+                  have no `pattern` field.
+                type: string
+              patterns:
+                description: Patterns is a list of custom pattern definitions.
+                items:
+                  description: |-
+                    PatternSpec defines a custom pattern.
+
+                    on the cluster. Simplest format is a flat YAML file, but we may need more structure
+                    to store kustomize scripts, multi-stage deployments, health checks, metadata etc....
+                    Possible storage formats: ConfigMap, PersistentVolume, container image...
+
+                    Patterns should also be usable directly, without depending on this API.
+                    Preferably using only kubectl and kustomize.
+                  properties:
+                    pattern:
+                      description: Name of the pattern.
+                      type: string
+                  required:
+                  - pattern
+                  type: object
+                type: array
+              signals:
+                description: Signals is a list of signal types with the desired pattern.
+                items:
+                  properties:
+                    name:
+                      description: Signal name
+                      type: string
+                    namespace:
+                      description: |-
+                        Namespace to install to.
+
+                        Optional, each signal type has a default namespace.
+                      type: string
+                    pattern:
+                      description: Pattern for this signal. Optional, if absent use
+                        the 'Default' pattern.
+                      type: string
+                  required:
+                  - name
+                  type: object
+                type: array
+            required:
+            - pattern
+            type: object
+          status:
+            description: Status of the signal manager.
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
