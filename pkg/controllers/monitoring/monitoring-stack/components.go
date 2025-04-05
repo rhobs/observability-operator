@@ -14,6 +14,7 @@ import (
 	"k8s.io/utils/ptr"
 
 	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
+	"github.com/rhobs/observability-operator/pkg/assets"
 	"github.com/rhobs/observability-operator/pkg/reconciler"
 )
 
@@ -49,6 +50,7 @@ func stackComponentReconcilers(
 	thanos ThanosConfiguration,
 	prometheus PrometheusConfiguration,
 	alertmanager AlertmanagerConfiguration,
+	tlsHashes map[string]string,
 ) []reconciler.Reconciler {
 	prometheusName := ms.Name + "-prometheus"
 	alertmanagerName := ms.Name + "-alertmanager"
@@ -64,7 +66,7 @@ func stackComponentReconcilers(
 		reconciler.NewUpdater(newPrometheus(ms, prometheusName,
 			additionalScrapeConfigsSecretName,
 			instanceSelectorKey, instanceSelectorValue,
-			thanos, prometheus), ms),
+			thanos, prometheus, tlsHashes), ms),
 		reconciler.NewUpdater(newPrometheusService(ms, instanceSelectorKey, instanceSelectorValue), ms),
 		reconciler.NewUpdater(newThanosSidecarService(ms, instanceSelectorKey, instanceSelectorValue), ms),
 		reconciler.NewOptionalUpdater(newPrometheusPDB(ms, instanceSelectorKey, instanceSelectorValue), ms,
@@ -135,6 +137,7 @@ func newPrometheus(
 	instanceSelectorValue string,
 	thanosCfg ThanosConfiguration,
 	prometheusCfg PrometheusConfiguration,
+	tlsHashes map[string]string,
 ) *monv1.Prometheus {
 	prometheusSelector := ms.Spec.ResourceSelector
 
@@ -213,12 +216,33 @@ func newPrometheus(
 					}
 					return []monv1.EnableFeature{}
 				}(),
+				Volumes: []corev1.Volume{
+					{
+						Name: "thanos-tls-assets",
+						VolumeSource: corev1.VolumeSource{
+							Secret: &corev1.SecretVolumeSource{
+								SecretName: assets.GRPCSecretName,
+							},
+						},
+					},
+				},
 			},
 			Retention:             ms.Spec.Retention,
 			RuleSelector:          prometheusSelector,
 			RuleNamespaceSelector: ms.Spec.NamespaceSelector,
 			Thanos: &monv1.ThanosSpec{
 				Image: ptr.To(thanosCfg.Image),
+				GRPCServerTLSConfig: &monv1.TLSConfig{
+					CAFile:   "/etc/thanos/tls-assets/ca.crt",
+					CertFile: "/etc/thanos/tls-assets/prometheus-server.crt",
+					KeyFile:  "/etc/thanos/tls-assets/prometheus-server.key",
+				},
+				VolumeMounts: []corev1.VolumeMount{
+					{
+						Name:      "thanos-tls-assets",
+						MountPath: "/etc/thanos/tls-assets",
+					},
+				},
 			},
 		},
 	}
@@ -248,6 +272,14 @@ func newPrometheus(
 		}
 		// Add a CA secret to use later for the self-scraping job
 		prometheus.Spec.Secrets = append(prometheus.Spec.Secrets, tlsConfig.CertificateAuthority.Name)
+	}
+
+	if len(tlsHashes) > 0 {
+		tlsAnnotations := map[string]string{}
+		for name, hash := range tlsHashes {
+			tlsAnnotations[fmt.Sprintf("monitoring.openshift.io/%s-hash", name)] = hash
+		}
+		prometheus.Spec.CommonPrometheusFields.PodMetadata.Annotations = tlsAnnotations
 	}
 
 	if prometheusCfg.Image != "" {

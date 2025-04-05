@@ -10,6 +10,7 @@ import (
 	"k8s.io/utils/ptr"
 
 	msoapi "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
+	"github.com/rhobs/observability-operator/pkg/assets"
 	"github.com/rhobs/observability-operator/pkg/reconciler"
 )
 
@@ -66,6 +67,11 @@ func newThanosQuerierDeployment(
 		"--log.format=logfmt",
 		"--query.replica-label=prometheus_replica",
 		"--query.auto-downsampling",
+		"--grpc-client-tls-secure",
+		"--grpc-client-server-name=prometheus-grpc",
+		"--grpc-client-tls-ca=/etc/thanos/tls-sidecar-assets/ca.crt",
+		"--grpc-client-tls-key=/etc/thanos/tls-sidecar-assets/thanos-querier-client.key",
+		"--grpc-client-tls-cert=/etc/thanos/tls-sidecar-assets/thanos-querier-client.crt",
 	}
 	for _, endpoint := range sidecarUrls {
 		args = append(args, fmt.Sprintf("--endpoint=%s", endpoint))
@@ -127,6 +133,12 @@ func newThanosQuerierDeployment(
 									Type: corev1.SeccompProfileTypeRuntimeDefault,
 								},
 							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "thanos-sidecar-tls-assets",
+									MountPath: "/etc/thanos/tls-sidecar-assets",
+								},
+							},
 						},
 					},
 					NodeSelector: map[string]string{
@@ -136,6 +148,16 @@ func newThanosQuerierDeployment(
 						RunAsNonRoot: ptr.To(true),
 						SeccompProfile: &corev1.SeccompProfile{
 							Type: corev1.SeccompProfileTypeRuntimeDefault,
+						},
+					},
+					Volumes: []corev1.Volume{
+						{
+							Name: "thanos-sidecar-tls-assets",
+							VolumeSource: corev1.VolumeSource{
+								Secret: &corev1.SecretVolumeSource{
+									SecretName: assets.GRPCSecretName,
+								},
+							},
 						},
 					},
 				},
@@ -189,11 +211,13 @@ func newThanosQuerierDeployment(
 				ReadOnly:  true,
 			},
 		}...)
+	}
+	if len(tlsHashes) > 0 {
 		tlsAnnotations := map[string]string{}
 		for name, hash := range tlsHashes {
 			tlsAnnotations[fmt.Sprintf("monitoring.openshift.io/%s-hash", name)] = hash
 		}
-		thanos.ObjectMeta.Annotations = tlsAnnotations
+		thanos.Spec.Template.ObjectMeta.Annotations = tlsAnnotations
 	}
 
 	return thanos
