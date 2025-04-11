@@ -12,8 +12,8 @@ resources:
 
 images:
 - name: observability-operator
-  newName: observability-operator
-  newTag: 1.0.0
+  newName: grover.home:5000/alanconway/observability-operator
+  newTag: 3.3.3
 
 patches:
 - patch: |-

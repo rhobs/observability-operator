@@ -40,13 +40,13 @@ var defaultImages = map[string]string{
 	"alertmanager":               "",
 	"thanos":                     obopo.DefaultThanosImage,
 	"ui-dashboards":              "quay.io/openshift-observability-ui/console-dashboards-plugin:v0.4.0",
-	"ui-troubleshooting-panel":   "quay.io/openshift-observability-ui/troubleshooting-panel-console-plugin:v0.4.0",
+	"ui-troubleshooting-panel":   "grover.home:5000/alanconway/troubleshooting-panel-console-plugin:latest",
 	"ui-distributed-tracing-pf4": "quay.io/openshift-observability-ui/distributed-tracing-console-plugin:v0.3.0",
 	"ui-distributed-tracing":     "quay.io/openshift-observability-ui/distributed-tracing-console-plugin:v0.4.0",
 	"ui-logging-pf4":             "quay.io/openshift-observability-ui/logging-view-plugin:v6.0.0",
 	"ui-logging":                 "quay.io/openshift-observability-ui/logging-view-plugin:v6.1.0",
 	"ui-monitoring":              "quay.io/openshift-observability-ui/monitoring-console-plugin:release-coo-1.1",
-	"korrel8r":                   "quay.io/korrel8r/korrel8r:0.7.4",
+	"korrel8r":                   "grover.home:5000/alanconway/korrel8r:latest",
 	"health-analyzer":            "quay.io/openshiftanalytics/cluster-health-analyzer:v0.4.0",
 	"perses":                     "quay.io/persesdev/perses:v0.50.1",
 }
@@ -95,7 +95,7 @@ func main() {
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&healthProbeAddr, "health-probe-bind-address", ":8081", "The address the health probe endpoint binds to.")
 	flag.Var(images, "images", fmt.Sprintf("Full images refs to use for containers managed by the operator. E.g thanos=quay.io/thanos/thanos:v0.33.0. Images used are %v", imagesUsed()))
-	flag.BoolVar(&openShiftEnabled, "openshift.enabled", false, "Enable OpenShift specific features such as Console Plugins.")
+	flag.BoolVar(&openShiftEnabled, "openshift.enabled", true, "Enable OpenShift specific features such as Console Plugins.")
 
 	opts := zap.Options{
 		Development: true,

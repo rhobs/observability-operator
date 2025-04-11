@@ -43,7 +43,7 @@ check-jq:
 	jq --version > /dev/null
 
 .PHONY: docs
-docs: $(CRDOC)
+docs: $(CRDOC) generate-crds
 	mkdir -p docs
 	$(CRDOC) --resources deploy/crds/common --output docs/api.md
 

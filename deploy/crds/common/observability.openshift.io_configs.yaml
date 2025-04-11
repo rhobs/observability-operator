@@ -1,0 +1,94 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.16.2
+  name: configs.observability.openshift.io
+spec:
+  group: observability.openshift.io
+  names:
+    kind: Config
+    listKind: ConfigList
+    plural: configs
+    singular: config
+  scope: Cluster
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          Config defines an observability configuration that can deploy operators and resources for
+          observability signal collectors and stores.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ConfigSpec specifies what to install.
+            properties:
+              defaultInstall:
+                description: |-
+                  DefaultInstall is the default install type for signals that are not listed or
+                  are listed without an `install` field.
+                  For example, `{ defaultinstall: Default }` with no `signals` field installs all signal
+                  types with default settings.
+                type: string
+              installDefinitions:
+                items:
+                  description: InstallDefinitionSpec defines a new installation type.
+                  properties:
+                    configMap:
+                      description: |-
+                        ConfigMap contains deployment bundles for the install type, with key=signal type.
+                        FIXME: which way around? install < signal or signal < install
+                      type: string
+                    install:
+                      description: Name of the installation type.
+                      type: string
+                  type: object
+                type: array
+              signals:
+                description: Signals specifies what to install for each signal type.
+                items:
+                  properties:
+                    installType:
+                      description: Install type for this signal. Optional, if absent
+                        use ..defaultInstall
+                      type: string
+                    namespace:
+                      description: |-
+                        Namespace to install to. Optional, each signal type has a default namespace.
+                        A signal can be listed multiple times with different `namespace` values,
+                        to install in multiple namespaces.
+                      type: string
+                    signal:
+                      description: Name of this signal type.
+                      type: string
+                  required:
+                  - signal
+                  type: object
+                type: array
+            type: object
+          status:
+            description: FIXME Status
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
