@@ -228,6 +228,7 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 			Scheme:                 scheme,
 			Metrics:                metricsOpts,
 			HealthProbeBindAddress: cfg.HealthProbeAddr,
+			PprofBindAddress:       "127.0.0.1:8083",
 		})
 	if err != nil {
 		return nil, fmt.Errorf("unable to create manager: %w", err)
