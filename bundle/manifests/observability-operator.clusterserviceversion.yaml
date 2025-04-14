@@ -83,10 +83,14 @@ spec:
     - kind: Perses
       name: perses.perses.dev
       version: v1alpha1
-    - kind: PersesDashboard
+    - description: PersesDashboard is the Schema for the PersesDashboards API
+      displayName: PersesDashboard
+      kind: PersesDashboard
       name: persesdashboards.perses.dev
       version: v1alpha1
-    - kind: PersesDatasource
+    - description: PersesDatasource is the Schema for the PersesDatasources API
+      displayName: PersesDatasource
+      kind: PersesDatasource
       name: persesdatasources.perses.dev
       version: v1alpha1
     - description: PodMonitor defines monitoring for a set of pods
