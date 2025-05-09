@@ -128,6 +128,16 @@ spec:
                         type: string
                     type: object
                     x-kubernetes-map-type: atomic
+                  schema:
+                    description: |-
+                      Schema is the schema to use for logs querying and display.
+
+                      Defatults to "viaq" if not specified.
+                    enum:
+                    - viaq
+                    - otel
+                    - select
+                    type: string
                   timeout:
                     description: |-
                       Timeout is the maximum duration before a query timeout.

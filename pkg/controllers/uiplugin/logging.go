@@ -24,6 +24,7 @@ import (
 type loggingConfig struct {
 	LogsLimit int32         `yaml:"logsLimit,omitempty"`
 	Timeout   time.Duration `yaml:"timeout,omitempty"`
+	Schema    string        `yaml:"schema,omitempty"`
 }
 
 func createLoggingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string, ctx context.Context, dk dynamic.Interface) (*UIPluginInfo, error) {
@@ -133,7 +134,7 @@ func marshalLoggingPluginConfig(cfg *uiv1alpha1.LoggingConfig) (string, error) {
 		return "", nil
 	}
 
-	if cfg.LogsLimit == 0 && cfg.Timeout == "" {
+	if cfg.LogsLimit == 0 && cfg.Timeout == "" && cfg.Schema == "" {
 		return "", nil
 	}
 
@@ -149,6 +150,7 @@ func marshalLoggingPluginConfig(cfg *uiv1alpha1.LoggingConfig) (string, error) {
 	pluginCfg := loggingConfig{
 		LogsLimit: cfg.LogsLimit,
 		Timeout:   timeout,
+		Schema:    cfg.Schema,
 	}
 
 	buf := &bytes.Buffer{}
