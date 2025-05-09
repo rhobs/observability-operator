@@ -4280,6 +4280,17 @@ It always references a LokiStack in the "openshift-logging" namespace.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>schema</b></td>
+        <td>enum</td>
+        <td>
+          Schema is the schema to use for logs querying and display.
+
+Defatults to "viaq" if not specified.<br/>
+          <br/>
+            <i>Enum</i>: viaq, otel, select<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>timeout</b></td>
         <td>string</td>
         <td>

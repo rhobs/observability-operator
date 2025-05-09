@@ -119,6 +119,15 @@ type LoggingConfig struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OCP Console Query Timeout",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:ocpConsoleTimeout"}
 	// +kubebuilder:validation:Pattern:="^([0-9]+)([sm]{0,1})$"
 	Timeout string `json:"timeout,omitempty"`
+
+	// Schema is the schema to use for logs querying and display.
+	//
+	// Defatults to "viaq" if not specified.
+	//
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OCP Console Logs Schema",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:ocpConsoleLogsSchema"}
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Enum=viaq;otel;select
+	Schema string `json:"schema,omitempty"`
 }
 
 // LokiStackReference is used to configure a reference to a LokiStack that should be used
