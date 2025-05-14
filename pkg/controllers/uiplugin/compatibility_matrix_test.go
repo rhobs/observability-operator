@@ -202,18 +202,30 @@ func TestLookupImageAndFeatures(t *testing.T) {
 		{
 			pluginType:     uiv1alpha1.TypeDistributedTracing,
 			clusterVersion: "4.15",
-			expectedKey:    "ui-distributed-tracing",
+			expectedKey:    "ui-distributed-tracing-pf5",
 			expectedErr:    nil,
 		},
 		{
 			pluginType:     uiv1alpha1.TypeDistributedTracing,
 			clusterVersion: "v4.15.0-0.nightly-2024-06-06-064349",
-			expectedKey:    "ui-distributed-tracing",
+			expectedKey:    "ui-distributed-tracing-pf5",
 			expectedErr:    nil,
 		},
 		{
 			pluginType:     uiv1alpha1.TypeDistributedTracing,
 			clusterVersion: "v4.15.46",
+			expectedKey:    "ui-distributed-tracing-pf5",
+			expectedErr:    nil,
+		},
+		{
+			pluginType:     uiv1alpha1.TypeDistributedTracing,
+			clusterVersion: "4.18",
+			expectedKey:    "ui-distributed-tracing-pf5",
+			expectedErr:    nil,
+		},
+		{
+			pluginType:     uiv1alpha1.TypeDistributedTracing,
+			clusterVersion: "4.19",
 			expectedKey:    "ui-distributed-tracing",
 			expectedErr:    nil,
 		},
@@ -221,6 +233,12 @@ func TestLookupImageAndFeatures(t *testing.T) {
 			pluginType:     uiv1alpha1.TypeDistributedTracing,
 			clusterVersion: "4.24.0-0.nightly-2024-03-11-200348",
 			expectedKey:    "ui-distributed-tracing",
+			expectedErr:    nil,
+		},
+		{
+			pluginType:     uiv1alpha1.TypeDistributedTracing,
+			clusterVersion: "4.16.0-rc.3",
+			expectedKey:    "ui-distributed-tracing-pf5",
 			expectedErr:    nil,
 		},
 		{
@@ -228,12 +246,6 @@ func TestLookupImageAndFeatures(t *testing.T) {
 			clusterVersion: "4.24.0-0.nightly-2024-03-11-200348",
 			expectedKey:    "",
 			expectedErr:    fmt.Errorf(`plugin "non-existent-plugin": no compatible image found for cluster version "v4.24.0-0.nightly-2024-03-11-200348"`),
-		},
-		{
-			pluginType:     uiv1alpha1.TypeDistributedTracing,
-			clusterVersion: "4.16.0-rc.3",
-			expectedKey:    "ui-distributed-tracing",
-			expectedErr:    nil,
 		},
 		{
 			pluginType:     uiv1alpha1.TypeTroubleshootingPanel,
