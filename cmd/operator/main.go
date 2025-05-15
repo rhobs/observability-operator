@@ -43,7 +43,7 @@ var defaultImages = map[string]string{
 	"ui-troubleshooting-panel":   "quay.io/openshift-observability-ui/troubleshooting-panel-console-plugin:v0.4.0",
 	"ui-distributed-tracing-pf4": "quay.io/openshift-observability-ui/distributed-tracing-console-plugin:v0.3.0",
 	"ui-distributed-tracing-pf5": "quay.io/openshift-observability-ui/distributed-tracing-console-plugin:v0.4.0",
-	"ui-distributed-tracing":     "quay.io/openshift-observability-ui/distributed-tracing-console-plugin:v0.5.0",
+	"ui-distributed-tracing":     "quay.io/openshift-observability-ui/distributed-tracing-console-plugin:v1.0.0",
 	"ui-logging-pf4":             "quay.io/openshift-observability-ui/logging-view-plugin:v6.0.0",
 	"ui-logging":                 "quay.io/openshift-observability-ui/logging-view-plugin:v6.1.0",
 	"ui-monitoring":              "quay.io/openshift-observability-ui/monitoring-console-plugin:release-coo-1.1",
