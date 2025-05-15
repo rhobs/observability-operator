@@ -10,6 +10,11 @@ inputs:
 runs:
   using: composite
   steps:
+  - name: Clean Go module cache
+    run: |
+      shell: bash
+      go clean -modcache
+      rm -rf ~/go/pkg/mod
   - name: Setup Go environment
     uses: actions/setup-go@v5
     with:
