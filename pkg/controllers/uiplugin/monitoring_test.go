@@ -1,7 +1,7 @@
 package uiplugin
 
 import (
-	"regexp"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -189,57 +189,68 @@ var pluginMalformed = &uiv1alpha1.UIPlugin{
 	},
 }
 
-func containsFeatureFlag(pluginInfo *UIPluginInfo) (bool, bool, bool) {
-	acmAlertingFound, persesFound, incidentsFound := false, false, false
-	var featuresIndex int
+type featureFlagsStatus struct {
+	acmAlerting bool
+	perses      bool
+	incidents   bool
+}
 
-	// Loop through the array to find the index of "-features"
-	for i, arg := range pluginInfo.ExtraArgs {
-		if strings.Contains(arg, "-features") {
-			featuresIndex = i
+func containsFeatureFlag(pluginInfo *UIPluginInfo) featureFlagsStatus {
+	var status featureFlagsStatus
+	var featuresArg string
+
+	for _, arg := range pluginInfo.ExtraArgs {
+		if strings.HasPrefix(arg, "-features=") {
+			featuresArg = arg
 			break
 		}
 	}
 
-	// Get "-features=" list from ExtraArgs field
-	// (e.g. "-features='acm-alerting', 'perses-dashboards', 'incidents'")
-	re := regexp.MustCompile(`-features=([a-zA-Z0-9,\-]+)`)
-	featuresList := re.FindString(pluginInfo.ExtraArgs[featuresIndex])
-
-	// Get individual feature strings, by spliting string after "=" and between ","
-	features := strings.Split(strings.Split(featuresList, "=")[1], ",")
-
-	// Check if features are listed
-	for _, feature := range features {
-		if feature == "acm-alerting" {
-			acmAlertingFound = true
-		}
-		if feature == "perses-dashboards" {
-			persesFound = true
-		}
-		if feature == "incidents" {
-			incidentsFound = true
-		}
+	if featuresArg == "" {
+		return status // No features argument found
 	}
 
-	return acmAlertingFound, persesFound, incidentsFound
+	valuePart := strings.TrimPrefix(featuresArg, "-features=")
+	if valuePart == "" {
+		return status // No features listed after "="
+	}
+
+	features := strings.Split(valuePart, ",")
+
+	for _, feature := range features {
+		trimmedFeature := strings.TrimSpace(feature)
+		switch trimmedFeature {
+		case "acm-alerting":
+			status.acmAlerting = true
+		case "perses-dashboards":
+			status.perses = true
+		case "incidents":
+			status.incidents = true
+		}
+	}
+	return status
 }
 
-func containsProxy(pluginInfo *UIPluginInfo) (bool, bool, bool) {
-	alertmanagerFound, thanosFound, persesFound := false, false, false
+type proxiesStatus struct {
+	alertmanager bool
+	thanos       bool
+	perses       bool
+}
+
+func containsProxy(pluginInfo *UIPluginInfo) proxiesStatus {
+	var status proxiesStatus
 
 	for _, proxy := range pluginInfo.Proxies {
-		if proxy.Alias == "alertmanager-proxy" {
-			alertmanagerFound = true
-		}
-		if proxy.Alias == "thanos-proxy" {
-			thanosFound = true
-		}
-		if proxy.Alias == "perses" {
-			persesFound = true
+		switch proxy.Alias {
+		case "alertmanager-proxy":
+			status.alertmanager = true
+		case "thanos-proxy":
+			status.thanos = true
+		case "perses":
+			status.perses = true
 		}
 	}
-	return alertmanagerFound, thanosFound, persesFound
+	return status
 }
 
 func containsHealthAnalyzer(pluginInfo *UIPluginInfo) bool {
@@ -250,12 +261,7 @@ func containsPerses(pluginInfo *UIPluginInfo) bool {
 	return pluginInfo.PersesImage == persesImage
 }
 
-var (
-	features       = []string{}
-	clusterVersion = "v4.19"
-)
-
-const healthAnalyzerImage = "quay.io/health-analuzer-foo-test:123"
+const healthAnalyzerImage = "quay.io/health-analyzer-foo-test:123"
 const persesImage = "quay.io/perses-foo-test:123"
 
 func getPluginInfo(plugin *uiv1alpha1.UIPlugin, features []string, clusterVersion string) (*UIPluginInfo, error) {
@@ -269,97 +275,215 @@ func getPluginInfo(plugin *uiv1alpha1.UIPlugin, features []string, clusterVersio
 }
 
 func TestCreateMonitoringPluginInfo(t *testing.T) {
-	/** Postive Test - ALL  **/
-	t.Run("Test createMonitoringPluginInfo with all monitoring configurations", func(t *testing.T) {
-		pluginInfo, err := getPluginInfo(pluginConfigAll, features, clusterVersion)
-		assert.Assert(t, err == nil)
+	featuresForTest := []string{}
 
-		alertmanagerProxyFound, thanosProxyFound, persesProxyFound := containsProxy(pluginInfo)
-		assert.Assert(t, alertmanagerProxyFound == true)
-		assert.Assert(t, thanosProxyFound == true)
-		assert.Assert(t, persesProxyFound == true)
+	type expectedComponents struct {
+		persesImage    bool
+		healthAnalyzer bool
+	}
 
-		acmAlertingFlagFound, persesFlagFound, incidentsFlagFound := containsFeatureFlag(pluginInfo)
-		assert.Assert(t, acmAlertingFlagFound == true)
-		assert.Assert(t, persesFlagFound == true)
-		assert.Assert(t, incidentsFlagFound == true)
+	type testCase struct {
+		name                  string
+		pluginConfig          *uiv1alpha1.UIPlugin
+		proxies               proxiesStatus
+		featureFlags          featureFlagsStatus
+		components            expectedComponents
+		expectedErrorMessage  string
+		clusterVersionsToTest []string
+	}
 
-		assert.Assert(t, containsHealthAnalyzer(pluginInfo) == true)
-	})
+	testCfgs := []testCase{
+		{
+			name:         "All monitoring configurations",
+			pluginConfig: pluginConfigAll,
+			proxies: proxiesStatus{
+				alertmanager: true,
+				thanos:       true,
+				perses:       true,
+			},
+			featureFlags: featureFlagsStatus{
+				acmAlerting: true,
+				perses:      true,
+				incidents:   true,
+			},
+			components: expectedComponents{
+				persesImage:    true,
+				healthAnalyzer: true,
+			},
+			clusterVersionsToTest: []string{"v4.19"},
+		},
+		{
+			name:         "All monitoring configurations",
+			pluginConfig: pluginConfigAll,
+			proxies: proxiesStatus{
+				alertmanager: true,
+				thanos:       true,
+				perses:       true,
+			},
+			featureFlags: featureFlagsStatus{
+				acmAlerting: true,
+				perses:      true,
+				incidents:   false, // Differs for v4.18
+			},
+			components: expectedComponents{
+				persesImage:    true,
+				healthAnalyzer: false, // Differs for v4.18
+			},
+			clusterVersionsToTest: []string{"v4.18"},
+		},
+		{
+			name:         "ACM configuration only",
+			pluginConfig: pluginConfigACM,
+			proxies: proxiesStatus{
+				alertmanager: true,
+				thanos:       true,
+				perses:       false,
+			},
+			featureFlags: featureFlagsStatus{
+				acmAlerting: true,
+				perses:      false,
+				incidents:   false,
+			},
+			components: expectedComponents{
+				persesImage:    false,
+				healthAnalyzer: false,
+			},
+			clusterVersionsToTest: []string{"v4.19", "v4.18"},
+		},
+		{
+			name:         "Perses configuration only",
+			pluginConfig: pluginConfigPerses,
+			proxies: proxiesStatus{
+				alertmanager: false,
+				thanos:       false,
+				perses:       true,
+			},
+			featureFlags: featureFlagsStatus{
+				acmAlerting: false,
+				perses:      true,
+				incidents:   false,
+			},
+			components: expectedComponents{
+				persesImage:    true,
+				healthAnalyzer: false,
+			},
+			clusterVersionsToTest: []string{"v4.19", "v4.18"},
+		},
+		{
+			name:         "Perses default namespace and name",
+			pluginConfig: pluginConfigPersesDefault,
+			proxies: proxiesStatus{
+				alertmanager: false,
+				thanos:       false,
+				perses:       true,
+			},
+			featureFlags: featureFlagsStatus{
+				acmAlerting: false,
+				perses:      true,
+				incidents:   false,
+			},
+			components: expectedComponents{
+				persesImage:    true,
+				healthAnalyzer: false,
+			},
+			clusterVersionsToTest: []string{"v4.19", "v4.18"},
+		},
+		{
+			name:                  "Incidents configuration only",
+			pluginConfig:          pluginConfigIncidents,
+			expectedErrorMessage:  "all uiplugin monitoring configurations are invalid or not supported in this cluster version",
+			clusterVersionsToTest: []string{"v4.18"},
+		},
+		{
+			name:         "Incidents configuration only",
+			pluginConfig: pluginConfigIncidents,
+			proxies: proxiesStatus{
+				alertmanager: false,
+				thanos:       false,
+				perses:       false,
+			},
+			featureFlags: featureFlagsStatus{
+				acmAlerting: false,
+				perses:      false,
+				incidents:   true,
+			},
+			components: expectedComponents{
+				persesImage:    false,
+				healthAnalyzer: true,
+			},
+			clusterVersionsToTest: []string{"v4.19"},
+		},
+	}
 
-	/** Postive Test - ACM  **/
-	t.Run("Test createMonitoringPluginInfo with AMC configuration only", func(t *testing.T) {
-		pluginInfo, err := getPluginInfo(pluginConfigACM, features, clusterVersion)
-		assert.Assert(t, err == nil)
+	for _, tc := range testCfgs {
+		for _, cv := range tc.clusterVersionsToTest {
+			t.Run(tc.name+"_"+cv, func(t *testing.T) {
+				pluginInfo, err := getPluginInfo(tc.pluginConfig, featuresForTest, cv)
 
-		alertmanagerProxyFound, thanosProxyFound, persesProxyFound := containsProxy(pluginInfo)
-		assert.Assert(t, alertmanagerProxyFound == true)
-		assert.Assert(t, thanosProxyFound == true)
-		assert.Assert(t, persesProxyFound == false)
+				if tc.expectedErrorMessage != "" {
+					assert.ErrorContains(t, err, tc.expectedErrorMessage, "Expected an error for invalid configuration")
+					assert.Assert(t, pluginInfo == nil, "Expected pluginInfo to be nil")
+					return
+				}
 
-		acmAlertingFlagFound, persesFlagFound, incidentsFlagFound := containsFeatureFlag(pluginInfo)
-		assert.Assert(t, acmAlertingFlagFound == true)
-		assert.Assert(t, persesFlagFound == false)
-		assert.Assert(t, incidentsFlagFound == false)
+				assert.NilError(t, err, "getPluginInfo returned an unexpected error")
+				if err != nil {
+					return
+				}
 
-		assert.Assert(t, containsHealthAnalyzer(pluginInfo) == false)
-		assert.Assert(t, containsPerses(pluginInfo) == false)
-	})
+				actualProxies := containsProxy(pluginInfo)
+				assert.Equal(t, actualProxies.alertmanager, tc.proxies.alertmanager, "Alertmanager proxy mismatch")
+				assert.Equal(t, actualProxies.thanos, tc.proxies.thanos, "Thanos proxy mismatch")
+				assert.Equal(t, actualProxies.perses, tc.proxies.perses, "Perses proxy mismatch")
 
-	/** Postive Test - Perses  **/
-	t.Run("Test createMonitoringPluginInfo with Perses configuration only", func(t *testing.T) {
-		pluginInfo, err := getPluginInfo(pluginConfigPerses, features, clusterVersion)
-		assert.Assert(t, err == nil)
+				actualFlags := containsFeatureFlag(pluginInfo)
+				assert.Equal(t, actualFlags.acmAlerting, tc.featureFlags.acmAlerting, "ACM alerting flag mismatch")
+				assert.Equal(t, actualFlags.perses, tc.featureFlags.perses, "Perses flag mismatch")
+				assert.Equal(t, actualFlags.incidents, tc.featureFlags.incidents, "Incidents flag mismatch")
 
-		alertmanagerProxyFound, thanosProxyFound, persesProxyFound := containsProxy(pluginInfo)
-		assert.Assert(t, alertmanagerProxyFound == false)
-		assert.Assert(t, thanosProxyFound == false)
-		assert.Assert(t, persesProxyFound == true)
+				assert.Equal(t, containsHealthAnalyzer(pluginInfo), tc.components.healthAnalyzer, "Health analyzer mismatch")
+				assert.Equal(t, containsPerses(pluginInfo), tc.components.persesImage, "Perses image mismatch")
+			})
+		}
+	}
 
-		acmAlertingFlagFound, persesFlagFound, incidentsFlagFound := containsFeatureFlag(pluginInfo)
-		assert.Assert(t, acmAlertingFlagFound == false)
-		assert.Assert(t, persesFlagFound == true)
-		assert.Assert(t, incidentsFlagFound == false)
+	type invalidConfigTestCase struct {
+		name         string
+		pluginConfig *uiv1alpha1.UIPlugin
+	}
 
-		assert.Assert(t, containsHealthAnalyzer(pluginInfo) == false)
-		assert.Assert(t, containsPerses(pluginInfo) == true)
-	})
+	negativeTestCfgs := []invalidConfigTestCase{
+		{
+			name:         "Missing URL from thanos in ACM config",
+			pluginConfig: pluginConfigAlertmanager, // ACM enabled, Alertmanager URL set, Thanos URL missing
+		},
+		{
+			name:         "Missing URL from alertmanager in ACM config",
+			pluginConfig: pluginConfigThanos, // ACM enabled, Thanos URL set, Alertmanager URL missing
+		},
+		{
+			name:         "Missing Perses enabled field when Perses config is present",
+			pluginConfig: pluginConfigPersesEmpty, // PersesReference{}
+		},
+		{
+			name:         "Malformed UIPlugin custom resource (no monitoring sections enabled)",
+			pluginConfig: pluginMalformed, // MonitoringConfig{}
+		},
+	}
 
-	t.Run("Test createMonitoringPluginInfo with Perses default namespace and namespace", func(t *testing.T) {
-		pluginInfo, err := getPluginInfo(pluginConfigPersesDefault, features, clusterVersion)
-		assert.Assert(t, err == nil)
+	clusterVersionsToTest := []string{"v4.19", "v4.18"} // This variable is used for negative tests
 
-		alertmanagerProxyFound, thanosProxyFound, persesProxyFound := containsProxy(pluginInfo)
-		assert.Assert(t, alertmanagerProxyFound == false)
-		assert.Assert(t, thanosProxyFound == false)
-		assert.Assert(t, persesProxyFound == true)
-
-		acmAlertingFlagFound, persesFlagFound, incidentsFlagFound := containsFeatureFlag(pluginInfo)
-		assert.Assert(t, acmAlertingFlagFound == false)
-		assert.Assert(t, persesFlagFound == true)
-		assert.Assert(t, incidentsFlagFound == false)
-
-		assert.Assert(t, containsHealthAnalyzer(pluginInfo) == false)
-		assert.Assert(t, containsPerses(pluginInfo) == true)
-	})
-
-	/** Postive Test - Incidents **/
-	t.Run("Test createMonitoringPluginInfo with Incidents configuration only", func(t *testing.T) {
-		pluginInfo, err := getPluginInfo(pluginConfigIncidents, features, clusterVersion)
-		assert.Assert(t, err == nil)
-
-		alertmanagerProxyFound, thanosProxyFound, persesProxyFound := containsProxy(pluginInfo)
-		assert.Assert(t, alertmanagerProxyFound == false)
-		assert.Assert(t, thanosProxyFound == false)
-		assert.Assert(t, persesProxyFound == false)
-
-		acmAlertingFlagFound, persesFlagFound, incidentsFlagFound := containsFeatureFlag(pluginInfo)
-		assert.Assert(t, acmAlertingFlagFound == false)
-		assert.Assert(t, persesFlagFound == false)
-		assert.Assert(t, incidentsFlagFound == true)
-
-		assert.Assert(t, containsHealthAnalyzer(pluginInfo) == true)
-	})
+	for _, cv := range clusterVersionsToTest {
+		t.Run(fmt.Sprintf("NegativeTests_ClusterVersion_%s", cv), func(t *testing.T) {
+			for _, tc := range negativeTestCfgs {
+				t.Run(tc.name, func(t *testing.T) {
+					pluginInfo, err := getPluginInfo(tc.pluginConfig, featuresForTest, cv)
+					assert.Assert(t, err != nil, "Expected an error for invalid configuration")
+					assert.Assert(t, pluginInfo == nil, "Expected pluginInfo to be nil on error")
+				})
+			}
+		})
+	}
 
 	t.Run("Test validateIncidentsConfig() with valid and invalid clusterVersion formats", func(t *testing.T) {
 		// should not throw an error because all these are valid formats for clusterVersion
@@ -381,39 +505,5 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "v4.18") == false)
 		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "v4.18.0") == false)
 		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "4.18.0") == false)
-
-	})
-
-	/** NEGATIVE TESTS **/
-
-	/** Negative Tests - ACM **/
-	t.Run("Test createMonitoringPluginInfo with missing URL from thanos", func(t *testing.T) {
-		// this should throw an error because thanosQuerier.URL is not set
-		pluginInfo, err := getPluginInfo(pluginConfigAlertmanager, features, clusterVersion)
-		assert.Assert(t, pluginInfo == nil)
-		assert.Assert(t, err != nil)
-	})
-
-	t.Run("Test createMonitoringPluginInfo with missing URL from alertmanager ", func(t *testing.T) {
-		// this should throw an error because alertManager.URL is not set
-		pluginInfo, err := getPluginInfo(pluginConfigThanos, features, clusterVersion)
-		assert.Assert(t, pluginInfo == nil)
-		assert.Assert(t, err != nil)
-	})
-
-	/** Negative Tests - Perses **/
-	t.Run("Test createMonitoringPluginInfo with missing Perses enabled field ", func(t *testing.T) {
-		// this should throw an error because 'enabled: true' is not set
-		pluginInfo, err := getPluginInfo(pluginConfigPersesEmpty, features, clusterVersion)
-		assert.Assert(t, pluginInfo == nil)
-		assert.Assert(t, err != nil)
-	})
-
-	/** Negative Tests - ALL **/
-	t.Run("Test createMonitoringPluginInfo with malform UIPlugin custom resource", func(t *testing.T) {
-		// this should throw an error because UIPlugin doesn't include alertmanager, thanos, perses, or incidents
-		pluginInfo, err := getPluginInfo(pluginMalformed, features, clusterVersion)
-		assert.Assert(t, pluginInfo == nil)
-		assert.Assert(t, err != nil)
 	})
 }
