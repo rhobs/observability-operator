@@ -51,7 +51,7 @@ func validateIncidentsConfig(config *uiv1alpha1.MonitoringConfig, clusterVersion
 		clusterVersion = "v" + clusterVersion
 	}
 	canonicalClusterVersion := fmt.Sprintf("%s-0", semver.Canonical(clusterVersion))
-	minClusterVersionMet := semver.Compare(canonicalClusterVersion, "v4.18.0-0") >= 0
+	minClusterVersionMet := semver.Compare(canonicalClusterVersion, "v4.19.0-0") >= 0
 
 	return enabled && minClusterVersionMet
 }
@@ -194,7 +194,7 @@ func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, im
 
 	atLeastOneValidConfig := isValidAcmConfig || isValidPersesConfig || isValidIncidentsConfig
 	if !atLeastOneValidConfig {
-		return nil, fmt.Errorf("all uiplugin monitoring configurations are invalid")
+		return nil, fmt.Errorf("all uiplugin monitoring configurations are invalid or not supported in this cluster version")
 	}
 
 	//  Add proxies and feature flags
