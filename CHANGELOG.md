@@ -2,6 +2,38 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.2.0](https://github.com/rhobs/monitoring-stack-operator/commit/) (2025-05-19)
+
+
+### Features
+
+*  Add Perses Flag OU-571 ([#664](https://github.com/rhobs/monitoring-stack-operator/issues/664)) ([c5b39c1](https://github.com/rhobs/monitoring-stack-operator/commit/c5b39c12719896be405f53916c6010d2b500fe13))
+* add Incidents backend ([#678](https://github.com/rhobs/monitoring-stack-operator/issues/678)) ([5bcf2db](https://github.com/rhobs/monitoring-stack-operator/commit/5bcf2db7e316faa81fc9143d14b1f75b6fb8a4f5))
+* add PatternFly 5 stream for distributed tracing UI plugin ([#736](https://github.com/rhobs/monitoring-stack-operator/issues/736)) ([b3176ac](https://github.com/rhobs/monitoring-stack-operator/commit/b3176ac82e82ba803ff1a6f704534c65a17a5725))
+* add perses operator deployment and apis ([#680](https://github.com/rhobs/monitoring-stack-operator/issues/680)) ([5ba0330](https://github.com/rhobs/monitoring-stack-operator/commit/5ba03304119eb2545e277e55bc8cea1441c23d24))
+* add schema configuration for logging view plugin ([#733](https://github.com/rhobs/monitoring-stack-operator/issues/733)) ([0124fd8](https://github.com/rhobs/monitoring-stack-operator/commit/0124fd89cab3a6b122e484dd90d396a9b9855ee1))
+* add support for multiple images in plugins ([#689](https://github.com/rhobs/monitoring-stack-operator/issues/689)) ([e42e8a8](https://github.com/rhobs/monitoring-stack-operator/commit/e42e8a8e514a5b95e47842148496089e8336ce33))
+* deploying COO in place of OBO on SC clusters ([#667](https://github.com/rhobs/monitoring-stack-operator/issues/667)) ([c9eb0e0](https://github.com/rhobs/monitoring-stack-operator/commit/c9eb0e0f1d16d27a13b10d9e2db5fe281e790f0b))
+* deploying COO in place of OBO on SC clusters ([#716](https://github.com/rhobs/monitoring-stack-operator/issues/716)) ([dfe4e21](https://github.com/rhobs/monitoring-stack-operator/commit/dfe4e21cefceb2707c88da2faf00f005607844e6))
+* discover default lokistack ([#690](https://github.com/rhobs/monitoring-stack-operator/issues/690)) ([648c091](https://github.com/rhobs/monitoring-stack-operator/commit/648c0910237e3491e95b6ddcc77ebb98a0645048))
+* drop support for ui monitoring 4.14 ([#688](https://github.com/rhobs/monitoring-stack-operator/issues/688)) ([cd66c38](https://github.com/rhobs/monitoring-stack-operator/commit/cd66c380ea9876c2b3caf1bf5ea2e487fde786e3))
+* enable pprof on the operator ([#725](https://github.com/rhobs/monitoring-stack-operator/issues/725)) ([2efed3c](https://github.com/rhobs/monitoring-stack-operator/commit/2efed3cb55452bd946fd87cdc86472a9667462ce))
+* log Kubernetes events related to TLS certificate ([#637](https://github.com/rhobs/monitoring-stack-operator/issues/637)) ([a0ff1f3](https://github.com/rhobs/monitoring-stack-operator/commit/a0ff1f3133fb8464af3983518a0cc1d384ebb2e3))
+* remove acm-version check for acm-alerting ui feature ([#677](https://github.com/rhobs/monitoring-stack-operator/issues/677)) ([365e30d](https://github.com/rhobs/monitoring-stack-operator/commit/365e30d3392c9ec3114bbc1d1eab3e46c86468e6))
+* TLS support for the Thanos web endpoint ([#598](https://github.com/rhobs/monitoring-stack-operator/issues/598)) ([d989f9a](https://github.com/rhobs/monitoring-stack-operator/commit/d989f9ac839c196efc6d8d0146588d780a08ba88))
+* update health-analyzer to v0.5.0 ([#738](https://github.com/rhobs/monitoring-stack-operator/issues/738)) ([7831111](https://github.com/rhobs/monitoring-stack-operator/commit/7831111b57f19c2765b2c7916c1a6f468346fcc1))
+* update UIPlugin images to prep  for COO 1.1 release ([#687](https://github.com/rhobs/monitoring-stack-operator/issues/687)) ([2b6fe6d](https://github.com/rhobs/monitoring-stack-operator/commit/2b6fe6d924843858b1f1d581a9917f5cdd16f182))
+
+
+### Bug Fixes
+
+* default image for distributed tracing new stream ([#737](https://github.com/rhobs/monitoring-stack-operator/issues/737)) ([be7ed12](https://github.com/rhobs/monitoring-stack-operator/commit/be7ed128aa31bff628ee831e905f4dfc69dc1dc6))
+* failed to get metric when install upstream ObO on OCP ([#654](https://github.com/rhobs/monitoring-stack-operator/issues/654)) ([6d7b707](https://github.com/rhobs/monitoring-stack-operator/commit/6d7b70724364dcc5996d3e174ca32414fb9db0b3))
+* mktemp command expects a template string that includes a minimum of six X characters on some os ([#650](https://github.com/rhobs/monitoring-stack-operator/issues/650)) ([21f303b](https://github.com/rhobs/monitoring-stack-operator/commit/21f303b0b9a33b2f28a877824006bd5d57bc71ea))
+* test script failure when enable OCP feature gate ([#695](https://github.com/rhobs/monitoring-stack-operator/issues/695)) ([79cbdf6](https://github.com/rhobs/monitoring-stack-operator/commit/79cbdf6efb493ccdb467fe778cc20b543e5cc17b))
+* update docs with new monitoring UIPlugin schema ([#681](https://github.com/rhobs/monitoring-stack-operator/issues/681)) ([6e9607a](https://github.com/rhobs/monitoring-stack-operator/commit/6e9607a6d6d39298672b606c9abbf5c502b35363))
+* web UI case failure in downstream ([#719](https://github.com/rhobs/monitoring-stack-operator/issues/719)) ([08ec7ed](https://github.com/rhobs/monitoring-stack-operator/commit/08ec7ed87e8b23761b5f6d47f773c66333365156))
+
 ## [1.0.0](https://github.com/rhobs/monitoring-stack-operator/commit/) (2024-12-11)
 
 
