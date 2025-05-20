@@ -10,13 +10,14 @@ inputs:
 runs:
   using: composite
   steps:
-  - name: Clean Go module cache
+  - name: Check Go version
+    id: go-version
     shell: bash
     run: |
-      go clean -modcache
-      rm -rf ~/go/pkg/mod
+      go version
   - name: Setup Go environment
     uses: actions/setup-go@v5
+    if: steps.go-version.outcome == 'failure'
     with:
       go-version-file: 'go.mod'
       check-latest: true
