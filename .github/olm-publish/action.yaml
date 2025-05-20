@@ -11,8 +11,8 @@ runs:
   using: composite
   steps:
   - name: Clean Go module cache
+    shell: bash
     run: |
-      shell: bash
       go clean -modcache
       rm -rf ~/go/pkg/mod
   - name: Setup Go environment
