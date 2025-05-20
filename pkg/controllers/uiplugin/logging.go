@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-logr/logr"
 	osv1 "github.com/openshift/api/console/v1"
 	osv1alpha1 "github.com/openshift/api/console/v1alpha1"
 	"gopkg.in/yaml.v3"
@@ -27,8 +28,8 @@ type loggingConfig struct {
 	Schema    string        `yaml:"schema,omitempty"`
 }
 
-func createLoggingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string, ctx context.Context, dk dynamic.Interface) (*UIPluginInfo, error) {
-	lokiStack, err := getLokiStack(plugin, ctx, dk)
+func createLoggingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string, ctx context.Context, dk dynamic.Interface, logger logr.Logger) (*UIPluginInfo, error) {
+	lokiStack, err := getLokiStack(plugin, ctx, dk, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -209,7 +210,7 @@ var lokiStackResource = schema.GroupVersionResource{
 
 // getLokiStack returns the LokiStack resource to use for the logging plugin.
 // It either uses the explicitly configured LokiStack or discovers one from the cluster.
-func getLokiStack(plugin *uiv1alpha1.UIPlugin, ctx context.Context, client dynamic.Interface) (*types.NamespacedName, error) {
+func getLokiStack(plugin *uiv1alpha1.UIPlugin, ctx context.Context, client dynamic.Interface, logger logr.Logger) (*types.NamespacedName, error) {
 	config := plugin.Spec.Logging
 
 	searchNamespace := OpenshiftLoggingNs
@@ -231,15 +232,18 @@ func getLokiStack(plugin *uiv1alpha1.UIPlugin, ctx context.Context, client dynam
 
 	lokiStacks, err := client.Resource(lokiStackResource).Namespace(searchNamespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to list LokiStacks in namespace %s: %w", searchNamespace, err)
+		logger.Info("Failed to list LokiStacks in namespace, will use default", "namespace", searchNamespace, "error", err.Error())
 	}
 
-	if len(lokiStacks.Items) == 0 {
-		return nil, fmt.Errorf("no LokiStack found in namespace %s", searchNamespace)
+	if len(lokiStacks.Items) > 0 {
+		return &types.NamespacedName{
+			Name:      lokiStacks.Items[0].GetName(),
+			Namespace: searchNamespace,
+		}, nil
 	}
 
 	return &types.NamespacedName{
-		Name:      lokiStacks.Items[0].GetName(),
+		Name:      "loki-stack",
 		Namespace: searchNamespace,
 	}, nil
 }

@@ -257,7 +257,7 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, err
 	}
 
-	pluginInfo, err := PluginInfoBuilder(ctx, rm.k8sClient, rm.k8sDynamicClient, plugin, rm.pluginConf, compatibilityInfo, rm.clusterVersion)
+	pluginInfo, err := PluginInfoBuilder(ctx, rm.k8sClient, rm.k8sDynamicClient, plugin, rm.pluginConf, compatibilityInfo, rm.clusterVersion, rm.logger)
 
 	if err != nil {
 		logger.Error(err, "failed to reconcile plugin")
