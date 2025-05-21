@@ -262,13 +262,27 @@ func TestLookupImageAndFeatures(t *testing.T) {
 		{
 			pluginType:       uiv1alpha1.TypeMonitoring,
 			clusterVersion:   "v4.15",
-			expectedKey:      "ui-monitoring",
+			expectedKey:      "ui-monitoring-pf5",
 			expectedFeatures: []string{},
 			expectedErr:      nil,
 		},
 		{
 			pluginType:       uiv1alpha1.TypeMonitoring,
 			clusterVersion:   "v4.15.0-0.nightly-2024-06-06-064349",
+			expectedKey:      "ui-monitoring-pf5",
+			expectedFeatures: []string{},
+			expectedErr:      nil,
+		},
+		{
+			pluginType:       uiv1alpha1.TypeMonitoring,
+			clusterVersion:   "v4.19",
+			expectedKey:      "ui-monitoring",
+			expectedFeatures: []string{},
+			expectedErr:      nil,
+		},
+		{
+			pluginType:       uiv1alpha1.TypeMonitoring,
+			clusterVersion:   "v4.19.0-0.nightly-2024-06-06-064349",
 			expectedKey:      "ui-monitoring",
 			expectedFeatures: []string{},
 			expectedErr:      nil,
