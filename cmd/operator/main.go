@@ -47,7 +47,7 @@ var defaultImages = map[string]string{
 	"ui-logging-pf4":             "quay.io/openshift-observability-ui/logging-view-plugin:v6.0.0",
 	"ui-logging":                 "quay.io/openshift-observability-ui/logging-view-plugin:v6.1.0",
 	"ui-monitoring":              "quay.io/openshift-observability-ui/monitoring-console-plugin:release-coo-1.1",
-	"korrel8r":                   "quay.io/korrel8r/korrel8r:0.7.4",
+	"korrel8r":                   "quay.io/korrel8r/korrel8r:release-coo-1.2",
 	"health-analyzer":            "quay.io/openshiftanalytics/cluster-health-analyzer:v0.5.0",
 	"perses":                     "quay.io/persesdev/perses:v0.50.3",
 }
