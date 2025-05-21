@@ -7,14 +7,14 @@ import (
 
 	osv1 "github.com/openshift/api/console/v1"
 	osv1alpha1 "github.com/openshift/api/console/v1alpha1"
+	persesv1alpha1 "github.com/perses/perses-operator/api/v1alpha1"
+	persesconfig "github.com/perses/perses/pkg/model/api/config"
+	"github.com/perses/perses/pkg/model/api/v1/common"
 	"golang.org/x/mod/semver"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	persesv1alpha1 "github.com/perses/perses-operator/api/v1alpha1"
-	persesconfig "github.com/perses/perses/pkg/model/api/config"
-	"github.com/perses/perses/pkg/model/api/v1/common"
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 )
 

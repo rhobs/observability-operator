@@ -125,6 +125,9 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 		components = append(components, reconciler.NewUpdater(newPerses(namespace, pluginInfo.PersesImage), plugin))
 	}
 
+	components = append(components, reconciler.NewUpdater(newAcceleratorsDatasource(namespace), plugin))
+	components = append(components, reconciler.NewUpdater(newAcceleratorsDashboard(namespace), plugin))
+
 	return components
 }
 
