@@ -226,6 +226,24 @@ rules:
 - apiGroups:
   - observability.openshift.io
   resources:
+  - clusterobservability
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - observability.openshift.io
+  resources:
+  - clusterobservability/finalizers
+  - clusterobservability/status
+  - uiplugins/finalizers
+  - uiplugins/status
+  verbs:
+  - get
+  - update
+- apiGroups:
+  - observability.openshift.io
+  resources:
   - uiplugins
   verbs:
   - create
@@ -235,14 +253,6 @@ rules:
   - patch
   - update
   - watch
-- apiGroups:
-  - observability.openshift.io
-  resources:
-  - uiplugins/finalizers
-  - uiplugins/status
-  verbs:
-  - get
-  - update
 - apiGroups:
   - operator.openshift.io
   resources:
