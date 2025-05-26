@@ -4038,7 +4038,7 @@ ClusterObservability defines the desired state of the observability stack.
         <td><b>status</b></td>
         <td>object</td>
         <td>
-          Status of the signal manager.<br/>
+          Status of the cluster observability.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
