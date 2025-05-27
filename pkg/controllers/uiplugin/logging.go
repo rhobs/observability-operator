@@ -214,11 +214,11 @@ func getLokiStack(plugin *uiv1alpha1.UIPlugin, ctx context.Context, client dynam
 	config := plugin.Spec.Logging
 
 	searchNamespace := OpenshiftLoggingNs
-	if config != nil && config.LokiStack.Namespace != "" {
+	if config != nil && config.LokiStack != nil && config.LokiStack.Namespace != "" {
 		searchNamespace = config.LokiStack.Namespace
 	}
 
-	if config != nil && config.LokiStack.Name != "" {
+	if config != nil && config.LokiStack != nil && config.LokiStack.Name != "" {
 		lokiStack, err := client.Resource(lokiStackResource).Namespace(searchNamespace).Get(ctx, config.LokiStack.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, fmt.Errorf("failed to get LokiStack %s in namespace %s: %w", config.LokiStack.Name, searchNamespace, err)
@@ -235,7 +235,7 @@ func getLokiStack(plugin *uiv1alpha1.UIPlugin, ctx context.Context, client dynam
 		logger.Info("Failed to list LokiStacks in namespace, will use default", "namespace", searchNamespace, "error", err.Error())
 	}
 
-	if len(lokiStacks.Items) > 0 {
+	if lokiStacks != nil && len(lokiStacks.Items) > 0 {
 		return &types.NamespacedName{
 			Name:      lokiStacks.Items[0].GetName(),
 			Namespace: searchNamespace,
