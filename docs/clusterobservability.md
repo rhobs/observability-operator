@@ -19,12 +19,6 @@ spec:
       enabled: true
     tracing:
       enabled: true
-    opentelemetry:
-      enabled: true
-      exporter:
-        endpoint: http://dynatrace:4317
-        headers:
-          x-dynatrace: "true"
 ```
 
 Notes:
