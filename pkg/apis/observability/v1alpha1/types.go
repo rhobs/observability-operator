@@ -37,7 +37,30 @@ type ClusterObservabilityList struct {
 }
 
 type ClusterObservabilitySpec struct {
+	Storage StorageSpec `json:"storage,omitempty"`
+
+	Capabilities *CapabilitiesSpec `json:"capabilities,omitempty"`
 }
 
 // ClusterObservabilityStatus defines the observed state of ClusterObservability.
 type ClusterObservabilityStatus struct{}
+
+type StorageSpec struct {
+	Secret SecretSpec `json:"secret,omitempty"`
+}
+
+type SecretSpec struct {
+	Name string `json:"name,omitempty"`
+}
+
+// CapabilitiesSpec defines the observability capabilities.
+type CapabilitiesSpec struct {
+
+	// +optional
+	// +kubebuilder:validation:Optional
+	Tracing TracingSpec `json:"tracing,omitempty"`
+
+	// +optional
+	// +kubebuilder:validation:Optional
+	OpenTelemetry OpenTelemetrySpec `json:"opentelemetry,omitempty"`
+}

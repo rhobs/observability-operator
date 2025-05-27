@@ -4028,7 +4028,7 @@ ClusterObservability defines the desired state of the observability stack.
       <td>Refer to the Kubernetes API documentation for the fields of the `metadata` field.</td>
       <td>true</td>
       </tr><tr>
-        <td><b>spec</b></td>
+        <td><b><a href="#clusterobservabilityspec">spec</a></b></td>
         <td>object</td>
         <td>
           Spec defines the desired state of the cluster observability.<br/>
@@ -4039,6 +4039,216 @@ ClusterObservability defines the desired state of the observability stack.
         <td>object</td>
         <td>
           Status of the signal manager.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec
+<sup><sup>[↩ Parent](#clusterobservability)</sup></sup>
+
+
+
+Spec defines the desired state of the cluster observability.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#clusterobservabilityspeccapabilities">capabilities</a></b></td>
+        <td>object</td>
+        <td>
+          CapabilitiesSpec defines the observability capabilities.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#clusterobservabilityspecstorage">storage</a></b></td>
+        <td>object</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.capabilities
+<sup><sup>[↩ Parent](#clusterobservabilityspec)</sup></sup>
+
+
+
+CapabilitiesSpec defines the observability capabilities.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#clusterobservabilityspeccapabilitiesopentelemetry">opentelemetry</a></b></td>
+        <td>object</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracing">tracing</a></b></td>
+        <td>object</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.capabilities.opentelemetry
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilities)</sup></sup>
+
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>enabled</b></td>
+        <td>boolean</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#clusterobservabilityspeccapabilitiesopentelemetryexporter">exporter</a></b></td>
+        <td>object</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.capabilities.opentelemetry.exporter
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiesopentelemetry)</sup></sup>
+
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>endpoint</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.capabilities.tracing
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilities)</sup></sup>
+
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>enabled</b></td>
+        <td>boolean</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.storage
+<sup><sup>[↩ Parent](#clusterobservabilityspec)</sup></sup>
+
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#clusterobservabilityspecstoragesecret">secret</a></b></td>
+        <td>object</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.storage.secret
+<sup><sup>[↩ Parent](#clusterobservabilityspecstorage)</sup></sup>
+
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          <br/>
         </td>
         <td>false</td>
       </tr></tbody>

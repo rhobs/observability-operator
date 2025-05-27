@@ -39,6 +39,34 @@ spec:
             type: object
           spec:
             description: Spec defines the desired state of the cluster observability.
+            properties:
+              capabilities:
+                description: CapabilitiesSpec defines the observability capabilities.
+                properties:
+                  opentelemetry:
+                    properties:
+                      enabled:
+                        type: boolean
+                      exporter:
+                        properties:
+                          endpoint:
+                            type: string
+                        type: object
+                    type: object
+                  tracing:
+                    properties:
+                      enabled:
+                        type: boolean
+                    type: object
+                type: object
+              storage:
+                properties:
+                  secret:
+                    properties:
+                      name:
+                        type: string
+                    type: object
+                type: object
             type: object
           status:
             description: Status of the signal manager.

@@ -1,0 +1,67 @@
+# ClusterObservability CRD
+
+## Examples
+
+### Logging and tracing
+
+```yaml
+apiVersion: observability.openshift.io/v1alpha1
+kind: ClusterObservability
+metadata:
+  name: logging-tracing
+spec:
+  storage:
+    secret:
+      name: minio
+      type: s3
+  capabilities:
+    logging:
+      enabled: true
+    tracing:
+      enabled: true
+    opentelemetry:
+      enabled: true
+      exporter:
+        endpoint: http://dynatrace:4317
+        headers:
+          x-dynatrace: "true"
+```
+
+Notes:
+* installs the Loki, ClusterLogForwarder, Tempo and opentelemetry operators
+* creates storage secret for `LokiStack` and `TempoStack` from the secret `minio` which is reconciled by the `ClusterObservability`
+* deploys logging stack with `ClusterLogForwarder` and `LokiStack` in the `openshift-logging` namespace
+* deploys tracing stack with `OpenTelemetryCollector` and `TempoStack` in the `openshift-distributed-tracing` namespace
+* Installs the UI plugins for Loki and Tempo
+* The appropriate operators are installed only when given capability is enabled
+
+### OpenTelemetry with tracing and Dynatrace
+
+```yaml
+apiVersion: observability.openshift.io/v1alpha1
+kind: ClusterObservability
+metadata:
+  name: logging-tracing
+spec:
+  storage:
+    secret:
+      name: minio
+      type: s3
+  capabilities:
+    tracing:
+      enabled: true
+    opentelemetry:
+      enabled: true
+      tracesincluster: true 
+      exporter:
+        endpoint: http://dynatrace:4317
+        headers:
+          x-dynatrace: "token..."
+```
+
+Notes:
+* installs the opentelemetry and tempo operators
+* deploys tracing stack with `OpenTelemetryCollector` and `TempoStack` in the `openshift-distributed-tracing` namespace
+* deploys `OpenTelemetryCollector` in the `openshift-opentelemetry`
+* configures OTLP exporter on the collector to send traces to Dynatrace
+* configures collector to export trace data to Tempo deployed by the `ClusterObservability` CR
