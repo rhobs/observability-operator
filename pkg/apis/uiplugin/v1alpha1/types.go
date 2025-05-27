@@ -127,6 +127,7 @@ type LoggingConfig struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OCP Console Logs Schema",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:ocpConsoleLogsSchema"}
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum=viaq;otel;select
+	// +kubebuilder:default=viaq
 	Schema string `json:"schema,omitempty"`
 }
 

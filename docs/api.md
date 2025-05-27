@@ -4343,6 +4343,7 @@ It always references a LokiStack in the "openshift-logging" namespace.<br/>
 Defatults to "viaq" if not specified.<br/>
           <br/>
             <i>Enum</i>: viaq, otel, select<br/>
+            <i>Default</i>: viaq<br/>
         </td>
         <td>false</td>
       </tr><tr>

@@ -129,6 +129,7 @@ spec:
                     type: object
                     x-kubernetes-map-type: atomic
                   schema:
+                    default: viaq
                     description: |-
                       Schema is the schema to use for logs querying and display.
 
