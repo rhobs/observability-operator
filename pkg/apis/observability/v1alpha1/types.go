@@ -24,7 +24,7 @@ type ClusterObservability struct {
 	// Spec defines the desired state of the cluster observability.
 	Spec ClusterObservabilitySpec `json:"spec,omitempty"`
 
-	// Status of the signal manager.
+	// Status of the cluster observability.
 	Status ClusterObservabilityStatus `json:"status,omitempty"`
 }
 

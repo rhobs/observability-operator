@@ -41,7 +41,7 @@ spec:
             description: Spec defines the desired state of the cluster observability.
             type: object
           status:
-            description: Status of the signal manager.
+            description: Status of the cluster observability.
             type: object
         type: object
     served: true
