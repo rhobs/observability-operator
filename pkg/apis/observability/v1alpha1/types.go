@@ -37,30 +37,54 @@ type ClusterObservabilityList struct {
 }
 
 type ClusterObservabilitySpec struct {
+	// Storage defines the storage for the capabilities that require a storage.
 	Storage StorageSpec `json:"storage,omitempty"`
 
+	// Capabilities defines the observability capabilities.
+	// Each capability has to be enabled explicitly.
 	Capabilities *CapabilitiesSpec `json:"capabilities,omitempty"`
 }
 
 // ClusterObservabilityStatus defines the observed state of ClusterObservability.
 type ClusterObservabilityStatus struct{}
 
+// StorageSpec defines the storage.
 type StorageSpec struct {
 	Secret SecretSpec `json:"secret,omitempty"`
 }
 
+// SecretSpec defines the secret for the storage.
 type SecretSpec struct {
+	// Name is the name of the secret for the storage.
 	Name string `json:"name,omitempty"`
 }
 
 // CapabilitiesSpec defines the observability capabilities.
 type CapabilitiesSpec struct {
 
+	// Tracing defines the tracing capabilities.
 	// +optional
 	// +kubebuilder:validation:Optional
 	Tracing TracingSpec `json:"tracing,omitempty"`
 
+	// OpenTelemetry defines the OpenTelemetry capabilities.
 	// +optional
 	// +kubebuilder:validation:Optional
 	OpenTelemetry OpenTelemetrySpec `json:"opentelemetry,omitempty"`
+}
+
+// CommonCapabilitiesSpec defines the common capabilities.
+type CommonCapabilitiesSpec struct {
+	// Enabled indicates whether the capability is enabled and it operator should deploy an instance.
+	// By default, it is set to false.
+	// +optional
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=false
+	Enabled bool `json:"enabled,omitempty"`
+	// OLM indicates whether the operators used by the capability should be deployed via OLM.
+	// When the capability is enabled, the OLM is set to true, otherwise it is set to false.
+	// +optional
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=false
+	OLM bool `json:"olm,omitempty"`
 }

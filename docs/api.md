@@ -4065,14 +4065,15 @@ Spec defines the desired state of the cluster observability.
         <td><b><a href="#clusterobservabilityspeccapabilities">capabilities</a></b></td>
         <td>object</td>
         <td>
-          CapabilitiesSpec defines the observability capabilities.<br/>
+          Capabilities defines the observability capabilities.
+Each capability has to be enabled explicitly.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#clusterobservabilityspecstorage">storage</a></b></td>
         <td>object</td>
         <td>
-          <br/>
+          Storage defines the storage for the capabilities that require a storage.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -4084,7 +4085,8 @@ Spec defines the desired state of the cluster observability.
 
 
 
-CapabilitiesSpec defines the observability capabilities.
+Capabilities defines the observability capabilities.
+Each capability has to be enabled explicitly.
 
 <table>
     <thead>
@@ -4099,14 +4101,14 @@ CapabilitiesSpec defines the observability capabilities.
         <td><b><a href="#clusterobservabilityspeccapabilitiesopentelemetry">opentelemetry</a></b></td>
         <td>object</td>
         <td>
-          <br/>
+          OpenTelemetry defines the OpenTelemetry capabilities.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#clusterobservabilityspeccapabilitiestracing">tracing</a></b></td>
         <td>object</td>
         <td>
-          <br/>
+          Tracing defines the tracing capabilities.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -4118,7 +4120,7 @@ CapabilitiesSpec defines the observability capabilities.
 
 
 
-
+OpenTelemetry defines the OpenTelemetry capabilities.
 
 <table>
     <thead>
@@ -4133,14 +4135,28 @@ CapabilitiesSpec defines the observability capabilities.
         <td><b>enabled</b></td>
         <td>boolean</td>
         <td>
+          Enabled indicates whether the capability is enabled and it operator should deploy an instance.
+By default, it is set to false.<br/>
           <br/>
+            <i>Default</i>: false<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#clusterobservabilityspeccapabilitiesopentelemetryexporter">exporter</a></b></td>
         <td>object</td>
         <td>
+          Exporter defines the OpenTelemetry exporter configuration.
+When defined the collector will export telemetry data to the specified endpoint.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>olm</b></td>
+        <td>boolean</td>
+        <td>
+          OLM indicates whether the operators used by the capability should be deployed via OLM.
+When the capability is enabled, the OLM is set to true, otherwise it is set to false.<br/>
           <br/>
+            <i>Default</i>: false<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -4152,7 +4168,8 @@ CapabilitiesSpec defines the observability capabilities.
 
 
 
-
+Exporter defines the OpenTelemetry exporter configuration.
+When defined the collector will export telemetry data to the specified endpoint.
 
 <table>
     <thead>
@@ -4167,7 +4184,7 @@ CapabilitiesSpec defines the observability capabilities.
         <td><b>endpoint</b></td>
         <td>string</td>
         <td>
-          <br/>
+          Endpoint is the OTLP endpoint.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -4179,7 +4196,7 @@ CapabilitiesSpec defines the observability capabilities.
 
 
 
-
+Tracing defines the tracing capabilities.
 
 <table>
     <thead>
@@ -4194,7 +4211,20 @@ CapabilitiesSpec defines the observability capabilities.
         <td><b>enabled</b></td>
         <td>boolean</td>
         <td>
+          Enabled indicates whether the capability is enabled and it operator should deploy an instance.
+By default, it is set to false.<br/>
           <br/>
+            <i>Default</i>: false<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>olm</b></td>
+        <td>boolean</td>
+        <td>
+          OLM indicates whether the operators used by the capability should be deployed via OLM.
+When the capability is enabled, the OLM is set to true, otherwise it is set to false.<br/>
+          <br/>
+            <i>Default</i>: false<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -4206,7 +4236,7 @@ CapabilitiesSpec defines the observability capabilities.
 
 
 
-
+Storage defines the storage for the capabilities that require a storage.
 
 <table>
     <thead>
@@ -4221,7 +4251,7 @@ CapabilitiesSpec defines the observability capabilities.
         <td><b><a href="#clusterobservabilityspecstoragesecret">secret</a></b></td>
         <td>object</td>
         <td>
-          <br/>
+          SecretSpec defines the secret for the storage.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -4233,7 +4263,7 @@ CapabilitiesSpec defines the observability capabilities.
 
 
 
-
+SecretSpec defines the secret for the storage.
 
 <table>
     <thead>
@@ -4248,7 +4278,7 @@ CapabilitiesSpec defines the observability capabilities.
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          <br/>
+          Name is the name of the secret for the storage.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

@@ -41,29 +41,61 @@ spec:
             description: Spec defines the desired state of the cluster observability.
             properties:
               capabilities:
-                description: CapabilitiesSpec defines the observability capabilities.
+                description: |-
+                  Capabilities defines the observability capabilities.
+                  Each capability has to be enabled explicitly.
                 properties:
                   opentelemetry:
+                    description: OpenTelemetry defines the OpenTelemetry capabilities.
                     properties:
                       enabled:
+                        default: false
+                        description: |-
+                          Enabled indicates whether the capability is enabled and it operator should deploy an instance.
+                          By default, it is set to false.
                         type: boolean
                       exporter:
+                        description: |-
+                          Exporter defines the OpenTelemetry exporter configuration.
+                          When defined the collector will export telemetry data to the specified endpoint.
                         properties:
                           endpoint:
+                            description: Endpoint is the OTLP endpoint.
                             type: string
                         type: object
+                      olm:
+                        default: false
+                        description: |-
+                          OLM indicates whether the operators used by the capability should be deployed via OLM.
+                          When the capability is enabled, the OLM is set to true, otherwise it is set to false.
+                        type: boolean
                     type: object
                   tracing:
+                    description: Tracing defines the tracing capabilities.
                     properties:
                       enabled:
+                        default: false
+                        description: |-
+                          Enabled indicates whether the capability is enabled and it operator should deploy an instance.
+                          By default, it is set to false.
+                        type: boolean
+                      olm:
+                        default: false
+                        description: |-
+                          OLM indicates whether the operators used by the capability should be deployed via OLM.
+                          When the capability is enabled, the OLM is set to true, otherwise it is set to false.
                         type: boolean
                     type: object
                 type: object
               storage:
+                description: Storage defines the storage for the capabilities that
+                  require a storage.
                 properties:
                   secret:
+                    description: SecretSpec defines the secret for the storage.
                     properties:
                       name:
+                        description: Name is the name of the secret for the storage.
                         type: string
                     type: object
                 type: object

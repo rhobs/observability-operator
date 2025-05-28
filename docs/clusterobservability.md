@@ -16,9 +16,9 @@ spec:
       type: s3
   capabilities:
     logging:
-      enabled: true
+      deploy: true
     tracing:
-      enabled: true
+      deploy: true
 ```
 
 Notes:
@@ -59,3 +59,48 @@ Notes:
 * deploys `OpenTelemetryCollector` in the `openshift-opentelemetry`
 * configures OTLP exporter on the collector to send traces to Dynatrace
 * configures collector to export trace data to Tempo deployed by the `ClusterObservability` CR
+
+### Install only operators for a given capability
+
+```yaml
+apiVersion: observability.openshift.io/v1alpha1
+kind: ClusterObservability
+metadata:
+  name: logging-tracing
+spec:
+  storage:
+    secret:
+      name: minio
+      type: s3
+  capabilities:
+    tracing:
+      enabled: false
+      olm: true
+```
+
+Notes:
+* The tracing instance is not deployed, but the operators are installed
+
+### Deploy capability but don't deploy the operators.
+
+```yaml
+apiVersion: observability.openshift.io/v1alpha1
+kind: ClusterObservability
+metadata:
+  name: logging-tracing
+spec:
+  storage:
+    secret:
+      name: minio
+      type: s3
+  capabilities:
+    tracing:
+      enabled: true
+      olm: false
+```
+
+Notes:
+* The tracing instance is deployed, but the operators are not installed via COO.
+* In this case, the user is responsible for installing the operators
+
+In this case the COO cannot guarantee that installed operator versions are compatible therefore we could forbit this configuration or show a warning/unmanaged state.
