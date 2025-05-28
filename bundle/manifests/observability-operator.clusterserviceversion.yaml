@@ -999,7 +999,7 @@ spec:
                         operator: Exists
                     weight: 1
               containers:
-              - image: quay.io/persesdev/perses-operator:v0.1.10
+              - image: quay.io/persesdev/perses-operator:v0.1.12
                 livenessProbe:
                   httpGet:
                     path: /healthz
