@@ -13,7 +13,7 @@ resources:
 images:
 - name: observability-operator
   newName: observability-operator
-  newTag: 1.2.0
+  newTag: 1.2.1
 
 patches:
 - patch: |-
