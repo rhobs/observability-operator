@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.2.1](https://github.com/rhobs/monitoring-stack-operator/commit/) (2025-05-28)
+
+
+### Features
+
+* add CRD scaffolding for cluster observability / signal manager ([#748](https://github.com/rhobs/monitoring-stack-operator/issues/748)) ([a942029](https://github.com/rhobs/monitoring-stack-operator/commit/a9420299b75cc9a48dea3aaa3ebb671e92117af7))
+* add monitoring-plugin stream 0.4 and 0.5 ([#747](https://github.com/rhobs/monitoring-stack-operator/issues/747)) ([a3d2d47](https://github.com/rhobs/monitoring-stack-operator/commit/a3d2d4754de1f3c69a52479287d3ec4f13d9ddd0))
+* enable deployment of common accelerator perses dashboard ([#744](https://github.com/rhobs/monitoring-stack-operator/issues/744)) ([f9a161e](https://github.com/rhobs/monitoring-stack-operator/commit/f9a161e531043f61b792adbeedede8c63522884c))
+
+
+### Bug Fixes
+
+*  Update main.go korrel8r tag to release-coo-1.2 ([#746](https://github.com/rhobs/monitoring-stack-operator/issues/746)) ([053872d](https://github.com/rhobs/monitoring-stack-operator/commit/053872d2632999e8b1ce9bbffae92e8d693e4c6c))
+* add default value to logs schema ([#751](https://github.com/rhobs/monitoring-stack-operator/issues/751)) ([f0448d8](https://github.com/rhobs/monitoring-stack-operator/commit/f0448d800bbfbc2b852c375a16492a7ed4e2dc46))
+* allow to create a logging plugin without a loki stack ([#743](https://github.com/rhobs/monitoring-stack-operator/issues/743)) ([9bf3c3e](https://github.com/rhobs/monitoring-stack-operator/commit/9bf3c3e9cc9be6c415c9b196ca624c2754072e27))
+* check lokistack value on lokistack discovery ([#753](https://github.com/rhobs/monitoring-stack-operator/issues/753)) ([cfb7a04](https://github.com/rhobs/monitoring-stack-operator/commit/cfb7a043d4be1b8f7367b439f83030205583c39a))
+* further fix github action olm publish failure ([#742](https://github.com/rhobs/monitoring-stack-operator/issues/742)) ([e2e2383](https://github.com/rhobs/monitoring-stack-operator/commit/e2e23834a650f7b2e83045620f8a5dffe203e248))
+
 ## [1.2.0](https://github.com/rhobs/monitoring-stack-operator/commit/) (2025-05-19)
 
 
