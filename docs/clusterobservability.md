@@ -16,9 +16,9 @@ spec:
       type: s3
   capabilities:
     logging:
-      deploy: true
+      enabled: true
     tracing:
-      deploy: true
+      enabled: true
 ```
 
 Notes:
