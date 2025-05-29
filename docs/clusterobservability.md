@@ -1,5 +1,9 @@
 # ClusterObservability CRD
 
+This document describes the `ClusterObservability` Custom Resource Definition (CRD).
+The goal of this CRD is to provide end-to-end observability capabilities with minimal configuration.
+Power users should be able to customize the underlying components via server-side apply.
+
 ## Examples
 
 ### Logging and tracing
@@ -75,7 +79,8 @@ spec:
   capabilities:
     tracing:
       enabled: false
-      olm: true
+      operators:
+        install: true
 ```
 
 Notes:
@@ -96,7 +101,8 @@ spec:
   capabilities:
     tracing:
       enabled: true
-      olm: false
+      operators:
+        install: false
 ```
 
 Notes:

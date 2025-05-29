@@ -81,10 +81,18 @@ type CommonCapabilitiesSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=false
 	Enabled bool `json:"enabled,omitempty"`
-	// OLM indicates whether the operators used by the capability should be deployed via OLM.
-	// When the capability is enabled, the OLM is set to true, otherwise it is set to false.
+
+	// Operators defines the operators installation for the capability.
 	// +optional
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=false
-	OLM bool `json:"olm,omitempty"`
+	Operators OperatorsSpec `json:"operators,omitempty"`
+}
+
+// OperatorsSpec defines the operators installation.
+type OperatorsSpec struct {
+	// Install indicates whether the operator(s) used by the capability should be installed via OLM.
+	// When the capability is enabled, the install is set to true, otherwise it is set to false.
+	// +optional
+	// +kubebuilder:validation:Optional
+	Install bool `json:"install,omitempty"`
 }

@@ -4150,13 +4150,10 @@ When defined the collector will export telemetry data to the specified endpoint.
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>olm</b></td>
-        <td>boolean</td>
+        <td><b><a href="#clusterobservabilityspeccapabilitiesopentelemetryoperators">operators</a></b></td>
+        <td>object</td>
         <td>
-          OLM indicates whether the operators used by the capability should be deployed via OLM.
-When the capability is enabled, the OLM is set to true, otherwise it is set to false.<br/>
-          <br/>
-            <i>Default</i>: false<br/>
+          Operators defines the operators installation for the capability.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -4191,6 +4188,34 @@ When defined the collector will export telemetry data to the specified endpoint.
 </table>
 
 
+### ClusterObservability.spec.capabilities.opentelemetry.operators
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiesopentelemetry)</sup></sup>
+
+
+
+Operators defines the operators installation for the capability.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>install</b></td>
+        <td>boolean</td>
+        <td>
+          Install indicates whether the operator(s) used by the capability should be installed via OLM.
+When the capability is enabled, the install is set to true, otherwise it is set to false.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 ### ClusterObservability.spec.capabilities.tracing
 <sup><sup>[↩ Parent](#clusterobservabilityspeccapabilities)</sup></sup>
 
@@ -4218,13 +4243,38 @@ By default, it is set to false.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>olm</b></td>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingoperators">operators</a></b></td>
+        <td>object</td>
+        <td>
+          Operators defines the operators installation for the capability.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.capabilities.tracing.operators
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracing)</sup></sup>
+
+
+
+Operators defines the operators installation for the capability.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>install</b></td>
         <td>boolean</td>
         <td>
-          OLM indicates whether the operators used by the capability should be deployed via OLM.
-When the capability is enabled, the OLM is set to true, otherwise it is set to false.<br/>
-          <br/>
-            <i>Default</i>: false<br/>
+          Install indicates whether the operator(s) used by the capability should be installed via OLM.
+When the capability is enabled, the install is set to true, otherwise it is set to false.<br/>
         </td>
         <td>false</td>
       </tr></tbody>

@@ -63,12 +63,16 @@ spec:
                             description: Endpoint is the OTLP endpoint.
                             type: string
                         type: object
-                      olm:
-                        default: false
-                        description: |-
-                          OLM indicates whether the operators used by the capability should be deployed via OLM.
-                          When the capability is enabled, the OLM is set to true, otherwise it is set to false.
-                        type: boolean
+                      operators:
+                        description: Operators defines the operators installation
+                          for the capability.
+                        properties:
+                          install:
+                            description: |-
+                              Install indicates whether the operator(s) used by the capability should be installed via OLM.
+                              When the capability is enabled, the install is set to true, otherwise it is set to false.
+                            type: boolean
+                        type: object
                     type: object
                   tracing:
                     description: Tracing defines the tracing capabilities.
@@ -79,12 +83,16 @@ spec:
                           Enabled indicates whether the capability is enabled and it operator should deploy an instance.
                           By default, it is set to false.
                         type: boolean
-                      olm:
-                        default: false
-                        description: |-
-                          OLM indicates whether the operators used by the capability should be deployed via OLM.
-                          When the capability is enabled, the OLM is set to true, otherwise it is set to false.
-                        type: boolean
+                      operators:
+                        description: Operators defines the operators installation
+                          for the capability.
+                        properties:
+                          install:
+                            description: |-
+                              Install indicates whether the operator(s) used by the capability should be installed via OLM.
+                              When the capability is enabled, the install is set to true, otherwise it is set to false.
+                            type: boolean
+                        type: object
                     type: object
                 type: object
               storage:
