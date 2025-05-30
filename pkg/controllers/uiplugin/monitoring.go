@@ -319,10 +319,8 @@ func newPerses(namespace string, persesImage string) *persesv1alpha1.Perses {
 				TLS: &persesv1alpha1.TLS{
 					Enable: true,
 					CaCert: &persesv1alpha1.Certificate{
-						Type:           persesv1alpha1.CertificateTypeSecret,
-						CertPath:       "tls.crt",
-						PrivateKeyPath: "tls.key",
-						Name:           name,
+						Type:     persesv1alpha1.CertificateTypeFile,
+						CertPath: "/ca/service-ca.crt",
 					},
 				},
 			},

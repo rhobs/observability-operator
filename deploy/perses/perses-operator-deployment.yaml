@@ -61,4 +61,4 @@ spec:
           optional: true
           items:
           - key: service-ca.crt
-            path: ca.crt
+            path: service-ca.crt
