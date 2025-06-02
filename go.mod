@@ -15,6 +15,7 @@ require (
 	github.com/prometheus/common v0.63.0
 	github.com/rhobs/obo-prometheus-operator v0.80.1-rhobs1
 	github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.80.1-rhobs1
+	github.com/rhobs/observability-operator/pkg/apis v0.0.0-unpublished
 	go.uber.org/zap v1.27.0
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394
 	golang.org/x/mod v0.24.0
@@ -134,3 +135,5 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.5.0 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
+
+replace github.com/rhobs/observability-operator/pkg/apis v0.0.0-unpublished => ./pkg/apis
