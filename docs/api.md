@@ -4028,7 +4028,7 @@ ClusterObservability defines the desired state of the observability stack.
       <td>Refer to the Kubernetes API documentation for the fields of the `metadata` field.</td>
       <td>true</td>
       </tr><tr>
-        <td><b>spec</b></td>
+        <td><b><a href="#clusterobservabilityspec">spec</a></b></td>
         <td>object</td>
         <td>
           Spec defines the desired state of the cluster observability.<br/>
@@ -4039,6 +4039,296 @@ ClusterObservability defines the desired state of the observability stack.
         <td>object</td>
         <td>
           Status of the signal manager.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec
+<sup><sup>[↩ Parent](#clusterobservability)</sup></sup>
+
+
+
+Spec defines the desired state of the cluster observability.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#clusterobservabilityspeccapabilities">capabilities</a></b></td>
+        <td>object</td>
+        <td>
+          Capabilities defines the observability capabilities.
+Each capability has to be enabled explicitly.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#clusterobservabilityspecstorage">storage</a></b></td>
+        <td>object</td>
+        <td>
+          Storage defines the storage for the capabilities that require a storage.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.capabilities
+<sup><sup>[↩ Parent](#clusterobservabilityspec)</sup></sup>
+
+
+
+Capabilities defines the observability capabilities.
+Each capability has to be enabled explicitly.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#clusterobservabilityspeccapabilitiesopentelemetry">opentelemetry</a></b></td>
+        <td>object</td>
+        <td>
+          OpenTelemetry defines the OpenTelemetry capabilities.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracing">tracing</a></b></td>
+        <td>object</td>
+        <td>
+          Tracing defines the tracing capabilities.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.capabilities.opentelemetry
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilities)</sup></sup>
+
+
+
+OpenTelemetry defines the OpenTelemetry capabilities.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>enabled</b></td>
+        <td>boolean</td>
+        <td>
+          Enabled indicates whether the capability is enabled and it operator should deploy an instance.
+By default, it is set to false.<br/>
+          <br/>
+            <i>Default</i>: false<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#clusterobservabilityspeccapabilitiesopentelemetryexporter">exporter</a></b></td>
+        <td>object</td>
+        <td>
+          Exporter defines the OpenTelemetry exporter configuration.
+When defined the collector will export telemetry data to the specified endpoint.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#clusterobservabilityspeccapabilitiesopentelemetryoperators">operators</a></b></td>
+        <td>object</td>
+        <td>
+          Operators defines the operators installation for the capability.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.capabilities.opentelemetry.exporter
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiesopentelemetry)</sup></sup>
+
+
+
+Exporter defines the OpenTelemetry exporter configuration.
+When defined the collector will export telemetry data to the specified endpoint.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>endpoint</b></td>
+        <td>string</td>
+        <td>
+          Endpoint is the OTLP endpoint.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.capabilities.opentelemetry.operators
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiesopentelemetry)</sup></sup>
+
+
+
+Operators defines the operators installation for the capability.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>install</b></td>
+        <td>boolean</td>
+        <td>
+          Install indicates whether the operator(s) used by the capability should be installed via OLM.
+When the capability is enabled, the install is set to true, otherwise it is set to false.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.capabilities.tracing
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilities)</sup></sup>
+
+
+
+Tracing defines the tracing capabilities.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>enabled</b></td>
+        <td>boolean</td>
+        <td>
+          Enabled indicates whether the capability is enabled and it operator should deploy an instance.
+By default, it is set to false.<br/>
+          <br/>
+            <i>Default</i>: false<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingoperators">operators</a></b></td>
+        <td>object</td>
+        <td>
+          Operators defines the operators installation for the capability.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.capabilities.tracing.operators
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracing)</sup></sup>
+
+
+
+Operators defines the operators installation for the capability.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>install</b></td>
+        <td>boolean</td>
+        <td>
+          Install indicates whether the operator(s) used by the capability should be installed via OLM.
+When the capability is enabled, the install is set to true, otherwise it is set to false.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.storage
+<sup><sup>[↩ Parent](#clusterobservabilityspec)</sup></sup>
+
+
+
+Storage defines the storage for the capabilities that require a storage.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#clusterobservabilityspecstoragesecret">secret</a></b></td>
+        <td>object</td>
+        <td>
+          SecretSpec defines the secret for the storage.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.storage.secret
+<sup><sup>[↩ Parent](#clusterobservabilityspecstorage)</sup></sup>
+
+
+
+SecretSpec defines the secret for the storage.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name is the name of the secret for the storage.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
