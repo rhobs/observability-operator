@@ -66,7 +66,7 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 	namespace := pluginInfo.ResourceNamespace
 
 	components := []reconciler.Reconciler{
-		reconciler.NewUpdater(newServiceAccount(pluginInfo, namespace), plugin),
+		reconciler.NewUpdater(newServiceAccount(pluginInfo.Name, namespace), plugin),
 		reconciler.NewUpdater(newDeployment(pluginInfo, namespace, plugin.Spec.Deployment), plugin),
 		reconciler.NewUpdater(newService(pluginInfo, namespace), plugin),
 	}
@@ -122,6 +122,9 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 	}
 
 	if pluginInfo.PersesImage != "" {
+		persesServiceAccountName := "perses" + serviceAccountSuffix
+		components = append(components, reconciler.NewUpdater(newServiceAccount("perses", namespace), plugin))
+		components = append(components, reconciler.NewUpdater(newClusterRoleBinding(namespace, persesServiceAccountName, "system:auth-delegator", persesServiceAccountName+":system:auth-delegator"), plugin))
 		components = append(components, reconciler.NewUpdater(newPerses(namespace, pluginInfo.PersesImage), plugin))
 	}
 
@@ -129,7 +132,6 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 		components = append(components, reconciler.NewUpdater(newAcceleratorsDatasource(namespace), plugin))
 		components = append(components, reconciler.NewUpdater(newAcceleratorsDashboard(namespace), plugin))
 	}
-
 	return components
 }
 
@@ -158,14 +160,14 @@ func newClusterRoleBinding(namespace string, serviceAccountName string, roleName
 	}
 }
 
-func newServiceAccount(info UIPluginInfo, namespace string) *corev1.ServiceAccount {
+func newServiceAccount(name string, namespace string) *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),
 			Kind:       "ServiceAccount",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      info.Name + serviceAccountSuffix,
+			Name:      name + serviceAccountSuffix,
 			Namespace: namespace,
 		},
 	}
