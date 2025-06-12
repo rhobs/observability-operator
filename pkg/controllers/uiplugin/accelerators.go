@@ -1,11 +1,11 @@
 package uiplugin
 
 import (
-	persesv1alpha1 "github.com/perses/perses-operator/api/v1alpha1"
-	persesv1 "github.com/perses/perses/pkg/model/api/v1"
-	"github.com/perses/perses/pkg/model/api/v1/common"
-	"github.com/perses/perses/pkg/model/api/v1/dashboard"
-	"github.com/perses/perses/pkg/model/api/v1/variable"
+	persesv1alpha1 "github.com/rhobs/perses-operator/api/v1alpha1"
+	persesv1 "github.com/rhobs/perses/pkg/model/api/v1"
+	"github.com/rhobs/perses/pkg/model/api/v1/common"
+	"github.com/rhobs/perses/pkg/model/api/v1/dashboard"
+	"github.com/rhobs/perses/pkg/model/api/v1/variable"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 )
@@ -13,9 +13,9 @@ import (
 func newAcceleratorsDatasource(namespace string) *persesv1alpha1.PersesDatasource {
 	return &persesv1alpha1.PersesDatasource{
 		TypeMeta: metav1.TypeMeta{
-                        APIVersion: persesv1alpha1.GroupVersion.String(),
-                        Kind:       "PersesDatasource",
-                },
+			APIVersion: persesv1alpha1.GroupVersion.String(),
+			Kind:       "PersesDatasource",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "accelerators-thanos-querier-datasource",
 			Namespace: namespace,
@@ -48,7 +48,9 @@ func newAcceleratorsDatasource(namespace string) *persesv1alpha1.PersesDatasourc
 				TLS: &persesv1alpha1.TLS{
 					Enable: true,
 					CaCert: &persesv1alpha1.Certificate{
-						Type:     persesv1alpha1.CertificateTypeFile,
+						SecretSource: persesv1alpha1.SecretSource{
+							Type: persesv1alpha1.SecretSourceTypeFile,
+						},
 						CertPath: "/ca/service-ca.crt",
 					},
 				},
@@ -60,9 +62,9 @@ func newAcceleratorsDatasource(namespace string) *persesv1alpha1.PersesDatasourc
 func newAcceleratorsDashboard(namespace string) *persesv1alpha1.PersesDashboard {
 	return &persesv1alpha1.PersesDashboard{
 		TypeMeta: metav1.TypeMeta{
-                        APIVersion: persesv1alpha1.GroupVersion.String(),
-                        Kind:       "PersesDashboard",
-                },
+			APIVersion: persesv1alpha1.GroupVersion.String(),
+			Kind:       "PersesDashboard",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "accelerators-dashboard",
 			Namespace: namespace,

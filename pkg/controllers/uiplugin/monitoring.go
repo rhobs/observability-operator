@@ -7,9 +7,10 @@ import (
 
 	osv1 "github.com/openshift/api/console/v1"
 	osv1alpha1 "github.com/openshift/api/console/v1alpha1"
-	persesv1alpha1 "github.com/perses/perses-operator/api/v1alpha1"
-	persesconfig "github.com/perses/perses/pkg/model/api/config"
-	"github.com/perses/perses/pkg/model/api/v1/common"
+	persesv1alpha1 "github.com/rhobs/perses-operator/api/v1alpha1"
+	persesconfig "github.com/rhobs/perses/pkg/model/api/config"
+	"github.com/rhobs/perses/pkg/model/api/v1/common"
+	persesrole "github.com/rhobs/perses/pkg/model/api/v1/role"
 	"golang.org/x/mod/semver"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -282,7 +283,28 @@ func newPerses(namespace string, persesImage string) *persesv1alpha1.Perses {
 			Config: persesv1alpha1.PersesConfig{
 				Config: persesconfig.Config{
 					Security: persesconfig.Security{
-						EnableAuth: false,
+						EnableAuth: true,
+						Authorization: persesconfig.AuthorizationConfig{
+							Kubernetes: true,
+							GuestPermissions: []*persesrole.Permission{
+								{
+									Actions: []persesrole.Action{
+										"read",
+									},
+									Scopes: []persesrole.Scope{
+										"*",
+									},
+								},
+							},
+						},
+						Authentication: persesconfig.AuthenticationConfig{
+							DisableSignUp: true,
+							Providers: persesconfig.AuthProviders{
+								KubernetesProvider: persesconfig.KubernetesProvider{
+									Enabled: true,
+								},
+							},
+						},
 					},
 					Database: persesconfig.Database{
 						File: &persesconfig.File{
@@ -290,7 +312,7 @@ func newPerses(namespace string, persesImage string) *persesv1alpha1.Perses {
 							Extension: persesconfig.YAMLExtension,
 						},
 					},
-					Schemas: persesconfig.Schemas{
+					Schemas: &persesconfig.Schemas{
 						PanelsPath:      "/etc/perses/cue/schemas/panels",
 						QueriesPath:     "/etc/perses/cue/schemas/queries",
 						DatasourcesPath: "/etc/perses/cue/schemas/datasources",
@@ -304,14 +326,20 @@ func newPerses(namespace string, persesImage string) *persesv1alpha1.Perses {
 			TLS: &persesv1alpha1.TLS{
 				Enable: true,
 				UserCert: &persesv1alpha1.Certificate{
-					Type:           persesv1alpha1.CertificateTypeSecret,
-					Name:           name,
+					SecretSource: persesv1alpha1.SecretSource{
+						Type:      persesv1alpha1.SecretSourceTypeSecret,
+						Name:      name,
+						Namespace: namespace,
+					},
 					CertPath:       "tls.crt",
 					PrivateKeyPath: "tls.key",
 				},
 				CaCert: &persesv1alpha1.Certificate{
-					Type:     persesv1alpha1.CertificateTypeConfigMap,
-					Name:     "openshift-service-ca.crt",
+					SecretSource: persesv1alpha1.SecretSource{
+						Type:      persesv1alpha1.SecretSourceTypeConfigMap,
+						Name:      "openshift-service-ca.crt",
+						Namespace: namespace,
+					},
 					CertPath: "service-ca.crt",
 				},
 			},
@@ -319,8 +347,11 @@ func newPerses(namespace string, persesImage string) *persesv1alpha1.Perses {
 				TLS: &persesv1alpha1.TLS{
 					Enable: true,
 					CaCert: &persesv1alpha1.Certificate{
-						Type:     persesv1alpha1.CertificateTypeConfigMap,
-						Name:     "openshift-service-ca.crt",
+						SecretSource: persesv1alpha1.SecretSource{
+							Type:      persesv1alpha1.SecretSourceTypeConfigMap,
+							Name:      "openshift-service-ca.crt",
+							Namespace: namespace,
+						},
 						CertPath: "service-ca.crt",
 					},
 				},
@@ -330,6 +361,7 @@ func newPerses(namespace string, persesImage string) *persesv1alpha1.Perses {
 					"service.beta.openshift.io/serving-cert-secret-name": name,
 				},
 			},
+			ServiceAccountName: "perses" + serviceAccountSuffix,
 		},
 	}
 }

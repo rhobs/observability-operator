@@ -929,7 +929,7 @@ spec:
                 - --images=alertmanager=quay.io/prometheus/alertmanager:v0.26.0
                 - --images=prometheus=quay.io/prometheus/prometheus:v2.49.1
                 - --images=thanos=quay.io/thanos/thanos:v0.33.0
-                - --images=perses=quay.io/persesdev/perses:v0.50.3
+                - --images=perses=quay.io/openshift-observability-ui/perses:v0.51-go-1.23
                 env:
                 - name: NAMESPACE
                   valueFrom:
@@ -1006,7 +1006,7 @@ spec:
                         operator: Exists
                     weight: 1
               containers:
-              - image: quay.io/persesdev/perses-operator:v0.1.12
+              - image: quay.io/openshift-observability-ui/perses-operator:v0.2-go-1.23
                 livenessProbe:
                   httpGet:
                     path: /healthz
