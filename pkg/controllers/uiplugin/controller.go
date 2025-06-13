@@ -10,7 +10,7 @@ import (
 	osv1 "github.com/openshift/api/console/v1"
 	osv1alpha1 "github.com/openshift/api/console/v1alpha1"
 	operatorv1 "github.com/openshift/api/operator/v1"
-	persesv1alpha1 "github.com/perses/perses-operator/api/v1alpha1"
+	persesv1alpha1 "github.com/rhobs/perses-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
