@@ -13,6 +13,7 @@ import (
 	persesrole "github.com/rhobs/perses/pkg/model/api/v1/role"
 	"golang.org/x/mod/semver"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
@@ -370,6 +371,30 @@ func newPerses(namespace string, persesImage string) *persesv1alpha1.Perses {
 				},
 			},
 			ServiceAccountName: "perses" + serviceAccountSuffix,
+		},
+	}
+}
+
+func newPersesClusterRole() *rbacv1.ClusterRole {
+	return &rbacv1.ClusterRole{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: rbacv1.SchemeGroupVersion.String(),
+			Kind:       "ClusterRole",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "perses-cr",
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{""},
+				Resources: []string{"namespaces"},
+				Verbs:     []string{"list", "get"},
+			},
+			{
+				APIGroups: []string{"perses.dev"},
+				Resources: []string{"persesdashboards", "persesdatasources"},
+				Verbs:     []string{"get", "list", "watch", "create", "update", "delete", "patch"},
+			},
 		},
 	}
 }
