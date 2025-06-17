@@ -360,6 +360,9 @@ func newPerses(namespace string, persesImage string) *persesv1alpha1.Perses {
 						CertPath: "service-ca.crt",
 					},
 				},
+				KubernetesAuth: &persesv1alpha1.KubernetesAuth{
+					Enable: true,
+				},
 			},
 			Service: &persesv1alpha1.PersesService{
 				Annotations: map[string]string{
