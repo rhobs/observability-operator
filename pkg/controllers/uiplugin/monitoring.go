@@ -289,10 +289,15 @@ func newPerses(namespace string, persesImage string) *persesv1alpha1.Perses {
 							GuestPermissions: []*persesrole.Permission{
 								{
 									Actions: []persesrole.Action{
-										"read",
+										"*",
 									},
 									Scopes: []persesrole.Scope{
-										"*",
+										"Folder",
+										"GlobalDatasource",
+										"GlobalSecret",
+										"GlobalVariable",
+										"Secret",
+										"Variable",
 									},
 								},
 							},
