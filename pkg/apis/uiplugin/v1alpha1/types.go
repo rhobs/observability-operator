@@ -122,12 +122,11 @@ type LoggingConfig struct {
 
 	// Schema is the schema to use for logs querying and display.
 	//
-	// Defatults to "viaq" if not specified.
+	// Defatults to "viaq" if not specified, "select" is used to allow users to select the schema from the UI.
 	//
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OCP Console Logs Schema",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:ocpConsoleLogsSchema"}
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum=viaq;otel;select
-	// +kubebuilder:default=viaq
 	Schema string `json:"schema,omitempty"`
 }
 
