@@ -94,6 +94,37 @@ func newHealthAnalyzerService(namespace string) *corev1.Service {
 	return service
 }
 
+func newHealthAnalyzerServiceMCP(namespace string) *corev1.Service {
+	service := &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "Service",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name + "-mcp",
+			Namespace: namespace,
+			Annotations: map[string]string{
+				"service.beta.openshift.io/serving-cert-secret-name": volumeMountName,
+			},
+			Labels: componentLabels(name),
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "mcp",
+					Port:       8085,
+					TargetPort: intstr.FromString("mcp"),
+				},
+			},
+			Selector: map[string]string{
+				"app.kubernetes.io/instance": name,
+			},
+		},
+	}
+
+	return service
+}
+
 func newHealthAnalyzerDeployment(namespace string, serviceAccountName string, pluginInfo UIPluginInfo) *appsv1.Deployment {
 	deploy := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
@@ -125,6 +156,7 @@ func newHealthAnalyzerDeployment(namespace string, serviceAccountName string, pl
 							Image:           pluginInfo.HealthAnalyzerImage,
 							ImagePullPolicy: corev1.PullAlways,
 							Args: []string{
+								"serve",
 								"--tls-cert-file=/etc/tls/private/tls.crt",
 								"--tls-private-key-file=/etc/tls/private/tls.key",
 							},
@@ -158,6 +190,37 @@ func newHealthAnalyzerDeployment(namespace string, serviceAccountName string, pl
 									ReadOnly:  true,
 								},
 							},
+						},
+						{
+							Name:            name + "mcp",
+							Image:           pluginInfo.HealthAnalyzerImage,
+							ImagePullPolicy: corev1.PullAlways,
+							Args: []string{
+								"mcp",
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "PROM_URL",
+									Value: "https://thanos-querier.openshift-monitoring.svc.cluster.local:9091/",
+								},
+							},
+							SecurityContext: &corev1.SecurityContext{
+								RunAsNonRoot:             ptr.To(true),
+								AllowPrivilegeEscalation: ptr.To(false),
+								Capabilities: &corev1.Capabilities{
+									Drop: []corev1.Capability{"ALL"},
+								},
+								SeccompProfile: &corev1.SeccompProfile{
+									Type: corev1.SeccompProfileTypeRuntimeDefault,
+								},
+							},
+							Ports: []corev1.ContainerPort{
+								{
+									ContainerPort: 8085,
+									Name:          "mcp",
+								},
+							},
+							TerminationMessagePolicy: corev1.TerminationMessageFallbackToLogsOnError,
 						},
 					},
 					Volumes: []corev1.Volume{
