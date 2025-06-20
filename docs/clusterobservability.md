@@ -110,3 +110,19 @@ Notes:
 * In this case, the user is responsible for installing the operators
 
 In this case the COO cannot guarantee that installed operator versions are compatible therefore we could forbit this configuration or show a warning/unmanaged state.
+
+## Storage secret
+
+* Loki https://loki-operator.dev/docs/object_storage.md/
+* Tempo https://grafana.com/docs/tempo/latest/setup/operator/object-storage/ and https://docs.redhat.com/en/documentation/openshift_container_platform/4.17/html/distributed_tracing/distr-tracing-tempo-installing#distr-tracing-tempo-object-storage-setup_distr-tracing-tempo-installing
+
+## S3 
+
+```yaml
+kubectl create secret generic s3 \
+    --from-literal=bucket="<BUCKET_NAME>" \
+    --from-literal=endpoint="<AWS_BUCKET_ENDPOINT>" \
+    --from-literal=access_key_id="<AWS_ACCESS_KEY_ID>" \
+    --from-literal=access_key_secret="<AWS_ACCESS_KEY_SECRET>" \
+    --from-literal=region="<AWS_REGION_YOUR_BUCKET_LIVES_IN>"
+```

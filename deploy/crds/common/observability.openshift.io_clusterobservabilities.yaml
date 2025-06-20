@@ -14,7 +14,14 @@ spec:
     singular: clusterobservability
   scope: Cluster
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.opentelemetry
+      name: OpenTelemetry
+      type: string
+    - jsonPath: .status.tempo
+      name: Tempo
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: ClusterObservability defines the desired state of the observability
@@ -49,9 +56,8 @@ spec:
                     description: OpenTelemetry defines the OpenTelemetry capabilities.
                     properties:
                       enabled:
-                        default: false
                         description: |-
-                          Enabled indicates whether the capability is enabled and it operator should deploy an instance.
+                          Enabled indicates whether the capability is enabled and whether the operator should deploy an instance.
                           By default, it is set to false.
                         type: boolean
                       exporter:
@@ -78,9 +84,8 @@ spec:
                     description: Tracing defines the tracing capabilities.
                     properties:
                       enabled:
-                        default: false
                         description: |-
-                          Enabled indicates whether the capability is enabled and it operator should deploy an instance.
+                          Enabled indicates whether the capability is enabled and whether the operator should deploy an instance.
                           By default, it is set to false.
                         type: boolean
                       operators:
@@ -105,11 +110,31 @@ spec:
                       name:
                         description: Name is the name of the secret for the storage.
                         type: string
+                      type:
+                        description: Type is the type of the secret for the storage.
+                        type: string
                     type: object
                 type: object
             type: object
           status:
             description: Status of the signal manager.
+            properties:
+              conditions:
+                description: Conditions provide status information about the instance.
+                items:
+                  properties:
+                    message:
+                      type: string
+                  type: object
+                type: array
+                x-kubernetes-list-type: atomic
+              opentelemetry:
+                description: OpenTelemetry defines the status of the OpenTelemetry
+                  capability.
+                type: string
+              tempo:
+                description: Tempo defines the status of the Tempo capability.
+                type: string
             type: object
         type: object
     served: true

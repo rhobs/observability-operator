@@ -4065,7 +4065,7 @@ ClusterObservability defines the desired state of the observability stack.
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>status</b></td>
+        <td><b><a href="#clusterobservabilitystatus">status</a></b></td>
         <td>object</td>
         <td>
           Status of the signal manager.<br/>
@@ -4165,10 +4165,8 @@ OpenTelemetry defines the OpenTelemetry capabilities.
         <td><b>enabled</b></td>
         <td>boolean</td>
         <td>
-          Enabled indicates whether the capability is enabled and it operator should deploy an instance.
+          Enabled indicates whether the capability is enabled and whether the operator should deploy an instance.
 By default, it is set to false.<br/>
-          <br/>
-            <i>Default</i>: false<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4266,10 +4264,8 @@ Tracing defines the tracing capabilities.
         <td><b>enabled</b></td>
         <td>boolean</td>
         <td>
-          Enabled indicates whether the capability is enabled and it operator should deploy an instance.
+          Enabled indicates whether the capability is enabled and whether the operator should deploy an instance.
 By default, it is set to false.<br/>
-          <br/>
-            <i>Default</i>: false<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4359,6 +4355,81 @@ SecretSpec defines the secret for the storage.
         <td>string</td>
         <td>
           Name is the name of the secret for the storage.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          Type is the type of the secret for the storage.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.status
+<sup><sup>[↩ Parent](#clusterobservability)</sup></sup>
+
+
+
+Status of the signal manager.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#clusterobservabilitystatusconditionsindex">conditions</a></b></td>
+        <td>[]object</td>
+        <td>
+          Conditions provide status information about the instance.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>opentelemetry</b></td>
+        <td>string</td>
+        <td>
+          OpenTelemetry defines the status of the OpenTelemetry capability.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>tempo</b></td>
+        <td>string</td>
+        <td>
+          Tempo defines the status of the Tempo capability.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.status.conditions[index]
+<sup><sup>[↩ Parent](#clusterobservabilitystatus)</sup></sup>
+
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>message</b></td>
+        <td>string</td>
+        <td>
+          <br/>
         </td>
         <td>false</td>
       </tr></tbody>

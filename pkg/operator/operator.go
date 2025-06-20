@@ -22,6 +22,7 @@ import (
 
 	stackctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/monitoring-stack"
 	tqctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/thanos-querier"
+	obsctrl "github.com/rhobs/observability-operator/pkg/controllers/observability"
 	opctrl "github.com/rhobs/observability-operator/pkg/controllers/operator"
 	uictrl "github.com/rhobs/observability-operator/pkg/controllers/uiplugin"
 )
@@ -55,15 +56,22 @@ type FeatureGates struct {
 }
 
 type OperatorConfiguration struct {
-	Namespace       string
-	MetricsAddr     string
-	HealthProbeAddr string
-	Prometheus      stackctrl.PrometheusConfiguration
-	Alertmanager    stackctrl.AlertmanagerConfiguration
-	ThanosSidecar   stackctrl.ThanosConfiguration
-	ThanosQuerier   tqctrl.ThanosConfiguration
-	UIPlugins       uictrl.UIPluginsConfiguration
-	FeatureGates    FeatureGates
+	Namespace            string
+	MetricsAddr          string
+	HealthProbeAddr      string
+	Prometheus           stackctrl.PrometheusConfiguration
+	Alertmanager         stackctrl.AlertmanagerConfiguration
+	ThanosSidecar        stackctrl.ThanosConfiguration
+	ThanosQuerier        tqctrl.ThanosConfiguration
+	UIPlugins            uictrl.UIPluginsConfiguration
+	FeatureGates         FeatureGates
+	ClusterObservability ClusterObservabilityConfiguration
+}
+
+type ClusterObservabilityConfiguration struct {
+	COONamespace     string
+	OpenTelemetryCSV string
+	TempoCSV         string
 }
 
 func WithNamespace(ns string) func(*OperatorConfiguration) {
@@ -127,6 +135,12 @@ func NewOperatorConfiguration(opts ...func(*OperatorConfiguration)) *OperatorCon
 		o(cfg)
 	}
 	return cfg
+}
+
+func WithClusterObservability(configuration ClusterObservabilityConfiguration) func(*OperatorConfiguration) {
+	return func(oc *OperatorConfiguration) {
+		oc.ClusterObservability = configuration
+	}
 }
 
 func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
@@ -263,6 +277,30 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 	} else {
 		setupLog := ctrl.Log.WithName("setup")
 		setupLog.Info("OpenShift feature gate is disabled, Operator controller is not enabled")
+	}
+
+	if cfg.FeatureGates.OpenShift.Enabled {
+		if err := obsctrl.RegisterWithManager(mgr, obsctrl.Options{
+			OperandsNamespace: "cluster-observability",
+			COONamespace:      cfg.ClusterObservability.COONamespace,
+			OpenTelemetryOperator: obsctrl.OperatorInstallConfig{
+				Namespace:   cfg.ClusterObservability.COONamespace,
+				PackageName: "opentelemetry-product",
+				StartingCSV: cfg.ClusterObservability.OpenTelemetryCSV,
+				Channel:     "stable",
+			},
+			TempoOperator: obsctrl.OperatorInstallConfig{
+				Namespace:   cfg.ClusterObservability.COONamespace,
+				PackageName: "tempo-product",
+				StartingCSV: cfg.ClusterObservability.OpenTelemetryCSV,
+				Channel:     "stable",
+			},
+		}); err != nil {
+			return nil, fmt.Errorf("unable to register cluster observability controller: %w", err)
+		}
+	} else {
+		setupLog := ctrl.Log.WithName("setup")
+		setupLog.Info("OpenShift feature gate is disabled, cluster observability controller is not enabled")
 	}
 
 	if err := mgr.AddHealthzCheck("health probe", healthz.Ping); err != nil {
