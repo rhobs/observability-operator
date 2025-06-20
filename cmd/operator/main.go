@@ -32,6 +32,11 @@ import (
 	"github.com/rhobs/observability-operator/pkg/operator"
 )
 
+const (
+	opentelemetryCSV = "opentelemetry-operator.v0.127.0-1"
+	tempoCSV         = "tempo-operator.v0.16.0-1"
+)
+
 // The default values we use. Prometheus and Alertmanager are handled by
 // prometheus-operator. For thanos we use the default version from
 // prometheus-operator.
@@ -88,6 +93,8 @@ func main() {
 		metricsAddr      string
 		healthProbeAddr  string
 		openShiftEnabled bool
+		otelCSVName      string
+		tempoCSVName     string
 
 		setupLog = ctrl.Log.WithName("setup")
 	)
@@ -98,6 +105,8 @@ func main() {
 	flag.StringVar(&healthProbeAddr, "health-probe-bind-address", ":8081", "The address the health probe endpoint binds to.")
 	flag.Var(images, "images", fmt.Sprintf("Full images refs to use for containers managed by the operator. E.g thanos=quay.io/thanos/thanos:v0.33.0. Images used are %v", imagesUsed()))
 	flag.BoolVar(&openShiftEnabled, "openshift.enabled", false, "Enable OpenShift specific features such as Console Plugins.")
+	flag.StringVar(&otelCSVName, "opentelemetry-csv", opentelemetryCSV, "OpenTelemetry Operator starting CSV name. This is used to install the OpenTelemetry Operator in the cluster.")
+	flag.StringVar(&tempoCSVName, "tempo-csv", tempoCSV, "Tempo Operator starting CSV name. This is used to install the Tempo Operator in the cluster.")
 
 	opts := zap.Options{
 		Development: true,
@@ -134,6 +143,11 @@ func main() {
 			operator.WithThanosSidecarImage(imgMap["thanos"]),
 			operator.WithThanosQuerierImage(imgMap["thanos"]),
 			operator.WithUIPluginImages(imgMap),
+			operator.WithClusterObservability(operator.ClusterObservabilityConfiguration{
+				COONamespace:     os.Getenv("NAMESPACE"),
+				OpenTelemetryCSV: otelCSVName,
+				TempoCSV:         tempoCSVName,
+			}),
 			operator.WithFeatureGates(operator.FeatureGates{
 				OpenShift: operator.OpenShiftFeatureGates{
 					Enabled: openShiftEnabled,

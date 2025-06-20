@@ -8,6 +8,7 @@ rules:
   - ""
   resources:
   - configmaps
+  - namespaces
   - secrets
   - serviceaccounts
   - services
@@ -24,7 +25,6 @@ rules:
   resources:
   - endpoints
   - events
-  - namespaces
   - nodes
   - persistentvolumeclaims
   - persistentvolumes
@@ -226,24 +226,7 @@ rules:
 - apiGroups:
   - observability.openshift.io
   resources:
-  - clusterobservability
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - observability.openshift.io
-  resources:
-  - clusterobservability/finalizers
-  - clusterobservability/status
-  - uiplugins/finalizers
-  - uiplugins/status
-  verbs:
-  - get
-  - update
-- apiGroups:
-  - observability.openshift.io
-  resources:
+  - clusterobservabilities
   - uiplugins
   verbs:
   - create
@@ -254,6 +237,44 @@ rules:
   - update
   - watch
 - apiGroups:
+  - observability.openshift.io
+  resources:
+  - clusterobservabilities/finalizers
+  - clusterobservabilities/status
+  verbs:
+  - delete
+  - get
+  - patch
+  - update
+- apiGroups:
+  - observability.openshift.io
+  resources:
+  - uiplugins/finalizers
+  - uiplugins/status
+  verbs:
+  - get
+  - update
+- apiGroups:
+  - opentelemetry.io
+  resources:
+  - opentelemetrycollectors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - opentelemetry.io
+  resources:
+  - opentelemetrycollectors/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - operator.openshift.io
   resources:
   - consoles
@@ -261,6 +282,19 @@ rules:
   - get
   - list
   - patch
+  - watch
+- apiGroups:
+  - operators.coreos.com
+  resources:
+  - clusterserviceversions
+  - subscriptions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
   - watch
 - apiGroups:
   - perses.dev
@@ -341,8 +375,35 @@ rules:
   - watch
 - apiGroups:
   - tempo.grafana.com
+  resourceNames:
+  - traces
+  resources:
+  - prod
+  verbs:
+  - create
+- apiGroups:
+  - tempo.grafana.com
   resources:
   - tempomonolithics
-  - tempostacks
   verbs:
   - list
+- apiGroups:
+  - tempo.grafana.com
+  resources:
+  - tempostacks
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - tempo.grafana.com
+  resources:
+  - tempostacks/status
+  verbs:
+  - get
+  - list
+  - watch
