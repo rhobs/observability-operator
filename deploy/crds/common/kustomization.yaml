@@ -5,3 +5,4 @@ resources:
   - monitoring.rhobs_monitoringstacks.yaml
   - monitoring.rhobs_thanosqueriers.yaml
   - observability.openshift.io_uiplugins.yaml
+#  - observability.openshift.io_clusterobservabilities.yaml
