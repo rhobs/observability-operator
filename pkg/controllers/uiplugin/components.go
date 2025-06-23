@@ -123,9 +123,6 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 
 	if pluginInfo.PersesImage != "" {
 		components = append(components, reconciler.NewUpdater(newPerses(namespace, pluginInfo.PersesImage), plugin))
-	}
-
-	if plugin.Spec.Type == uiv1alpha1.TypeMonitoring {
 		components = append(components, reconciler.NewUpdater(newAcceleratorsDatasource(namespace), plugin))
 		components = append(components, reconciler.NewUpdater(newAcceleratorsDashboard(namespace), plugin))
 	}
