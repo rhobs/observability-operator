@@ -101,14 +101,17 @@ spec:
         displayName: Perses
         kind: Perses
         name: perses.perses.dev
+        version: v1alpha1
       - description: A Perses Dashboard
         displayName: Perses Dashboard
         kind: PersesDashboard
         name: persesdashboards.perses.dev
+        version: v1alpha1
       - description: A Perses Datasource
         displayName: Perses Datasource
         kind: PersesDatasource
         name: persesdatasources.perses.dev
+        version: v1alpha1
   description: >+
 
     Observability Operator is a Go based Kubernetes operator to setup and
