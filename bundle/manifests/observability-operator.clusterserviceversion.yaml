@@ -42,7 +42,7 @@ metadata:
     categories: Monitoring
     certified: "false"
     containerImage: observability-operator:1.2.0
-    createdAt: "2025-06-24T10:23:06Z"
+    createdAt: "2025-06-24T11:30:26Z"
     description: A Go based Kubernetes operator to setup and manage highly available
       Monitoring Stack using Prometheus, Alertmanager and Thanos Querier.
     operatorframework.io/cluster-monitoring: "true"
@@ -929,7 +929,7 @@ spec:
                 - --images=alertmanager=quay.io/prometheus/alertmanager:v0.26.0
                 - --images=prometheus=quay.io/prometheus/prometheus:v2.49.1
                 - --images=thanos=quay.io/thanos/thanos:v0.33.0
-                - --images=perses=quay.io/openshift-observability-ui/perses:v0.51-go-1.23
+                - --images=perses=quay.io/openshift-observability-ui/perses:v0.51.1-go-1.23
                 env:
                 - name: NAMESPACE
                   valueFrom:
