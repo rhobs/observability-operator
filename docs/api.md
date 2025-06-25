@@ -923,7 +923,7 @@ to a remote endpoint.
         <td>
           Authorization section for the URL.
 
-It requires Prometheus >= v2.26.0.
+It requires Prometheus >= v2.26.0 or Thanos >= v0.24.0.
 
 Cannot be set at the same time as `sigv4`, `basicAuth`, `oauth2`, or `azureAd`.<br/>
         </td>
@@ -934,7 +934,7 @@ Cannot be set at the same time as `sigv4`, `basicAuth`, `oauth2`, or `azureAd`.<
         <td>
           AzureAD for the URL.
 
-It requires Prometheus >= v2.45.0.
+It requires Prometheus >= v2.45.0 or Thanos >= v0.31.0.
 
 Cannot be set at the same time as `authorization`, `basicAuth`, `oauth2`, or `sigv4`.<br/>
         </td>
@@ -980,7 +980,7 @@ Deprecated: this will be removed in a future release. Prefer using `authorizatio
         <td>
           Configure whether HTTP requests follow HTTP 3xx redirects.
 
-It requires Prometheus >= v2.26.0.<br/>
+It requires Prometheus >= v2.26.0 or Thanos >= v0.24.0.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -990,7 +990,7 @@ It requires Prometheus >= v2.26.0.<br/>
           Custom HTTP headers to be sent along with each remote write request.
 Be aware that headers that are set by Prometheus itself can't be overwritten.
 
-It requires Prometheus >= v2.25.0.<br/>
+It requires Prometheus >= v2.25.0 or Thanos >= v0.24.0.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1008,7 +1008,7 @@ configured to append the metadata of scraped metrics to the WAL.
 Before setting this field, consult with your remote storage provider
 what message version it supports.
 
-It requires Prometheus >= v2.54.0.<br/>
+It requires Prometheus >= v2.54.0 or Thanos >= v0.37.0.<br/>
           <br/>
             <i>Enum</i>: V1.0, V2.0<br/>
         </td>
@@ -1027,7 +1027,7 @@ It requires Prometheus >= v2.54.0.<br/>
           The name of the remote write queue, it must be unique if specified. The
 name is used in metrics and logging in order to differentiate queues.
 
-It requires Prometheus >= v2.15.0.<br/>
+It requires Prometheus >= v2.15.0 or Thanos >= 0.24.0.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1038,7 +1038,7 @@ It requires Prometheus >= v2.15.0.<br/>
 that should be excluded from proxying. IP and domain names can
 contain port numbers.
 
-It requires Prometheus >= v2.43.0 or Alertmanager >= 0.25.0.<br/>
+It requires Prometheus >= v2.43.0, Alertmanager >= v0.25.0 or Thanos >= v0.32.0.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1047,7 +1047,7 @@ It requires Prometheus >= v2.43.0 or Alertmanager >= 0.25.0.<br/>
         <td>
           OAuth2 configuration for the URL.
 
-It requires Prometheus >= v2.27.0.
+It requires Prometheus >= v2.27.0 or Thanos >= v0.24.0.
 
 Cannot be set at the same time as `sigv4`, `authorization`, `basicAuth`, or `azureAd`.<br/>
         </td>
@@ -1059,7 +1059,7 @@ Cannot be set at the same time as `sigv4`, `authorization`, `basicAuth`, or `azu
           ProxyConnectHeader optionally specifies headers to send to
 proxies during CONNECT requests.
 
-It requires Prometheus >= v2.43.0 or Alertmanager >= 0.25.0.<br/>
+It requires Prometheus >= v2.43.0, Alertmanager >= v0.25.0 or Thanos >= v0.32.0.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1068,7 +1068,7 @@ It requires Prometheus >= v2.43.0 or Alertmanager >= 0.25.0.<br/>
         <td>
           Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).
 
-It requires Prometheus >= v2.43.0 or Alertmanager >= 0.25.0.<br/>
+It requires Prometheus >= v2.43.0, Alertmanager >= v0.25.0 or Thanos >= v0.32.0.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1093,6 +1093,24 @@ It requires Prometheus >= v2.43.0 or Alertmanager >= 0.25.0.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>roundRobinDNS</b></td>
+        <td>boolean</td>
+        <td>
+          When enabled:
+    - The remote-write mechanism will resolve the hostname via DNS.
+    - It will randomly select one of the resolved IP addresses and connect to it.
+
+When disabled (default behavior):
+    - The Go standard library will handle hostname resolution.
+    - It will attempt connections to each resolved IP address sequentially.
+
+Note: The connection timeout applies to the entire resolution and connection process.
+      If disabled, the timeout is distributed across all connection attempts.
+
+It requires Prometheus >= v3.1.0 or Thanos >= v0.38.0.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>sendExemplars</b></td>
         <td>boolean</td>
         <td>
@@ -1100,7 +1118,7 @@ It requires Prometheus >= v2.43.0 or Alertmanager >= 0.25.0.<br/>
 exemplar-storage itself must be enabled using the `spec.enableFeatures`
 option for exemplars to be scraped in the first place.
 
-It requires Prometheus >= v2.27.0.<br/>
+It requires Prometheus >= v2.27.0 or Thanos >= v0.24.0.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1110,7 +1128,7 @@ It requires Prometheus >= v2.27.0.<br/>
           Enables sending of native histograms, also known as sparse histograms
 over remote write.
 
-It requires Prometheus >= v2.40.0.<br/>
+It requires Prometheus >= v2.40.0 or Thanos >= v0.30.0.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1119,7 +1137,7 @@ It requires Prometheus >= v2.40.0.<br/>
         <td>
           Sigv4 allows to configures AWS's Signature Verification 4 for the URL.
 
-It requires Prometheus >= v2.26.0.
+It requires Prometheus >= v2.26.0 or Thanos >= v0.24.0.
 
 Cannot be set at the same time as `authorization`, `basicAuth`, `oauth2`, or `azureAd`.<br/>
         </td>
@@ -1149,7 +1167,7 @@ Cannot be set at the same time as `authorization`, `basicAuth`, `oauth2`, or `az
 
 Authorization section for the URL.
 
-It requires Prometheus >= v2.26.0.
+It requires Prometheus >= v2.26.0 or Thanos >= v0.24.0.
 
 Cannot be set at the same time as `sigv4`, `basicAuth`, `oauth2`, or `azureAd`.
 
@@ -1245,7 +1263,7 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
 
 AzureAD for the URL.
 
-It requires Prometheus >= v2.45.0.
+It requires Prometheus >= v2.45.0 or Thanos >= v0.31.0.
 
 Cannot be set at the same time as `authorization`, `basicAuth`, `oauth2`, or `sigv4`.
 
@@ -1282,7 +1300,7 @@ Cannot be set at the same time as `oauth` or `sdk`.<br/>
           OAuth defines the oauth config that is being used to authenticate.
 Cannot be set at the same time as `managedIdentity` or `sdk`.
 
-It requires Prometheus >= v2.48.0.<br/>
+It requires Prometheus >= v2.48.0 or Thanos >= v0.31.0.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1293,7 +1311,7 @@ It requires Prometheus >= v2.48.0.<br/>
 See https://learn.microsoft.com/en-us/azure/developer/go/azure-sdk-authentication
 Cannot be set at the same time as `oauth` or `managedIdentity`.
 
-It requires Prometheus >= 2.52.0.<br/>
+It requires Prometheus >= v2.52.0 or Thanos >= v0.36.0.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -1336,7 +1354,7 @@ Cannot be set at the same time as `oauth` or `sdk`.
 OAuth defines the oauth config that is being used to authenticate.
 Cannot be set at the same time as `managedIdentity` or `sdk`.
 
-It requires Prometheus >= v2.48.0.
+It requires Prometheus >= v2.48.0 or Thanos >= v0.31.0.
 
 <table>
     <thead>
@@ -1428,7 +1446,7 @@ SDK defines the Azure SDK config that is being used to authenticate.
 See https://learn.microsoft.com/en-us/azure/developer/go/azure-sdk-authentication
 Cannot be set at the same time as `oauth` or `managedIdentity`.
 
-It requires Prometheus >= 2.52.0.
+It requires Prometheus >= v2.52.0 or Thanos >= v0.36.0.
 
 <table>
     <thead>
@@ -1601,6 +1619,18 @@ MetadataConfig configures the sending of series metadata to the remote storage.
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>maxSamplesPerSend</b></td>
+        <td>integer</td>
+        <td>
+          MaxSamplesPerSend is the maximum number of metadata samples per send.
+
+It requires Prometheus >= v2.29.0.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Minimum</i>: -1<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>send</b></td>
         <td>boolean</td>
         <td>
@@ -1625,7 +1655,7 @@ MetadataConfig configures the sending of series metadata to the remote storage.
 
 OAuth2 configuration for the URL.
 
-It requires Prometheus >= v2.27.0.
+It requires Prometheus >= v2.27.0 or Thanos >= v0.24.0.
 
 Cannot be set at the same time as `sigv4`, `authorization`, `basicAuth`, or `azureAd`.
 
@@ -1677,7 +1707,7 @@ URL.<br/>
 that should be excluded from proxying. IP and domain names can
 contain port numbers.
 
-It requires Prometheus >= v2.43.0 or Alertmanager >= 0.25.0.<br/>
+It requires Prometheus >= v2.43.0, Alertmanager >= v0.25.0 or Thanos >= v0.32.0.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1687,7 +1717,7 @@ It requires Prometheus >= v2.43.0 or Alertmanager >= 0.25.0.<br/>
           ProxyConnectHeader optionally specifies headers to send to
 proxies during CONNECT requests.
 
-It requires Prometheus >= v2.43.0 or Alertmanager >= 0.25.0.<br/>
+It requires Prometheus >= v2.43.0, Alertmanager >= v0.25.0 or Thanos >= v0.32.0.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1696,7 +1726,7 @@ It requires Prometheus >= v2.43.0 or Alertmanager >= 0.25.0.<br/>
         <td>
           Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).
 
-It requires Prometheus >= v2.43.0 or Alertmanager >= 0.25.0.<br/>
+It requires Prometheus >= v2.43.0, Alertmanager >= v0.25.0 or Thanos >= v0.32.0.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2000,7 +2030,7 @@ It requires Prometheus >= v2.43.0.
         <td>
           Maximum acceptable TLS version.
 
-It requires Prometheus >= v2.41.0.<br/>
+It requires Prometheus >= v2.41.0 or Thanos >= v0.31.0.<br/>
           <br/>
             <i>Enum</i>: TLS10, TLS11, TLS12, TLS13<br/>
         </td>
@@ -2011,7 +2041,7 @@ It requires Prometheus >= v2.41.0.<br/>
         <td>
           Minimum acceptable TLS version.
 
-It requires Prometheus >= v2.35.0.<br/>
+It requires Prometheus >= v2.35.0 or Thanos >= v0.28.0.<br/>
           <br/>
             <i>Enum</i>: TLS10, TLS11, TLS12, TLS13<br/>
         </td>
@@ -2465,7 +2495,7 @@ in a breaking way.<br/>
         <td>string</td>
         <td>
           SampleAgeLimit drops samples older than the limit.
-It requires Prometheus >= v2.50.0.<br/>
+It requires Prometheus >= v2.50.0 or Thanos >= v0.32.0.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -2479,7 +2509,7 @@ It requires Prometheus >= v2.50.0.<br/>
 
 Sigv4 allows to configures AWS's Signature Verification 4 for the URL.
 
-It requires Prometheus >= v2.26.0.
+It requires Prometheus >= v2.26.0 or Thanos >= v0.24.0.
 
 Cannot be set at the same time as `authorization`, `basicAuth`, `oauth2`, or `azureAd`.
 
@@ -2700,7 +2730,7 @@ TLS Config to use for the URL.
         <td>
           Maximum acceptable TLS version.
 
-It requires Prometheus >= v2.41.0.<br/>
+It requires Prometheus >= v2.41.0 or Thanos >= v0.31.0.<br/>
           <br/>
             <i>Enum</i>: TLS10, TLS11, TLS12, TLS13<br/>
         </td>
@@ -2711,7 +2741,7 @@ It requires Prometheus >= v2.41.0.<br/>
         <td>
           Minimum acceptable TLS version.
 
-It requires Prometheus >= v2.35.0.<br/>
+It requires Prometheus >= v2.35.0 or Thanos >= v0.28.0.<br/>
           <br/>
             <i>Enum</i>: TLS10, TLS11, TLS12, TLS13<br/>
         </td>
