@@ -11,4 +11,4 @@ resources:
 - persesdashboard_viewer_role.yaml
 - persesdatasource_editor_role.yaml
 - persesdatasource_viewer_role.yaml
-
+- perses-service-account.yaml
