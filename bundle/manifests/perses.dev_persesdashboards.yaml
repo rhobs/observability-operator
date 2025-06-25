@@ -12,6 +12,8 @@ spec:
     kind: PersesDashboard
     listKind: PersesDashboardList
     plural: persesdashboards
+    shortNames:
+    - perdb
     singular: persesdashboard
   scope: Namespaced
   versions:

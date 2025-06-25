@@ -7,3 +7,8 @@ resources:
 - perses-operator-cluster-role.yaml
 - perses-operator-service-account.yaml
 - perses-operator-cluster-role-binding.yaml
+- persesdashboard_editor_role.yaml
+- persesdashboard_viewer_role.yaml
+- persesdatasource_editor_role.yaml
+- persesdatasource_viewer_role.yaml
+

@@ -4630,10 +4630,9 @@ It always references a LokiStack in the "openshift-logging" namespace.<br/>
         <td>
           Schema is the schema to use for logs querying and display.
 
-Defatults to "viaq" if not specified.<br/>
+Defatults to "viaq" if not specified, "select" is used to allow users to select the schema from the UI.<br/>
           <br/>
             <i>Enum</i>: viaq, otel, select<br/>
-            <i>Default</i>: viaq<br/>
         </td>
         <td>false</td>
       </tr><tr>

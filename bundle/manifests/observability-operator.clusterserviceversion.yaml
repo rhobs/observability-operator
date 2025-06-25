@@ -42,7 +42,7 @@ metadata:
     categories: Monitoring
     certified: "false"
     containerImage: observability-operator:1.2.0
-    createdAt: "2025-05-26T07:04:40Z"
+    createdAt: "2025-06-24T11:30:26Z"
     description: A Go based Kubernetes operator to setup and manage highly available
       Monitoring Stack using Prometheus, Alertmanager and Thanos Querier.
     operatorframework.io/cluster-monitoring: "true"
@@ -80,13 +80,19 @@ spec:
       kind: MonitoringStack
       name: monitoringstacks.monitoring.rhobs
       version: v1alpha1
-    - kind: Perses
+    - description: Perses is the Schema for the perses API
+      displayName: Perses
+      kind: Perses
       name: perses.perses.dev
       version: v1alpha1
-    - kind: PersesDashboard
+    - description: A Perses Dashboard
+      displayName: Perses Dashboard
+      kind: PersesDashboard
       name: persesdashboards.perses.dev
       version: v1alpha1
-    - kind: PersesDatasource
+    - description: A Perses Datasource
+      displayName: Perses Datasource
+      kind: PersesDatasource
       name: persesdatasources.perses.dev
       version: v1alpha1
     - description: PodMonitor defines monitoring for a set of pods
@@ -658,6 +664,7 @@ spec:
           resources:
           - services
           - configmaps
+          - secrets
           verbs:
           - get
           - patch
@@ -922,7 +929,7 @@ spec:
                 - --images=alertmanager=quay.io/prometheus/alertmanager:v0.26.0
                 - --images=prometheus=quay.io/prometheus/prometheus:v2.49.1
                 - --images=thanos=quay.io/thanos/thanos:v0.33.0
-                - --images=perses=quay.io/persesdev/perses:v0.50.3
+                - --images=perses=quay.io/openshift-observability-ui/perses:v0.51.1-go-1.23
                 env:
                 - name: NAMESPACE
                   valueFrom:
@@ -999,7 +1006,7 @@ spec:
                         operator: Exists
                     weight: 1
               containers:
-              - image: quay.io/persesdev/perses-operator:v0.1.10
+              - image: quay.io/openshift-observability-ui/perses-operator:v0.2-go-1.23
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -1038,7 +1045,7 @@ spec:
               - configMap:
                   items:
                   - key: service-ca.crt
-                    path: ca.crt
+                    path: service-ca.crt
                   name: openshift-service-ca.crt
                   optional: true
                 name: openshift-service-ca
