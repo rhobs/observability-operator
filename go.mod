@@ -6,7 +6,7 @@ toolchain go1.23.10
 
 require (
 	github.com/go-jose/go-jose/v4 v4.0.5 // indirect
-	github.com/go-logr/logr v1.4.2
+	github.com/go-logr/logr v1.4.3
 	github.com/google/go-cmp v0.7.0
 	github.com/openshift/api v0.0.0-20240404200104-96ed2d49b255
 	github.com/pkg/errors v0.9.1
