@@ -1,5 +1,5 @@
 ###  Builder ###
-FROM golang:1.23  as builder
+FROM golang:1.24  as builder
 
 ENV PKG=/workspace
 WORKDIR ${PKG}
@@ -23,7 +23,7 @@ RUN go test -c -tags netgo,osusergo ./test/e2e/
 
 ###  Runner  ###
 
-FROM registry.access.redhat.com/ubi7/ubi-minimal:latest
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 WORKDIR /workspace
 
 COPY --from=builder /workspace/e2e.test .
