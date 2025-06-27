@@ -26,6 +26,9 @@ declare SKIP_HOST_CHECK=false
 # shellcheck source=/dev/null
 source "$PROJECT_ROOT_DIR/test/lib/utils.bash"
 
+# set PATH to include tools
+export PATH="$PROJECT_ROOT_DIR/tmp/bin/:$PATH"
+
 print_usage() {
     local scr
     scr="$(basename "$0")"
@@ -208,9 +211,6 @@ install_kind() {
     curl -sSLo "$bin_path/kind" "https://kind.sigs.k8s.io/dl/$KIND_VERSION/kind-$os-$arch"
     chmod +x "$bin_path/kind"
 
-    # Add to PATH for this session
-    export PATH="$bin_path:$PATH"
-
     ok "kind $KIND_VERSION installed to $bin_path/kind"
 }
 
@@ -233,9 +233,6 @@ install_kubectl() {
     info "Downloading latest kubectl"
     curl -sSLo "$bin_path/kubectl" "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
     chmod +x "$bin_path/kubectl"
-
-    # Add to PATH for this session
-    export PATH="$bin_path:$PATH"
 
     ok "kubectl installed to $bin_path/kubectl"
 }
@@ -456,9 +453,6 @@ main() {
     install_kind
     install_kubectl
     install_extra_packages
-
-    # Ensure tmp/bin is in PATH for subsequent operations
-    export PATH="$PROJECT_ROOT_DIR/tmp/bin:$PATH"
 
     # Set up cluster and components
     setup_cluster

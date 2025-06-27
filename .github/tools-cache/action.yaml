@@ -19,3 +19,8 @@ runs:
       run: |
         ls ./tmp/bin
         make validate-tools
+
+    - name: Add tmp/bin to PATH
+      shell: bash
+      run: |
+        echo "tmp/bin" >> "$GITHUB_PATH"
