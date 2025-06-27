@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e -u -o pipefail
+set  -x -e -u -o pipefail
 
 SCRIPT_PATH=$(readlink -f "$0")
 declare -r SCRIPT_PATH
@@ -315,6 +315,10 @@ setup_cluster() {
     kubectl wait --for=condition=Ready nodes --all --timeout=300s
     kubectl wait --for=condition=Ready pods --all --all-namespaces --timeout=300s
 
+    # export $KUBECONFIG so its available for other steps
+    if [[ "$GITHUB_ACTIONS" ]]; then
+        echo "KUBECONFIG=$KUBECONFIG" >> "$GITHUB_ENV"
+    fi
     ok "Kind cluster is ready"
 }
 
@@ -376,6 +380,12 @@ setup_registry() {
     kubectl apply -f "$SCRIPT_DIR/kind/registry.yaml" -n operators
     kubectl rollout status deployment local-registry -n operators --timeout=300s
     kubectl wait --for=condition=Available deploy local-registry -n operators --timeout=300s
+    kubectl get service -n operators -o yaml
+    # add local-registry to /etc/hosts in case we run in a github action
+    if [[ "$GITHUB_ACTIONS" ]]; then
+        echo "Detected github actions run, adding \"127.0.0.1 local-registry\" to \"/etc/hosts\""
+        echo "127.0.0.1 local-registry" | sudo tee -a /etc/hosts
+    fi
 
     # Test registry connectivity
     local max_attempts=10

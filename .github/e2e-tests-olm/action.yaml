@@ -29,8 +29,6 @@ runs:
           --skip-host-check \
           --kind-version ${{ inputs.kind-version }} \
           --kind-image ${{ inputs.kind-image }}
-        echo $KUBECONFIG
-        echo "KUBECONFIG=$KUBECONFIG" >> "$GITHUB_ENV"
 
     - name: Run e2e script
       shell: bash
