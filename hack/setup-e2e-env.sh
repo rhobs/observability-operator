@@ -384,7 +384,7 @@ setup_registry() {
         if curl --connect-timeout 5 --max-time 10 http://local-registry:30000 &>/dev/null; then
             break
         fi
-        ((attempt++))
+        attempt=$((attempt + 1))
         info "Waiting for registry to be ready ($attempt/$max_attempts)..."
         sleep 5
     done
