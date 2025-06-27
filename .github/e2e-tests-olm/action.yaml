@@ -1,49 +1,34 @@
 name: e2e-tests-olm
-description: Runs E2E tests against the OLM bundle
+description: Runs E2E tests against the OLM bundle using unified setup
 inputs:
   kind-version:
     description: "kind version"
     required: false
     default: 'v0.29.0'
   kind-image:
-    description: "kind version"
+    description: "kind node image"
     required: false
     default: 'kindest/node:v1.33.1'
 
 runs:
   using: composite
   steps:
-    - uses: azure/setup-kubectl@v4
-
-    - name: Start Kind
-      uses: helm/kind-action@v1.10.0
-      with:
-        version: ${{ inputs.kind-version }}
-        node_image: ${{ inputs.kind-image }}
-        wait: 300s
-        config: ./hack/kind/config.yaml
-
     - uses: actions/setup-go@v5
       with:
         go-version-file: 'go.mod'
         check-latest: true
 
-    - name: Install required tools
+    - name: Install required tools using unified setup
       uses: ./.github/tools-cache
 
-    # Pin to OLM v0.28.0 because v0.29.0 fails on Kind.
-    # https://github.com/operator-framework/operator-lifecycle-manager/issues/3419
-    - name: Install OLM
-      shell: bash
-      run: ./tmp/bin/operator-sdk olm install --version 0.28.0
-
-    - name: Create a local docker registry in the Kind cluster
+    - name: Set up e2e environment
       shell: bash
       run: |
-        kubectl apply -f hack/kind/registry.yaml -n operators
-        kubectl rollout status deployment local-registry -n operators
-        # Expose the registry to the host so that we can build and push the image
-        echo "127.0.0.1 local-registry" | sudo tee -a /etc/hosts
+        # Use the unified setup script with CI-friendly options
+        ./hack/setup-e2e-env.sh \
+          --skip-host-check \
+          --kind-version ${{ inputs.kind-version }} \
+          --kind-image ${{ inputs.kind-image }}
 
     - name: Run e2e script
       shell: bash
