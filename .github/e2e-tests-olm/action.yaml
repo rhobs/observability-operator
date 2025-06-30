@@ -29,8 +29,6 @@ runs:
           --skip-host-check \
           --kind-version ${{ inputs.kind-version }} \
           --kind-image ${{ inputs.kind-image }}
-        echo $KUBECONFIG
-        echo "KUBECONFIG=$KUBECONFIG" >> "$GITHUB_ENV"
 
     - name: Run e2e script
       shell: bash
@@ -41,7 +39,6 @@ runs:
       shell: bash
       run: |
         # Capture apiserver state
-        echo $KUBECONFIG
         oc adm inspect node --dest-dir cluster-state || true
         oc adm inspect -A statefulset --dest-dir cluster-state || true
         oc adm inspect -A deployment --dest-dir cluster-state || true

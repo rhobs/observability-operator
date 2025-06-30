@@ -37,8 +37,9 @@ print_usage() {
 		Usage:
 		  $scr [OPTIONS] [PACKAGES...]
 
-		This script sets up the e2e test environment with kind cluster and required tools.
+		This script sets up the e2e test environment with kind cluster.
 		It can be used both locally and in CI environments.
+		Run 'make tools' first to install project-specific tools.
 
 		Options:
 		  -h|--help                    show this help
@@ -58,7 +59,7 @@ print_usage() {
 		  $scr                        # Full setup with default options
 		  $scr --validate-only        # Only check prerequisites
 		  $scr --no-cluster           # Install tools but don't create cluster
-		  $scr curl jq                # Install curl, jq in addition to defaults
+		  $scr curl jq tree htop       # Install additional system packages
 		  $scr --skip-host-check --no-olm  # CI-friendly setup without OLM
 
 	EOF_HELP
@@ -151,17 +152,28 @@ validate_prerequisites() {
 
     local fail=0
 
-    # Check for required tools
+    # Check for required system tools
     check_command "go" || fail=1
     check_command "git" || fail=1
     check_command "curl" || fail=1
 
-    # Check project tools if they exist
-    if [[ -x "$PROJECT_ROOT_DIR/tmp/bin/operator-sdk" ]]; then
-        ok "operator-sdk is installed in tmp/bin"
-    else
-        warn "operator-sdk not found - run 'make tools' first"
-        # Don't fail here as we can continue without it for some operations
+    # Check for project tools that should be installed via 'make tools'
+    local tools_missing=0
+    local required_tools=("operator-sdk" "oc" "controller-gen" "kustomize")
+
+    for tool in "${required_tools[@]}"; do
+        if [[ -x "$PROJECT_ROOT_DIR/tmp/bin/$tool" ]]; then
+            ok "$tool is available in tmp/bin"
+        else
+            warn "$tool not found in tmp/bin"
+            tools_missing=1
+        fi
+    done
+
+    if [[ $tools_missing -eq 1 ]]; then
+        info "Install missing tools by running:"
+        echo "    ❯ make tools"
+        # Don't fail here as some operations might still work
     fi
 
     # Check /etc/hosts for local-registry entry (skip in CI)
@@ -253,33 +265,55 @@ install_extra_packages() {
         fi
 
         info "Installing $package"
-        case "$package" in
-            curl)
-                if command -v apt-get &> /dev/null; then
-                    sudo apt-get update && sudo apt-get install -y curl
-                elif command -v yum &> /dev/null; then
-                    sudo yum install -y curl
-                elif command -v brew &> /dev/null; then
-                    brew install curl
-                else
-                    warn "Don't know how to install $package on this system"
-                fi
-                ;;
-            jq)
-                if command -v apt-get &> /dev/null; then
-                    sudo apt-get update && sudo apt-get install -y jq
-                elif command -v yum &> /dev/null; then
-                    sudo yum install -y jq
-                elif command -v brew &> /dev/null; then
-                    brew install jq
-                else
-                    warn "Don't know how to install $package on this system"
-                fi
-                ;;
-            *)
-                warn "Don't know how to install package: $package"
-                ;;
-        esac
+        local install_success=false
+
+        # Try different package managers
+        if command -v apt-get &> /dev/null; then
+            info "Using apt-get to install $package"
+            if sudo apt-get update && sudo apt-get install -y "$package"; then
+                install_success=true
+            fi
+        elif command -v dnf &> /dev/null; then
+            info "Using dnf to install $package"
+            if sudo dnf install -y "$package"; then
+                install_success=true
+            fi
+        elif command -v yum &> /dev/null; then
+            info "Using yum to install $package"
+            if sudo yum install -y "$package"; then
+                install_success=true
+            fi
+        elif command -v zypper &> /dev/null; then
+            info "Using zypper to install $package"
+            if sudo zypper install -y "$package"; then
+                install_success=true
+            fi
+        elif command -v pacman &> /dev/null; then
+            info "Using pacman to install $package"
+            if sudo pacman -S --noconfirm "$package"; then
+                install_success=true
+            fi
+        elif command -v brew &> /dev/null; then
+            info "Using brew to install $package"
+            if brew install "$package"; then
+                install_success=true
+            fi
+        elif command -v apk &> /dev/null; then
+            info "Using apk to install $package"
+            if sudo apk add "$package"; then
+                install_success=true
+            fi
+        else
+            warn "No supported package manager found"
+            info "Supported package managers: apt-get, dnf, yum, zypper, pacman, brew, apk"
+            info "Please install $package manually"
+            continue
+        fi
+
+        if ! $install_success; then
+            warn "Failed to install $package"
+            info "Please install $package manually or check if the package name is correct"
+        fi
     done
 }
 
@@ -348,15 +382,10 @@ setup_olm() {
 
     header "Installing OLM"
 
-    # Use operator-sdk from project tools if available, otherwise try PATH
+    # Use operator-sdk from project tools
     local operator_sdk="$PROJECT_ROOT_DIR/tmp/bin/operator-sdk"
     if [[ ! -x "$operator_sdk" ]]; then
-        operator_sdk="operator-sdk"
-    fi
-
-    if ! command -v "$operator_sdk" &> /dev/null; then
-        warn "operator-sdk not found - run 'make tools' first or install operator-sdk"
-        return 1
+        die "operator-sdk not found in tmp/bin - run 'make tools' first"
     fi
 
     # Pin to OLM v0.28.0 because v0.29.0 fails on Kind
@@ -442,17 +471,18 @@ main() {
 
     print_config
 
+    # Install tools first
+    install_kind
+    install_kubectl
+    install_extra_packages
+
+    # Validate prerequisites after package installation
     validate_prerequisites || die "Fix prerequisite errors above and rerun"
 
     if $VALIDATE_ONLY; then
         ok "Validation completed successfully"
         exit 0
     fi
-
-    # Install tools
-    install_kind
-    install_kubectl
-    install_extra_packages
 
     # Set up cluster and components
     setup_cluster
