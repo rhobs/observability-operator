@@ -1,14 +1,5 @@
 name: e2e-tests-olm
 description: Runs E2E tests against the OLM bundle using unified setup
-inputs:
-  kind-version:
-    description: "kind version"
-    required: false
-    default: 'v0.29.0'
-  kind-image:
-    description: "kind node image"
-    required: false
-    default: 'kindest/node:v1.33.1'
 
 runs:
   using: composite
@@ -26,9 +17,7 @@ runs:
       run: |
         # Use the unified setup script with CI-friendly options
         ./hack/setup-e2e-env.sh \
-          --skip-host-check \
-          --kind-version ${{ inputs.kind-version }} \
-          --kind-image ${{ inputs.kind-image }}
+          --skip-host-check
 
     - name: Run e2e script
       shell: bash
