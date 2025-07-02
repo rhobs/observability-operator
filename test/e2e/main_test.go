@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	configv1 "github.com/openshift/api/config/v1"
+	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -89,7 +90,11 @@ func main(m *testing.M) int {
 func setupFramework() error {
 	cfg := config.GetConfigOrDie()
 	scheme := operator.NewScheme(&operator.OperatorConfiguration{})
-	err := configv1.Install(scheme)
+	err := olmv1alpha1.AddToScheme(scheme)
+	if err != nil {
+		return fmt.Errorf("failed to register olmv1alpha1 to scheme %w", err)
+	}
+	err = configv1.Install(scheme)
 	if err != nil {
 		return fmt.Errorf("failed to register configv1 to scheme %w", err)
 	}
