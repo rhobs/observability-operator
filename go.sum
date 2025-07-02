@@ -275,8 +275,12 @@ github.com/rhobs/obo-prometheus-operator/pkg/client v0.80.1-rhobs1 h1:G5O8HeMAMX
 github.com/rhobs/obo-prometheus-operator/pkg/client v0.80.1-rhobs1/go.mod h1:MTDYtuwui/WwVLOhCOIr1LSD1qWTOKGjx1J8e+Td/CY=
 github.com/rhobs/perses v0.0.0-20250612171017-5d7686af9ae4 h1:IxpxGJ/fbnRkZZYFm17NMedFyEuOKuf4TS23g+6jMvU=
 github.com/rhobs/perses v0.0.0-20250612171017-5d7686af9ae4/go.mod h1:Mxs4sXawWiV50qokKG1UZCV9NJEdJWsALY71/z38NKA=
+github.com/rhobs/perses v0.0.0-20250702155211-05ab23e2ea44 h1:RIdhHhB+yiMKPQlPEsxiZMaX5eqcLOATYzbDDZNXeLI=
+github.com/rhobs/perses v0.0.0-20250702155211-05ab23e2ea44/go.mod h1:Mxs4sXawWiV50qokKG1UZCV9NJEdJWsALY71/z38NKA=
 github.com/rhobs/perses-operator v0.1.10-0.20250612173146-78eb619430df h1:rwtqpvrowEF6EjSiO3PPcqC6s2jo7NU3VsGU6yrpxTg=
 github.com/rhobs/perses-operator v0.1.10-0.20250612173146-78eb619430df/go.mod h1:G7eHFpIaBYMlqUZGsfTu2290i7ZXS9pc5TYicCj6+W0=
+github.com/rhobs/perses-operator v0.1.10-0.20250702160743-6116f0920e00 h1:QfXBErKVvyAXeQ8SlQwYj6lkwf6c/Ikn65QlR8NjRdo=
+github.com/rhobs/perses-operator v0.1.10-0.20250702160743-6116f0920e00/go.mod h1:Ltaf7JYLEFKutOdKZoG2MlphHjofDRZhg02YqcJcVLo=
 github.com/rogpeppe/go-internal v1.14.1 h1:UQB4HGPB6osV0SQTLymcB4TgvyWu6ZyliaW0tI/otEQ=
 github.com/rogpeppe/go-internal v1.14.1/go.mod h1:MaRKkUm5W0goXpeCfT7UZI6fk/L7L7so1lCWt35ZSgc=
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
