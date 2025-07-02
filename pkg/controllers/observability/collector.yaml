@@ -1,0 +1,58 @@
+extensions:
+  bearertokenauth:
+    filename: "/var/run/secrets/kubernetes.io/serviceaccount/token"
+
+receivers:
+  otlp:
+    protocols:
+      grpc: {}
+      http: {}
+  jaeger:
+    protocols:
+      grpc: {}
+      thrift_http: {}
+      thrift_compact: {}
+      thrift_binary: {}
+  zipkin: {}
+
+processors:
+  k8sattributes: {}
+  batch: {}
+  memory_limiter:
+    check_interval: 1s
+    limit_percentage: 75
+    spike_limit_percentage: 25
+
+exporters:
+  debug: {}
+  otlphttp/tempo:
+    endpoint: https://tempo-{{ .TempoName }}-gateway.{{ .Namespace }}.svc.cluster.local:8080/api/traces/v1/{{ .TempoTenant }}
+    tls:
+      insecure: false
+      ca_file: "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
+      reload_interval: 5s
+    auth:
+      authenticator: bearertokenauth
+
+service:
+  telemetry:
+    logs:
+      level: "INFO"
+      development: true
+      encoding: "json"
+    metrics:
+      level: detailed
+      readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: '0.0.0.0'
+                port: 8888
+  extensions: [bearertokenauth]
+  pipelines:
+    traces:
+      receivers: [otlp, jaeger, zipkin]
+      processors: [memory_limiter, k8sattributes, batch]
+      exporters:
+        - debug
+        - otlphttp/tempo
