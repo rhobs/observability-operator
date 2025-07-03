@@ -24,8 +24,8 @@ require (
 )
 
 require (
-	github.com/rhobs/perses v0.0.0-20250612171017-5d7686af9ae4
-	github.com/rhobs/perses-operator v0.1.10-0.20250612173146-78eb619430df
+	github.com/rhobs/perses v0.0.0-20250702155211-05ab23e2ea44
+	github.com/rhobs/perses-operator v0.1.10-0.20250702160743-6116f0920e00
 	k8s.io/api v0.32.5
 	k8s.io/apiextensions-apiserver v0.32.1
 	k8s.io/apimachinery v0.32.5
