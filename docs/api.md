@@ -4395,14 +4395,16 @@ Status of the signal manager.
         <td><b>opentelemetry</b></td>
         <td>string</td>
         <td>
-          OpenTelemetry defines the status of the OpenTelemetry capability.<br/>
+          OpenTelemetry defines the status of the OpenTelemetry capability.
+The value is in the form of instance namespace/name (version)<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>tempo</b></td>
         <td>string</td>
         <td>
-          Tempo defines the status of the Tempo capability.<br/>
+          Tempo defines the status of the Tempo capability.
+The value is in the form of instance namespace/name (version)<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -4414,7 +4416,7 @@ Status of the signal manager.
 
 
 
-
+Condition contains details for one aspect of the current state of this API Resource.
 
 <table>
     <thead>
@@ -4426,10 +4428,60 @@ Status of the signal manager.
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>lastTransitionTime</b></td>
+        <td>string</td>
+        <td>
+          lastTransitionTime is the last time the condition transitioned from one status to another.
+This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.<br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
         <td><b>message</b></td>
         <td>string</td>
         <td>
+          message is a human readable message indicating details about the transition.
+This may be an empty string.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>reason</b></td>
+        <td>string</td>
+        <td>
+          reason contains a programmatic identifier indicating the reason for the condition's last transition.
+Producers of specific condition types may define expected values and meanings for this field,
+and whether the values are considered a guaranteed API.
+The value should be a CamelCase string.
+This field may not be empty.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>status</b></td>
+        <td>enum</td>
+        <td>
+          status of the condition, one of True, False, Unknown.<br/>
           <br/>
+            <i>Enum</i>: True, False, Unknown<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          type of condition in CamelCase or in foo.example.com/CamelCase.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>observedGeneration</b></td>
+        <td>integer</td>
+        <td>
+          observedGeneration represents the .metadata.generation that the condition was set based upon.
+For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+with respect to the current state of the instance.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+            <i>Minimum</i>: 0<br/>
         </td>
         <td>false</td>
       </tr></tbody>
