@@ -50,20 +50,18 @@ type ClusterObservabilitySpec struct {
 // ClusterObservabilityStatus defines the observed state of ClusterObservability.
 type ClusterObservabilityStatus struct {
 	// OpenTelemetry defines the status of the OpenTelemetry capability.
+	// The value is in the form of instance namespace/name (version)
 	// +optional
 	OpenTelemetry string `json:"opentelemetry,omitempty"`
 	// Tempo defines the status of the Tempo capability.
+	// The value is in the form of instance namespace/name (version)
 	// +optional
 	Tempo string `json:"tempo,omitempty"`
 
 	// Conditions provide status information about the instance.
 	// +listType=atomic
 	// +optional
-	Conditions []StatusConditions `json:"conditions,omitempty"`
-}
-
-type StatusConditions struct {
-	Message string `json:"message,omitempty"`
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 type StorageSecretType string

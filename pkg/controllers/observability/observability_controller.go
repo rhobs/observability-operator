@@ -10,6 +10,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -25,6 +26,9 @@ import (
 
 const (
 	finalizerName = "observability.openshift.io/clusterobservability"
+
+	conditionReasonError    = "ReconcileError"
+	conditionTypeReconciled = "Reconciled"
 )
 
 // RBAC for the ClusterObservability CRD
@@ -169,9 +173,14 @@ func (o clusterObservabilityController) updateStatus(ctx context.Context, instan
 	}
 
 	if reconcileErr != nil {
-		instance.Status.Conditions = []obsv1alpha1.StatusConditions{
+		instance.Status.Conditions = []metav1.Condition{
 			{
-				Message: reconcileErr.Error(),
+				Reason:             conditionReasonError,
+				Type:               conditionTypeReconciled,
+				Status:             metav1.ConditionFalse,
+				Message:            reconcileErr.Error(),
+				LastTransitionTime: metav1.Now(),
+				ObservedGeneration: instance.GetGeneration(),
 			},
 		}
 	}
