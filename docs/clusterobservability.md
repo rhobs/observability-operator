@@ -4,6 +4,15 @@ This document describes the `ClusterObservability` Custom Resource Definition (C
 The goal of this CRD is to provide end-to-end observability capabilities with minimal configuration.
 Power users should be able to customize the underlying components via server-side apply.
 
+## Setup
+
+The `ClusterObservability` CRD is not by default enabled. To enable it, you need to perform the following steps:
+
+* Uncomment https://github.com/rhobs/observability-operator/blob/c4564860c698cb8201d368c02de21650a8b7034c/deploy/crds/common/kustomization.yaml#L7
+* Enable `--openshift.enabled=true` https://github.com/rhobs/observability-operator/blob/edd13e0a43cab1e74536b01f86ea5cb4ff7fe897/cmd/operator/main.go#L107
+
+```bash
+
 ## Examples
 
 ### Logging and tracing
