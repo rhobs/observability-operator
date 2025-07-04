@@ -3,6 +3,7 @@ package observability
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -95,7 +96,22 @@ func (o clusterObservabilityController) Reconcile(ctx context.Context, request r
 		}
 	}
 
-	reconcilers, err := getReconcilers(instance, o.Options, storageSecret)
+	subs := &olmv1alpha1.SubscriptionList{}
+	err = o.client.List(ctx, subs, &client.ListOptions{})
+	if err != nil {
+		o.logger.Error(err, "Failed to list subscriptions")
+		return ctrl.Result{}, err
+	}
+	subsByCSVName := make(map[string]olmv1alpha1.Subscription, len(subs.Items))
+	for _, sub := range subs.Items {
+		csvWithoutVersion := sub.Spec.StartingCSV
+		if idx := strings.Index(sub.Spec.StartingCSV, "."); idx != -1 {
+			csvWithoutVersion = sub.Spec.StartingCSV[:idx]
+		}
+		subsByCSVName[csvWithoutVersion] = sub
+	}
+
+	reconcilers, err := getReconcilers(instance, o.Options, storageSecret, subsByCSVName)
 	if err != nil {
 		o.logger.Error(err, "Failed to get reconcilers")
 		return ctrl.Result{}, err
@@ -216,8 +232,11 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 	// TODO remove once the ClusterObservability feature is tech-preview
 	// Check if the ClusterObservability CRD is installed, if not, do not install the controller
 	clObs := &obsv1alpha1.ClusterObservability{}
-	getClObsErr := mgr.GetClient().Get(context.Background(), types.NamespacedName{}, clObs)
+	getClObsErr := mgr.GetAPIReader().Get(context.Background(), types.NamespacedName{
+		Name: "does-not-exist-on-purpose",
+	}, clObs)
 	if !apierrors.IsNotFound(getClObsErr) {
+		logger.Info("not installing cluster observability controller, ClusterObservability CRD is not installed")
 		return nil
 	}
 

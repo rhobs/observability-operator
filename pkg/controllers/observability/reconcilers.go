@@ -12,15 +12,22 @@ import (
 	"github.com/rhobs/observability-operator/pkg/reconciler"
 )
 
-func getReconcilers(instance *obsv1alpha1.ClusterObservability, opts Options, storageSecret *corev1.Secret) ([]reconciler.Reconciler, error) {
+func getReconcilers(instance *obsv1alpha1.ClusterObservability, opts Options, storageSecret *corev1.Secret, subsByCSVName map[string]olmv1alpha1.Subscription) ([]reconciler.Reconciler, error) {
 	var reconcilers []reconciler.Reconciler
 	var operatorObjects []client.Object
 	var instanceObjects []client.Object
 	installedObjects := map[string]client.Object{}
 
-	// operator objects
-	operatorObjects = append(operatorObjects, subscription(opts.OpenTelemetryOperator))
-	operatorObjects = append(operatorObjects, subscription(opts.TempoOperator))
+	// the OTEL and Tempo operators are rolling release, meaning only the latest released versions are supported.
+	// At the moment there are no compatibility issues between the operands of these two operators, so we can
+	// install them together in any versions.
+	if _, otelOperatorInstalled := subsByCSVName["opentelemetry-operator"]; !otelOperatorInstalled {
+		operatorObjects = append(operatorObjects, subscription(opts.OpenTelemetryOperator))
+	}
+	if _, tempoOperatorInstalled := subsByCSVName["tempo-operator"]; !tempoOperatorInstalled {
+		operatorObjects = append(operatorObjects, subscription(opts.TempoOperator))
+	}
+
 	// instance objects
 	instanceObjects = append(instanceObjects, newOperandsNamespace(opts.OperandsNamespace))
 	otelCol, err := otelCollector(opts.OperandsNamespace)
@@ -92,7 +99,9 @@ func getReconcilers(instance *obsv1alpha1.ClusterObservability, opts Options, st
 			reconcilers = append(reconcilers, reconciler.NewDeleter(obj))
 		}
 	}
+	// Delete CSV explicitly because it is not deleted when the subscription is deleted.
 	for _, obj := range operatorObjects {
+		// operator is not installed so make sure the CSV is deleted
 		if installedObjects[gvaNameIdentifier(obj)] == nil {
 			reconcilers = append(reconcilers, reconciler.NewDeleter(obj))
 
