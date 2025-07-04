@@ -292,7 +292,7 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 			TempoOperator: obsctrl.OperatorInstallConfig{
 				Namespace:   cfg.ClusterObservability.COONamespace,
 				PackageName: "tempo-product",
-				StartingCSV: cfg.ClusterObservability.OpenTelemetryCSV,
+				StartingCSV: cfg.ClusterObservability.TempoCSV,
 				Channel:     "stable",
 			},
 		}); err != nil {
