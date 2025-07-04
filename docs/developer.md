@@ -29,21 +29,54 @@ make tools
 
 ## Environment Setup
 
-To setup the environment, it is recommended to run the helper script
-`hack/kind/setup.sh`. The script does the following:
-* Sets up a local Kind cluster.
-* Installs the Operator Lifecycle Manager (OLM) in the cluster.
-* Sets up a local registry to push the local operator and bundle images.
+To setup the environment, first install project-specific tools, then run the unified environment setup script
+`hack/setup-e2e-env.sh`. This script provides a consistent setup process used by both
+local development and CI environments to prevent config drift.
 
 ```sh
-./hack/kind/setup.sh
+# First, install project tools
+make tools
+
+# Then run the environment setup
+./hack/setup-e2e-env.sh
 ```
 
-Once done, the cluster can be deleted by running
+The script does the following:
+* Validates that project tools (operator-sdk, oc, etc.) are available from `make tools`
+* Installs kind and kubectl if not already available
+* Sets up a local Kind cluster
+* Installs the Operator Lifecycle Manager (OLM) in the cluster
+* Sets up a local registry to push the local operator and bundle images
+* Installs monitoring CRDs
+
+For advanced usage or CI integration, the script supports many options:
+
+```sh
+# First, install project tools
+make tools
+
+# Full setup with defaults (typical local development)
+./hack/setup-e2e-env.sh
+
+# Only validate prerequisites without setting up
+./hack/setup-e2e-env.sh --validate-only
+
+# Install additional packages (any system packages)
+./hack/setup-e2e-env.sh curl jq tree htop git-lfs
+
+# Use custom versions
+./hack/setup-e2e-env.sh --kind-version v0.23.0 --kind-image kindest/node:v1.25.0
+```
+
+See `./hack/setup-e2e-env.sh --help` for all available options.
+
+Once done, the cluster can be deleted by running:
 
 ```
 kind delete cluster --name obs-operator
 ```
+
+**Note:** The old `hack/kind/setup.sh` script is deprecated but still works for backward compatibility - it forwards to the new unified script.
 
 ## Running End to End tests
 
