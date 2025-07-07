@@ -91,11 +91,6 @@ type CapabilitiesSpec struct {
 	// +optional
 	// +kubebuilder:validation:Optional
 	Tracing TracingSpec `json:"tracing,omitempty"`
-
-	// OpenTelemetry defines the OpenTelemetry capabilities.
-	// +optional
-	// +kubebuilder:validation:Optional
-	OpenTelemetry OpenTelemetrySpec `json:"opentelemetry,omitempty"`
 }
 
 // CommonCapabilitiesSpec defines the common capabilities.
