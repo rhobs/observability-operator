@@ -179,7 +179,7 @@ func TestGetReconcilers(t *testing.T) {
 					StartingCSV: "tempo",
 					Channel:     "stable",
 				},
-			}, corev1.Secret{}, test.installedSubscriptions)
+			}, &corev1.Secret{}, test.installedSubscriptions)
 			require.NoError(t, err)
 
 			mockClient := test.mockClient()
