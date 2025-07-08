@@ -12,7 +12,7 @@ import (
 	"github.com/rhobs/observability-operator/pkg/reconciler"
 )
 
-func getReconcilers(instance *obsv1alpha1.ClusterObservability, opts Options, storageSecret corev1.Secret) ([]reconciler.Reconciler, error) {
+func getReconcilers(instance *obsv1alpha1.ClusterObservability, opts Options, storageSecret *corev1.Secret) ([]reconciler.Reconciler, error) {
 	var reconcilers []reconciler.Reconciler
 	var operatorObjects []client.Object
 	var instanceObjects []client.Object
@@ -61,17 +61,22 @@ func getReconcilers(instance *obsv1alpha1.ClusterObservability, opts Options, st
 		return reconcilers, nil
 	}
 
+	// Install operators and instances
 	if instance.Spec.Capabilities != nil && instance.Spec.Capabilities.Tracing.CommonCapabilitiesSpec.Enabled {
 		// install operators and instances
 		for _, obj := range operatorObjects {
 			reconcilers = append(reconcilers, reconciler.NewCreateUpdateReconciler(obj, instance))
 			installedObjects[gvaNameIdentifier(obj)] = obj
 		}
+		if storageSecret == nil {
+			return nil, fmt.Errorf("storage secret is required when the tracing capability is enabled")
+		}
 		for _, obj := range instanceObjects {
 			reconcilers = append(reconcilers, reconciler.NewUpdater(obj, instance))
 			installedObjects[gvaNameIdentifier(obj)] = obj
 		}
 	}
+	// install operators only
 	if instance.Spec.Capabilities != nil &&
 		(instance.Spec.Capabilities.Tracing.CommonCapabilitiesSpec.Operators.Install != nil && *instance.Spec.Capabilities.Tracing.CommonCapabilitiesSpec.Operators.Install) {
 		// install operators only

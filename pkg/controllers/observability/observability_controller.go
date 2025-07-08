@@ -84,16 +84,18 @@ func (o clusterObservabilityController) Reconcile(ctx context.Context, request r
 	}
 
 	storageSecret := &corev1.Secret{}
-	err = o.client.Get(ctx, types.NamespacedName{
-		Namespace: "operators",
-		Name:      instance.Spec.Storage.Secret.Name,
-	}, storageSecret)
-	if err != nil {
-		o.logger.Error(err, "Failed to get storage secret")
-		return ctrl.Result{}, err
+	if instance.Spec.Storage.Secret.Name != "" {
+		err = o.client.Get(ctx, types.NamespacedName{
+			Namespace: "operators",
+			Name:      instance.Spec.Storage.Secret.Name,
+		}, storageSecret)
+		if err != nil {
+			o.logger.Error(err, "Failed to get storage secret")
+			return ctrl.Result{}, err
+		}
 	}
 
-	reconcilers, err := getReconcilers(instance, o.Options, *storageSecret)
+	reconcilers, err := getReconcilers(instance, o.Options, storageSecret)
 	if err != nil {
 		o.logger.Error(err, "Failed to get reconcilers")
 		return ctrl.Result{}, err

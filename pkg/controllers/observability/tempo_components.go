@@ -56,8 +56,8 @@ func tempoSecretName(name string) string {
 	return fmt.Sprintf("coo-%s", name)
 }
 
-func tempoStackSecret(storage obsv1alpha1.StorageSpec, ns string, storageSecret corev1.Secret) *corev1.Secret {
-	return &corev1.Secret{
+func tempoStackSecret(storage obsv1alpha1.StorageSpec, ns string, storageSecret *corev1.Secret) *corev1.Secret {
+	tempoSecret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Secret",
 			APIVersion: corev1.SchemeGroupVersion.String(),
@@ -66,13 +66,17 @@ func tempoStackSecret(storage obsv1alpha1.StorageSpec, ns string, storageSecret 
 			Name:      tempoSecretName(storage.Secret.Name),
 			Namespace: ns,
 		},
-		Data: map[string][]byte{
+	}
+	if storageSecret != nil {
+		tempoSecret.Data = map[string][]byte{
 			"bucket":            storageSecret.Data["bucket"],
 			"endpoint":          storageSecret.Data["endpoint"],
 			"access_key_id":     storageSecret.Data["access_key_id"],
 			"access_key_secret": storageSecret.Data["access_key_secret"],
-		},
+		}
 	}
+
+	return tempoSecret
 }
 
 func uiPlugin() *uiv1alpha1.UIPlugin {
