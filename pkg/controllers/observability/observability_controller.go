@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -14,10 +15,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/discovery"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	tempov1alpha1 "github.com/grafana/tempo-operator/api/tempo/v1alpha1"
 	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
@@ -54,10 +60,15 @@ const (
 // +kubebuilder:rbac:groups=tempo.grafana.com,resources=prod,resourceNames=traces,verbs=create
 
 type clusterObservabilityController struct {
-	client  client.Client
-	scheme  *runtime.Scheme
-	logger  logr.Logger
-	Options Options
+	client          client.Client
+	scheme          *runtime.Scheme
+	logger          logr.Logger
+	Options         Options
+	controller      controller.TypedController[reconcile.Request]
+	cache           cache.Cache
+	discoveryClient *discovery.DiscoveryClient
+	watchOTELcol    *sync.Once
+	watchTempo      *sync.Once
 }
 
 var _ reconcile.TypedReconciler[reconcile.Request] = (*clusterObservabilityController)(nil)
@@ -130,6 +141,29 @@ func (o clusterObservabilityController) Reconcile(ctx context.Context, request r
 		}
 	}
 
+	groups, err := o.discoveryClient.ServerGroups()
+	if err != nil {
+		o.logger.Error(err, "Failed to get server groups / CDRs")
+		return ctrl.Result{}, fmt.Errorf("failed to get server groups: %w", err)
+	}
+	for _, group := range groups.Groups {
+		if group.Name == "opentelemetry.io" {
+			o.watchOTELcol.Do(func() {
+				if err := o.controller.Watch(source.Kind[client.Object](o.cache, &otelv1beta1.OpenTelemetryCollector{}, handler.EnqueueRequestsFromMapFunc(o.triggerReconcile))); err != nil {
+					o.logger.Error(err, "Failed to watch OpenTelemetryCollector resources")
+				}
+			})
+		}
+
+		if group.Name == "tempo.grafana.com" {
+			o.watchTempo.Do(func() {
+				if err := o.controller.Watch(source.Kind[client.Object](o.cache, &otelv1beta1.OpenTelemetryCollector{}, handler.EnqueueRequestsFromMapFunc(o.triggerReconcile))); err != nil {
+					o.logger.Error(err, "Failed to watch TempoStack resources")
+				}
+			})
+		}
+	}
+
 	// We have a deletion, short circuit and let the deletion happen
 	if instance.ObjectMeta.DeletionTimestamp != nil {
 		if controllerutil.ContainsFinalizer(instance, finalizerName) {
@@ -145,6 +179,26 @@ func (o clusterObservabilityController) Reconcile(ctx context.Context, request r
 	}
 
 	return o.updateStatus(ctx, instance, nil), nil
+}
+
+func (o clusterObservabilityController) triggerReconcile(ctx context.Context, _ client.Object) []reconcile.Request {
+	instances := &obsv1alpha1.ClusterObservabilityList{}
+	listOps := &client.ListOptions{}
+	err := o.client.List(ctx, instances, listOps)
+	if err != nil {
+		return []reconcile.Request{}
+	}
+
+	requests := make([]reconcile.Request, len(instances.Items))
+	for i, item := range instances.Items {
+		requests[i] = reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Name:      item.GetName(),
+				Namespace: item.GetNamespace(),
+			},
+		}
+	}
+	return requests
 }
 
 func (o clusterObservabilityController) getInstance(ctx context.Context, req ctrl.Request) (*obsv1alpha1.ClusterObservability, error) {
@@ -240,18 +294,25 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 		return nil
 	}
 
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(mgr.GetConfig())
+	if err != nil {
+		return fmt.Errorf("failed to create discovery client: %w", err)
+	}
+
 	controller := &clusterObservabilityController{
-		client:  mgr.GetClient(),
-		scheme:  mgr.GetScheme(),
-		logger:  logger,
-		Options: opts,
+		client:          mgr.GetClient(),
+		scheme:          mgr.GetScheme(),
+		logger:          logger,
+		Options:         opts,
+		watchOTELcol:    &sync.Once{},
+		watchTempo:      &sync.Once{},
+		discoveryClient: discoveryClient,
+		cache:           mgr.GetCache(),
 	}
 
 	ctrlBuilder := ctrl.NewControllerManagedBy(mgr).
 		For(&obsv1alpha1.ClusterObservability{}).
 		Owns(&olmv1alpha1.Subscription{}).
-		Owns(&otelv1beta1.OpenTelemetryCollector{}).
-		Owns(&tempov1alpha1.TempoStack{}).
 		Owns(&corev1.Secret{}).
 		Owns(&corev1.Namespace{}).
 		Owns(&uiv1alpha1.UIPlugin{}).
@@ -259,8 +320,7 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 		Owns(&rbacv1.ClusterRoleBinding{}).
 		Named("cluster-observability")
 
-	_, err := ctrlBuilder.Build(controller)
-
+	controller.controller, err = ctrlBuilder.Build(controller)
 	if err != nil {
 		return err
 	}
