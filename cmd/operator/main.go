@@ -33,8 +33,8 @@ import (
 )
 
 const (
-	opentelemetryCSV = "opentelemetry-operator.v0.127.0-1"
-	tempoCSV         = "tempo-operator.v0.16.0-1"
+	opentelemetryCSV = ""
+	tempoCSV         = ""
 )
 
 // The default values we use. Prometheus and Alertmanager are handled by
@@ -105,8 +105,8 @@ func main() {
 	flag.StringVar(&healthProbeAddr, "health-probe-bind-address", ":8081", "The address the health probe endpoint binds to.")
 	flag.Var(images, "images", fmt.Sprintf("Full images refs to use for containers managed by the operator. E.g thanos=quay.io/thanos/thanos:v0.33.0. Images used are %v", imagesUsed()))
 	flag.BoolVar(&openShiftEnabled, "openshift.enabled", false, "Enable OpenShift specific features such as Console Plugins.")
-	flag.StringVar(&otelCSVName, "opentelemetry-csv", opentelemetryCSV, "OpenTelemetry Operator starting CSV name. This is used to install the OpenTelemetry Operator in the cluster.")
-	flag.StringVar(&tempoCSVName, "tempo-csv", tempoCSV, "Tempo Operator starting CSV name. This is used to install the Tempo Operator in the cluster.")
+	flag.StringVar(&otelCSVName, "opentelemetry-csv", opentelemetryCSV, "OpenTelemetry Operator starting CSV name. This can be used to install a specific OpenTelemetry Operator version")
+	flag.StringVar(&tempoCSVName, "tempo-csv", tempoCSV, "Tempo Operator starting CSV name. This can be used to install a specific Tempo Operator version")
 
 	opts := zap.Options{
 		Development: true,
