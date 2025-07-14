@@ -27,9 +27,10 @@ func TestGetReconcilers(t *testing.T) {
 	trueVal := true
 
 	tests := []struct {
-		name       string
-		instance   *obsv1alpha1.ClusterObservability
-		mockClient func() *MockClient
+		name                   string
+		instance               *obsv1alpha1.ClusterObservability
+		mockClient             func() *MockClient
+		installedSubscriptions map[string]olmv1alpha1.Subscription
 	}{
 		{
 			name: "tracing capability enabled",
@@ -126,6 +127,39 @@ func TestGetReconcilers(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "tracing capability enabled, subscription already installed",
+			mockClient: func() *MockClient {
+				mockClient := &MockClient{}
+				mockClient.On("Patch", context.Background(), mock.IsType(&corev1.Namespace{}), mock.Anything, mock.Anything).Return(nil)
+				mockClient.On("Patch", context.Background(), mock.IsType(&otelv1beta1.OpenTelemetryCollector{}), mock.Anything, mock.Anything).Return(nil)
+				mockClient.On("Patch", context.Background(), mock.IsType(&rbacv1.ClusterRole{}), mock.Anything, mock.Anything).Return(nil)
+				mockClient.On("Patch", context.Background(), mock.IsType(&rbacv1.ClusterRoleBinding{}), mock.Anything, mock.Anything).Return(nil)
+				mockClient.On("Patch", context.Background(), mock.IsType(&tempov1alpha1.TempoStack{}), mock.Anything, mock.Anything).Return(nil)
+				mockClient.On("Patch", context.Background(), mock.IsType(&corev1.Secret{}), mock.Anything, mock.Anything).Return(nil)
+				mockClient.On("Patch", context.Background(), mock.IsType(&uiv1alpha1.UIPlugin{}), mock.Anything, mock.Anything).Return(nil)
+				return mockClient
+			},
+			instance: &obsv1alpha1.ClusterObservability{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "test-namespace",
+				},
+				Spec: obsv1alpha1.ClusterObservabilitySpec{
+					Capabilities: &obsv1alpha1.CapabilitiesSpec{
+						Tracing: obsv1alpha1.TracingSpec{
+							CommonCapabilitiesSpec: obsv1alpha1.CommonCapabilitiesSpec{
+								Enabled: true,
+							},
+						},
+					},
+				},
+			},
+			installedSubscriptions: map[string]olmv1alpha1.Subscription{
+				"opentelemetry-operator": {},
+				"tempo-operator":         {},
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -145,7 +179,7 @@ func TestGetReconcilers(t *testing.T) {
 					StartingCSV: "tempo",
 					Channel:     "stable",
 				},
-			}, corev1.Secret{})
+			}, &corev1.Secret{}, test.installedSubscriptions)
 			require.NoError(t, err)
 
 			mockClient := test.mockClient()

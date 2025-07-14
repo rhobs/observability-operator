@@ -1,0 +1,72 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: verify-traces-traceql-grpc
+  namespace: cluster-observability
+spec:
+  template:
+    spec:
+      containers:
+        - name: verify-traces
+          image: ghcr.io/grafana/tempo-operator/test-utils:main
+          command:
+            - /bin/bash
+            - -eux
+            - -c
+          args:
+            - |
+              token=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+              curl \
+                -v -G \
+                --header "Authorization: Bearer $token" \
+                --cacert /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt \
+                https://tempo-coo-gateway.cluster-observability.svc:8080/api/traces/v1/prod/tempo/api/search \
+                --data-urlencode 'q={ resource.service.name="grpc" }' \
+                | tee /tmp/jaeger.out
+              num_traces=$(jq ".traces | length" /tmp/jaeger.out)
+              if [[ "$num_traces" != "10" ]]; then
+                echo && echo "The API returned $num_traces instead of 10 traces."
+                exit 1
+              fi
+      restartPolicy: Never
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: tempostack-traces-reader
+rules:
+  - apiGroups:
+      - 'tempo.grafana.com'
+    resources:
+      - prod
+    resourceNames:
+      - traces
+    verbs:
+      - 'get'
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: tempostack-traces-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: tempostack-traces-reader
+subjects:
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: system:authenticated
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: view
+  namespace: cluster-observability
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: cluster-observability

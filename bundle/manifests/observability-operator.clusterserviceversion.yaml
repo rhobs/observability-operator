@@ -42,7 +42,7 @@ metadata:
     categories: Monitoring
     certified: "false"
     containerImage: observability-operator:1.2.0
-    createdAt: "2025-07-08T14:18:43Z"
+    createdAt: "2025-07-14T11:40:47Z"
     description: A Go based Kubernetes operator to setup and manage highly available
       Monitoring Stack using Prometheus, Alertmanager and Thanos Querier.
     operatorframework.io/cluster-monitoring: "true"
@@ -75,9 +75,6 @@ spec:
       kind: Alertmanager
       name: alertmanagers.monitoring.rhobs
       version: v1
-    - kind: ClusterObservability
-      name: clusterobservabilities.observability.openshift.io
-      version: v1alpha1
     - description: MonitoringStack is the Schema for the monitoringstacks API
       displayName: MonitoringStack
       kind: MonitoringStack
