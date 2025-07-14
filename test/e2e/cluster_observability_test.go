@@ -127,6 +127,7 @@ func testClusterObservabilityInstallOperators(t *testing.T) {
 		}
 		return false, nil
 	})
+	require.NoError(t, err)
 
 	// Delete the resource
 	err = f.K8sClient.Delete(ctx, &createdClusterObs)
@@ -141,5 +142,5 @@ func testClusterObservabilityInstallOperators(t *testing.T) {
 		}
 		return false, err
 	})
-	assert.NilError(t, err, "ClusterObservability resource should be deleted")
+	require.NoError(t, err)
 }
