@@ -157,7 +157,7 @@ func (o clusterObservabilityController) Reconcile(ctx context.Context, request r
 
 		if group.Name == "tempo.grafana.com" {
 			o.watchTempo.Do(func() {
-				if err := o.controller.Watch(source.Kind[client.Object](o.cache, &otelv1beta1.OpenTelemetryCollector{}, handler.EnqueueRequestsFromMapFunc(o.triggerReconcile))); err != nil {
+				if err := o.controller.Watch(source.Kind[client.Object](o.cache, &tempov1alpha1.TempoStack{}, handler.EnqueueRequestsFromMapFunc(o.triggerReconcile))); err != nil {
 					o.logger.Error(err, "Failed to watch TempoStack resources")
 				}
 			})
