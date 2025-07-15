@@ -145,7 +145,7 @@ func getReconcilers(instance *obsv1alpha1.ClusterObservability, opts Options, st
 		}
 	}
 	// Delete CSV explicitly because it is not deleted when the subscription is deleted.
-	if operatorsStatus.ShouldInstall("otel") && installedObjects[gvaNameIdentifier(otelSubs)] == nil {
+	if operatorsStatus.ShouldInstall("opentelemetry") && installedObjects[gvaNameIdentifier(otelSubs)] == nil {
 		reconcilers = append(reconcilers, reconciler.NewDeleter(otelSubs))
 		if otelCSV := operatorsStatus.getCSVByName("opentelemetry-operator"); otelCSV != nil {
 			reconcilers = append(reconcilers, reconciler.NewDeleter(otelCSV))
