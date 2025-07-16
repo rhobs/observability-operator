@@ -2,6 +2,7 @@ package observability
 
 import (
 	"fmt"
+	"strings"
 
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -12,21 +13,61 @@ import (
 	"github.com/rhobs/observability-operator/pkg/reconciler"
 )
 
-func getReconcilers(instance *obsv1alpha1.ClusterObservability, opts Options, storageSecret *corev1.Secret, subsByCSVName map[string]olmv1alpha1.Subscription) ([]reconciler.Reconciler, error) {
+type operatorsStatus struct {
+	cooNamespace string
+	// CSVs installed in the operator's namespace.
+	// The CSV name is always in a form opentelemetry-operator.v0.129.1 - it's for both the product and the OOS version.
+	csvs []olmv1alpha1.ClusterServiceVersion
+	// Subscriptions installed in all namespaces.
+	// The subscription name can be opentelemetry-product or opentelemetry-operator.
+	subs []olmv1alpha1.Subscription
+}
+
+// ShouldInstall checks if the operator should be uninstalled.
+func (s *operatorsStatus) ShouldInstall(operatorName string) bool {
+	for _, sub := range s.subs {
+		if strings.HasPrefix(sub.Name, operatorName) && sub.Namespace != s.cooNamespace {
+			return false
+		}
+	}
+	return true
+}
+
+func (s *operatorsStatus) ShouldUnInstall(operatorName string) bool {
+	for _, sub := range s.subs {
+		if strings.HasPrefix(sub.Name, operatorName) && sub.Namespace == s.cooNamespace {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *operatorsStatus) getCSVByName(operatorName string) *olmv1alpha1.ClusterServiceVersion {
+	for _, csv := range s.csvs {
+		if strings.HasPrefix(csv.Name, operatorName) {
+			return &csv
+		}
+	}
+	return nil
+}
+
+// getReconcilers returns a list of reconcilers for the ClusterObservability instance.
+// The subByName is used to check if the operators are already installed, if not, they will be installed.
+// The csvByName is used to uninstall the operators, the name of the CSV contains the version therefore it must be retrieved from the cluster.
+// The CSV is not deleted when the subscription is deleted, so we need to delete it explicitly.
+func getReconcilers(instance *obsv1alpha1.ClusterObservability, opts Options, storageSecret *corev1.Secret, operatorsStatus operatorsStatus) ([]reconciler.Reconciler, error) {
 	var reconcilers []reconciler.Reconciler
-	var operatorObjects []client.Object
+	//var otelOperator client.Object
+	//var tempoOperator client.Object
 	var instanceObjects []client.Object
 	installedObjects := map[string]client.Object{}
 
 	// the OTEL and Tempo operators are rolling release, meaning only the latest released versions are supported.
 	// At the moment there are no compatibility issues between the operands of these two operators, so we can
 	// install them together in any versions.
-	if _, otelOperatorInstalled := subsByCSVName["opentelemetry-operator"]; !otelOperatorInstalled {
-		operatorObjects = append(operatorObjects, subscription(opts.OpenTelemetryOperator))
-	}
-	if _, tempoOperatorInstalled := subsByCSVName["tempo-operator"]; !tempoOperatorInstalled {
-		operatorObjects = append(operatorObjects, subscription(opts.TempoOperator))
-	}
+
+	otelSubs := subscription(opts.OpenTelemetryOperator)
+	tempoSubs := subscription(opts.TempoOperator)
 
 	// instance objects
 	instanceObjects = append(instanceObjects, newOperandsNamespace(opts.OperandsNamespace))
@@ -49,31 +90,31 @@ func getReconcilers(instance *obsv1alpha1.ClusterObservability, opts Options, st
 		for _, obj := range instanceObjects {
 			reconcilers = append(reconcilers, reconciler.NewDeleter(obj))
 		}
-		for _, obj := range operatorObjects {
-			reconcilers = append(reconcilers, reconciler.NewDeleter(obj))
+		if operatorsStatus.ShouldUnInstall("opentelemetry") {
+			reconcilers = append(reconcilers, reconciler.NewDeleter(otelSubs))
+			if otelCSV := operatorsStatus.getCSVByName("opentelemetry-operator"); otelCSV != nil {
+				reconcilers = append(reconcilers, reconciler.NewDeleter(otelCSV))
+			}
 		}
-
-		reconcilers = append(reconcilers, reconciler.NewDeleter(&olmv1alpha1.ClusterServiceVersion{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      opts.OpenTelemetryOperator.StartingCSV,
-				Namespace: opts.COONamespace,
-			},
-		}))
-		reconcilers = append(reconcilers, reconciler.NewDeleter(&olmv1alpha1.ClusterServiceVersion{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      opts.TempoOperator.StartingCSV,
-				Namespace: opts.COONamespace,
-			},
-		}))
+		if operatorsStatus.ShouldUnInstall("tempo") {
+			reconcilers = append(reconcilers, reconciler.NewDeleter(tempoSubs))
+			if tempoCSV := operatorsStatus.getCSVByName("tempo-operator"); tempoCSV != nil {
+				reconcilers = append(reconcilers, reconciler.NewDeleter(tempoCSV))
+			}
+		}
 		return reconcilers, nil
 	}
 
 	// Install operators and instances
 	if instance.Spec.Capabilities != nil && instance.Spec.Capabilities.Tracing.CommonCapabilitiesSpec.Enabled {
 		// install operators and instances
-		for _, obj := range operatorObjects {
-			reconcilers = append(reconcilers, reconciler.NewCreateUpdateReconciler(obj, instance))
-			installedObjects[gvaNameIdentifier(obj)] = obj
+		if operatorsStatus.ShouldInstall("opentelemetry") {
+			reconcilers = append(reconcilers, reconciler.NewCreateUpdateReconciler(otelSubs, instance))
+			installedObjects[gvaNameIdentifier(otelSubs)] = otelSubs
+		}
+		if operatorsStatus.ShouldInstall("tempo") {
+			reconcilers = append(reconcilers, reconciler.NewCreateUpdateReconciler(tempoSubs, instance))
+			installedObjects[gvaNameIdentifier(tempoSubs)] = tempoSubs
 		}
 		if storageSecret == nil {
 			return nil, fmt.Errorf("storage secret is required when the tracing capability is enabled")
@@ -87,41 +128,33 @@ func getReconcilers(instance *obsv1alpha1.ClusterObservability, opts Options, st
 	if instance.Spec.Capabilities != nil &&
 		(instance.Spec.Capabilities.Tracing.CommonCapabilitiesSpec.Operators.Install != nil && *instance.Spec.Capabilities.Tracing.CommonCapabilitiesSpec.Operators.Install) {
 		// install operators only
-		for _, obj := range operatorObjects {
-			reconcilers = append(reconcilers, reconciler.NewCreateUpdateReconciler(obj, instance))
-			installedObjects[gvaNameIdentifier(obj)] = obj
+		if operatorsStatus.ShouldInstall("opentelemetry") {
+			reconcilers = append(reconcilers, reconciler.NewCreateUpdateReconciler(otelSubs, instance))
+			installedObjects[gvaNameIdentifier(otelSubs)] = otelSubs
+		}
+		if operatorsStatus.ShouldInstall("tempo") {
+			reconcilers = append(reconcilers, reconciler.NewCreateUpdateReconciler(tempoSubs, instance))
+			installedObjects[gvaNameIdentifier(tempoSubs)] = tempoSubs
 		}
 	}
 
-	// rest to delete
+	// Delete not created objects.
 	for _, obj := range instanceObjects {
 		if installedObjects[gvaNameIdentifier(obj)] == nil {
 			reconcilers = append(reconcilers, reconciler.NewDeleter(obj))
 		}
 	}
 	// Delete CSV explicitly because it is not deleted when the subscription is deleted.
-	for _, obj := range operatorObjects {
-		// operator is not installed so make sure the CSV is deleted
-		if installedObjects[gvaNameIdentifier(obj)] == nil {
-			reconcilers = append(reconcilers, reconciler.NewDeleter(obj))
-
-			var csv *olmv1alpha1.ClusterServiceVersion
-			if obj.GetName() == opts.OpenTelemetryOperator.PackageName {
-				csv = &olmv1alpha1.ClusterServiceVersion{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      opts.OpenTelemetryOperator.StartingCSV,
-						Namespace: opts.COONamespace,
-					},
-				}
-			} else if obj.GetName() == opts.TempoOperator.PackageName {
-				csv = &olmv1alpha1.ClusterServiceVersion{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      opts.TempoOperator.StartingCSV,
-						Namespace: opts.COONamespace,
-					},
-				}
-			}
-			reconcilers = append(reconcilers, reconciler.NewDeleter(csv))
+	if operatorsStatus.ShouldInstall("opentelemetry") && installedObjects[gvaNameIdentifier(otelSubs)] == nil {
+		reconcilers = append(reconcilers, reconciler.NewDeleter(otelSubs))
+		if otelCSV := operatorsStatus.getCSVByName("opentelemetry-operator"); otelCSV != nil {
+			reconcilers = append(reconcilers, reconciler.NewDeleter(otelCSV))
+		}
+	}
+	if operatorsStatus.ShouldInstall("tempo") && installedObjects[gvaNameIdentifier(tempoSubs)] == nil {
+		reconcilers = append(reconcilers, reconciler.NewDeleter(tempoSubs))
+		if tempoCSV := operatorsStatus.getCSVByName("tempo-operator"); tempoCSV != nil {
+			reconcilers = append(reconcilers, reconciler.NewDeleter(tempoCSV))
 		}
 	}
 

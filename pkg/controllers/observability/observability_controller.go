@@ -3,7 +3,6 @@ package observability
 import (
 	"context"
 	"fmt"
-	"strings"
 	"sync"
 	"time"
 
@@ -107,22 +106,23 @@ func (o clusterObservabilityController) Reconcile(ctx context.Context, request r
 		}
 	}
 
+	csvs := &olmv1alpha1.ClusterServiceVersionList{}
+	err = o.client.List(ctx, csvs, &client.ListOptions{Namespace: o.Options.COONamespace})
+	if err != nil {
+		o.logger.Error(err, "Failed to list csvs")
+		return ctrl.Result{}, err
+	}
 	subs := &olmv1alpha1.SubscriptionList{}
 	err = o.client.List(ctx, subs, &client.ListOptions{})
 	if err != nil {
 		o.logger.Error(err, "Failed to list subscriptions")
 		return ctrl.Result{}, err
 	}
-	subsByCSVName := make(map[string]olmv1alpha1.Subscription, len(subs.Items))
-	for _, sub := range subs.Items {
-		csvWithoutVersion := sub.Spec.StartingCSV
-		if idx := strings.Index(sub.Spec.StartingCSV, "."); idx != -1 {
-			csvWithoutVersion = sub.Spec.StartingCSV[:idx]
-		}
-		subsByCSVName[csvWithoutVersion] = sub
-	}
-
-	reconcilers, err := getReconcilers(instance, o.Options, storageSecret, subsByCSVName)
+	reconcilers, err := getReconcilers(instance, o.Options, storageSecret, operatorsStatus{
+		cooNamespace: o.Options.COONamespace,
+		csvs:         csvs.Items,
+		subs:         subs.Items,
+	})
 	if err != nil {
 		o.logger.Error(err, "Failed to get reconcilers")
 		return ctrl.Result{}, err

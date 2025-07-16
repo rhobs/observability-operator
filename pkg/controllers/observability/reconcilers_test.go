@@ -30,7 +30,7 @@ func TestGetReconcilers(t *testing.T) {
 		name                   string
 		instance               *obsv1alpha1.ClusterObservability
 		mockClient             func() *MockClient
-		installedSubscriptions map[string]olmv1alpha1.Subscription
+		installedSubscriptions []olmv1alpha1.Subscription
 	}{
 		{
 			name: "tracing capability enabled",
@@ -155,9 +155,19 @@ func TestGetReconcilers(t *testing.T) {
 					},
 				},
 			},
-			installedSubscriptions: map[string]olmv1alpha1.Subscription{
-				"opentelemetry-operator": {},
-				"tempo-operator":         {},
+			installedSubscriptions: []olmv1alpha1.Subscription{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "opentelemetry-operator",
+						Namespace: "openshift",
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "tempo-operator",
+						Namespace: "openshift",
+					},
+				},
 			},
 		},
 	}
@@ -179,7 +189,9 @@ func TestGetReconcilers(t *testing.T) {
 					StartingCSV: "tempo",
 					Channel:     "stable",
 				},
-			}, &corev1.Secret{}, test.installedSubscriptions)
+			}, &corev1.Secret{}, operatorsStatus{
+				subs: test.installedSubscriptions,
+			})
 			require.NoError(t, err)
 
 			mockClient := test.mockClient()
