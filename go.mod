@@ -33,8 +33,8 @@ replace github.com/rhobs/observability-operator/pkg/apis v0.0.0-unpublished => .
 
 require (
 	github.com/rhobs/observability-operator/pkg/apis v0.0.0-unpublished
-	github.com/rhobs/perses v0.0.0-20250612171017-5d7686af9ae4
-	github.com/rhobs/perses-operator v0.1.10-0.20250612173146-78eb619430df
+	github.com/rhobs/perses v0.0.0-20250702155211-05ab23e2ea44
+	github.com/rhobs/perses-operator v0.1.10-0.20250702160743-6116f0920e00
 )
 
 require (
@@ -143,7 +143,7 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
-	k8s.io/kube-openapi v0.0.0-20250610211856-8b98d1ed966a // indirect
+	k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff // indirect
 	sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.7.0 // indirect
