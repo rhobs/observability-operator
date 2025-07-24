@@ -20,9 +20,9 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	gotest.tools/v3 v3.5.2
 	k8s.io/api v0.33.3
-	k8s.io/apiextensions-apiserver v0.33.2
+	k8s.io/apiextensions-apiserver v0.33.3
 	k8s.io/apimachinery v0.33.3
-	k8s.io/apiserver v0.33.2
+	k8s.io/apiserver v0.33.3
 	k8s.io/client-go v0.33.3
 	k8s.io/component-base v0.33.3
 	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
