@@ -117,7 +117,6 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 		components = append(components, reconciler.NewUpdater(newHealthAnalyzerPrometheusRole(namespace), plugin))
 		components = append(components, reconciler.NewUpdater(newHealthAnalyzerPrometheusRoleBinding(namespace), plugin))
 		components = append(components, reconciler.NewUpdater(newHealthAnalyzerService(namespace), plugin))
-		components = append(components, reconciler.NewUpdater(newHealthAnalyzerServiceMCP(namespace), plugin))
 		components = append(components, reconciler.NewUpdater(newHealthAnalyzerDeployment(namespace, serviceAccountName, pluginInfo), plugin))
 		components = append(components, reconciler.NewUpdater(newHealthAnalyzerServiceMonitor(namespace), plugin))
 	}
