@@ -9,6 +9,9 @@ stores:
   - domain: log
     lokiStack: https://{{ .Log }}.{{ .LoggingNs }}.svc:8080
     certificateAuthority: ./run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+  - domain: otellog
+    lokiStack: https://{{ .Log }}.{{ .LoggingNs }}.svc:8080
+    certificateAuthority: ./run/secrets/kubernetes.io/serviceaccount/service-ca.crt
   - domain: metric
     metric: https://{{ .Metric }}.{{ .MonitoringNs }}.svc:9091
     certificateAuthority: ./run/secrets/kubernetes.io/serviceaccount/service-ca.crt
