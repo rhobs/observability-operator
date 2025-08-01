@@ -66,7 +66,29 @@ enable_ocp() {
     ' "$CSV_JSON_FILE" > /tmp/tmp.$$.json && mv /tmp/tmp.$$.json "$CSV_JSON_FILE"
   ok "Added arguments to container operator in '$CSV_JSON_FILE'."
 
-	oc replace -f "$CSV_JSON_FILE"
+  # Retry logic
+  max_retries=3
+  retry_count=0
+
+  while [ $retry_count -lt $max_retries ]; do
+    if oc -n "$OPERATORS_NS" apply -f "$CSV_JSON_FILE"; then
+      ok "Successfully updated CSV ${CSV_NAME}"
+      break
+    fi
+
+    ((retry_count++))
+    if [ $retry_count -eq $max_retries ]; then
+      err "Failed to update CSV ${CSV_NAME} after $max_retries attempts"
+      exit 1
+    fi
+
+    # Get fresh version and reapply changes
+    oc -n "$OPERATORS_NS" get csv "${CSV_NAME}" -o json > "$CSV_JSON_FILE"
+    jq --arg container_name operator --argjson args "$ARGS_JSON" '
+      (.spec.install.spec.deployments[].spec.template.spec.containers[] | select(.name == $container_name) | .args) += $args
+    ' "$CSV_JSON_FILE" > /tmp/tmp.$$.json && mv /tmp/tmp.$$.json "$CSV_JSON_FILE"
+  done
+
 	rm -f "$CSV_JSON_FILE"
 
 	# enable platform monitoring
