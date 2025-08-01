@@ -252,7 +252,7 @@ spec:
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----------------- |
 | `acm-alerting`      | Adds alerting UI to multi-cluster view. Configures proxies to connect with any alertmanager and thanos-querier.          | Dev Preview      |
 | `incidents`         | Adds incidents UI to `Observe` section of OpenShift Console Platform. Deploys the [Cluster Health Analyzer](https://github.com/openshift/cluster-health-analyzer) and configures proxies in the plugin to connect with it. | Tech Preview      |
-| `perses-dashboards` | Adds perses UI to `Observe` section of OpenShift Console Platform. Configures proxies to connect with a Perses instance. Installs Accelerator Perses Dashboard and Accelerator Perses Datasource. | Dev Preview      |
+| `perses-dashboards` | Adds perses UI to `Observe` section of OpenShift Console Platform. Configures proxies to connect with a Perses instance. Installs Accelerator Perses Dashboard and Accelerator Perses Datasource. See details [here](./perses-dashboards.md) | Dev Preview      |
 
 
 #### Feature Matrix
