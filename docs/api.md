@@ -4218,22 +4218,29 @@ Storage defines the storage for the capabilities that require a storage.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b><a href="#clusterobservabilityspecstoragesecret">secret</a></b></td>
+        <td><b><a href="#clusterobservabilityspecstorageobjectstorage">objectStorage</a></b></td>
         <td>object</td>
         <td>
-          SecretSpec defines the secret for the storage.<br/>
+          ObjectStorageSpec defines the object storage for the capabilities that require it.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#clusterobservabilityspecstoragepvc">pvc</a></b></td>
+        <td>object</td>
+        <td>
+          PersistentVolumeClaimSpec defines the persistent volume claim(s) for the capabilities that require it.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
 </table>
 
 
-### ClusterObservability.spec.storage.secret
+### ClusterObservability.spec.storage.objectStorage
 <sup><sup>[↩ Parent](#clusterobservabilityspecstorage)</sup></sup>
 
 
 
-SecretSpec defines the secret for the storage.
+ObjectStorageSpec defines the object storage for the capabilities that require it.
 
 <table>
     <thead>
@@ -4245,17 +4252,491 @@ SecretSpec defines the secret for the storage.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b>name</b></td>
-        <td>string</td>
+        <td><b><a href="#clusterobservabilityspecstorageobjectstorageazure">azure</a></b></td>
+        <td>object</td>
         <td>
-          Name is the name of the secret for the storage.<br/>
+          Azure defines the Azure Blob Storage configuration.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>type</b></td>
+        <td><b><a href="#clusterobservabilityspecstorageobjectstorageazurewif">azureWIF</a></b></td>
+        <td>object</td>
+        <td>
+          AzureWIF defines the Azure Blob Storage configuration using a Workload Identity Federation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#clusterobservabilityspecstorageobjectstoragegcs">gcs</a></b></td>
+        <td>object</td>
+        <td>
+          GCS defines the Google Cloud Storage configuration.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#clusterobservabilityspecstorageobjectstorages3">s3</a></b></td>
+        <td>object</td>
+        <td>
+          S3 defines the S3 object storage configuration.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#clusterobservabilityspecstorageobjectstorages3cco">s3cco</a></b></td>
+        <td>object</td>
+        <td>
+          S3CCO defines the S3 object storage configuration using CCO.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#clusterobservabilityspecstorageobjectstorages3sts">s3sts</a></b></td>
+        <td>object</td>
+        <td>
+          S3STS defines the S3 object storage configuration using short-lived credentials.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#clusterobservabilityspecstorageobjectstoragetls">tls</a></b></td>
+        <td>object</td>
+        <td>
+          TLS configuration for reaching the object storage endpoint.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.storage.objectStorage.azure
+<sup><sup>[↩ Parent](#clusterobservabilityspecstorageobjectstorage)</sup></sup>
+
+
+
+Azure defines the Azure Blob Storage configuration.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#clusterobservabilityspecstorageobjectstorageazureaccountkey">accountKey</a></b></td>
+        <td>object</td>
+        <td>
+          AccountKey is a reference to a secret containing the account key for the Azure Storage account.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>accountName</b></td>
         <td>string</td>
         <td>
-          Type is the type of the secret for the storage.<br/>
+          AccountName is the name of the Azure Storage account.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>container</b></td>
+        <td>string</td>
+        <td>
+          Container is the name of the Azure Blob Storage container.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.storage.objectStorage.azure.accountKey
+<sup><sup>[↩ Parent](#clusterobservabilityspecstorageobjectstorageazure)</sup></sup>
+
+
+
+AccountKey is a reference to a secret containing the account key for the Azure Storage account.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key contains the name of the key inside the referenced Secret.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>secretName</b></td>
+        <td>string</td>
+        <td>
+          SecretName contains the name of the Secret containing the referenced value.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.storage.objectStorage.azureWIF
+<sup><sup>[↩ Parent](#clusterobservabilityspecstorageobjectstorage)</sup></sup>
+
+
+
+AzureWIF defines the Azure Blob Storage configuration using a Workload Identity Federation.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>accountName</b></td>
+        <td>string</td>
+        <td>
+          AccountName is the name of the Azure Storage account.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>clientID</b></td>
+        <td>string</td>
+        <td>
+          ClientID is the client ID of the Azure Active Directory application.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>container</b></td>
+        <td>string</td>
+        <td>
+          Container is the name of the Azure Blob Storage container.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>tenantID</b></td>
+        <td>string</td>
+        <td>
+          TenantID is the tenant ID of the Azure Active Directory.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>audience</b></td>
+        <td>string</td>
+        <td>
+          Audience is the optional audience for the Azure Workload Identity Federation.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.storage.objectStorage.gcs
+<sup><sup>[↩ Parent](#clusterobservabilityspecstorageobjectstorage)</sup></sup>
+
+
+
+GCS defines the Google Cloud Storage configuration.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>bucket</b></td>
+        <td>string</td>
+        <td>
+          Bucket is the name of the Google Cloud Storage bucket.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#clusterobservabilityspecstorageobjectstoragegcskeyjson">keyJSON</a></b></td>
+        <td>object</td>
+        <td>
+          KeyJSON is the key.json file encoded in a secret.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.storage.objectStorage.gcs.keyJSON
+<sup><sup>[↩ Parent](#clusterobservabilityspecstorageobjectstoragegcs)</sup></sup>
+
+
+
+KeyJSON is the key.json file encoded in a secret.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key contains the name of the key inside the referenced Secret.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>secretName</b></td>
+        <td>string</td>
+        <td>
+          SecretName contains the name of the Secret containing the referenced value.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.storage.objectStorage.s3
+<sup><sup>[↩ Parent](#clusterobservabilityspecstorageobjectstorage)</sup></sup>
+
+
+
+S3 defines the S3 object storage configuration.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>accessKeyID</b></td>
+        <td>string</td>
+        <td>
+          AccessKeyID is the access key ID for the S3 bucket.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#clusterobservabilityspecstorageobjectstorages3accesskeysecret">accessKeySecret</a></b></td>
+        <td>object</td>
+        <td>
+          AccessKeySecret is a reference to a secret containing the access key secret for the S3.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>bucket</b></td>
+        <td>string</td>
+        <td>
+          Bucket is the name of the S3 bucket.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>endpoint</b></td>
+        <td>string</td>
+        <td>
+          Endpoint is the S3 endpoint URL.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>region</b></td>
+        <td>string</td>
+        <td>
+          Region is the region where the S3 bucket is located.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.storage.objectStorage.s3.accessKeySecret
+<sup><sup>[↩ Parent](#clusterobservabilityspecstorageobjectstorages3)</sup></sup>
+
+
+
+AccessKeySecret is a reference to a secret containing the access key secret for the S3.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key contains the name of the key inside the referenced Secret.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>secretName</b></td>
+        <td>string</td>
+        <td>
+          SecretName contains the name of the Secret containing the referenced value.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.storage.objectStorage.s3cco
+<sup><sup>[↩ Parent](#clusterobservabilityspecstorageobjectstorage)</sup></sup>
+
+
+
+S3CCO defines the S3 object storage configuration using CCO.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>bucket</b></td>
+        <td>string</td>
+        <td>
+          Bucket is the name of the S3 bucket.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>region</b></td>
+        <td>string</td>
+        <td>
+          Region is the region where the S3 bucket is located.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.storage.objectStorage.s3sts
+<sup><sup>[↩ Parent](#clusterobservabilityspecstorageobjectstorage)</sup></sup>
+
+
+
+S3STS defines the S3 object storage configuration using short-lived credentials.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>bucket</b></td>
+        <td>string</td>
+        <td>
+          Bucket is the name of the S3 bucket.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>roleARN</b></td>
+        <td>string</td>
+        <td>
+          RoleARN is the ARN of the IAM role to assume for accessing the S3 bucket.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>region</b></td>
+        <td>string</td>
+        <td>
+          Region is the region where the S3 bucket is located.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.storage.objectStorage.tls
+<sup><sup>[↩ Parent](#clusterobservabilityspecstorageobjectstorage)</sup></sup>
+
+
+
+TLS configuration for reaching the object storage endpoint.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>caName</b></td>
+        <td>string</td>
+        <td>
+          CA is the name of a ConfigMap containing a CA certificate (service-ca.crt).
+It needs to be in the same namespace as the Tempo custom resource.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>certName</b></td>
+        <td>string</td>
+        <td>
+          Cert is the name of a Secret containing a certificate (tls.crt) and private key (tls.key).
+It needs to be in the same namespace as the Tempo custom resource.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>enabled</b></td>
+        <td>boolean</td>
+        <td>
+          Enabled defines if TLS is enabled.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>minVersion</b></td>
+        <td>string</td>
+        <td>
+          MinVersion defines the minimum acceptable TLS version.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.storage.pvc
+<sup><sup>[↩ Parent](#clusterobservabilityspecstorage)</sup></sup>
+
+
+
+PersistentVolumeClaimSpec defines the persistent volume claim(s) for the capabilities that require it.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>storageClassName</b></td>
+        <td>string</td>
+        <td>
+          StorageClassName is the name of the storage class to use for the persistent volume claim(s).<br/>
         </td>
         <td>false</td>
       </tr></tbody>
