@@ -168,16 +168,61 @@ The various storage configuration per capability can be achieved by multiple `Cl
 Each object storage type has its own set of required fields which are configured in the secret.
 Object storage types will be added separately, there are plans to support the all the storage types supported by the capabilities.
 
-#### S3 secret
+#### Amazon S3 S3 / MinIO
+
+Supported by Tempo and Loki.
 
 ```yaml
-kubectl create secret generic s3 \
+kubectl create secret generic storage-secret \
     --from-literal=bucket="<BUCKET_NAME>" \
     --from-literal=endpoint="<AWS_BUCKET_ENDPOINT>" \
     --from-literal=access_key_id="<AWS_ACCESS_KEY_ID>" \
     --from-literal=access_key_secret="<AWS_ACCESS_KEY_SECRET>" \
     --from-literal=region="<AWS_REGION_YOUR_BUCKET_LIVES_IN>"
 ```
+
+* `region` - is optional in Tempo and required by Loki.
+
+###### Short lived - Amazon S3 with Security Token Service (STS)
+
+Supported by Tempo and Loki.
+
+```yaml
+kubectl create secret generic storage-secret \
+--from-literal=bucket="<BUCKET_NAME>" \
+--from-literal=role_arn="<AWS_ROLE_ARN>" \
+--from-literal=region="<AWS_REGION_YOUR_BUCKET_LIVES_IN>"
+```
+
+#### Microsoft Azure Blob Storage
+
+Supported by Tempo and Loki.
+
+```yaml
+kubectl create secret generic storage-secret \
+--from-literal=container="<BLOB_STORAGE_CONTAINER_NAME>" \
+--from-literal=account_name="<BLOB_STORAGE_ACCOUNT_NAME>" \
+--from-literal=account_key="<BLOB_STORAGE_ACCOUNT_KEY>"
+```
+
+Loki operator also supports fields:
+* `environment`
+* `endpoint_suffix` - optional
+
+##### Short lived
+
+Supported by Tempo.
+
+```yaml
+kubectl create secret generic storage-secret \
+--from-literal=container="<BLOB_STORAGE_CONTAINER_NAME>" \
+--from-literal=account_name="<BLOB_STORAGE_ACCOUNT_NAME>" \
+--from-literal=audience="<AUDIENCE>" \
+--from-literal=client_id="CLIENT_ID>" \
+--from-literal=tenant_id="<TENANT_ID>"
+```
+
+* `audience` - optional and defaults to `api://AzureADTokenExchange`
 
 ### References:
 * Loki https://loki-operator.dev/docs/object_storage.md/, https://docs.redhat.com/en/documentation/openshift_container_platform/4.17/html/logging/logging-6-2#log6x-logging-loki-cli-install_installing-logging-6-2
