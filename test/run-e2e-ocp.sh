@@ -53,20 +53,35 @@ install_obo() {
 
 enable_ocp() {
   # Get ObO CSV json file
-	CSV_NAME=$(oc -n "$OPERATORS_NS" get sub observability-operator -o jsonpath='{.status.installedCSV}')
-	CSV_JSON_FILE=$(mktemp /tmp/"$CSV_NAME"XXXXXX.json)
-	if [ -e "$CSV_JSON_FILE" ]; then
-		rm -f "$CSV_JSON_FILE"
-	fi
-	oc -n "$OPERATORS_NS" get csv "${CSV_NAME}" -o json > "$CSV_JSON_FILE"
+  CSV_NAME=$(oc -n "$OPERATORS_NS" get sub observability-operator -o jsonpath='{.status.installedCSV}')
+  CSV_JSON_FILE=$(mktemp /tmp/"$CSV_NAME"XXXXXX.json)
+  if [ -e "$CSV_JSON_FILE" ]; then
+    rm -f "$CSV_JSON_FILE"
+  fi
+
+  # Retry logic
+  max_retries=3
+  retry_count=0
+  while [ "$retry_count" -lt "$max_retries" ]; do
+    oc -n "$OPERATORS_NS" get csv "${CSV_NAME}" -o json > "$CSV_JSON_FILE"
 	# Update CSV json file to enable OCP mode
 	ARGS_JSON=$(printf '%s\n' "--openshift.enabled=true" | jq -R . | jq -s .)
 	jq --arg container_name operator --argjson args "$ARGS_JSON" '
       (.spec.install.spec.deployments[].spec.template.spec.containers[] | select(.name == $container_name) | .args) += $args
     ' "$CSV_JSON_FILE" > /tmp/tmp.$$.json && mv /tmp/tmp.$$.json "$CSV_JSON_FILE"
-  ok "Added arguments to container operator in '$CSV_JSON_FILE'."
+    ok "Added arguments to container operator in '$CSV_JSON_FILE'."
+    if oc -n "$OPERATORS_NS" apply -f "$CSV_JSON_FILE"; then
+      ok "Successfully updated CSV ${CSV_NAME}"
+      break
+    fi
+    sleep 3
+    ((retry_count++))
+    if [ "$retry_count" -eq "$max_retries" ]; then
+      err "Failed to update CSV ${CSV_NAME} after $max_retries attempts"
+      exit 1
+    fi
+  done
 
-	oc replace -f "$CSV_JSON_FILE"
 	rm -f "$CSV_JSON_FILE"
 
 	# enable platform monitoring
