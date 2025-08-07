@@ -15,6 +15,11 @@ limitations under the License.
 */
 
 // Package v1alpha1 contains API Schema definitions for the rhobs v1alpha1 API group
+//
+// The observability-operator API module uses semantic versioning for version tags,
+// but does not guarantee backward compatibility, even for versions v1.0.0 and above.
+// Breaking changes may occur without major version bumps.
+//
 // +kubebuilder:object:generate=true
 // +groupName=monitoring.rhobs
 package v1alpha1
