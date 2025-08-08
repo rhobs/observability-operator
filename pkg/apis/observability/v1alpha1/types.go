@@ -64,24 +64,49 @@ type ClusterObservabilityStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
-type StorageSecretType string
-
-const (
-	S3 StorageSecretType = "s3"
-)
+// PersistentVolumeClaimSpec defines the persistent volume claim(s) for the storage of the capabilities.
+type PersistentVolumeClaimSpec struct {
+	// StorageClassName is the name of the storage class to use for the persistent volume claim(s).
+	// +optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="StorageClassName for PVCs"
+	StorageClassName *string `json:"storageClassName,omitempty"`
+}
 
 // StorageSpec defines the storage.
 type StorageSpec struct {
-	Secret SecretSpec `json:"secret,omitempty"`
+	// ObjectStorageSpec defines the object storage for the capabilities that require it.
+	ObjectStorageSpec ObjectStorage `json:"objectStorage,omitempty"`
+	// PersistentVolumeClaimSpec defines the persistent volume claim(s) for the capabilities that require it.
+	PersistentVolumeClaimSpec PersistentVolumeClaimSpec `json:"pvc,omitempty"`
 }
 
-// SecretSpec defines the secret for the storage.
-type SecretSpec struct {
-	// Name is the name of the secret for the storage.
-	Name string `json:"name,omitempty"`
+// TLSSpec is the TLS configuration.
+type TLSSpec struct {
+	// Enabled defines if TLS is enabled.
+	//
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enabled",order=1,xDescriptors="urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
+	Enabled bool `json:"enabled"`
 
-	// Type is the type of the secret for the storage.
-	Type StorageSecretType `json:"type,omitempty"`
+	// CA is the name of a ConfigMap containing a CA certificate (service-ca.crt).
+	// It needs to be in the same namespace as the Tempo custom resource.
+	//
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors="urn:alm:descriptor:io.kubernetes:ConfigMap",displayName="CA ConfigMap"
+	CA string `json:"caName,omitempty"`
+
+	// Cert is the name of a Secret containing a certificate (tls.crt) and private key (tls.key).
+	// It needs to be in the same namespace as the Tempo custom resource.
+	//
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors="urn:alm:descriptor:io.kubernetes:Secret",displayName="Certificate Secret"
+	Cert string `json:"certName,omitempty"`
+
+	// MinVersion defines the minimum acceptable TLS version.
+	//
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Min TLS Version"
+	MinVersion string `json:"minVersion,omitempty"`
 }
 
 // CapabilitiesSpec defines the observability capabilities.
