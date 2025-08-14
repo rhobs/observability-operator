@@ -14,27 +14,26 @@ import (
 )
 
 const (
-	tempoName  = "coo"
 	tenantName = "prod"
 	tenantID   = "1610b0c3-c509-4592-a256-a1871353dbfb"
 )
 
-func tempoStack(storage obsv1alpha1.StorageSpec, ns string, instanceName string) *tempov1alpha1.TempoStack {
+func tempoStack(instance *obsv1alpha1.ClusterObservability) *tempov1alpha1.TempoStack {
 	tempo := &tempov1alpha1.TempoStack{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "TempoStack",
 			APIVersion: tempov1alpha1.GroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      tempoName,
-			Namespace: ns,
+			Name:      tempoName(instance.Name),
+			Namespace: instance.Namespace,
 		},
 		Spec: tempov1alpha1.TempoStackSpec{
 			Storage: tempov1alpha1.ObjectStorageSpec{
 				Secret: tempov1alpha1.ObjectStorageSecretSpec{
-					Type:           toTempoStorageType(storage.ObjectStorageSpec),
-					CredentialMode: toTempoCredentialMode(storage.ObjectStorageSpec),
-					Name:           tempoSecretName(instanceName),
+					Type:           toTempoStorageType(instance.Spec.Storage.ObjectStorageSpec),
+					CredentialMode: toTempoCredentialMode(instance.Spec.Storage.ObjectStorageSpec),
+					Name:           tempoSecretName(instance.Name),
 				},
 			},
 			Template: tempov1alpha1.TempoTemplateSpec{
@@ -54,16 +53,20 @@ func tempoStack(storage obsv1alpha1.StorageSpec, ns string, instanceName string)
 		},
 	}
 
-	if storage.ObjectStorageSpec.TLS != nil {
+	if instance.Spec.Storage.ObjectStorageSpec.TLS != nil {
 		tempo.Spec.Storage.TLS = tempov1alpha1.TLSSpec{
 			Enabled:    true,
-			CA:         tempoStorageCAConfigMapName(instanceName),
-			Cert:       tempoStorageSecretName(instanceName),
-			MinVersion: storage.ObjectStorageSpec.TLS.MinVersion,
+			CA:         tempoStorageCAConfigMapName(instance.Name),
+			Cert:       tempoStorageSecretName(instance.Name),
+			MinVersion: instance.Spec.Storage.ObjectStorageSpec.TLS.MinVersion,
 		}
 	}
 
 	return tempo
+}
+
+func tempoName(instance string) string {
+	return fmt.Sprintf("%s", instance)
 }
 
 func tempoStorageCAConfigMapName(name string) string {
@@ -75,7 +78,7 @@ func tempoStorageSecretName(name string) string {
 }
 
 func tempoSecretName(name string) string {
-	return fmt.Sprintf("coo-%s", name)
+	return fmt.Sprintf("coo-%s-tempo", name)
 }
 
 type tempoSecrets struct {
@@ -85,7 +88,7 @@ type tempoSecrets struct {
 	objectStorageCAConfigMap *corev1.ConfigMap
 }
 
-func tempoStackSecrets(ctx context.Context, k8sClient client.Client, instance obsv1alpha1.ClusterObservability, tempoNamespace string, operatorNamespace string) (*tempoSecrets, error) {
+func tempoStackSecrets(ctx context.Context, k8sClient client.Client, instance obsv1alpha1.ClusterObservability) (*tempoSecrets, error) {
 	var objectStorageCAConfMap *corev1.ConfigMap
 	var objectStorageTLSSecret *corev1.Secret
 
@@ -94,7 +97,7 @@ func tempoStackSecrets(ctx context.Context, k8sClient client.Client, instance ob
 		if tlsSpec.CAConfigMap != nil {
 			caConfigMap := &corev1.ConfigMap{}
 			err := k8sClient.Get(ctx, client.ObjectKey{
-				Namespace: operatorNamespace,
+				Namespace: instance.Namespace,
 				Name:      tlsSpec.CAConfigMap.Name,
 			}, caConfigMap)
 			if err != nil {
@@ -108,7 +111,7 @@ func tempoStackSecrets(ctx context.Context, k8sClient client.Client, instance ob
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      tempoStorageCAConfigMapName(instance.Name),
-					Namespace: tempoNamespace,
+					Namespace: instance.Namespace,
 				},
 				Data: map[string]string{
 					"service-ca.crt": caConfigMap.Data[tlsSpec.CAConfigMap.Key],
@@ -119,7 +122,7 @@ func tempoStackSecrets(ctx context.Context, k8sClient client.Client, instance ob
 		if tlsSpec.CertSecret != nil {
 			certSecret := &corev1.Secret{}
 			err := k8sClient.Get(ctx, client.ObjectKey{
-				Namespace: operatorNamespace,
+				Namespace: instance.Namespace,
 				Name:      tlsSpec.CertSecret.Name,
 			}, certSecret)
 			if err != nil {
@@ -133,7 +136,7 @@ func tempoStackSecrets(ctx context.Context, k8sClient client.Client, instance ob
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      tempoSecretName(instance.Name),
-					Namespace: tempoNamespace,
+					Namespace: instance.Namespace,
 				},
 			}
 			objectStorageTLSSecret.Data["tls.crt"] = certSecret.Data[tlsSpec.CertSecret.Key]
@@ -141,7 +144,7 @@ func tempoStackSecrets(ctx context.Context, k8sClient client.Client, instance ob
 		if tlsSpec.KeySecret != nil {
 			certSecret := &corev1.Secret{}
 			err := k8sClient.Get(ctx, client.ObjectKey{
-				Namespace: operatorNamespace,
+				Namespace: instance.Namespace,
 				Name:      tlsSpec.KeySecret.Name,
 			}, certSecret)
 			if err != nil {
@@ -159,13 +162,13 @@ func tempoStackSecrets(ctx context.Context, k8sClient client.Client, instance ob
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      tempoSecretName(instance.Name),
-			Namespace: tempoNamespace,
+			Namespace: instance.Namespace,
 		},
 	}
 	if instance.Spec.Storage.ObjectStorageSpec.S3 != nil {
 		accessKeySecret := &corev1.Secret{}
 		err := k8sClient.Get(ctx, client.ObjectKey{
-			Namespace: operatorNamespace,
+			Namespace: instance.Namespace,
 			Name:      instance.Spec.Storage.ObjectStorageSpec.S3.AccessKeySecret.Name,
 		}, accessKeySecret)
 		if err != nil {
@@ -196,7 +199,7 @@ func tempoStackSecrets(ctx context.Context, k8sClient client.Client, instance ob
 	} else if instance.Spec.Storage.ObjectStorageSpec.Azure != nil {
 		accountKeySecret := &corev1.Secret{}
 		err := k8sClient.Get(ctx, client.ObjectKey{
-			Namespace: operatorNamespace,
+			Namespace: instance.Namespace,
 			Name:      instance.Spec.Storage.ObjectStorageSpec.Azure.AccountKeySecret.Name,
 		}, accountKeySecret)
 		if err != nil {
@@ -221,7 +224,7 @@ func tempoStackSecrets(ctx context.Context, k8sClient client.Client, instance ob
 	} else if instance.Spec.Storage.ObjectStorageSpec.GCS != nil {
 		keyJSONSecret := &corev1.Secret{}
 		err := k8sClient.Get(ctx, client.ObjectKey{
-			Namespace: operatorNamespace,
+			Namespace: instance.Namespace,
 			Name:      instance.Spec.Storage.ObjectStorageSpec.GCS.KeyJSONSecret.Name,
 		}, keyJSONSecret)
 		if err != nil {
@@ -235,7 +238,7 @@ func tempoStackSecrets(ctx context.Context, k8sClient client.Client, instance ob
 	} else if instance.Spec.Storage.ObjectStorageSpec.GCSSTSSpec != nil {
 		keyJSONSecret := &corev1.Secret{}
 		err := k8sClient.Get(ctx, client.ObjectKey{
-			Namespace: operatorNamespace,
+			Namespace: instance.Namespace,
 			Name:      instance.Spec.Storage.ObjectStorageSpec.GCSSTSSpec.KeyJSONSecret.Name,
 		}, keyJSONSecret)
 		if err != nil {

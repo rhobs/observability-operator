@@ -6,8 +6,6 @@ import (
 	"strings"
 
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	obsv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/observability/v1alpha1"
@@ -71,18 +69,17 @@ func getReconcilers(ctx context.Context, k8sClient client.Client, instance *obsv
 	tempoSubs := subscription(opts.TempoOperator)
 
 	// instance objects
-	instanceObjects = append(instanceObjects, newOperandsNamespace(opts.OperandsNamespace))
-	otelCol, err := otelCollector(opts.OperandsNamespace)
+	otelCol, err := otelCollector(instance)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create OpenTelemetryCollector: %w", err)
 	}
 	instanceObjects = append(instanceObjects, otelCol)
-	otelcolRBAC, otelcolRBACBinding := otelCollectorComponentsRBAC(opts.OperandsNamespace)
+	otelcolRBAC, otelcolRBACBinding := otelCollectorComponentsRBAC(instance)
 	instanceObjects = append(instanceObjects, otelcolRBAC)
 	instanceObjects = append(instanceObjects, otelcolRBACBinding)
-	instanceObjects = append(instanceObjects, tempoStack(instance.Spec.Storage, opts.OperandsNamespace, instance.Name))
+	instanceObjects = append(instanceObjects, tempoStack(instance))
 
-	secrets, err := tempoStackSecrets(ctx, k8sClient, *instance, opts.OperandsNamespace, opts.COONamespace)
+	secrets, err := tempoStackSecrets(ctx, k8sClient, *instance)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create TempoStack secret: %w", err)
 	}
@@ -96,7 +93,7 @@ func getReconcilers(ctx context.Context, k8sClient client.Client, instance *obsv
 		instanceObjects = append(instanceObjects, secrets.objectStorageCAConfigMap)
 	}
 
-	otelcolTempoRBAC, otelcolTempoRBACBinding := otelCollectorTempoRBAC(opts.OperandsNamespace)
+	otelcolTempoRBAC, otelcolTempoRBACBinding := otelCollectorTempoRBAC(instance)
 	instanceObjects = append(instanceObjects, otelcolTempoRBAC)
 	instanceObjects = append(instanceObjects, otelcolTempoRBACBinding)
 	instanceObjects = append(instanceObjects, uiPlugin())
@@ -175,16 +172,4 @@ func getReconcilers(ctx context.Context, k8sClient client.Client, instance *obsv
 
 func gvaNameIdentifier(obj client.Object) string {
 	return fmt.Sprintf("%s/%s", obj.GetObjectKind().GroupVersionKind().String(), obj.GetName())
-}
-
-func newOperandsNamespace(name string) *corev1.Namespace {
-	return &corev1.Namespace{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: corev1.SchemeGroupVersion.String(),
-			Kind:       "Namespace",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-		},
-	}
 }

@@ -230,8 +230,7 @@ func TestGetReconcilers(t *testing.T) {
 			mockClient := test.mockClient()
 
 			reconcilers, err := getReconcilers(context.Background(), mockClient, test.instance, Options{
-				COONamespace:      "operators",
-				OperandsNamespace: "test-namespace",
+				COONamespace: "operators",
 				OpenTelemetryOperator: OperatorInstallConfig{
 					Namespace:   "operators",
 					PackageName: "otel",

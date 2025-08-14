@@ -12,7 +12,6 @@ import (
 // +k8s:openapi-gen=true
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:shortName=clobs;clobs
-// +kubebuilder:resource:scope=Cluster
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="OpenTelemetry",type="string",JSONPath=".status.opentelemetry"
 // +kubebuilder:printcolumn:name="Tempo",type="string",JSONPath=".status.tempo"

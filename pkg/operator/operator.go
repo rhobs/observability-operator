@@ -281,8 +281,7 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 
 	if cfg.FeatureGates.OpenShift.Enabled {
 		if err := obsctrl.RegisterWithManager(mgr, obsctrl.Options{
-			OperandsNamespace: "cluster-observability",
-			COONamespace:      cfg.ClusterObservability.COONamespace,
+			COONamespace: cfg.ClusterObservability.COONamespace,
 			OpenTelemetryOperator: obsctrl.OperatorInstallConfig{
 				Namespace:   cfg.ClusterObservability.COONamespace,
 				PackageName: "opentelemetry-product",
