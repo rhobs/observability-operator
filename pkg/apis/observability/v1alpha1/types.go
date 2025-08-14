@@ -36,9 +36,6 @@ type ClusterObservabilityList struct {
 }
 
 type ClusterObservabilitySpec struct {
-	// Storage defines the storage for the capabilities that require a storage.
-	Storage StorageSpec `json:"storage,omitempty"`
-
 	// Capabilities defines the observability capabilities.
 	// Each capability has to be enabled explicitly.
 	// +kubebuilder:validation:Optional
@@ -61,12 +58,6 @@ type ClusterObservabilityStatus struct {
 	// +listType=atomic
 	// +optional
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
-}
-
-// StorageSpec defines the storage.
-type StorageSpec struct {
-	// ObjectStorageSpec defines the object storage for the capabilities that require it.
-	ObjectStorageSpec ObjectStorage `json:"objectStorage,omitempty"`
 }
 
 // TLSSpec is the TLS configuration.

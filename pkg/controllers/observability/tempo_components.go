@@ -31,8 +31,8 @@ func tempoStack(instance *obsv1alpha1.ClusterObservability) *tempov1alpha1.Tempo
 		Spec: tempov1alpha1.TempoStackSpec{
 			Storage: tempov1alpha1.ObjectStorageSpec{
 				Secret: tempov1alpha1.ObjectStorageSecretSpec{
-					Type:           toTempoStorageType(instance.Spec.Storage.ObjectStorageSpec),
-					CredentialMode: toTempoCredentialMode(instance.Spec.Storage.ObjectStorageSpec),
+					Type:           toTempoStorageType(instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec),
+					CredentialMode: toTempoCredentialMode(instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec),
 					Name:           tempoSecretName(instance.Name),
 				},
 			},
@@ -53,12 +53,12 @@ func tempoStack(instance *obsv1alpha1.ClusterObservability) *tempov1alpha1.Tempo
 		},
 	}
 
-	if instance.Spec.Storage.ObjectStorageSpec.TLS != nil {
+	if instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.TLS != nil {
 		tempo.Spec.Storage.TLS = tempov1alpha1.TLSSpec{
 			Enabled:    true,
 			CA:         tempoStorageCAConfigMapName(instance.Name),
 			Cert:       tempoStorageSecretName(instance.Name),
-			MinVersion: instance.Spec.Storage.ObjectStorageSpec.TLS.MinVersion,
+			MinVersion: instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.TLS.MinVersion,
 		}
 	}
 
@@ -92,8 +92,8 @@ func tempoStackSecrets(ctx context.Context, k8sClient client.Client, instance ob
 	var objectStorageCAConfMap *corev1.ConfigMap
 	var objectStorageTLSSecret *corev1.Secret
 
-	if instance.Spec.Storage.ObjectStorageSpec.TLS != nil {
-		tlsSpec := instance.Spec.Storage.ObjectStorageSpec.TLS
+	if instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.TLS != nil {
+		tlsSpec := instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.TLS
 		if tlsSpec.CAConfigMap != nil {
 			caConfigMap := &corev1.ConfigMap{}
 			err := k8sClient.Get(ctx, client.ObjectKey{
@@ -101,7 +101,7 @@ func tempoStackSecrets(ctx context.Context, k8sClient client.Client, instance ob
 				Name:      tlsSpec.CAConfigMap.Name,
 			}, caConfigMap)
 			if err != nil {
-				return nil, fmt.Errorf("failed to get object storage CA configmap %s: %w", instance.Spec.Storage.ObjectStorageSpec.TLS.CAConfigMap.Name, err)
+				return nil, fmt.Errorf("failed to get object storage CA configmap %s: %w", instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.TLS.CAConfigMap.Name, err)
 			}
 
 			objectStorageCAConfMap = &corev1.ConfigMap{
@@ -165,92 +165,92 @@ func tempoStackSecrets(ctx context.Context, k8sClient client.Client, instance ob
 			Namespace: instance.Namespace,
 		},
 	}
-	if instance.Spec.Storage.ObjectStorageSpec.S3 != nil {
+	if instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.S3 != nil {
 		accessKeySecret := &corev1.Secret{}
 		err := k8sClient.Get(ctx, client.ObjectKey{
 			Namespace: instance.Namespace,
-			Name:      instance.Spec.Storage.ObjectStorageSpec.S3.AccessKeySecret.Name,
+			Name:      instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.S3.AccessKeySecret.Name,
 		}, accessKeySecret)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get S3 access key secret %s: %w", instance.Spec.Storage.ObjectStorageSpec.S3.AccessKeySecret.Name, err)
+			return nil, fmt.Errorf("failed to get S3 access key secret %s: %w", instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.S3.AccessKeySecret.Name, err)
 		}
 
 		tempoSecret.Data = map[string][]byte{
-			"bucket":            []byte(instance.Spec.Storage.ObjectStorageSpec.S3.Bucket),
-			"endpoint":          []byte(instance.Spec.Storage.ObjectStorageSpec.S3.Endpoint),
-			"access_key_id":     []byte(instance.Spec.Storage.ObjectStorageSpec.S3.AccessKeyID),
-			"access_key_secret": accessKeySecret.Data[instance.Spec.Storage.ObjectStorageSpec.S3.AccessKeySecret.Key],
+			"bucket":            []byte(instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.S3.Bucket),
+			"endpoint":          []byte(instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.S3.Endpoint),
+			"access_key_id":     []byte(instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.S3.AccessKeyID),
+			"access_key_secret": accessKeySecret.Data[instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.S3.AccessKeySecret.Key],
 		}
 
-		if instance.Spec.Storage.ObjectStorageSpec.S3.Region != "" {
-			tempoSecret.Data["region"] = []byte(instance.Spec.Storage.ObjectStorageSpec.S3.Region)
+		if instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.S3.Region != "" {
+			tempoSecret.Data["region"] = []byte(instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.S3.Region)
 		}
-	} else if instance.Spec.Storage.ObjectStorageSpec.S3STS != nil {
+	} else if instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.S3STS != nil {
 		tempoSecret.Data = map[string][]byte{
-			"bucket":   []byte(instance.Spec.Storage.ObjectStorageSpec.S3STS.Bucket),
-			"role_arn": []byte(instance.Spec.Storage.ObjectStorageSpec.S3STS.RoleARN),
-			"region":   []byte(instance.Spec.Storage.ObjectStorageSpec.S3STS.RoleARN),
+			"bucket":   []byte(instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.S3STS.Bucket),
+			"role_arn": []byte(instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.S3STS.RoleARN),
+			"region":   []byte(instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.S3STS.RoleARN),
 		}
-	} else if instance.Spec.Storage.ObjectStorageSpec.S3CCO != nil {
+	} else if instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.S3CCO != nil {
 		tempoSecret.Data = map[string][]byte{
-			"bucket": []byte(instance.Spec.Storage.ObjectStorageSpec.S3CCO.Bucket),
-			"region": []byte(instance.Spec.Storage.ObjectStorageSpec.S3CCO.Region),
+			"bucket": []byte(instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.S3CCO.Bucket),
+			"region": []byte(instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.S3CCO.Region),
 		}
-	} else if instance.Spec.Storage.ObjectStorageSpec.Azure != nil {
+	} else if instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.Azure != nil {
 		accountKeySecret := &corev1.Secret{}
 		err := k8sClient.Get(ctx, client.ObjectKey{
 			Namespace: instance.Namespace,
-			Name:      instance.Spec.Storage.ObjectStorageSpec.Azure.AccountKeySecret.Name,
+			Name:      instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.Azure.AccountKeySecret.Name,
 		}, accountKeySecret)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get Azure account key secret %s: %w", instance.Spec.Storage.ObjectStorageSpec.Azure.AccountKeySecret.Name, err)
+			return nil, fmt.Errorf("failed to get Azure account key secret %s: %w", instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.Azure.AccountKeySecret.Name, err)
 		}
 
 		tempoSecret.Data = map[string][]byte{
-			"container":    []byte(instance.Spec.Storage.ObjectStorageSpec.Azure.Container),
-			"account_name": []byte(instance.Spec.Storage.ObjectStorageSpec.Azure.AccountName),
-			"account_key":  accountKeySecret.Data[instance.Spec.Storage.ObjectStorageSpec.Azure.AccountKeySecret.Key],
+			"container":    []byte(instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.Azure.Container),
+			"account_name": []byte(instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.Azure.AccountName),
+			"account_key":  accountKeySecret.Data[instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.Azure.AccountKeySecret.Key],
 		}
-	} else if instance.Spec.Storage.ObjectStorageSpec.AzureWIF != nil {
+	} else if instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.AzureWIF != nil {
 		tempoSecret.Data = map[string][]byte{
-			"container":    []byte(instance.Spec.Storage.ObjectStorageSpec.AzureWIF.Container),
-			"account_name": []byte(instance.Spec.Storage.ObjectStorageSpec.AzureWIF.AccountName),
-			"client_id":    []byte(instance.Spec.Storage.ObjectStorageSpec.AzureWIF.ClientID),
-			"tenant_id":    []byte(instance.Spec.Storage.ObjectStorageSpec.AzureWIF.TenantID),
+			"container":    []byte(instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.AzureWIF.Container),
+			"account_name": []byte(instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.AzureWIF.AccountName),
+			"client_id":    []byte(instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.AzureWIF.ClientID),
+			"tenant_id":    []byte(instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.AzureWIF.TenantID),
 		}
-		if instance.Spec.Storage.ObjectStorageSpec.AzureWIF.Audience != "" {
-			tempoSecret.Data["audience"] = []byte(instance.Spec.Storage.ObjectStorageSpec.AzureWIF.Audience)
+		if instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.AzureWIF.Audience != "" {
+			tempoSecret.Data["audience"] = []byte(instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.AzureWIF.Audience)
 		}
-	} else if instance.Spec.Storage.ObjectStorageSpec.GCS != nil {
+	} else if instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.GCS != nil {
 		keyJSONSecret := &corev1.Secret{}
 		err := k8sClient.Get(ctx, client.ObjectKey{
 			Namespace: instance.Namespace,
-			Name:      instance.Spec.Storage.ObjectStorageSpec.GCS.KeyJSONSecret.Name,
+			Name:      instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.GCS.KeyJSONSecret.Name,
 		}, keyJSONSecret)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get GCS keyJSON secret %s: %w", instance.Spec.Storage.ObjectStorageSpec.GCS.KeyJSONSecret.Name, err)
+			return nil, fmt.Errorf("failed to get GCS keyJSON secret %s: %w", instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.GCS.KeyJSONSecret.Name, err)
 		}
 
 		tempoSecret.Data = map[string][]byte{
-			"bucketname": []byte(instance.Spec.Storage.ObjectStorageSpec.GCS.Bucket),
-			"key.json":   keyJSONSecret.Data[instance.Spec.Storage.ObjectStorageSpec.GCS.KeyJSONSecret.Key],
+			"bucketname": []byte(instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.GCS.Bucket),
+			"key.json":   keyJSONSecret.Data[instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.GCS.KeyJSONSecret.Key],
 		}
-	} else if instance.Spec.Storage.ObjectStorageSpec.GCSSTSSpec != nil {
+	} else if instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.GCSSTSSpec != nil {
 		keyJSONSecret := &corev1.Secret{}
 		err := k8sClient.Get(ctx, client.ObjectKey{
 			Namespace: instance.Namespace,
-			Name:      instance.Spec.Storage.ObjectStorageSpec.GCSSTSSpec.KeyJSONSecret.Name,
+			Name:      instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.GCSSTSSpec.KeyJSONSecret.Name,
 		}, keyJSONSecret)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get GCSSTS keyJSON secret %s: %w", instance.Spec.Storage.ObjectStorageSpec.GCSSTSSpec.KeyJSONSecret.Name, err)
+			return nil, fmt.Errorf("failed to get GCSSTS keyJSON secret %s: %w", instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.GCSSTSSpec.KeyJSONSecret.Name, err)
 		}
 
 		tempoSecret.Data = map[string][]byte{
-			"bucketname": []byte(instance.Spec.Storage.ObjectStorageSpec.GCSSTSSpec.Bucket),
-			"key.json":   keyJSONSecret.Data[instance.Spec.Storage.ObjectStorageSpec.GCSSTSSpec.KeyJSONSecret.Key],
+			"bucketname": []byte(instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.GCSSTSSpec.Bucket),
+			"key.json":   keyJSONSecret.Data[instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.GCSSTSSpec.KeyJSONSecret.Key],
 		}
-		if instance.Spec.Storage.ObjectStorageSpec.GCSSTSSpec.Audience != "" {
-			tempoSecret.Data["audience"] = []byte(instance.Spec.Storage.ObjectStorageSpec.GCSSTSSpec.Audience)
+		if instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.GCSSTSSpec.Audience != "" {
+			tempoSecret.Data["audience"] = []byte(instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.GCSSTSSpec.Audience)
 		}
 	}
 
@@ -276,7 +276,7 @@ func uiPlugin() *uiv1alpha1.UIPlugin {
 	}
 }
 
-func toTempoStorageType(objStorage obsv1alpha1.ObjectStorage) tempov1alpha1.ObjectStorageSecretType {
+func toTempoStorageType(objStorage obsv1alpha1.TracingObjectStorageSpec) tempov1alpha1.ObjectStorageSecretType {
 	if objStorage.S3 != nil || objStorage.S3STS != nil || objStorage.S3CCO != nil {
 		return tempov1alpha1.ObjectStorageSecretS3
 	} else if objStorage.Azure != nil || objStorage.AzureWIF != nil {
@@ -287,7 +287,7 @@ func toTempoStorageType(objStorage obsv1alpha1.ObjectStorage) tempov1alpha1.Obje
 	return ""
 }
 
-func toTempoCredentialMode(objStorage obsv1alpha1.ObjectStorage) tempov1alpha1.CredentialMode {
+func toTempoCredentialMode(objStorage obsv1alpha1.TracingObjectStorageSpec) tempov1alpha1.CredentialMode {
 	if objStorage.S3 != nil || objStorage.Azure != nil || objStorage.GCS != nil {
 		return tempov1alpha1.CredentialModeStatic
 	} else if objStorage.S3STS != nil || objStorage.AzureWIF != nil || objStorage.GCSSTSSpec != nil {

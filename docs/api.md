@@ -4099,13 +4099,6 @@ Spec defines the desired state of the cluster observability.
 Each capability has to be enabled explicitly.<br/>
         </td>
         <td>false</td>
-      </tr><tr>
-        <td><b><a href="#clusterobservabilityspecstorage">storage</a></b></td>
-        <td>object</td>
-        <td>
-          Storage defines the storage for the capabilities that require a storage.<br/>
-        </td>
-        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -4169,6 +4162,13 @@ By default, it is set to false.<br/>
           Operators defines the operators installation for the capability.<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingstorage">storage</a></b></td>
+        <td>object</td>
+        <td>
+          Storage defines the storage for the tracing capability<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -4201,12 +4201,12 @@ When the capability is enabled, the install is set to true, otherwise it is set 
 </table>
 
 
-### ClusterObservability.spec.storage
-<sup><sup>[↩ Parent](#clusterobservabilityspec)</sup></sup>
+### ClusterObservability.spec.capabilities.tracing.storage
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracing)</sup></sup>
 
 
 
-Storage defines the storage for the capabilities that require a storage.
+Storage defines the storage for the tracing capability
 
 <table>
     <thead>
@@ -4218,22 +4218,22 @@ Storage defines the storage for the capabilities that require a storage.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b><a href="#clusterobservabilityspecstorageobjectstorage">objectStorage</a></b></td>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingstorageobjectstoragespec">objectStorageSpec</a></b></td>
         <td>object</td>
         <td>
-          ObjectStorageSpec defines the object storage for the capabilities that require it.<br/>
+          ObjectStorageSpec defines the object storage configuration for tracing.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
 </table>
 
 
-### ClusterObservability.spec.storage.objectStorage
-<sup><sup>[↩ Parent](#clusterobservabilityspecstorage)</sup></sup>
+### ClusterObservability.spec.capabilities.tracing.storage.objectStorageSpec
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracingstorage)</sup></sup>
 
 
 
-ObjectStorageSpec defines the object storage for the capabilities that require it.
+ObjectStorageSpec defines the object storage configuration for tracing.
 
 <table>
     <thead>
@@ -4245,56 +4245,56 @@ ObjectStorageSpec defines the object storage for the capabilities that require i
         </tr>
     </thead>
     <tbody><tr>
-        <td><b><a href="#clusterobservabilityspecstorageobjectstorageazure">azure</a></b></td>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingstorageobjectstoragespecazure">azure</a></b></td>
         <td>object</td>
         <td>
           Azure defines the Azure Blob Storage configuration.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#clusterobservabilityspecstorageobjectstorageazurewif">azureWIF</a></b></td>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingstorageobjectstoragespecazurewif">azureWIF</a></b></td>
         <td>object</td>
         <td>
           AzureWIF defines the Azure Blob Storage configuration using a Workload Identity Federation.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#clusterobservabilityspecstorageobjectstoragegcs">gcs</a></b></td>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingstorageobjectstoragespecgcs">gcs</a></b></td>
         <td>object</td>
         <td>
           GCS defines the Google Cloud Storage configuration.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#clusterobservabilityspecstorageobjectstoragegcssts">gcsSTS</a></b></td>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingstorageobjectstoragespecgcssts">gcsSTS</a></b></td>
         <td>object</td>
         <td>
           GCSSToken defines the Google Cloud Storage configuration using short-lived tokens.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#clusterobservabilityspecstorageobjectstorages3">s3</a></b></td>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingstorageobjectstoragespecs3">s3</a></b></td>
         <td>object</td>
         <td>
           S3 defines the S3 object storage configuration.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#clusterobservabilityspecstorageobjectstorages3coo">s3COO</a></b></td>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingstorageobjectstoragespecs3coo">s3COO</a></b></td>
         <td>object</td>
         <td>
           S3CCO defines the S3 object storage configuration using CCO.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#clusterobservabilityspecstorageobjectstorages3sts">s3STS</a></b></td>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingstorageobjectstoragespecs3sts">s3STS</a></b></td>
         <td>object</td>
         <td>
           S3STS defines the S3 object storage configuration using short-lived credentials.<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#clusterobservabilityspecstorageobjectstoragetls">tls</a></b></td>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingstorageobjectstoragespectls">tls</a></b></td>
         <td>object</td>
         <td>
           TLS configuration for reaching the object storage endpoint.<br/>
@@ -4304,8 +4304,8 @@ ObjectStorageSpec defines the object storage for the capabilities that require i
 </table>
 
 
-### ClusterObservability.spec.storage.objectStorage.azure
-<sup><sup>[↩ Parent](#clusterobservabilityspecstorageobjectstorage)</sup></sup>
+### ClusterObservability.spec.capabilities.tracing.storage.objectStorageSpec.azure
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracingstorageobjectstoragespec)</sup></sup>
 
 
 
@@ -4321,7 +4321,7 @@ Azure defines the Azure Blob Storage configuration.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b><a href="#clusterobservabilityspecstorageobjectstorageazureaccountkeysecret">accountKeySecret</a></b></td>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingstorageobjectstoragespecazureaccountkeysecret">accountKeySecret</a></b></td>
         <td>object</td>
         <td>
           AccountKey is a reference to a secret containing the account key for the Azure Storage account.<br/>
@@ -4345,8 +4345,8 @@ Azure defines the Azure Blob Storage configuration.
 </table>
 
 
-### ClusterObservability.spec.storage.objectStorage.azure.accountKeySecret
-<sup><sup>[↩ Parent](#clusterobservabilityspecstorageobjectstorageazure)</sup></sup>
+### ClusterObservability.spec.capabilities.tracing.storage.objectStorageSpec.azure.accountKeySecret
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracingstorageobjectstoragespecazure)</sup></sup>
 
 
 
@@ -4379,8 +4379,8 @@ AccountKey is a reference to a secret containing the account key for the Azure S
 </table>
 
 
-### ClusterObservability.spec.storage.objectStorage.azureWIF
-<sup><sup>[↩ Parent](#clusterobservabilityspecstorageobjectstorage)</sup></sup>
+### ClusterObservability.spec.capabilities.tracing.storage.objectStorageSpec.azureWIF
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracingstorageobjectstoragespec)</sup></sup>
 
 
 
@@ -4434,8 +4434,8 @@ AzureWIF defines the Azure Blob Storage configuration using a Workload Identity 
 </table>
 
 
-### ClusterObservability.spec.storage.objectStorage.gcs
-<sup><sup>[↩ Parent](#clusterobservabilityspecstorageobjectstorage)</sup></sup>
+### ClusterObservability.spec.capabilities.tracing.storage.objectStorageSpec.gcs
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracingstorageobjectstoragespec)</sup></sup>
 
 
 
@@ -4458,7 +4458,7 @@ GCS defines the Google Cloud Storage configuration.
         </td>
         <td>true</td>
       </tr><tr>
-        <td><b><a href="#clusterobservabilityspecstorageobjectstoragegcskeyjsonsecret">keyJSONSecret</a></b></td>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingstorageobjectstoragespecgcskeyjsonsecret">keyJSONSecret</a></b></td>
         <td>object</td>
         <td>
           KeyJSON is the key.json file encoded in a secret.<br/>
@@ -4468,8 +4468,8 @@ GCS defines the Google Cloud Storage configuration.
 </table>
 
 
-### ClusterObservability.spec.storage.objectStorage.gcs.keyJSONSecret
-<sup><sup>[↩ Parent](#clusterobservabilityspecstorageobjectstoragegcs)</sup></sup>
+### ClusterObservability.spec.capabilities.tracing.storage.objectStorageSpec.gcs.keyJSONSecret
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracingstorageobjectstoragespecgcs)</sup></sup>
 
 
 
@@ -4502,8 +4502,8 @@ KeyJSON is the key.json file encoded in a secret.
 </table>
 
 
-### ClusterObservability.spec.storage.objectStorage.gcsSTS
-<sup><sup>[↩ Parent](#clusterobservabilityspecstorageobjectstorage)</sup></sup>
+### ClusterObservability.spec.capabilities.tracing.storage.objectStorageSpec.gcsSTS
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracingstorageobjectstoragespec)</sup></sup>
 
 
 
@@ -4526,7 +4526,7 @@ GCSSToken defines the Google Cloud Storage configuration using short-lived token
         </td>
         <td>true</td>
       </tr><tr>
-        <td><b><a href="#clusterobservabilityspecstorageobjectstoragegcsstskeyjsonsecret">keyJSONSecret</a></b></td>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingstorageobjectstoragespecgcsstskeyjsonsecret">keyJSONSecret</a></b></td>
         <td>object</td>
         <td>
           KeyJSON is the key.json file encoded in a secret.<br/>
@@ -4543,8 +4543,8 @@ GCSSToken defines the Google Cloud Storage configuration using short-lived token
 </table>
 
 
-### ClusterObservability.spec.storage.objectStorage.gcsSTS.keyJSONSecret
-<sup><sup>[↩ Parent](#clusterobservabilityspecstorageobjectstoragegcssts)</sup></sup>
+### ClusterObservability.spec.capabilities.tracing.storage.objectStorageSpec.gcsSTS.keyJSONSecret
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracingstorageobjectstoragespecgcssts)</sup></sup>
 
 
 
@@ -4577,8 +4577,8 @@ KeyJSON is the key.json file encoded in a secret.
 </table>
 
 
-### ClusterObservability.spec.storage.objectStorage.s3
-<sup><sup>[↩ Parent](#clusterobservabilityspecstorageobjectstorage)</sup></sup>
+### ClusterObservability.spec.capabilities.tracing.storage.objectStorageSpec.s3
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracingstorageobjectstoragespec)</sup></sup>
 
 
 
@@ -4601,7 +4601,7 @@ S3 defines the S3 object storage configuration.
         </td>
         <td>true</td>
       </tr><tr>
-        <td><b><a href="#clusterobservabilityspecstorageobjectstorages3accesskeysecret">accessKeySecret</a></b></td>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingstorageobjectstoragespecs3accesskeysecret">accessKeySecret</a></b></td>
         <td>object</td>
         <td>
           AccessKeySecret is a reference to a secret containing the access key secret for the S3.<br/>
@@ -4632,8 +4632,8 @@ S3 defines the S3 object storage configuration.
 </table>
 
 
-### ClusterObservability.spec.storage.objectStorage.s3.accessKeySecret
-<sup><sup>[↩ Parent](#clusterobservabilityspecstorageobjectstorages3)</sup></sup>
+### ClusterObservability.spec.capabilities.tracing.storage.objectStorageSpec.s3.accessKeySecret
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracingstorageobjectstoragespecs3)</sup></sup>
 
 
 
@@ -4666,8 +4666,8 @@ AccessKeySecret is a reference to a secret containing the access key secret for 
 </table>
 
 
-### ClusterObservability.spec.storage.objectStorage.s3COO
-<sup><sup>[↩ Parent](#clusterobservabilityspecstorageobjectstorage)</sup></sup>
+### ClusterObservability.spec.capabilities.tracing.storage.objectStorageSpec.s3COO
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracingstorageobjectstoragespec)</sup></sup>
 
 
 
@@ -4700,8 +4700,8 @@ S3CCO defines the S3 object storage configuration using CCO.
 </table>
 
 
-### ClusterObservability.spec.storage.objectStorage.s3STS
-<sup><sup>[↩ Parent](#clusterobservabilityspecstorageobjectstorage)</sup></sup>
+### ClusterObservability.spec.capabilities.tracing.storage.objectStorageSpec.s3STS
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracingstorageobjectstoragespec)</sup></sup>
 
 
 
@@ -4741,8 +4741,8 @@ S3STS defines the S3 object storage configuration using short-lived credentials.
 </table>
 
 
-### ClusterObservability.spec.storage.objectStorage.tls
-<sup><sup>[↩ Parent](#clusterobservabilityspecstorageobjectstorage)</sup></sup>
+### ClusterObservability.spec.capabilities.tracing.storage.objectStorageSpec.tls
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracingstorageobjectstoragespec)</sup></sup>
 
 
 
@@ -4758,21 +4758,21 @@ TLS configuration for reaching the object storage endpoint.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b><a href="#clusterobservabilityspecstorageobjectstoragetlscaconfigmap">caConfigMap</a></b></td>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingstorageobjectstoragespectlscaconfigmap">caConfigMap</a></b></td>
         <td>object</td>
         <td>
           CAConfigMap is the name of a ConfigMap containing a CA certificate (e.g. service-ca.crt).<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#clusterobservabilityspecstorageobjectstoragetlscertsecret">certSecret</a></b></td>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingstorageobjectstoragespectlscertsecret">certSecret</a></b></td>
         <td>object</td>
         <td>
           CertSecret is the name of a Secret containing a certificate (e.g. tls.crt).<br/>
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b><a href="#clusterobservabilityspecstorageobjectstoragetlskeysecret">keySecret</a></b></td>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingstorageobjectstoragespectlskeysecret">keySecret</a></b></td>
         <td>object</td>
         <td>
           KeySecret is the name of a Secret containing a private key (e.g. tls.key).<br/>
@@ -4789,8 +4789,8 @@ TLS configuration for reaching the object storage endpoint.
 </table>
 
 
-### ClusterObservability.spec.storage.objectStorage.tls.caConfigMap
-<sup><sup>[↩ Parent](#clusterobservabilityspecstorageobjectstoragetls)</sup></sup>
+### ClusterObservability.spec.capabilities.tracing.storage.objectStorageSpec.tls.caConfigMap
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracingstorageobjectstoragespectls)</sup></sup>
 
 
 
@@ -4823,8 +4823,8 @@ CAConfigMap is the name of a ConfigMap containing a CA certificate (e.g. service
 </table>
 
 
-### ClusterObservability.spec.storage.objectStorage.tls.certSecret
-<sup><sup>[↩ Parent](#clusterobservabilityspecstorageobjectstoragetls)</sup></sup>
+### ClusterObservability.spec.capabilities.tracing.storage.objectStorageSpec.tls.certSecret
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracingstorageobjectstoragespectls)</sup></sup>
 
 
 
@@ -4857,8 +4857,8 @@ CertSecret is the name of a Secret containing a certificate (e.g. tls.crt).
 </table>
 
 
-### ClusterObservability.spec.storage.objectStorage.tls.keySecret
-<sup><sup>[↩ Parent](#clusterobservabilityspecstorageobjectstoragetls)</sup></sup>
+### ClusterObservability.spec.capabilities.tracing.storage.objectStorageSpec.tls.keySecret
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracingstorageobjectstoragespectls)</sup></sup>
 
 
 

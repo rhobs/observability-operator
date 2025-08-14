@@ -73,269 +73,279 @@ spec:
                               When the capability is enabled, the install is set to true, otherwise it is set to false.
                             type: boolean
                         type: object
-                    type: object
-                type: object
-              storage:
-                description: Storage defines the storage for the capabilities that
-                  require a storage.
-                properties:
-                  objectStorage:
-                    description: ObjectStorageSpec defines the object storage for
-                      the capabilities that require it.
-                    properties:
-                      azure:
-                        description: Azure defines the Azure Blob Storage configuration.
+                      storage:
+                        description: Storage defines the storage for the tracing capability
                         properties:
-                          accountKeySecret:
-                            description: AccountKey is a reference to a secret containing
-                              the account key for the Azure Storage account.
+                          objectStorageSpec:
+                            description: ObjectStorageSpec defines the object storage
+                              configuration for tracing.
                             properties:
-                              key:
-                                description: Key contains the name of the key inside
-                                  the referenced Secret.
-                                type: string
-                              name:
-                                description: SecretName contains the name of the Secret
-                                  containing the referenced value.
-                                type: string
-                            required:
-                            - key
-                            - name
+                              azure:
+                                description: Azure defines the Azure Blob Storage
+                                  configuration.
+                                properties:
+                                  accountKeySecret:
+                                    description: AccountKey is a reference to a secret
+                                      containing the account key for the Azure Storage
+                                      account.
+                                    properties:
+                                      key:
+                                        description: Key contains the name of the
+                                          key inside the referenced Secret.
+                                        type: string
+                                      name:
+                                        description: SecretName contains the name
+                                          of the Secret containing the referenced
+                                          value.
+                                        type: string
+                                    required:
+                                    - key
+                                    - name
+                                    type: object
+                                  accountName:
+                                    description: AccountName is the name of the Azure
+                                      Storage account.
+                                    type: string
+                                  container:
+                                    description: Container is the name of the Azure
+                                      Blob Storage container.
+                                    type: string
+                                required:
+                                - accountKeySecret
+                                - accountName
+                                - container
+                                type: object
+                              azureWIF:
+                                description: AzureWIF defines the Azure Blob Storage
+                                  configuration using a Workload Identity Federation.
+                                properties:
+                                  accountName:
+                                    description: AccountName is the name of the Azure
+                                      Storage account.
+                                    type: string
+                                  audience:
+                                    description: Audience is the optional audience
+                                      for the Azure Workload Identity Federation.
+                                    type: string
+                                  clientID:
+                                    description: ClientID is the client ID of the
+                                      Azure Active Directory application.
+                                    type: string
+                                  container:
+                                    description: Container is the name of the Azure
+                                      Blob Storage container.
+                                    type: string
+                                  tenantID:
+                                    description: TenantID is the tenant ID of the
+                                      Azure Active Directory.
+                                    type: string
+                                required:
+                                - accountName
+                                - clientID
+                                - container
+                                - tenantID
+                                type: object
+                              gcs:
+                                description: GCS defines the Google Cloud Storage
+                                  configuration.
+                                properties:
+                                  bucket:
+                                    description: Bucket is the name of the Google
+                                      Cloud Storage bucket.
+                                    type: string
+                                  keyJSONSecret:
+                                    description: KeyJSON is the key.json file encoded
+                                      in a secret.
+                                    properties:
+                                      key:
+                                        description: Key contains the name of the
+                                          key inside the referenced Secret.
+                                        type: string
+                                      name:
+                                        description: SecretName contains the name
+                                          of the Secret containing the referenced
+                                          value.
+                                        type: string
+                                    required:
+                                    - key
+                                    - name
+                                    type: object
+                                required:
+                                - bucket
+                                - keyJSONSecret
+                                type: object
+                              gcsSTS:
+                                description: GCSSToken defines the Google Cloud Storage
+                                  configuration using short-lived tokens.
+                                properties:
+                                  audience:
+                                    description: Audience is the optional audience.
+                                    type: string
+                                  bucket:
+                                    description: Bucket is the name of the Google
+                                      Cloud Storage bucket.
+                                    type: string
+                                  keyJSONSecret:
+                                    description: KeyJSON is the key.json file encoded
+                                      in a secret.
+                                    properties:
+                                      key:
+                                        description: Key contains the name of the
+                                          key inside the referenced Secret.
+                                        type: string
+                                      name:
+                                        description: SecretName contains the name
+                                          of the Secret containing the referenced
+                                          value.
+                                        type: string
+                                    required:
+                                    - key
+                                    - name
+                                    type: object
+                                required:
+                                - bucket
+                                - keyJSONSecret
+                                type: object
+                              s3:
+                                description: S3 defines the S3 object storage configuration.
+                                properties:
+                                  accessKeyID:
+                                    description: AccessKeyID is the access key ID
+                                      for the S3 bucket.
+                                    type: string
+                                  accessKeySecret:
+                                    description: AccessKeySecret is a reference to
+                                      a secret containing the access key secret for
+                                      the S3.
+                                    properties:
+                                      key:
+                                        description: Key contains the name of the
+                                          key inside the referenced Secret.
+                                        type: string
+                                      name:
+                                        description: SecretName contains the name
+                                          of the Secret containing the referenced
+                                          value.
+                                        type: string
+                                    required:
+                                    - key
+                                    - name
+                                    type: object
+                                  bucket:
+                                    description: Bucket is the name of the S3 bucket.
+                                    type: string
+                                  endpoint:
+                                    description: Endpoint is the S3 endpoint URL.
+                                    type: string
+                                  region:
+                                    description: Region is the region where the S3
+                                      bucket is located.
+                                    type: string
+                                required:
+                                - accessKeyID
+                                - accessKeySecret
+                                - bucket
+                                - endpoint
+                                type: object
+                              s3COO:
+                                description: S3CCO defines the S3 object storage configuration
+                                  using CCO.
+                                properties:
+                                  bucket:
+                                    description: Bucket is the name of the S3 bucket.
+                                    type: string
+                                  region:
+                                    description: Region is the region where the S3
+                                      bucket is located.
+                                    type: string
+                                required:
+                                - bucket
+                                type: object
+                              s3STS:
+                                description: S3STS defines the S3 object storage configuration
+                                  using short-lived credentials.
+                                properties:
+                                  bucket:
+                                    description: Bucket is the name of the S3 bucket.
+                                    type: string
+                                  region:
+                                    description: Region is the region where the S3
+                                      bucket is located.
+                                    type: string
+                                  roleARN:
+                                    description: RoleARN is the ARN of the IAM role
+                                      to assume for accessing the S3 bucket.
+                                    type: string
+                                required:
+                                - bucket
+                                - roleARN
+                                type: object
+                              tls:
+                                description: TLS configuration for reaching the object
+                                  storage endpoint.
+                                properties:
+                                  caConfigMap:
+                                    description: CAConfigMap is the name of a ConfigMap
+                                      containing a CA certificate (e.g. service-ca.crt).
+                                    properties:
+                                      key:
+                                        description: Key contains the name of the
+                                          key inside the referenced Secret.
+                                        type: string
+                                      name:
+                                        description: SecretName contains the name
+                                          of the Secret containing the referenced
+                                          value.
+                                        type: string
+                                    required:
+                                    - key
+                                    - name
+                                    type: object
+                                  certSecret:
+                                    description: CertSecret is the name of a Secret
+                                      containing a certificate (e.g. tls.crt).
+                                    properties:
+                                      key:
+                                        description: Key contains the name of the
+                                          key inside the referenced Secret.
+                                        type: string
+                                      name:
+                                        description: SecretName contains the name
+                                          of the Secret containing the referenced
+                                          value.
+                                        type: string
+                                    required:
+                                    - key
+                                    - name
+                                    type: object
+                                  keySecret:
+                                    description: KeySecret is the name of a Secret
+                                      containing a private key (e.g. tls.key).
+                                    properties:
+                                      key:
+                                        description: Key contains the name of the
+                                          key inside the referenced Secret.
+                                        type: string
+                                      name:
+                                        description: SecretName contains the name
+                                          of the Secret containing the referenced
+                                          value.
+                                        type: string
+                                    required:
+                                    - key
+                                    - name
+                                    type: object
+                                  minVersion:
+                                    description: MinVersion defines the minimum acceptable
+                                      TLS version.
+                                    type: string
+                                type: object
+                                x-kubernetes-validations:
+                                - message: KeySecret and CertSecret must be set together
+                                  rule: (has(self.keySecret) && has(self.certSecret))
+                                    || (!has(self.keySecret) && !has(self.certSecret))
                             type: object
-                          accountName:
-                            description: AccountName is the name of the Azure Storage
-                              account.
-                            type: string
-                          container:
-                            description: Container is the name of the Azure Blob Storage
-                              container.
-                            type: string
-                        required:
-                        - accountKeySecret
-                        - accountName
-                        - container
                         type: object
-                      azureWIF:
-                        description: AzureWIF defines the Azure Blob Storage configuration
-                          using a Workload Identity Federation.
-                        properties:
-                          accountName:
-                            description: AccountName is the name of the Azure Storage
-                              account.
-                            type: string
-                          audience:
-                            description: Audience is the optional audience for the
-                              Azure Workload Identity Federation.
-                            type: string
-                          clientID:
-                            description: ClientID is the client ID of the Azure Active
-                              Directory application.
-                            type: string
-                          container:
-                            description: Container is the name of the Azure Blob Storage
-                              container.
-                            type: string
-                          tenantID:
-                            description: TenantID is the tenant ID of the Azure Active
-                              Directory.
-                            type: string
-                        required:
-                        - accountName
-                        - clientID
-                        - container
-                        - tenantID
-                        type: object
-                      gcs:
-                        description: GCS defines the Google Cloud Storage configuration.
-                        properties:
-                          bucket:
-                            description: Bucket is the name of the Google Cloud Storage
-                              bucket.
-                            type: string
-                          keyJSONSecret:
-                            description: KeyJSON is the key.json file encoded in a
-                              secret.
-                            properties:
-                              key:
-                                description: Key contains the name of the key inside
-                                  the referenced Secret.
-                                type: string
-                              name:
-                                description: SecretName contains the name of the Secret
-                                  containing the referenced value.
-                                type: string
-                            required:
-                            - key
-                            - name
-                            type: object
-                        required:
-                        - bucket
-                        - keyJSONSecret
-                        type: object
-                      gcsSTS:
-                        description: GCSSToken defines the Google Cloud Storage configuration
-                          using short-lived tokens.
-                        properties:
-                          audience:
-                            description: Audience is the optional audience.
-                            type: string
-                          bucket:
-                            description: Bucket is the name of the Google Cloud Storage
-                              bucket.
-                            type: string
-                          keyJSONSecret:
-                            description: KeyJSON is the key.json file encoded in a
-                              secret.
-                            properties:
-                              key:
-                                description: Key contains the name of the key inside
-                                  the referenced Secret.
-                                type: string
-                              name:
-                                description: SecretName contains the name of the Secret
-                                  containing the referenced value.
-                                type: string
-                            required:
-                            - key
-                            - name
-                            type: object
-                        required:
-                        - bucket
-                        - keyJSONSecret
-                        type: object
-                      s3:
-                        description: S3 defines the S3 object storage configuration.
-                        properties:
-                          accessKeyID:
-                            description: AccessKeyID is the access key ID for the
-                              S3 bucket.
-                            type: string
-                          accessKeySecret:
-                            description: AccessKeySecret is a reference to a secret
-                              containing the access key secret for the S3.
-                            properties:
-                              key:
-                                description: Key contains the name of the key inside
-                                  the referenced Secret.
-                                type: string
-                              name:
-                                description: SecretName contains the name of the Secret
-                                  containing the referenced value.
-                                type: string
-                            required:
-                            - key
-                            - name
-                            type: object
-                          bucket:
-                            description: Bucket is the name of the S3 bucket.
-                            type: string
-                          endpoint:
-                            description: Endpoint is the S3 endpoint URL.
-                            type: string
-                          region:
-                            description: Region is the region where the S3 bucket
-                              is located.
-                            type: string
-                        required:
-                        - accessKeyID
-                        - accessKeySecret
-                        - bucket
-                        - endpoint
-                        type: object
-                      s3COO:
-                        description: S3CCO defines the S3 object storage configuration
-                          using CCO.
-                        properties:
-                          bucket:
-                            description: Bucket is the name of the S3 bucket.
-                            type: string
-                          region:
-                            description: Region is the region where the S3 bucket
-                              is located.
-                            type: string
-                        required:
-                        - bucket
-                        type: object
-                      s3STS:
-                        description: S3STS defines the S3 object storage configuration
-                          using short-lived credentials.
-                        properties:
-                          bucket:
-                            description: Bucket is the name of the S3 bucket.
-                            type: string
-                          region:
-                            description: Region is the region where the S3 bucket
-                              is located.
-                            type: string
-                          roleARN:
-                            description: RoleARN is the ARN of the IAM role to assume
-                              for accessing the S3 bucket.
-                            type: string
-                        required:
-                        - bucket
-                        - roleARN
-                        type: object
-                      tls:
-                        description: TLS configuration for reaching the object storage
-                          endpoint.
-                        properties:
-                          caConfigMap:
-                            description: CAConfigMap is the name of a ConfigMap containing
-                              a CA certificate (e.g. service-ca.crt).
-                            properties:
-                              key:
-                                description: Key contains the name of the key inside
-                                  the referenced Secret.
-                                type: string
-                              name:
-                                description: SecretName contains the name of the Secret
-                                  containing the referenced value.
-                                type: string
-                            required:
-                            - key
-                            - name
-                            type: object
-                          certSecret:
-                            description: CertSecret is the name of a Secret containing
-                              a certificate (e.g. tls.crt).
-                            properties:
-                              key:
-                                description: Key contains the name of the key inside
-                                  the referenced Secret.
-                                type: string
-                              name:
-                                description: SecretName contains the name of the Secret
-                                  containing the referenced value.
-                                type: string
-                            required:
-                            - key
-                            - name
-                            type: object
-                          keySecret:
-                            description: KeySecret is the name of a Secret containing
-                              a private key (e.g. tls.key).
-                            properties:
-                              key:
-                                description: Key contains the name of the key inside
-                                  the referenced Secret.
-                                type: string
-                              name:
-                                description: SecretName contains the name of the Secret
-                                  containing the referenced value.
-                                type: string
-                            required:
-                            - key
-                            - name
-                            type: object
-                          minVersion:
-                            description: MinVersion defines the minimum acceptable
-                              TLS version.
-                            type: string
-                        type: object
-                        x-kubernetes-validations:
-                        - message: KeySecret and CertSecret must be set together
-                          rule: (has(self.keySecret) && has(self.certSecret)) || (!has(self.keySecret)
-                            && !has(self.certSecret))
                     type: object
                 type: object
             type: object
