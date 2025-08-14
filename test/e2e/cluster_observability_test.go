@@ -73,9 +73,6 @@ func testClusterObservabilityInstallOperators(t *testing.T) {
 			Namespace: f.OperatorNamespace,
 		},
 		Data: map[string][]byte{
-			"endpoint":          []byte("http://minio.minio.svc:9000"),
-			"bucket":            []byte("tempo"),
-			"access_key_id":     []byte("tempo"),
 			"access_key_secret": []byte("supersecret"),
 		},
 	}
@@ -90,9 +87,16 @@ func testClusterObservabilityInstallOperators(t *testing.T) {
 		},
 		Spec: obsv1alpha1.ClusterObservabilitySpec{
 			Storage: obsv1alpha1.StorageSpec{
-				Secret: obsv1alpha1.SecretSpec{
-					Name: "minio",
-					Type: "s3",
+				ObjectStorageSpec: obsv1alpha1.ObjectStorage{
+					S3: &obsv1alpha1.S3Spec{
+						Bucket:      "tempo",
+						Endpoint:    "http://minio.minio.svc:9000",
+						AccessKeyID: "tempo",
+						AccessKeySecret: obsv1alpha1.SecretKeySelector{
+							Key:  "access_key_secret",
+							Name: "minio",
+						},
+					},
 				},
 			},
 			Capabilities: &obsv1alpha1.CapabilitiesSpec{

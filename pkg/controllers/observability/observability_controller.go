@@ -52,7 +52,7 @@ const (
 // RBAC for Tempo
 // +kubebuilder:rbac:groups=tempo.grafana.com,resources=tempostacks,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=tempo.grafana.com,resources=tempostacks/status,verbs=get;list;watch
-// +kubebuilder:rbac:groups="",resources=namespaces;secrets,verbs=get;list;watch;create;update;delete;patch
+// +kubebuilder:rbac:groups="",resources=namespaces;secrets;configmaps,verbs=get;list;watch;create;update;delete;patch
 // +kubebuilder:rbac:groups=observability.openshift.io,resources=uiplugins,verbs=get;list;watch;create;update;delete;patch
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles;clusterrolebindings,verbs=list;watch;create;update;delete;patch
 // +kubebuilder:rbac:groups=observability.openshift.io,resources=uiplugins,verbs=get;list;watch;create;update;delete;patch
@@ -94,18 +94,6 @@ func (o clusterObservabilityController) Reconcile(ctx context.Context, request r
 		}
 	}
 
-	storageSecret := &corev1.Secret{}
-	if instance.Spec.Storage.Secret.Name != "" {
-		err = o.client.Get(ctx, types.NamespacedName{
-			Namespace: "operators",
-			Name:      instance.Spec.Storage.Secret.Name,
-		}, storageSecret)
-		if err != nil {
-			o.logger.Error(err, "Failed to get storage secret")
-			return ctrl.Result{}, err
-		}
-	}
-
 	csvs := &olmv1alpha1.ClusterServiceVersionList{}
 	err = o.client.List(ctx, csvs, &client.ListOptions{Namespace: o.Options.COONamespace})
 	if err != nil {
@@ -118,7 +106,7 @@ func (o clusterObservabilityController) Reconcile(ctx context.Context, request r
 		o.logger.Error(err, "Failed to list subscriptions")
 		return ctrl.Result{}, err
 	}
-	reconcilers, err := getReconcilers(instance, o.Options, storageSecret, operatorsStatus{
+	reconcilers, err := getReconcilers(ctx, o.client, instance, o.Options, operatorsStatus{
 		cooNamespace: o.Options.COONamespace,
 		csvs:         csvs.Items,
 		subs:         subs.Items,

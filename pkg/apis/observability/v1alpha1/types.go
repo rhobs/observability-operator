@@ -64,24 +64,38 @@ type ClusterObservabilityStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
-type StorageSecretType string
-
-const (
-	S3 StorageSecretType = "s3"
-)
-
 // StorageSpec defines the storage.
 type StorageSpec struct {
-	Secret SecretSpec `json:"secret,omitempty"`
+	// ObjectStorageSpec defines the object storage for the capabilities that require it.
+	ObjectStorageSpec ObjectStorage `json:"objectStorage,omitempty"`
 }
 
-// SecretSpec defines the secret for the storage.
-type SecretSpec struct {
-	// Name is the name of the secret for the storage.
-	Name string `json:"name,omitempty"`
+// TLSSpec is the TLS configuration.
+// +kubebuilder:validation:XValidation:rule="(has(self.keySecret) && has(self.certSecret)) || (!has(self.keySecret) && !has(self.certSecret))",message="KeySecret and CertSecret must be set together"
+type TLSSpec struct {
+	// CAConfigMap is the name of a ConfigMap containing a CA certificate (e.g. service-ca.crt).
+	//
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors="urn:alm:descriptor:io.kubernetes:ConfigMap",displayName="CA ConfigMap"
+	CAConfigMap *ConfigMapKeySelector `json:"caConfigMap,omitempty"`
 
-	// Type is the type of the secret for the storage.
-	Type StorageSecretType `json:"type,omitempty"`
+	// CertSecret is the name of a Secret containing a certificate (e.g. tls.crt).
+	//
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors="urn:alm:descriptor:io.kubernetes:Secret",displayName="Certificate Secret"
+	CertSecret *SecretKeySelector `json:"certSecret,omitempty"`
+
+	// KeySecret is the name of a Secret containing a private key (e.g. tls.key).
+	//
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors="urn:alm:descriptor:io.kubernetes:Secret",displayName="Certificate Secret"
+	KeySecret *SecretKeySelector `json:"keySecret,omitempty"`
+
+	// MinVersion defines the minimum acceptable TLS version.
+	//
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Min TLS Version"
+	MinVersion string `json:"minVersion,omitempty"`
 }
 
 // CapabilitiesSpec defines the observability capabilities.

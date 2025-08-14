@@ -1,6 +1,7 @@
 package observability
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -55,7 +56,7 @@ func (s *operatorsStatus) getCSVByName(operatorName string) *olmv1alpha1.Cluster
 // The subByName is used to check if the operators are already installed, if not, they will be installed.
 // The csvByName is used to uninstall the operators, the name of the CSV contains the version therefore it must be retrieved from the cluster.
 // The CSV is not deleted when the subscription is deleted, so we need to delete it explicitly.
-func getReconcilers(instance *obsv1alpha1.ClusterObservability, opts Options, storageSecret *corev1.Secret, operatorsStatus operatorsStatus) ([]reconciler.Reconciler, error) {
+func getReconcilers(ctx context.Context, k8sClient client.Client, instance *obsv1alpha1.ClusterObservability, opts Options, operatorsStatus operatorsStatus) ([]reconciler.Reconciler, error) {
 	var reconcilers []reconciler.Reconciler
 	//var otelOperator client.Object
 	//var tempoOperator client.Object
@@ -79,8 +80,22 @@ func getReconcilers(instance *obsv1alpha1.ClusterObservability, opts Options, st
 	otelcolRBAC, otelcolRBACBinding := otelCollectorComponentsRBAC(opts.OperandsNamespace)
 	instanceObjects = append(instanceObjects, otelcolRBAC)
 	instanceObjects = append(instanceObjects, otelcolRBACBinding)
-	instanceObjects = append(instanceObjects, tempoStack(instance.Spec.Storage, opts.OperandsNamespace))
-	instanceObjects = append(instanceObjects, tempoStackSecret(instance.Spec.Storage, opts.OperandsNamespace, storageSecret))
+	instanceObjects = append(instanceObjects, tempoStack(instance.Spec.Storage, opts.OperandsNamespace, instance.Name))
+
+	secrets, err := tempoStackSecrets(ctx, k8sClient, *instance, opts.OperandsNamespace, opts.COONamespace)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create TempoStack secret: %w", err)
+	}
+	if secrets.objectStorage != nil {
+		instanceObjects = append(instanceObjects, secrets.objectStorage)
+	}
+	if secrets.objectStorageTLSSecret != nil {
+		instanceObjects = append(instanceObjects, secrets.objectStorageTLSSecret)
+	}
+	if secrets.objectStorageCAConfigMap != nil {
+		instanceObjects = append(instanceObjects, secrets.objectStorageCAConfigMap)
+	}
+
 	otelcolTempoRBAC, otelcolTempoRBACBinding := otelCollectorTempoRBAC(opts.OperandsNamespace)
 	instanceObjects = append(instanceObjects, otelcolTempoRBAC)
 	instanceObjects = append(instanceObjects, otelcolTempoRBACBinding)
@@ -115,9 +130,6 @@ func getReconcilers(instance *obsv1alpha1.ClusterObservability, opts Options, st
 		if operatorsStatus.ShouldInstall("tempo") {
 			reconcilers = append(reconcilers, reconciler.NewCreateUpdateReconciler(tempoSubs, instance))
 			installedObjects[gvaNameIdentifier(tempoSubs)] = tempoSubs
-		}
-		if storageSecret == nil {
-			return nil, fmt.Errorf("storage secret is required when the tracing capability is enabled")
 		}
 		for _, obj := range instanceObjects {
 			reconcilers = append(reconcilers, reconciler.NewUpdater(obj, instance))

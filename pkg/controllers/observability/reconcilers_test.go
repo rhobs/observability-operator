@@ -64,6 +64,59 @@ func TestGetReconcilers(t *testing.T) {
 			},
 		},
 		{
+			name: "tracing capability enabled, s3 storage with TLS",
+			mockClient: func() *MockClient {
+				mockClient := &MockClient{}
+				mockClient.On("Get", context.Background(), mock.Anything, mock.IsType(&olmv1alpha1.Subscription{}), mock.Anything).Return(nil)
+				mockClient.On("Get", context.Background(), mock.Anything, mock.IsType(&corev1.Secret{}), mock.Anything).Return(nil)
+				mockClient.On("Get", context.Background(), mock.Anything, mock.IsType(&corev1.ConfigMap{}), mock.Anything).Return(nil)
+				mockClient.On("Patch", context.Background(), mock.IsType(&corev1.Namespace{}), mock.Anything, mock.Anything).Return(nil)
+				mockClient.On("Patch", context.Background(), mock.IsType(&otelv1beta1.OpenTelemetryCollector{}), mock.Anything, mock.Anything).Return(nil)
+				mockClient.On("Patch", context.Background(), mock.IsType(&rbacv1.ClusterRole{}), mock.Anything, mock.Anything).Return(nil)
+				mockClient.On("Patch", context.Background(), mock.IsType(&rbacv1.ClusterRoleBinding{}), mock.Anything, mock.Anything).Return(nil)
+				mockClient.On("Patch", context.Background(), mock.IsType(&tempov1alpha1.TempoStack{}), mock.Anything, mock.Anything).Return(nil)
+				mockClient.On("Patch", context.Background(), mock.IsType(&corev1.Secret{}), mock.Anything, mock.Anything).Return(nil)
+				mockClient.On("Patch", context.Background(), mock.IsType(&corev1.ConfigMap{}), mock.Anything, mock.Anything).Return(nil)
+				mockClient.On("Patch", context.Background(), mock.IsType(&uiv1alpha1.UIPlugin{}), mock.Anything, mock.Anything).Return(nil)
+				return mockClient
+			},
+			instance: &obsv1alpha1.ClusterObservability{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "test-namespace",
+				},
+				Spec: obsv1alpha1.ClusterObservabilitySpec{
+					Storage: obsv1alpha1.StorageSpec{
+						ObjectStorageSpec: obsv1alpha1.ObjectStorage{
+							S3: &obsv1alpha1.S3Spec{
+								Bucket:      "tempo",
+								Endpoint:    "tmepo:111",
+								AccessKeyID: "id",
+								AccessKeySecret: obsv1alpha1.SecretKeySelector{
+									Key:  "key",
+									Name: "secret-name",
+								},
+							},
+							TLS: &obsv1alpha1.TLSSpec{
+								CAConfigMap: &obsv1alpha1.ConfigMapKeySelector{
+									Key:  "ca.crt",
+									Name: "configmap-name",
+								},
+							},
+						},
+					},
+					Capabilities: &obsv1alpha1.CapabilitiesSpec{
+						Tracing: obsv1alpha1.TracingSpec{
+							CommonCapabilitiesSpec: obsv1alpha1.CommonCapabilitiesSpec{
+								Enabled:   true,
+								Operators: obsv1alpha1.OperatorsSpec{},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "tracing capability disabled, install operators enabled",
 			mockClient: func() *MockClient {
 				mockClient := &MockClient{}
@@ -174,7 +227,9 @@ func TestGetReconcilers(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			reconcilers, err := getReconcilers(test.instance, Options{
+			mockClient := test.mockClient()
+
+			reconcilers, err := getReconcilers(context.Background(), mockClient, test.instance, Options{
 				COONamespace:      "operators",
 				OperandsNamespace: "test-namespace",
 				OpenTelemetryOperator: OperatorInstallConfig{
@@ -189,12 +244,11 @@ func TestGetReconcilers(t *testing.T) {
 					StartingCSV: "tempo",
 					Channel:     "stable",
 				},
-			}, &corev1.Secret{}, operatorsStatus{
+			}, operatorsStatus{
 				subs: test.installedSubscriptions,
 			})
 			require.NoError(t, err)
 
-			mockClient := test.mockClient()
 			for _, rec := range reconcilers {
 				err := rec.Reconcile(context.Background(), mockClient, getScheme())
 				require.NoError(t, err)
