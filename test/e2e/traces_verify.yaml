@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: verify-traces-traceql-grpc
-  namespace: cluster-observability
+  namespace: tracing-observability
 spec:
   template:
     spec:
@@ -20,7 +20,7 @@ spec:
                 -v -G \
                 --header "Authorization: Bearer $token" \
                 --cacert /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt \
-                https://tempo-coo-gateway.cluster-observability.svc:8080/api/traces/v1/prod/tempo/api/search \
+                https://tempo-coo-gateway.tracing-observability.svc:8080/api/traces/v1/prod/tempo/api/search \
                 --data-urlencode 'q={ resource.service.name="grpc" }' \
                 | tee /tmp/jaeger.out
               num_traces=$(jq ".traces | length" /tmp/jaeger.out)
@@ -61,7 +61,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: view
-  namespace: cluster-observability
+  namespace: tracing-observability
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -69,4 +69,4 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: default
-    namespace: cluster-observability
+    namespace: tracing-observability

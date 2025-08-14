@@ -11,8 +11,11 @@ spec:
     kind: ClusterObservability
     listKind: ClusterObservabilityList
     plural: clusterobservabilities
+    shortNames:
+    - clobs
+    - clobs
     singular: clusterobservability
-  scope: Cluster
+  scope: Namespaced
   versions:
   - additionalPrinterColumns:
     - jsonPath: .status.opentelemetry

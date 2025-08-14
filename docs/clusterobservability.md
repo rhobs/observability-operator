@@ -22,6 +22,7 @@ apiVersion: observability.openshift.io/v1alpha1
 kind: ClusterObservability
 metadata:
   name: logging-tracing
+  namespace: observability
 spec:
   storage:
     objectStorage:
@@ -42,8 +43,8 @@ spec:
 Notes:
 * installs the Loki, ClusterLogForwarder, Tempo and opentelemetry operators
 * creates storage secret for `LokiStack` and `TempoStack` from the secret `minio` which is reconciled by the `ClusterObservability`
-* deploys logging stack with `ClusterLogForwarder` and `LokiStack` in the `openshift-logging` namespace
-* deploys tracing stack with `OpenTelemetryCollector` and `TempoStack` in the `openshift-distributed-tracing` namespace
+* deploys logging stack with `ClusterLogForwarder` and `LokiStack` in the `observability` namespace
+* deploys tracing stack with `OpenTelemetryCollector` and `TempoStack` in the `observability` namespace
 * Installs the UI plugins for Loki and Tempo
 * The appropriate operators are installed only when given capability is enabled
 
@@ -54,6 +55,7 @@ apiVersion: observability.openshift.io/v1alpha1
 kind: ClusterObservability
 metadata:
   name: logging-tracing
+  namespace: observability
 spec:
   storage:
     objectStorage:
@@ -78,7 +80,7 @@ spec:
 
 Notes:
 * installs the opentelemetry and tempo operators
-* deploys tracing stack with `OpenTelemetryCollector` and `TempoStack` in the `openshift-distributed-tracing` namespace
+* deploys tracing stack with `OpenTelemetryCollector` and `TempoStack` in the `observability` namespace
 * deploys `OpenTelemetryCollector` in the `openshift-opentelemetry`
 * configures OTLP exporter on the collector to send traces to Dynatrace
 * configures collector to export trace data to Tempo deployed by the `ClusterObservability` CR
@@ -90,6 +92,7 @@ apiVersion: observability.openshift.io/v1alpha1
 kind: ClusterObservability
 metadata:
   name: logging-tracing
+  namespace: observability
 spec:
   storage:
     objectStorage:
@@ -117,6 +120,7 @@ apiVersion: observability.openshift.io/v1alpha1
 kind: ClusterObservability
 metadata:
   name: logging-tracing
+  namespace: observability
 spec:
   storage:
     objectStorage:
@@ -156,6 +160,7 @@ apiVersion: observability.openshift.io/v1alpha1
 kind: ClusterObservability
 metadata:
   name: example
+  namespace: observability
 spec:
   storage:
     pvc:

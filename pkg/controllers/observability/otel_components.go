@@ -13,10 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
-)
-
-const (
-	otelCollectorName = "coo"
+	obsv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/observability/v1alpha1"
 )
 
 var (
@@ -31,9 +28,9 @@ type templateOptions struct {
 	TempoName   string
 }
 
-func otelCollector(ns string) (*otelv1beta1.OpenTelemetryCollector, error) {
+func otelCollector(instance *obsv1alpha1.ClusterObservability) (*otelv1beta1.OpenTelemetryCollector, error) {
 	w := bytes.NewBuffer(nil)
-	err := collectorConfigTemplate.Execute(w, templateOptions{Namespace: ns, TempoName: tempoName, TempoTenant: tenantName})
+	err := collectorConfigTemplate.Execute(w, templateOptions{Namespace: instance.Namespace, TempoName: tempoName(instance.Name), TempoTenant: tenantName})
 	if err != nil {
 		return nil, err
 	}
@@ -59,8 +56,8 @@ func otelCollector(ns string) (*otelv1beta1.OpenTelemetryCollector, error) {
 			APIVersion: otelv1beta1.GroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      otelCollectorName,
-			Namespace: ns,
+			Name:      otelCollectorName(instance.Name),
+			Namespace: instance.Namespace,
 		},
 		Spec: otelv1beta1.OpenTelemetryCollectorSpec{
 			Config: *cfg,
@@ -71,8 +68,12 @@ func otelCollector(ns string) (*otelv1beta1.OpenTelemetryCollector, error) {
 	}, nil
 }
 
-func otelCollectorComponentsRBAC(ns string) (*rbacv1.ClusterRole, *rbacv1.ClusterRoleBinding) {
-	name := "coo-otel-collector-components"
+func otelCollectorName(instance string) string {
+	return fmt.Sprintf("%s", instance)
+}
+
+func otelCollectorComponentsRBAC(instance *obsv1alpha1.ClusterObservability) (*rbacv1.ClusterRole, *rbacv1.ClusterRoleBinding) {
+	name := fmt.Sprintf("coo-otelcol-%s-components", instance.Name)
 	role := &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ClusterRole",
@@ -111,16 +112,16 @@ func otelCollectorComponentsRBAC(ns string) (*rbacv1.ClusterRole, *rbacv1.Cluste
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      fmt.Sprintf("%s-collector", otelCollectorName),
-				Namespace: ns,
+				Name:      otelCollectorName(instance.Name) + "-collector",
+				Namespace: instance.Namespace,
 			},
 		},
 	}
 	return role, binding
 }
 
-func otelCollectorTempoRBAC(ns string) (*rbacv1.ClusterRole, *rbacv1.ClusterRoleBinding) {
-	name := "coo-otel-collector-tempo"
+func otelCollectorTempoRBAC(instance *obsv1alpha1.ClusterObservability) (*rbacv1.ClusterRole, *rbacv1.ClusterRoleBinding) {
+	name := fmt.Sprintf("coo-otelcol-%s-tempo", instance.Name)
 	role := &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ClusterRole",
@@ -155,8 +156,8 @@ func otelCollectorTempoRBAC(ns string) (*rbacv1.ClusterRole, *rbacv1.ClusterRole
 		Subjects: []rbacv1.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      fmt.Sprintf("%s-collector", otelCollectorName),
-				Namespace: ns,
+				Name:      otelCollectorName(instance.Name) + "-collector",
+				Namespace: instance.Namespace,
 			},
 		},
 	}

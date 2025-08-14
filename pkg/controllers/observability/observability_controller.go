@@ -209,23 +209,23 @@ func (o clusterObservabilityController) updateStatus(ctx context.Context, instan
 		if capabilities.Tracing.Enabled {
 			otelcol := &otelv1beta1.OpenTelemetryCollector{}
 			err := o.client.Get(ctx, types.NamespacedName{
-				Namespace: o.Options.OperandsNamespace,
-				Name:      otelCollectorName,
+				Namespace: instance.Namespace,
+				Name:      otelCollectorName(instance.Name),
 			}, otelcol)
 			if err != nil {
 				return ctrl.Result{RequeueAfter: 2 * time.Second}
 			}
 			tempo := &tempov1alpha1.TempoStack{}
 			err = o.client.Get(ctx, types.NamespacedName{
-				Namespace: o.Options.OperandsNamespace,
-				Name:      tempoName,
+				Namespace: instance.Namespace,
+				Name:      tempoName(instance.Name),
 			}, tempo)
 			if err != nil {
 				return ctrl.Result{RequeueAfter: 2 * time.Second}
 			}
 
-			instance.Status.Tempo = fmt.Sprintf("%s/%s (%s)", o.Options.OperandsNamespace, tempoName, tempo.Status.TempoVersion)
-			instance.Status.OpenTelemetry = fmt.Sprintf("%s/%s (%s)", o.Options.OperandsNamespace, otelCollectorName, otelcol.Status.Version)
+			instance.Status.Tempo = fmt.Sprintf("%s/%s (%s)", instance.Namespace, tempoName(instance.Name), tempo.Status.TempoVersion)
+			instance.Status.OpenTelemetry = fmt.Sprintf("%s/%s (%s)", instance.Namespace, otelCollectorName(instance.Name), otelcol.Status.Version)
 		}
 	} else {
 		instance.Status.Tempo = ""
@@ -256,7 +256,6 @@ func (o clusterObservabilityController) updateStatus(ctx context.Context, instan
 
 type Options struct {
 	COONamespace          string
-	OperandsNamespace     string
 	OpenTelemetryOperator OperatorInstallConfig
 	TempoOperator         OperatorInstallConfig
 }
@@ -275,7 +274,8 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 	// Check if the ClusterObservability CRD is installed, if not, do not install the controller
 	clObs := &obsv1alpha1.ClusterObservability{}
 	getClObsErr := mgr.GetAPIReader().Get(context.Background(), types.NamespacedName{
-		Name: "does-not-exist-on-purpose",
+		Name:      "does-not-exist-on-purpose",
+		Namespace: opts.COONamespace,
 	}, clObs)
 	if !apierrors.IsNotFound(getClObsErr) {
 		logger.Info("not installing cluster observability controller, ClusterObservability CRD is not installed")

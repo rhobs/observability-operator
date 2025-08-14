@@ -41,12 +41,11 @@ func TestClusterObservabilityController(t *testing.T) {
 
 	assertCRDExists(t, "clusterobservabilities.observability.openshift.io")
 
-	t.Run("ClusterObservabilityLifecycle", testClusterObservabilityInstallOperators)
+	t.Run("ClusterObservabilityTracing", testClusterObservabilityTracing)
 }
 
-func testClusterObservabilityInstallOperators(t *testing.T) {
+func testClusterObservabilityTracing(t *testing.T) {
 	ctx := context.Background()
-	name := "test-cluster-observability-lifecycle"
 
 	for _, doc := range strings.Split(minioManifests, "---") {
 		if strings.TrimSpace(doc) == "" {
@@ -63,27 +62,40 @@ func testClusterObservabilityInstallOperators(t *testing.T) {
 
 		// Use the client to create the object in the Kubernetes cluster
 		err = f.K8sClient.Create(context.Background(), obj)
+		if apierrors.IsAlreadyExists(err) {
+			continue
+		}
 		require.NoError(t, err)
 		f.CleanUp(t, func() { f.K8sClient.Delete(ctx, obj) })
 	}
 
+	operandNamespace := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "tracing-observability",
+		},
+	}
+	err := f.K8sClient.Create(ctx, operandNamespace)
+	require.NoError(t, err)
+	f.CleanUp(t, func() { f.K8sClient.Delete(ctx, operandNamespace) })
+
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "minio",
-			Namespace: f.OperatorNamespace,
+			Namespace: operandNamespace.Name,
 		},
 		Data: map[string][]byte{
 			"access_key_secret": []byte("supersecret"),
 		},
 	}
-	err := f.K8sClient.Create(ctx, secret)
+	err = f.K8sClient.Create(ctx, secret)
 	require.NoError(t, err)
 	f.CleanUp(t, func() { f.K8sClient.Delete(ctx, secret) })
 
 	// Create ClusterObservability resource
 	clusterObs := &obsv1alpha1.ClusterObservability{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:      "coo",
+			Namespace: operandNamespace.Name,
 		},
 		Spec: obsv1alpha1.ClusterObservabilitySpec{
 			Storage: obsv1alpha1.StorageSpec{
@@ -119,17 +131,17 @@ func testClusterObservabilityInstallOperators(t *testing.T) {
 
 	// Verify resource exists
 	var createdClusterObs obsv1alpha1.ClusterObservability
-	err = f.K8sClient.Get(ctx, types.NamespacedName{Name: name}, &createdClusterObs)
+	err = f.K8sClient.Get(ctx, types.NamespacedName{Name: "coo", Namespace: operandNamespace.Name}, &createdClusterObs)
 	assert.NilError(t, err, "Failed to get ClusterObservability resource")
 
 	// Wait for Tempo to be ready
 	err = wait.PollUntilContextTimeout(ctx, 1*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
 		var instance obsv1alpha1.ClusterObservability
-		err := f.K8sClient.Get(ctx, types.NamespacedName{Name: name}, &instance)
+		err := f.K8sClient.Get(ctx, types.NamespacedName{Name: "coo", Namespace: operandNamespace.Name}, &instance)
 		if apierrors.IsNotFound(err) {
 			return false, nil
 		}
-		r, _ := regexp.Compile(`cluster-observability/coo \([0-9]+.*\)`)
+		r, _ := regexp.Compile(`tracing-observability/coo \([0-9]+.*\)`)
 		fmt.Printf("Tempo status: %s\n", instance.Status.Tempo)
 		if r.MatchString(instance.Status.Tempo) {
 			return true, nil
@@ -140,11 +152,11 @@ func testClusterObservabilityInstallOperators(t *testing.T) {
 	// Wait for collector to be ready
 	err = wait.PollUntilContextTimeout(ctx, 1*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
 		var instance obsv1alpha1.ClusterObservability
-		err := f.K8sClient.Get(ctx, types.NamespacedName{Name: name}, &instance)
+		err := f.K8sClient.Get(ctx, types.NamespacedName{Name: "coo", Namespace: operandNamespace.Name}, &instance)
 		if apierrors.IsNotFound(err) {
 			return false, nil
 		}
-		r, _ := regexp.Compile(`cluster-observability/coo \([0-9]+.*\)`)
+		r, _ := regexp.Compile(`tracing-observability/coo \([0-9]+.*\)`)
 		fmt.Printf("OTEL status: %s\n", instance.Status.OpenTelemetry)
 		if r.MatchString(instance.Status.OpenTelemetry) {
 			return true, nil
@@ -156,7 +168,7 @@ func testClusterObservabilityInstallOperators(t *testing.T) {
 	job := batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "generate-traces-grpc",
-			Namespace: "cluster-observability",
+			Namespace: operandNamespace.Name,
 		},
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
@@ -167,7 +179,7 @@ func testClusterObservabilityInstallOperators(t *testing.T) {
 							Image: "ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.129.0",
 							Args: []string{
 								"traces",
-								"--otlp-endpoint=coo-collector.cluster-observability.svc.cluster.local:4317",
+								"--otlp-endpoint=coo-collector.tracing-observability.svc.cluster.local:4317",
 								"--service=grpc",
 								"--otlp-insecure",
 								"--traces=10",
@@ -185,7 +197,7 @@ func testClusterObservabilityInstallOperators(t *testing.T) {
 	// Check if the job succeeded
 	err = wait.PollUntilContextTimeout(ctx, 1*time.Second, 1*time.Minute, true, func(ctx context.Context) (bool, error) {
 		var job batchv1.Job
-		err := f.K8sClient.Get(ctx, types.NamespacedName{Name: "generate-traces-grpc", Namespace: "cluster-observability"}, &job)
+		err := f.K8sClient.Get(ctx, types.NamespacedName{Name: "generate-traces-grpc", Namespace: operandNamespace.Name}, &job)
 		if apierrors.IsNotFound(err) {
 			return false, nil
 		}
@@ -218,7 +230,7 @@ func testClusterObservabilityInstallOperators(t *testing.T) {
 	// Check if the verify traces job succeeded
 	err = wait.PollUntilContextTimeout(ctx, 1*time.Second, 1*time.Minute, true, func(ctx context.Context) (bool, error) {
 		var job batchv1.Job
-		err := f.K8sClient.Get(ctx, types.NamespacedName{Name: "verify-traces-traceql-grpc", Namespace: "cluster-observability"}, &job)
+		err := f.K8sClient.Get(ctx, types.NamespacedName{Name: "verify-traces-traceql-grpc", Namespace: operandNamespace.Name}, &job)
 		if apierrors.IsNotFound(err) {
 			return false, nil
 		}
@@ -236,7 +248,7 @@ func testClusterObservabilityInstallOperators(t *testing.T) {
 	// Verify resource is deleted
 	err = wait.PollUntilContextTimeout(ctx, 1*time.Second, 30*time.Second, true, func(ctx context.Context) (bool, error) {
 		var deletedClusterObs obsv1alpha1.ClusterObservability
-		err := f.K8sClient.Get(ctx, types.NamespacedName{Name: name}, &deletedClusterObs)
+		err := f.K8sClient.Get(ctx, types.NamespacedName{Name: "coo", Namespace: operandNamespace.Name}, &deletedClusterObs)
 		if apierrors.IsNotFound(err) {
 			return true, nil
 		}
