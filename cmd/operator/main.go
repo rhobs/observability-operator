@@ -88,6 +88,7 @@ func main() {
 		metricsAddr      string
 		healthProbeAddr  string
 		openShiftEnabled bool
+		forceHTTP        bool
 
 		setupLog = ctrl.Log.WithName("setup")
 	)
@@ -98,6 +99,7 @@ func main() {
 	flag.StringVar(&healthProbeAddr, "health-probe-bind-address", ":8081", "The address the health probe endpoint binds to.")
 	flag.Var(images, "images", fmt.Sprintf("Full images refs to use for containers managed by the operator. E.g thanos=quay.io/thanos/thanos:v0.33.0. Images used are %v", imagesUsed()))
 	flag.BoolVar(&openShiftEnabled, "openshift.enabled", false, "Enable OpenShift specific features such as Console Plugins.")
+	flag.BoolVar(&forceHTTP, "force-http", false, "Use HTTP instead of HTTPS to expose metrics.")
 
 	opts := zap.Options{
 		Development: true,
@@ -113,6 +115,7 @@ func main() {
 		"metrics-bind-address", metricsAddr,
 		"images", images,
 		"openshift.enabled", openShiftEnabled,
+		"forceHTTP", forceHTTP,
 	)
 
 	imgMap, err := validateImages(images)
@@ -139,6 +142,7 @@ func main() {
 					Enabled: openShiftEnabled,
 				},
 			}),
+			operator.WithForceHTTP(forceHTTP),
 		))
 	if err != nil {
 		setupLog.Error(err, "cannot create a new operator")
