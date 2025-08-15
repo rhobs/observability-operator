@@ -98,23 +98,23 @@ func testClusterObservabilityTracing(t *testing.T) {
 			Namespace: operandNamespace.Name,
 		},
 		Spec: obsv1alpha1.ClusterObservabilitySpec{
-			Storage: obsv1alpha1.StorageSpec{
-				ObjectStorageSpec: obsv1alpha1.ObjectStorage{
-					S3: &obsv1alpha1.S3Spec{
-						Bucket:      "tempo",
-						Endpoint:    "http://minio.minio.svc:9000",
-						AccessKeyID: "tempo",
-						AccessKeySecret: obsv1alpha1.SecretKeySelector{
-							Key:  "access_key_secret",
-							Name: "minio",
-						},
-					},
-				},
-			},
 			Capabilities: &obsv1alpha1.CapabilitiesSpec{
 				Tracing: obsv1alpha1.TracingSpec{
 					CommonCapabilitiesSpec: obsv1alpha1.CommonCapabilitiesSpec{
 						Enabled: true,
+					},
+					Storage: obsv1alpha1.TracingStorageSpec{
+						ObjectStorageSpec: obsv1alpha1.TracingObjectStorageSpec{
+							S3: &obsv1alpha1.S3Spec{
+								Bucket:      "tempo",
+								Endpoint:    "http://minio.minio.svc:9000",
+								AccessKeyID: "tempo",
+								AccessKeySecret: obsv1alpha1.SecretKeySelector{
+									Key:  "access_key_secret",
+									Name: "minio",
+								},
+							},
+						},
 					},
 				},
 			},

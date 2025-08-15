@@ -86,30 +86,30 @@ func TestGetReconcilers(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 				Spec: obsv1alpha1.ClusterObservabilitySpec{
-					Storage: obsv1alpha1.StorageSpec{
-						ObjectStorageSpec: obsv1alpha1.ObjectStorage{
-							S3: &obsv1alpha1.S3Spec{
-								Bucket:      "tempo",
-								Endpoint:    "tmepo:111",
-								AccessKeyID: "id",
-								AccessKeySecret: obsv1alpha1.SecretKeySelector{
-									Key:  "key",
-									Name: "secret-name",
-								},
-							},
-							TLS: &obsv1alpha1.TLSSpec{
-								CAConfigMap: &obsv1alpha1.ConfigMapKeySelector{
-									Key:  "ca.crt",
-									Name: "configmap-name",
-								},
-							},
-						},
-					},
 					Capabilities: &obsv1alpha1.CapabilitiesSpec{
 						Tracing: obsv1alpha1.TracingSpec{
 							CommonCapabilitiesSpec: obsv1alpha1.CommonCapabilitiesSpec{
 								Enabled:   true,
 								Operators: obsv1alpha1.OperatorsSpec{},
+							},
+							Storage: obsv1alpha1.TracingStorageSpec{
+								ObjectStorageSpec: obsv1alpha1.TracingObjectStorageSpec{
+									S3: &obsv1alpha1.S3Spec{
+										Bucket:      "tempo",
+										Endpoint:    "tmepo:111",
+										AccessKeyID: "id",
+										AccessKeySecret: obsv1alpha1.SecretKeySelector{
+											Key:  "key",
+											Name: "secret-name",
+										},
+									},
+									TLS: &obsv1alpha1.TLSSpec{
+										CAConfigMap: &obsv1alpha1.ConfigMapKeySelector{
+											Key:  "ca.crt",
+											Name: "configmap-name",
+										},
+									},
+								},
 							},
 						},
 					},

@@ -1,32 +1,5 @@
 package v1alpha1
 
-// ObjectStorage defines the object storage for the observability capabilities.
-type ObjectStorage struct {
-	// S3 defines the S3 object storage configuration.
-	S3 *S3Spec `json:"s3,omitempty"`
-	// S3STS defines the S3 object storage configuration using short-lived credentials.
-	S3STS *S3STSpec `json:"s3STS,omitempty"`
-	// S3CCO defines the S3 object storage configuration using CCO.
-	S3CCO *S3CCOSpec `json:"s3COO,omitempty"`
-
-	// Azure defines the Azure Blob Storage configuration.
-	Azure *AzureSpec `json:"azure,omitempty"`
-	// AzureWIF defines the Azure Blob Storage configuration using a Workload Identity Federation.
-	AzureWIF *AzureWIFSpec `json:"azureWIF,omitempty"`
-
-	// GCS defines the Google Cloud Storage configuration.
-	GCS *GCSSpec `json:"gcs,omitempty"`
-	// GCSSToken defines the Google Cloud Storage configuration using short-lived tokens.
-	GCSSTSSpec *GCSSTSSpec `json:"gcsSTS,omitempty"`
-
-	// TLS configuration for reaching the object storage endpoint.
-	//
-	// +optional
-	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="TLS Config"
-	TLS *TLSSpec `json:"tls,omitempty"`
-}
-
 type S3Spec struct {
 	// Bucket is the name of the S3 bucket.
 	// +kubebuilder:validation:Required

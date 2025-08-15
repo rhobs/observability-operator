@@ -24,20 +24,29 @@ metadata:
   name: logging-tracing
   namespace: observability
 spec:
-  storage:
-    objectStorage:
-      s3:
-        bucket: bucket-name
-        endpoint: http://minio.minio.svc:9000
-        accessKeyID: tempo
-        accessKeySecret:
-          name: minio-secret
-          key: access_key_secret
   capabilities:
     logging:
       enabled: true
+      storage:
+        objectStorage:
+          s3:
+            bucket: loki 
+            endpoint: http://minio.minio.svc:9000
+            accessKeyID: tempo
+            accessKeySecret:
+              name: minio-secret
+              key: access_key_secret
     tracing:
       enabled: true
+      storage:
+        objectStorage:
+          s3:
+            bucket: tempo
+            endpoint: http://minio.minio.svc:9000
+            accessKeyID: tempo
+            accessKeySecret:
+              name: minio-secret
+              key: access_key_secret
 ```
 
 Notes:
@@ -57,18 +66,18 @@ metadata:
   name: logging-tracing
   namespace: observability
 spec:
-  storage:
-    objectStorage:
-      s3:
-        bucket: bucket-name
-        endpoint: http://minio.minio.svc:9000
-        accessKeyID: tempo
-        accessKeySecret:
-          name: minio-secret
-          key: access_key_secret
   capabilities:
     tracing:
       enabled: true
+      storage:
+        objectStorage:
+          s3:
+            bucket: tempo
+            endpoint: http://minio.minio.svc:9000
+            accessKeyID: tempo
+            accessKeySecret:
+              name: minio-secret
+              key: access_key_secret
     opentelemetry:
       enabled: true
       tracesincluster: true 
@@ -94,20 +103,20 @@ metadata:
   name: logging-tracing
   namespace: observability
 spec:
-  storage:
-    objectStorage:
-      s3:
-        bucket: bucket-name
-        endpoint: http://minio.minio.svc:9000
-        accessKeyID: tempo
-        accessKeySecret:
-          name: minio-secret
-          key: access_key_secret
   capabilities:
     tracing:
       enabled: false
       operators:
         install: true
+      storage:
+        objectStorage:
+          s3:
+            bucket: tempo
+            endpoint: http://minio.minio.svc:9000
+            accessKeyID: tempo
+            accessKeySecret:
+              name: minio-secret
+              key: access_key_secret
 ```
 
 Notes:
@@ -122,20 +131,20 @@ metadata:
   name: logging-tracing
   namespace: observability
 spec:
-  storage:
-    objectStorage:
-      s3:
-        bucket: bucket-name
-        endpoint: http://minio.minio.svc:9000
-        accessKeyID: tempo
-        accessKeySecret:
-          name: minio-secret
-          key: access_key_secret
   capabilities:
     tracing:
       enabled: true
       operators:
         install: false
+      storage:
+        objectStorage:
+          s3:
+            bucket: bucket-name
+            endpoint: http://minio.minio.svc:9000
+            accessKeyID: tempo
+            accessKeySecret:
+              name: minio-secret
+              key: access_key_secret
 ```
 
 Notes:
@@ -162,30 +171,49 @@ metadata:
   name: example
   namespace: observability
 spec:
-  storage:
-    pvc:
-      storageClassName: "" # Empty defaults to the cluster default storage class.
-      storageSize: "" # .
-    objectStorage:
-      s3:
-        bucket: tempo
-        endpoint: http://minio.minio.svc:9000
-        accessKeyID: tempo
-        accessKeySecret:
-          name: minio-secret
-          key: access_key_secret
-        region: us-east-1
-      tls:
-        enabled: false
-        ca:
-        cert:
-        key:
-        minimumTLSVersion:
   capabilities:
     tracing:
       enabled: true
+      storage:
+        pvc:
+          storageClassName: "" # Empty defaults to the cluster default storage class.
+          storageSize: "" # .
+        objectStorage:
+          s3:
+            bucket: tempo
+            endpoint: http://minio.minio.svc:9000
+            accessKeyID: tempo
+            accessKeySecret:
+              name: minio-secret
+              key: access_key_secret
+            region: us-east-1
+          tls:
+            enabled: false
+            ca:
+            cert:
+            key:
+            minimumTLSVersion:
     logging:
       enabled: true
+      storage:
+        pvc:
+          storageClassName: "" # Empty defaults to the cluster default storage class.
+          storageSize: "" # .
+        objectStorage:
+          s3:
+            bucket: tempo
+            endpoint: http://minio.minio.svc:9000
+            accessKeyID: tempo
+            accessKeySecret:
+              name: minio-secret
+              key: access_key_secret
+            region: us-east-1
+          tls:
+            enabled: false
+            ca:
+            cert:
+            key:
+            minimumTLSVersion:
 ```
 
 * In the above example the tracing and logging capabilities will use S3 as object storage.
@@ -216,16 +244,19 @@ Supported by Tempo and Loki.
 
 ```yaml
 spec:
-  storage:
-    objectStorage:
-      s3:
-        bucket: bucket-name
-        endpoint: http://minio.minio.svc:9000
-        accessKeyID: tempo
-        accessKeySecret:
-          name: minio-secret
-          key: access_key_secret
-        region: us-east-1
+  capabilities:
+    tracing:
+      enabled: true
+      storage:
+        objectStorage:
+          s3:
+            bucket: bucket-name
+            endpoint: http://minio.minio.svc:9000
+            accessKeyID: tempo
+            accessKeySecret:
+              name: minio-secret
+              key: access_key_secret
+            region: us-east-1
 ```
 
 ```bash
@@ -252,12 +283,15 @@ Supported by Tempo and Loki.
 
 ```yaml
 spec:
-  storage:
-    objectStorage:
-      s3STS:
-        bucket: bucket-name
-        roleARN: 
-        region: us-east-1
+  capabilities:
+    tracing:
+      enabled: true
+      storage:
+        objectStorage:
+          s3STS:
+            bucket: bucket-name
+            roleARN: 
+            region: us-east-1
 ```
 
 ##### Secret supported by Tempo and Loki operators
@@ -275,11 +309,14 @@ Supported by Tempo.
 
 ```yaml
 spec:
-  storage:
-    objectStorage:
-      s3CCO:
-        bucket: bucket-name
-        region: us-east-1
+  capabilities:
+    tracing:
+      enabled: true
+      storage:
+        objectStorage:
+          s3CCO:
+            bucket: bucket-name
+            region: us-east-1
 ```
 
 ##### Secret supported by Tempo and Loki operators
@@ -296,14 +333,17 @@ Supported by Tempo and Loki.
 
 ```yaml
 spec:
-  storage:
-    objectStorage:
-      azure:
-        container:
-        accountName:
-        accountKeySecret:
-          name: azure-secret
-          key: account_key
+  capabilities:
+    tracing:
+      enabled: true
+      storage:
+        objectStorage:
+          azure:
+            container:
+            accountName:
+            accountKeySecret:
+              name: azure-secret
+              key: account_key
 ```
 
 ```bash
@@ -330,14 +370,17 @@ Supported by Tempo.
 
 ```yaml
 spec:
-  storage:
-    objectStorage:
-      azureWIF:
-        container:
-        accountName:
-        audience:
-        clientID:
-        tenantID:
+  capabilities:
+    tracing:
+      enabled: true
+      storage:
+        objectStorage:
+          azureWIF:
+            container:
+            accountName:
+            audience:
+            clientID:
+            tenantID:
 ```
 
 ##### Secret supported by Tempo and Loki operators
@@ -359,13 +402,16 @@ Supported by Tempo and Loki.
 
 ```yaml
 spec:
-  storage:
-    objectStorage:
-      gcs:
-        bucket: bucket-name
-        keyJSONSecret:
-          name: gcs-secret
-          key: key.json
+  capabilities:
+    tracing:
+      enabled: true
+      storage:
+        objectStorage:
+          gcs:
+            bucket: bucket-name
+            keyJSONSecret:
+              name: gcs-secret
+              key: key.json
 ```
 
 ```bash
@@ -387,14 +433,17 @@ Supported by Tempo.
 
 ```yaml
 spec:
-  storage:
-    objectStorage:
-      gcsSTS:
-        bucket: bucket-name
-        keyJSONSecret:
-          name: gcs-secret
-          key: key.json
-        audience: # optional
+  capabilities:
+    tracing:
+      enabled: true
+      storage:
+        objectStorage:
+          gcsSTS:
+            bucket: bucket-name
+            keyJSONSecret:
+              name: gcs-secret
+              key: key.json
+            audience: # optional
 ```
 
 ```bash
