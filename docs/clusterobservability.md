@@ -32,7 +32,7 @@ spec:
           s3:
             bucket: loki 
             endpoint: http://minio.minio.svc:9000
-            accessKeyID: tempo
+            accessKeyID: loki
             accessKeySecret:
               name: minio-secret
               key: access_key_secret
