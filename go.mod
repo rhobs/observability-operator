@@ -5,7 +5,7 @@ go 1.24.0
 toolchain go1.24.4
 
 require (
-	github.com/go-jose/go-jose/v4 v4.0.5 // indirect
+	github.com/go-jose/go-jose/v4 v4.1.0 // indirect
 	github.com/go-logr/logr v1.4.3
 	github.com/google/go-cmp v0.7.0
 	github.com/openshift/api v0.0.0-20240404200104-96ed2d49b255 // PINNED: newer versions remove console/v1alpha1 API needed for OpenShift <4.17 compatibility
@@ -32,6 +32,10 @@ require (
 replace github.com/rhobs/observability-operator/pkg/apis v0.0.0-unpublished => ./pkg/apis
 
 require (
+	github.com/perses/perses v0.51.1
+	github.com/perses/plugins/prometheus v0.52.1
+	github.com/perses/plugins/table v0.0.0-20250709083656-34e29fed0083
+	github.com/perses/plugins/timeserieschart v0.9.1
 	github.com/rhobs/observability-operator/pkg/apis v0.0.0-unpublished
 	github.com/rhobs/perses v0.0.0-20250612171017-5d7686af9ae4
 	github.com/rhobs/perses-operator v0.1.10-0.20250612173146-78eb619430df
