@@ -1,0 +1,6 @@
+filters:
+  ".*":
+    approvers:
+      - ui
+    reviewers:
+      - ui
