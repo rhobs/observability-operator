@@ -1,20 +1,21 @@
 aliases:
-  contributors:
-    - jan--f
-    - tremes
-    - danielmellado
-    - simonpasquier
-    - slashpai
-    - thibaultmg
-    - machine424
-    - rexagod
-    - lihongyan1
-    - marioferh
+  ui:
     - jgbernalp
-    - alanconway
-    - periklis
     - peteryurkovich
     - zhuje
+  mon:
+    - jan--f
+    - simonpasquier
+    - slashpai
+    - machine424
+    - rexagod
+    - marioferh
+  korrel8r:
+    - alanconway
+  cluster-obs:
+    - pavolloffay
+  cluster-health:
+    - tremes
   maintainers:
     - jan--f
     - danielmellado
@@ -22,5 +23,4 @@ aliases:
     - slashpai
     - marioferh
     - jgbernalp
-    - alanconway
-    - periklis
+    - lihongyan1
