@@ -225,9 +225,8 @@ CATALOG_IMG_LATEST ?= $(IMAGE_BASE)-catalog:latest
 # operator package manager tool, 'opm'.
 .PHONY: catalog-image
 catalog-image: $(OPM)
-	$(OPM) render $(BUNDLE_IMG) \
-		--output=yaml  >> olm/observability-operator-index/index.yaml
 	./olm/update-channels.sh $(CHANNELS) $(OPERATOR_BUNDLE)
+	$(OPM) alpha render-template basic --output yaml --migrate-level bundle-object-to-csv-metadata olm/index-template.yaml > olm/observability-operator-index/index.yaml
 	$(OPM) validate ./olm/observability-operator-index
 
 	$(CONTAINER_RUNTIME) build \
