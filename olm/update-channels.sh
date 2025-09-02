@@ -17,8 +17,9 @@ declare -r CATALOG_TEMPLATE="olm/index-template.yaml"
 update_channel() {
   local channel="$1"; shift
   local bundle="$1"; shift
+  local bundle_image="$1"; shift
 
-  echo "updating channel: $channel | bundle: $bundle"
+  echo "updating channel: $channel"
 
   old=$(CHANNEL=$channel :; yq '.entries[] | select(.name == strenv(CHANNEL) and .schema == "olm.channel").entries[-1].name' "$CATALOG_TEMPLATE")
 
@@ -29,9 +30,8 @@ update_channel() {
       CHANNEL=$channel yq -i 'del(.entries[] | select(.name == strenv(CHANNEL) and .schema == "olm.channel").entries[] | select(.name | test(".*-\d{12}$")))' "$CATALOG_TEMPLATE"
   fi
 
-  operator=${bundle//"-bundle"/}
-  BUNDLE="$bundle" yq -i '.entries += {"image": strenv(BUNDLE),"schema": "olm.bundle"}' "$CATALOG_TEMPLATE"
-  (OLD=$old OP=$operator CHANNEL=$channel yq -i '(.entries[] | select(.name == strenv(CHANNEL) and .schema == "olm.channel").entries) += [{"name": strenv(OP), "replaces": strenv(OLD)}]' "$CATALOG_TEMPLATE")
+  BUNDLE="$bundle_image" yq -i '.entries += {"image": strenv(BUNDLE),"schema": "olm.bundle"}' "$CATALOG_TEMPLATE"
+  (OLD=$old OP=$bundle CHANNEL=$channel yq -i '(.entries[] | select(.name == strenv(CHANNEL) and .schema == "olm.channel").entries) += [{"name": strenv(OP), "replaces": strenv(OLD)}]' "$CATALOG_TEMPLATE")
 }
 
 main() {
