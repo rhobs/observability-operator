@@ -2,17 +2,17 @@ SHELL=/usr/bin/env bash -o pipefail
 
 include Makefile.tools
 
-# IMAGE_BASE defines the registry/namespace and part of the image name
+# IMG_BASE defines the registry/namespace and part of the image name
 # This variable is used to construct full image tags for bundle and catalog images.
-IMAGE_BASE ?= observability-operator
+IMG_BASE ?= observability-operator
 
 VERSION ?= $(shell cat VERSION)
 RELEASE_SHA ?= $(shell git rev-parse origin/main)
-OPERATOR_IMG = $(IMAGE_BASE):$(VERSION)
+OPERATOR_IMG = $(IMG_BASE):$(VERSION)
 OPERATOR_BUNDLE=observability-operator.v$(VERSION)
 CONTAINER_RUNTIME := $(shell command -v podman 2> /dev/null || echo docker)
-OSD_E2E_TEST_HARNESS_IMG=$(IMAGE_BASE)-test-harness:$(VERSION)
-OSD_E2E_TEST_HARNESS_IMG_LATEST=$(IMAGE_BASE)-test-harness:latest
+OSD_E2E_TEST_HARNESS_IMG=$(IMG_BASE)-test-harness:$(VERSION)
+OSD_E2E_TEST_HARNESS_IMG_LATEST=$(IMG_BASE)-test-harness:latest
 
 # running `make` builds the operator (default target)
 .DEFAULT_GOAL := operator
@@ -145,7 +145,7 @@ test-e2e:
 
 # BUNDLE_IMG defines the image:tag used for the bundle.
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
-BUNDLE_IMG ?= $(IMAGE_BASE)-bundle:$(VERSION)
+BUNDLE_IMG ?= $(IMG_BASE)-bundle:$(VERSION)
 
 # CHANNELS define the bundle channels used in the bundle.
 # To re-generate a bundle for other specific channels without changing the standard setup, you can:
@@ -194,18 +194,18 @@ bundle-push: ## Build the bundle image.
 	$(CONTAINER_RUNTIME) push $(PUSH_OPTIONS) $(BUNDLE_IMG)
 
 # The image tag given to the resulting catalog image
-CATALOG_IMG_BASE ?= $(IMAGE_BASE)-catalog
+CATALOG_IMG_BASE ?= $(IMG_BASE)-catalog
 CATALOG_IMG ?= $(CATALOG_IMG_BASE):$(VERSION)
 
 # The tag is used as latest since it allows a CatalogSubscription to point to
 # a single image which keeps updating there by allowing auto upgrades
-CATALOG_IMG_LATEST ?= $(IMAGE_BASE)-catalog:latest
+CATALOG_IMG_LATEST ?= $(IMG_BASE)-catalog:latest
 
 # Build a catalog image by adding bundle images to an empty catalog using the
 # operator package manager tool, 'opm'.
 .PHONY: catalog-image
 catalog-image: $(OPM)
-	./olm/update-channels.sh $(CHANNELS) $(OPERATOR_BUNDLE) $(BUNDLE_IMAGE)
+	./olm/update-channels.sh $(CHANNELS) $(OPERATOR_BUNDLE) $(BUNDLE_IMG)
 	$(OPM) alpha render-template basic --output yaml --migrate-level bundle-object-to-csv-metadata olm/index-template.yaml > olm/observability-operator-index/index.yaml
 	$(OPM) validate ./olm/observability-operator-index
 
@@ -242,7 +242,7 @@ catalog-push: catalog-tag-sha ## Push a catalog image.
 ## package-operator package
 
 # The image tag given to the resulting package image
-PACKAGE_IMG_BASE ?= $(IMAGE_BASE)-package
+PACKAGE_IMG_BASE ?= $(IMG_BASE)-package
 PACKAGE_IMG ?= $(PACKAGE_IMG_BASE):$(VERSION)
 
 .PHONY: package
