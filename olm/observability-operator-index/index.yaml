@@ -1,0 +1,3 @@
+This file only exsists so git can track the partent dir.
+During `make catalog-image` this file is used but the content
+isn't tracked, as this path is in .gitignore.
