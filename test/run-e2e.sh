@@ -57,7 +57,7 @@ build_bundle() {
 	}
 
 	make operator-image bundle bundle-image \
-		IMAGE_BASE="$OBO_IMG_REPO" VERSION="$OBO_VERSION"
+		IMG_BASE="$OBO_IMG_REPO" VERSION="$OBO_VERSION"
 }
 
 push_bundle() {
@@ -68,7 +68,7 @@ push_bundle() {
 	}
 
 	make operator-push bundle-push \
-		IMAGE_BASE="$OBO_IMG_REPO" VERSION="$OBO_VERSION" \
+		IMG_BASE="$OBO_IMG_REPO" VERSION="$OBO_VERSION" \
 		PUSH_OPTIONS=--tls-verify=false
 
 }
