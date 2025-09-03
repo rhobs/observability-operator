@@ -38,15 +38,16 @@ main() {
   cd "$(git rev-parse --show-toplevel)"
   local channels="$1"; shift
   local bundle="$1"; shift
+  local bundle_image="$1"; shift
 
-  echo "channels: $channels | bundle: $bundle"
+  echo "channels: $channels | bundle: $bundle | bundle_image: $bundle_image"
 
   # convert comma seperated list to an array
   local -a channel_list
   readarray -td, channel_list <<< "$channels,"; unset 'channel_list[-1]'
 
   for ch in "${channel_list[@]}"; do
-    update_channel "$ch" "$bundle"
+    update_channel "$ch" "$bundle" "$bundle_image"
   done
 
   return $?
