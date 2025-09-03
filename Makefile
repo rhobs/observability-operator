@@ -13,7 +13,7 @@ OPERATOR_BUNDLE=observability-operator.v$(VERSION)
 CONTAINER_RUNTIME := $(shell command -v podman 2> /dev/null || echo docker)
 OSD_E2E_TEST_HARNESS_IMG=$(IMG_BASE)-test-harness:$(VERSION)
 OSD_E2E_TEST_HARNESS_IMG_LATEST=$(IMG_BASE)-test-harness:latest
-CATALOG_TEMP ?= $(shell mktemp)
+CATALOG_TEMP ?= $(shell mktemp -d)
 
 # running `make` builds the operator (default target)
 .DEFAULT_GOAL := operator
