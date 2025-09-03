@@ -18,7 +18,7 @@ jobs:
       - name: publish
         uses: ./.github/package-operator-publish
         env:
-          IMAGE_BASE: ${{ secrets.IMAGE_BASE }}
+          IMG_BASE: ${{ vars.IMG_BASE }}
         with:
           quay_login: ${{ secrets.QUAY_LOGIN }}
           quay_token: ${{ secrets.QUAY_TOKEN }}
