@@ -21,14 +21,14 @@ update_channel() {
 
   echo "updating channel: $channel"
 
-  old=$(CHANNEL=$channel :; yq '.entries[] | select(.name == strenv(CHANNEL) and .schema == "olm.channel").entries[-1].name' "$CATALOG_TEMPLATE")
-
   # dev releases are suffixed with `-$(date +%y%m%d%H%M%S)`, those are replaced.
   # We track RC and actual releases fully.
   if [ "$channel" == "development" ]; then
       yq -i 'del(.entries[] | select(.image | test(".*-\d{12}$") and .schema == "olm.bundle"))' "$CATALOG_TEMPLATE"
       CHANNEL=$channel yq -i 'del(.entries[] | select(.name == strenv(CHANNEL) and .schema == "olm.channel").entries[] | select(.name | test(".*-\d{12}$")))' "$CATALOG_TEMPLATE"
   fi
+
+  old=$(CHANNEL=$channel yq '.entries[] | select(.name == strenv(CHANNEL) and .schema == "olm.channel").entries[-1].name' "$CATALOG_TEMPLATE")
 
   BUNDLE="$bundle_image" yq -i '.entries += {"image": strenv(BUNDLE),"schema": "olm.bundle"}' "$CATALOG_TEMPLATE"
   (OLD=$old OP=$bundle CHANNEL=$channel yq -i '(.entries[] | select(.name == strenv(CHANNEL) and .schema == "olm.channel").entries) += [{"name": strenv(OP), "replaces": strenv(OLD)}]' "$CATALOG_TEMPLATE")
