@@ -395,3 +395,29 @@ func newPersesClusterRole() *rbacv1.ClusterRole {
 		},
 	}
 }
+
+func newAlertManagerViewRoleBinding(serviceAccountName, namespace string) *rbacv1.RoleBinding {
+	return &rbacv1.RoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: rbacv1.SchemeGroupVersion.String(),
+			Kind:       "RoleBinding",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "alertmanager-view-rolebinding",
+			Namespace: "openshift-monitoring",
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				APIGroup:  corev1.SchemeGroupVersion.Group,
+				Kind:      "ServiceAccount",
+				Name:      serviceAccountName,
+				Namespace: namespace,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: rbacv1.SchemeGroupVersion.Group,
+			Kind:     "Role",
+			Name:     "monitoring-alertmanager-view",
+		},
+	}
+}

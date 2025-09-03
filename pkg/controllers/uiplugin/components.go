@@ -119,6 +119,7 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 		components = append(components,
 			reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, serviceAccountName, "cluster-monitoring-view", "cluster-monitoring-view"), plugin, incidentsEnabled),
 			reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, serviceAccountName, "system:auth-delegator", serviceAccountName+"-system-auth-delegator"), plugin, incidentsEnabled),
+			reconciler.NewOptionalUpdater(newAlertManagerViewRoleBinding(serviceAccountName, namespace), plugin, incidentsEnabled),
 			reconciler.NewOptionalUpdater(newHealthAnalyzerPrometheusRole(namespace), plugin, incidentsEnabled),
 			reconciler.NewOptionalUpdater(newHealthAnalyzerPrometheusRoleBinding(namespace), plugin, incidentsEnabled),
 			reconciler.NewOptionalUpdater(newHealthAnalyzerService(namespace), plugin, incidentsEnabled),
