@@ -13,6 +13,7 @@ OPERATOR_BUNDLE=observability-operator.v$(VERSION)
 CONTAINER_RUNTIME := $(shell command -v podman 2> /dev/null || echo docker)
 OSD_E2E_TEST_HARNESS_IMG=$(IMG_BASE)-test-harness:$(VERSION)
 OSD_E2E_TEST_HARNESS_IMG_LATEST=$(IMG_BASE)-test-harness:latest
+CATALOG_TEMP ?= $(shell mktemp)
 
 # running `make` builds the operator (default target)
 .DEFAULT_GOAL := operator
@@ -205,12 +206,14 @@ CATALOG_IMG_LATEST ?= $(IMG_BASE)-catalog:latest
 # operator package manager tool, 'opm'.
 .PHONY: catalog-image
 catalog-image: $(OPM)
+	mkdir $(CATALOG_TEMP)/observability-operator-index
+	cp olm/observability-operator-index.Dockerfile $(CATALOG_TEMP)
 	./olm/update-channels.sh $(CHANNELS) $(OPERATOR_BUNDLE) $(BUNDLE_IMG)
-	$(OPM) alpha render-template basic --output yaml --migrate-level bundle-object-to-csv-metadata olm/index-template.yaml > olm/observability-operator-index/index.yaml
-	$(OPM) validate ./olm/observability-operator-index
+	$(OPM) alpha render-template basic --output yaml --migrate-level bundle-object-to-csv-metadata olm/index-template.yaml > $(CATALOG_TEMP)/observability-operator-index/index.yaml
+	$(OPM) validate $(CATALOG_TEMP)/observability-operator-index
 
 	$(CONTAINER_RUNTIME) build \
-		-f olm/observability-operator-index.Dockerfile \
+		-f $(CATALOG_TEMP)/observability-operator-index.Dockerfile \
 		-t $(CATALOG_IMG)
 
 	# tag the catalog img:version as latest so that continious release
