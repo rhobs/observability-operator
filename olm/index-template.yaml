@@ -183,7 +183,7 @@ entries:
         replaces: observability-operator.v0.4.1
       - name: observability-operator.v0.4.2
         replaces: observability-operator.v0.4.2-rc
-      - name: observability-operator.v0.4.3-241107155508
+      - name: observability-operator.v1.3.0-250903144116
         replaces: observability-operator.v0.4.2
     name: development
     package: observability-operator
@@ -243,480 +243,84 @@ entries:
     schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.0.15
     schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.15-220927011552
-    schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.0.15-rc
     schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.0.16
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.16-221025020905
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.16-221027071251
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.16-221031145549
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.16-221101092257
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.16-221102084651
     schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.0.16-rc
     schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.0.17
     schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.17-221106134413
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.17-221108122147
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.17-221113230927
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.17-221116145813
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.17-221125003247
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.17-221201152616
-    schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.0.17-rc
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.18-221202015815
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.18-221202102008
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.18-221206093642
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.18-221208000152
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.18-221208005725
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.18-221209162010
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.18-221214150246
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.18-221215143940
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.18-221215170808
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.18-221220125331
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.18-221221102938
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.18-230104144042
     schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.0.19
     schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.19-230109131019
-    schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.0.20
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.20-230116090648
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.20-230116125442
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.20-230116132431
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.20-230116135927
     schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.0.21
     schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.21-230119144147
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.21-230209004114
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.21-230301052116
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.21-230301090532
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.21-230329013021
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.21-230404055456
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.21-230412061002
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.21-230412074622
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.21-230413061216
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.21-230413080818
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.21-230419043805
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.21-230427044251
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.21-230427050828
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.21-230504231701
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.21-230505063421
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.21-230506213216
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.21-230509001529
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.21-230515005052
-    schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.0.22
     schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.22-230530085805
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.22-230531162250
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.22-230531234805
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.22-230601000822
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.22-230604234151
-    schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.0.23
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.23-230605234749
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.23-230620072248
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.23-230628203412
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.23-230704130453
     schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.0.23-rc
     schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.0.24
     schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.24-230726133641
-    schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.0.24-rc
     schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.0.25
     schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.25-230731091926
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.25-230807070328
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.25-230807234015
-    schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.0.25-rc
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.26-230808115505
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.26-230808231021
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.26-230809163224
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.26-230810065918
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.26-230814093531
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.26-230814122832
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.26-230814123815
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.26-230816091948
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.26-230816093937
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.26-230817125554
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.26-230823123240
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.26-230831035111
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.26-230904084539
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.26-230905072115
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.26-230905083319
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.26-230905121957
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.26-230906063313
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.26-230906073415
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.26-230919095706
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.26-230919145232
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.26-230920095559
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.26-230921144449
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.26-230927095608
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.26-230927134545
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.26-231005071102
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.26-231011084421
     schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.0.26-rc
     schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.0.27
     schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.27-231012125332
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.27-231018073030
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.27-231019092354
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.27-231027144224
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.27-231107133811
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.27-231107142223
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.27-231108091727
-    schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.0.27-rc
     schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.0.28
     schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.28-231108145050
-    schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.0.28-rc
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.29-231113101859
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.29-231117095223
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.29-231212104734
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.29-240103215654
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.29-240104095142
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.29-240104102020
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.29-240117095033
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.29-240117132638
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.29-240118173426
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.29-240122093649
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.29-240122104019
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.31-240312190401
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.0.31-240312195515
     schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.1.0-rc
     schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.1.1-240315163854
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.1.1-240319105748
-    schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.1.0
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.1.1-240327125511
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.1.1-240409150828
     schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.2.0-rc
     schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.2.0
     schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.2.1-240423032429
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.2.1-240507133128
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.2.1-240513073711
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.2.1-240513145220
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.2.1-240514134002
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.2.1-240514143251
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.2.1-240517123541
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.2.1-240517132951
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.2.1-240522125744
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.2.1-240527143854
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.2.1-240529132412
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.2.1-240531085454
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.2.1-240605124053
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.2.1-240606090743
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.2.1-240606141429
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.2.1-240607095130
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.2.1-240607102628
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.2.1-240607124638
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.2.1-240607132252
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.2.1-240610082139
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.2.1-240610102811
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.2.1-240610110542
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.2.1-240610133051
-    schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.3.0-rc
     schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.3.0
     schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.3.1-240612134047
-    schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.3.1-rc
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.3.2-240613121205
     schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.3.1
     schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.3.2-240614083253
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.3.2-240614130932
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.3.2-240617083006
-    schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.3.2-rc
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.3.3-240621073435
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.3.3-240625081545
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.3.3-240628124141
     schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.3.3-rc
     schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.3.4-240704152709
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.3.4-240709125250
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.3.4-240709143233
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.3.4-240709164534
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.3.4-240709172244
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.3.4-240710103001
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.3.4-240718111937
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.3.4-240729094706
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.3.4-240729140117
-    schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.3.4-rc
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.3.5-240730132230
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.3.5-240805155021
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.3.5-240806101706
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.3.5-240806122105
     schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.3.5-rc
     schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.3.6-240809181147
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.3.6-240812081011
-    schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.3.5
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.3.6-240813133212
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.3.6-240819132053
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.3.6-240822181511
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.3.6-240827174507
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.3.6-240828112354
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.3.6-240829070343
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.3.6-240829084111
     schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.4.0-rc
     schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.4.0
     schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.4.1-240905084331
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.4.1-240906102432
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.4.1-240918081209
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.4.1-240918090547
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.4.1-240919090305
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.4.1-240919182944
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.4.1-240925131602
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.4.1-240930091210
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.4.1-240930141006
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.4.1-240930150814
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.4.1-241002091643
-    schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.4.1-rc
     schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.4.1
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.4.2-241003104153
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.4.2-241007161324
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.4.2-241008092610
     schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.4.2-rc
     schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:0.4.2
     schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.4.3-241011173126
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.4.3-241014100804
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.4.3-241016082404
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.4.3-241016114141
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.4.3-241018065352
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.4.3-241021110336
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.4.3-241021185427
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.4.3-241023001216
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.4.3-241029135355
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.4.3-241029145111
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.4.3-241029164520
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.4.3-241029201807
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.4.3-241029211238
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.4.3-241031163304
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.4.3-241104083828
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.4.3-241104171837
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.4.3-241104202629
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.4.3-241105092032
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.4.3-241105174753
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.4.3-241106161705
-    schema: olm.bundle
-  - image: quay.io/rhobs/observability-operator-bundle:0.4.3-241107155508
+  - image: quay.io/rhobs/observability-operator-bundle:1.3.0-250903144116
     schema: olm.bundle
 schema: olm.template.basic
