@@ -11,14 +11,14 @@ jobs:
     runs-on: ubuntu-latest
     environment: quay
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: publish
         uses: ./.github/package-operator-publish
         env:
-          IMAGE_BASE: ${{ secrets.IMAGE_BASE }}
+          IMG_BASE: ${{ vars.IMG_BASE }}
         with:
           quay_login: ${{ secrets.QUAY_LOGIN }}
           quay_token: ${{ secrets.QUAY_TOKEN }}

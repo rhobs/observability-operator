@@ -11,14 +11,14 @@ jobs:
     runs-on: ubuntu-latest
     environment: quay
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: publish
         uses: ./.github/olm-publish
         env:
-          IMAGE_BASE: ${{ secrets.IMAGE_BASE }}
+          IMG_BASE: ${{ vars.IMG_BASE }}
           CHANNELS: stable,candidate,development
           DEFAULT_CHANNEL: stable
           RELEASE_SHA: ${GITHUB_SHA}
