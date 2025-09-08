@@ -73,8 +73,10 @@ enable_ocp() {
     if oc -n "$OPERATORS_NS" apply -f "$CSV_JSON_FILE"; then
       ok "Successfully updated CSV ${CSV_NAME}"
       break
+    else
+      echo "oc apply failed (attempt $((retry_count+1))/$max_retries), retrying..."
     fi
-    sleep 3
+    sleep 10
     ((retry_count++))
     if [ "$retry_count" -eq "$max_retries" ]; then
       err "Failed to update CSV ${CSV_NAME} after $max_retries attempts"
