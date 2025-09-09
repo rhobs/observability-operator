@@ -350,7 +350,7 @@ func (rm resourceManager) registerPluginWithConsole(ctx context.Context, pluginI
 	// Register the plugin with the console
 	cluster.Spec.Plugins = clusterPlugins
 
-	if err := reconciler.NewMerger(cluster).Reconcile(ctx, rm.k8sClient, rm.scheme); err != nil {
+	if err := reconciler.NewMerger(cluster, pluginInfo.ConsoleName).Reconcile(ctx, rm.k8sClient, rm.scheme); err != nil {
 		return err
 	}
 
@@ -374,7 +374,7 @@ func (rm resourceManager) deregisterPluginFromConsole(ctx context.Context, plugi
 	// Deregister the plugin from the console
 	cluster.Spec.Plugins = clusterPlugins
 
-	if err := reconciler.NewMerger(cluster).Reconcile(ctx, rm.k8sClient, rm.scheme); err != nil {
+	if err := reconciler.NewMerger(cluster, pluginConsoleName).Reconcile(ctx, rm.k8sClient, rm.scheme); err != nil {
 		return err
 	}
 

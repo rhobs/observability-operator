@@ -10,11 +10,13 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apiserver/pkg/server/dynamiccertificates"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -25,15 +27,10 @@ import (
 	obsctrl "github.com/rhobs/observability-operator/pkg/controllers/observability"
 	opctrl "github.com/rhobs/observability-operator/pkg/controllers/operator"
 	uictrl "github.com/rhobs/observability-operator/pkg/controllers/uiplugin"
+	ctrlutil "github.com/rhobs/observability-operator/pkg/controllers/util"
 )
 
 const (
-	// NOTE: The instance selector label is hardcoded in static assets.
-	// Any change to that must be reflected here as well
-	instanceSelector = "app.kubernetes.io/managed-by=observability-operator"
-
-	ObservabilityOperatorName = "observability-operator"
-
 	// The mount path for the serving certificate seret is hardcoded in the
 	// static assets.
 	tlsMountPath = "/etc/tls/private"
@@ -249,10 +246,9 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 	}
 
 	if err := stackctrl.RegisterWithManager(mgr, stackctrl.Options{
-		InstanceSelector: instanceSelector,
-		Prometheus:       cfg.Prometheus,
-		Alertmanager:     cfg.Alertmanager,
-		Thanos:           cfg.ThanosSidecar,
+		Prometheus:   cfg.Prometheus,
+		Alertmanager: cfg.Alertmanager,
+		Thanos:       cfg.ThanosSidecar,
 	}); err != nil {
 		return nil, fmt.Errorf("unable to register monitoring stack controller: %w", err)
 	}
