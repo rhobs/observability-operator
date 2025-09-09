@@ -240,6 +240,14 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 			Metrics:                metricsOpts,
 			HealthProbeBindAddress: cfg.HealthProbeAddr,
 			PprofBindAddress:       "127.0.0.1:8083",
+			Cache: cache.Options{
+				DefaultLabelSelector: labels.SelectorFromSet(map[string]string{ctrlutil.ResourceLabel: ctrlutil.OpName}),
+				ByObject: map[client.Object]cache.ByObject{
+					&v1.Secret{}: cache.ByObject{
+						Label: labels.Everything(),
+					},
+				},
+			},
 		})
 	if err != nil {
 		return nil, fmt.Errorf("unable to create manager: %w", err)
