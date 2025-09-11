@@ -22,6 +22,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
+	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
+	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 	stackctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/monitoring-stack"
 	tqctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/thanos-querier"
 	obsctrl "github.com/rhobs/observability-operator/pkg/controllers/observability"
@@ -244,6 +246,19 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 				DefaultLabelSelector: labels.SelectorFromSet(map[string]string{ctrlutil.ResourceLabel: ctrlutil.OpName}),
 				ByObject: map[client.Object]cache.ByObject{
 					&v1.Secret{}: cache.ByObject{
+						Label: labels.Everything(),
+					},
+					&stack.MonitoringStack{}: cache.ByObject{
+						// Transform: transformStripMonitoringStack(),
+						Label: labels.Everything(),
+					},
+					&stack.ThanosQuerier{}: cache.ByObject{
+						Label: labels.Everything(),
+					},
+					&uiv1alpha1.UIPlugin{}: cache.ByObject{
+						Label: labels.Everything(),
+					},
+					&v1.Service{}: cache.ByObject{
 						Label: labels.Everything(),
 					},
 				},
