@@ -4,7 +4,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.18.0
     observability.openshift.io/api-support: TechPreview
-    operator.prometheus.io/version: 0.83.0-rhobs1
+    operator.prometheus.io/version: 0.84.0-rhobs1
   creationTimestamp: null
   labels:
     app.kubernetes.io/part-of: observability-operator
@@ -4948,6 +4948,12 @@ spec:
                       description: Configure whether HTTP requests follow HTTP 3xx
                         redirects.
                       type: boolean
+                    labelSelector:
+                      description: |-
+                        Label selector used to filter the servers when fetching them from the API.
+                        It requires Prometheus >= v3.5.0.
+                      minLength: 1
+                      type: string
                     noProxy:
                       description: |-
                         `noProxy` is a comma-separated string that can contain IPs, CIDR notation, domain names
