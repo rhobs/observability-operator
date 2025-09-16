@@ -50,7 +50,7 @@ func stackComponentReconcilers(
 ) []reconciler.Reconciler {
 	prometheusName := ms.Name + "-prometheus"
 	alertmanagerName := ms.Name + "-alertmanager"
-	additionalScrapeConfigsSecretName := ms.Name + "-prometheus-additional-scrape-configs"
+	additionalScrapeConfigsSecretName := ms.Name + "-self-scrape"
 	hasNsSelector := ms.Spec.NamespaceSelector != nil
 	deployAlertmanager := !ms.Spec.AlertmanagerConfig.Disabled
 
