@@ -17,30 +17,6 @@ patches:
 - patch: |-
     - op: add
       path: /spec/template/spec/containers/0/args/-
-      value: --images=alertmanager=quay.io/prometheus/alertmanager:v0.26.0
-  target:
-    group: apps
-    kind: Deployment
-    version: v1
-- patch: |-
-    - op: add
-      path: /spec/template/spec/containers/0/args/-
-      value: --images=prometheus=quay.io/prometheus/prometheus:v2.49.1
-  target:
-    group: apps
-    kind: Deployment
-    version: v1
-- patch: |-
-    - op: add
-      path: /spec/template/spec/containers/0/args/-
-      value: --images=thanos=quay.io/thanos/thanos:v0.33.0
-  target:
-    group: apps
-    kind: Deployment
-    version: v1
-- patch: |-
-    - op: add
-      path: /spec/template/spec/containers/0/args/-
       value: --images=perses=quay.io/openshift-observability-ui/perses:v0.51.1-go-1.23
   target:
     group: apps
