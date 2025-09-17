@@ -211,6 +211,28 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			return ctrl.Result{}, err
 		}
 
+		// Clean up cluster-scoped resources before removing finalizer
+		logger.V(6).Info("cleaning up cluster-scoped resources")
+
+		// Get features and plugin info for cleanup
+		compatibilityInfo, err := lookupImageAndFeatures(plugin.Spec.Type, rm.clusterVersion)
+		if err != nil {
+			logger.Error(err, "failed to get compatibility info for cleanup")
+		} else {
+			pluginInfo, err := PluginInfoBuilder(ctx, rm.k8sClient, rm.k8sDynamicClient, plugin, rm.pluginConf, compatibilityInfo, rm.clusterVersion, rm.logger)
+			if err != nil {
+				logger.Error(err, "failed to build plugin info for cleanup")
+			} else {
+				reconcilers := pluginComponentCleanup(plugin, *pluginInfo)
+				for _, reconciler := range reconcilers {
+					err := reconciler.Reconcile(ctx, rm.k8sClient, rm.scheme)
+					if err != nil {
+						logger.Error(err, "failed to cleanup cluster-scoped resources")
+					}
+				}
+			}
+		}
+
 		// Remove finalizer if present
 		if slices.Contains(plugin.ObjectMeta.Finalizers, finalizerName) {
 			plugin.ObjectMeta.Finalizers = slices.DeleteFunc(plugin.ObjectMeta.Finalizers, func(currentFinalizerName string) bool {

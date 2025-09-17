@@ -112,11 +112,11 @@ func createTroubleshootingPanelPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace
 			},
 		},
 		ClusterRoles: []*rbacv1.ClusterRole{
-			korrel8rClusterRole(korrel8rSvcName),
+			korrel8rClusterRole(korrel8rSvcName, plugin.Name, namespace),
 		},
 		ClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
-			korrel8rClusterRoleBinding(monitorClusterroleName, plugin.Name, namespace),
-			korrel8rClusterRoleBinding(korrel8rSvcName, plugin.Name, namespace),
+			korrel8rClusterRoleBinding(monitorClusterroleName, plugin.Name, namespace, plugin.Name),
+			korrel8rClusterRoleBinding(korrel8rSvcName, plugin.Name, namespace, plugin.Name),
 		},
 	}
 
@@ -178,7 +178,7 @@ func getTempoServiceName(ctx context.Context, k client.Client, ns string) (strin
 	return "", nil
 }
 
-func korrel8rClusterRole(name string) *rbacv1.ClusterRole {
+func korrel8rClusterRole(name string, ownerPlugin string, namespace string) *rbacv1.ClusterRole {
 	korrel8rClusterroleName := name + "-view"
 	return &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
@@ -187,6 +187,9 @@ func korrel8rClusterRole(name string) *rbacv1.ClusterRole {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: korrel8rClusterroleName,
+			Labels: map[string]string{
+				"app.kubernetes.io/managed-by": "observability-operator",
+			},
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -238,7 +241,7 @@ func korrel8rClusterRole(name string) *rbacv1.ClusterRole {
 	}
 }
 
-func korrel8rClusterRoleBinding(name string, serviceAccountName string, namespace string) *rbacv1.ClusterRoleBinding {
+func korrel8rClusterRoleBinding(name string, serviceAccountName string, namespace string, ownerPlugin string) *rbacv1.ClusterRoleBinding {
 	korrel8rClusterroleBindingName := name + "-view"
 	return &rbacv1.ClusterRoleBinding{
 		TypeMeta: metav1.TypeMeta{
@@ -247,6 +250,9 @@ func korrel8rClusterRoleBinding(name string, serviceAccountName string, namespac
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: korrel8rClusterroleBindingName,
+			Labels: map[string]string{
+				"app.kubernetes.io/managed-by": "observability-operator",
+			},
 		},
 		Subjects: []rbacv1.Subject{
 			{
