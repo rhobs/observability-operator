@@ -4065,7 +4065,7 @@ ClusterObservability defines the desired state of the observability stack.
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>status</b></td>
+        <td><b><a href="#clusterobservabilitystatus">status</a></b></td>
         <td>object</td>
         <td>
           Status of the signal manager.<br/>
@@ -4099,13 +4099,6 @@ Spec defines the desired state of the cluster observability.
 Each capability has to be enabled explicitly.<br/>
         </td>
         <td>false</td>
-      </tr><tr>
-        <td><b><a href="#clusterobservabilityspecstorage">storage</a></b></td>
-        <td>object</td>
-        <td>
-          Storage defines the storage for the capabilities that require a storage.<br/>
-        </td>
-        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -4128,118 +4121,12 @@ Each capability has to be enabled explicitly.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b><a href="#clusterobservabilityspeccapabilitiesopentelemetry">opentelemetry</a></b></td>
-        <td>object</td>
-        <td>
-          OpenTelemetry defines the OpenTelemetry capabilities.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
         <td><b><a href="#clusterobservabilityspeccapabilitiestracing">tracing</a></b></td>
         <td>object</td>
         <td>
-          Tracing defines the tracing capabilities.<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-### ClusterObservability.spec.capabilities.opentelemetry
-<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilities)</sup></sup>
-
-
-
-OpenTelemetry defines the OpenTelemetry capabilities.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>enabled</b></td>
-        <td>boolean</td>
-        <td>
-          Enabled indicates whether the capability is enabled and it operator should deploy an instance.
-By default, it is set to false.<br/>
-          <br/>
-            <i>Default</i>: false<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#clusterobservabilityspeccapabilitiesopentelemetryexporter">exporter</a></b></td>
-        <td>object</td>
-        <td>
-          Exporter defines the OpenTelemetry exporter configuration.
-When defined the collector will export telemetry data to the specified endpoint.<br/>
-        </td>
-        <td>false</td>
-      </tr><tr>
-        <td><b><a href="#clusterobservabilityspeccapabilitiesopentelemetryoperators">operators</a></b></td>
-        <td>object</td>
-        <td>
-          Operators defines the operators installation for the capability.<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-### ClusterObservability.spec.capabilities.opentelemetry.exporter
-<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiesopentelemetry)</sup></sup>
-
-
-
-Exporter defines the OpenTelemetry exporter configuration.
-When defined the collector will export telemetry data to the specified endpoint.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>endpoint</b></td>
-        <td>string</td>
-        <td>
-          Endpoint is the OTLP endpoint.<br/>
-        </td>
-        <td>false</td>
-      </tr></tbody>
-</table>
-
-
-### ClusterObservability.spec.capabilities.opentelemetry.operators
-<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiesopentelemetry)</sup></sup>
-
-
-
-Operators defines the operators installation for the capability.
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Required</th>
-        </tr>
-    </thead>
-    <tbody><tr>
-        <td><b>install</b></td>
-        <td>boolean</td>
-        <td>
-          Install indicates whether the operator(s) used by the capability should be installed via OLM.
-When the capability is enabled, the install is set to true, otherwise it is set to false.<br/>
+          Tracing defines the tracing capabilities.
+The tracing capability install an OpenTelemetry Operator instance and a Tempo instance.
+The Tempo instance is configured with a single tenant called application.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -4252,6 +4139,8 @@ When the capability is enabled, the install is set to true, otherwise it is set 
 
 
 Tracing defines the tracing capabilities.
+The tracing capability install an OpenTelemetry Operator instance and a Tempo instance.
+The Tempo instance is configured with a single tenant called application.
 
 <table>
     <thead>
@@ -4266,10 +4155,8 @@ Tracing defines the tracing capabilities.
         <td><b>enabled</b></td>
         <td>boolean</td>
         <td>
-          Enabled indicates whether the capability is enabled and it operator should deploy an instance.
+          Enabled indicates whether the capability is enabled and whether the operator should deploy an instance.
 By default, it is set to false.<br/>
-          <br/>
-            <i>Default</i>: false<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4277,6 +4164,13 @@ By default, it is set to false.<br/>
         <td>object</td>
         <td>
           Operators defines the operators installation for the capability.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingstorage">storage</a></b></td>
+        <td>object</td>
+        <td>
+          Storage defines the storage for the tracing capability<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -4304,19 +4198,20 @@ Operators defines the operators installation for the capability.
         <td>boolean</td>
         <td>
           Install indicates whether the operator(s) used by the capability should be installed via OLM.
-When the capability is enabled, the install is set to true, otherwise it is set to false.<br/>
+When the capability is enabled, the install is set to true, otherwise it is set to false.
+This field can be used to install the operator(s) without installing any operands.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
 </table>
 
 
-### ClusterObservability.spec.storage
-<sup><sup>[↩ Parent](#clusterobservabilityspec)</sup></sup>
+### ClusterObservability.spec.capabilities.tracing.storage
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracing)</sup></sup>
 
 
 
-Storage defines the storage for the capabilities that require a storage.
+Storage defines the storage for the tracing capability
 
 <table>
     <thead>
@@ -4328,22 +4223,22 @@ Storage defines the storage for the capabilities that require a storage.
         </tr>
     </thead>
     <tbody><tr>
-        <td><b><a href="#clusterobservabilityspecstoragesecret">secret</a></b></td>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingstorageobjectstorage">objectStorage</a></b></td>
         <td>object</td>
         <td>
-          SecretSpec defines the secret for the storage.<br/>
+          ObjectStorageSpec defines the object storage configuration for tracing.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
 </table>
 
 
-### ClusterObservability.spec.storage.secret
-<sup><sup>[↩ Parent](#clusterobservabilityspecstorage)</sup></sup>
+### ClusterObservability.spec.capabilities.tracing.storage.objectStorage
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracingstorage)</sup></sup>
 
 
 
-SecretSpec defines the secret for the storage.
+ObjectStorageSpec defines the object storage configuration for tracing.
 
 <table>
     <thead>
@@ -4355,10 +4250,766 @@ SecretSpec defines the secret for the storage.
         </tr>
     </thead>
     <tbody><tr>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingstorageobjectstorageazure">azure</a></b></td>
+        <td>object</td>
+        <td>
+          Azure defines the Azure Blob Storage configuration.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingstorageobjectstorageazurewif">azureWIF</a></b></td>
+        <td>object</td>
+        <td>
+          AzureWIF defines the Azure Blob Storage configuration using a Workload Identity Federation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingstorageobjectstoragegcs">gcs</a></b></td>
+        <td>object</td>
+        <td>
+          GCS defines the Google Cloud Storage configuration.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingstorageobjectstoragegcswif">gcsWIF</a></b></td>
+        <td>object</td>
+        <td>
+          GCSSToken defines the Google Cloud Storage configuration using short-lived tokens.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingstorageobjectstorages3">s3</a></b></td>
+        <td>object</td>
+        <td>
+          S3 defines the S3 object storage configuration.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingstorageobjectstorages3cco">s3CCO</a></b></td>
+        <td>object</td>
+        <td>
+          S3CCO defines the S3 object storage configuration using CCO.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingstorageobjectstorages3sts">s3STS</a></b></td>
+        <td>object</td>
+        <td>
+          S3STS defines the S3 object storage configuration using short-lived credentials.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingstorageobjectstoragetls">tls</a></b></td>
+        <td>object</td>
+        <td>
+          TLS configuration for reaching the object storage endpoint.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.capabilities.tracing.storage.objectStorage.azure
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracingstorageobjectstorage)</sup></sup>
+
+
+
+Azure defines the Azure Blob Storage configuration.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingstorageobjectstorageazureaccountkeysecret">accountKeySecret</a></b></td>
+        <td>object</td>
+        <td>
+          AccountKey is a reference to a secret containing the account key for the Azure Storage account.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>accountName</b></td>
+        <td>string</td>
+        <td>
+          AccountName is the name of the Azure Storage account.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>container</b></td>
+        <td>string</td>
+        <td>
+          Container is the name of the Azure Blob Storage container.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.capabilities.tracing.storage.objectStorage.azure.accountKeySecret
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracingstorageobjectstorageazure)</sup></sup>
+
+
+
+AccountKey is a reference to a secret containing the account key for the Azure Storage account.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key contains the name of the key inside the referenced Secret.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
         <td><b>name</b></td>
         <td>string</td>
         <td>
-          Name is the name of the secret for the storage.<br/>
+          SecretName contains the name of the Secret containing the referenced value.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.capabilities.tracing.storage.objectStorage.azureWIF
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracingstorageobjectstorage)</sup></sup>
+
+
+
+AzureWIF defines the Azure Blob Storage configuration using a Workload Identity Federation.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>accountName</b></td>
+        <td>string</td>
+        <td>
+          AccountName is the name of the Azure Storage account.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>clientID</b></td>
+        <td>string</td>
+        <td>
+          ClientID is the client ID of the Azure Active Directory application.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>container</b></td>
+        <td>string</td>
+        <td>
+          Container is the name of the Azure Blob Storage container.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>tenantID</b></td>
+        <td>string</td>
+        <td>
+          TenantID is the tenant ID of the Azure Active Directory.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>audience</b></td>
+        <td>string</td>
+        <td>
+          Audience is the optional audience for the Azure Workload Identity Federation.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.capabilities.tracing.storage.objectStorage.gcs
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracingstorageobjectstorage)</sup></sup>
+
+
+
+GCS defines the Google Cloud Storage configuration.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>bucket</b></td>
+        <td>string</td>
+        <td>
+          Bucket is the name of the Google Cloud Storage bucket.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingstorageobjectstoragegcskeyjsonsecret">keyJSONSecret</a></b></td>
+        <td>object</td>
+        <td>
+          KeyJSON is the key.json file encoded in a secret.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.capabilities.tracing.storage.objectStorage.gcs.keyJSONSecret
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracingstorageobjectstoragegcs)</sup></sup>
+
+
+
+KeyJSON is the key.json file encoded in a secret.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key contains the name of the key inside the referenced Secret.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          SecretName contains the name of the Secret containing the referenced value.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.capabilities.tracing.storage.objectStorage.gcsWIF
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracingstorageobjectstorage)</sup></sup>
+
+
+
+GCSSToken defines the Google Cloud Storage configuration using short-lived tokens.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>bucket</b></td>
+        <td>string</td>
+        <td>
+          Bucket is the name of the Google Cloud Storage bucket.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingstorageobjectstoragegcswifkeyjsonsecret">keyJSONSecret</a></b></td>
+        <td>object</td>
+        <td>
+          KeyJSON is the key.json file encoded in a secret.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>audience</b></td>
+        <td>string</td>
+        <td>
+          Audience is the optional audience.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.capabilities.tracing.storage.objectStorage.gcsWIF.keyJSONSecret
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracingstorageobjectstoragegcswif)</sup></sup>
+
+
+
+KeyJSON is the key.json file encoded in a secret.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key contains the name of the key inside the referenced Secret.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          SecretName contains the name of the Secret containing the referenced value.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.capabilities.tracing.storage.objectStorage.s3
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracingstorageobjectstorage)</sup></sup>
+
+
+
+S3 defines the S3 object storage configuration.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>accessKeyID</b></td>
+        <td>string</td>
+        <td>
+          AccessKeyID is the access key ID for the S3 bucket.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingstorageobjectstorages3accesskeysecret">accessKeySecret</a></b></td>
+        <td>object</td>
+        <td>
+          AccessKeySecret is a reference to a secret containing the access key secret for the S3.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>bucket</b></td>
+        <td>string</td>
+        <td>
+          Bucket is the name of the S3 bucket.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>endpoint</b></td>
+        <td>string</td>
+        <td>
+          Endpoint is the S3 endpoint URL.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>region</b></td>
+        <td>string</td>
+        <td>
+          Region is the region where the S3 bucket is located.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.capabilities.tracing.storage.objectStorage.s3.accessKeySecret
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracingstorageobjectstorages3)</sup></sup>
+
+
+
+AccessKeySecret is a reference to a secret containing the access key secret for the S3.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key contains the name of the key inside the referenced Secret.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          SecretName contains the name of the Secret containing the referenced value.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.capabilities.tracing.storage.objectStorage.s3CCO
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracingstorageobjectstorage)</sup></sup>
+
+
+
+S3CCO defines the S3 object storage configuration using CCO.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>bucket</b></td>
+        <td>string</td>
+        <td>
+          Bucket is the name of the S3 bucket.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>region</b></td>
+        <td>string</td>
+        <td>
+          Region is the region where the S3 bucket is located.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.capabilities.tracing.storage.objectStorage.s3STS
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracingstorageobjectstorage)</sup></sup>
+
+
+
+S3STS defines the S3 object storage configuration using short-lived credentials.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>bucket</b></td>
+        <td>string</td>
+        <td>
+          Bucket is the name of the S3 bucket.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>roleARN</b></td>
+        <td>string</td>
+        <td>
+          RoleARN is the ARN of the IAM role to assume for accessing the S3 bucket.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>region</b></td>
+        <td>string</td>
+        <td>
+          Region is the region where the S3 bucket is located.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.capabilities.tracing.storage.objectStorage.tls
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracingstorageobjectstorage)</sup></sup>
+
+
+
+TLS configuration for reaching the object storage endpoint.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingstorageobjectstoragetlscaconfigmap">caConfigMap</a></b></td>
+        <td>object</td>
+        <td>
+          CAConfigMap is the name of a ConfigMap containing a CA certificate (e.g. service-ca.crt).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingstorageobjectstoragetlscertsecret">certSecret</a></b></td>
+        <td>object</td>
+        <td>
+          CertSecret is the name of a Secret containing a certificate (e.g. tls.crt).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#clusterobservabilityspeccapabilitiestracingstorageobjectstoragetlskeysecret">keySecret</a></b></td>
+        <td>object</td>
+        <td>
+          KeySecret is the name of a Secret containing a private key (e.g. tls.key).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>minVersion</b></td>
+        <td>string</td>
+        <td>
+          MinVersion defines the minimum acceptable TLS version.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.capabilities.tracing.storage.objectStorage.tls.caConfigMap
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracingstorageobjectstoragetls)</sup></sup>
+
+
+
+CAConfigMap is the name of a ConfigMap containing a CA certificate (e.g. service-ca.crt).
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key contains the name of the key inside the referenced Secret.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          SecretName contains the name of the Secret containing the referenced value.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.capabilities.tracing.storage.objectStorage.tls.certSecret
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracingstorageobjectstoragetls)</sup></sup>
+
+
+
+CertSecret is the name of a Secret containing a certificate (e.g. tls.crt).
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key contains the name of the key inside the referenced Secret.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          SecretName contains the name of the Secret containing the referenced value.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.spec.capabilities.tracing.storage.objectStorage.tls.keySecret
+<sup><sup>[↩ Parent](#clusterobservabilityspeccapabilitiestracingstorageobjectstoragetls)</sup></sup>
+
+
+
+KeySecret is the name of a Secret containing a private key (e.g. tls.key).
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key contains the name of the key inside the referenced Secret.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          SecretName contains the name of the Secret containing the referenced value.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.status
+<sup><sup>[↩ Parent](#clusterobservability)</sup></sup>
+
+
+
+Status of the signal manager.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#clusterobservabilitystatusconditionsindex">conditions</a></b></td>
+        <td>[]object</td>
+        <td>
+          Conditions provide status information about the instance.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>opentelemetry</b></td>
+        <td>string</td>
+        <td>
+          OpenTelemetry defines the status of the OpenTelemetry capability.
+The value is in the form of instance namespace/name (version)<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>tempo</b></td>
+        <td>string</td>
+        <td>
+          Tempo defines the status of the Tempo capability.
+The value is in the form of instance namespace/name (version)<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ClusterObservability.status.conditions[index]
+<sup><sup>[↩ Parent](#clusterobservabilitystatus)</sup></sup>
+
+
+
+Condition contains details for one aspect of the current state of this API Resource.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>lastTransitionTime</b></td>
+        <td>string</td>
+        <td>
+          lastTransitionTime is the last time the condition transitioned from one status to another.
+This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.<br/>
+          <br/>
+            <i>Format</i>: date-time<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>message</b></td>
+        <td>string</td>
+        <td>
+          message is a human readable message indicating details about the transition.
+This may be an empty string.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>reason</b></td>
+        <td>string</td>
+        <td>
+          reason contains a programmatic identifier indicating the reason for the condition's last transition.
+Producers of specific condition types may define expected values and meanings for this field,
+and whether the values are considered a guaranteed API.
+The value should be a CamelCase string.
+This field may not be empty.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>status</b></td>
+        <td>enum</td>
+        <td>
+          status of the condition, one of True, False, Unknown.<br/>
+          <br/>
+            <i>Enum</i>: True, False, Unknown<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>type</b></td>
+        <td>string</td>
+        <td>
+          type of condition in CamelCase or in foo.example.com/CamelCase.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>observedGeneration</b></td>
+        <td>integer</td>
+        <td>
+          observedGeneration represents the .metadata.generation that the condition was set based upon.
+For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+with respect to the current state of the instance.<br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+            <i>Minimum</i>: 0<br/>
         </td>
         <td>false</td>
       </tr></tbody>
