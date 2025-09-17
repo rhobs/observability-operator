@@ -1,6 +1,7 @@
 package uiplugin
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
@@ -271,7 +272,12 @@ func getPluginInfo(plugin *uiv1alpha1.UIPlugin, features []string, clusterVersio
 		image     = "quay.io/monitoring-foo-test:123"
 	)
 
-	return createMonitoringPluginInfo(plugin, namespace, name, image, features, clusterVersion, healthAnalyzerImage, persesImage)
+	mockDeregisterPluginFromConsole := func(ctx context.Context, s string) error {
+		return nil
+	}
+	ctx := context.Background()
+
+	return createMonitoringPluginInfo(plugin, namespace, name, image, features, clusterVersion, healthAnalyzerImage, persesImage, mockDeregisterPluginFromConsole, ctx)
 }
 
 func TestCreateMonitoringPluginInfo(t *testing.T) {
@@ -422,7 +428,6 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 
 				if tc.expectedErrorMessage != "" {
 					assert.ErrorContains(t, err, tc.expectedErrorMessage, "Expected an error for invalid configuration")
-					assert.Assert(t, pluginInfo == nil, "Expected pluginInfo to be nil")
 					return
 				}
 
@@ -477,9 +482,8 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 		t.Run(fmt.Sprintf("NegativeTests_ClusterVersion_%s", cv), func(t *testing.T) {
 			for _, tc := range negativeTestCfgs {
 				t.Run(tc.name, func(t *testing.T) {
-					pluginInfo, err := getPluginInfo(tc.pluginConfig, featuresForTest, cv)
+					_, err := getPluginInfo(tc.pluginConfig, featuresForTest, cv)
 					assert.Assert(t, err != nil, "Expected an error for invalid configuration")
-					assert.Assert(t, pluginInfo == nil, "Expected pluginInfo to be nil on error")
 				})
 			}
 		})

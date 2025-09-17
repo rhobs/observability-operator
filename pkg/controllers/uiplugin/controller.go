@@ -257,12 +257,7 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, err
 	}
 
-	pluginInfo, err := PluginInfoBuilder(ctx, rm.k8sClient, rm.k8sDynamicClient, plugin, rm.pluginConf, compatibilityInfo, rm.clusterVersion, rm.logger)
-
-	if err != nil {
-		logger.Error(err, "failed to reconcile plugin")
-		return ctrl.Result{}, err
-	}
+	pluginInfo, pluginInfoErr := PluginInfoBuilder(ctx, rm.k8sClient, rm.k8sDynamicClient, plugin, rm.pluginConf, compatibilityInfo, rm.clusterVersion, rm.logger, rm.deregisterPluginFromConsole)
 
 	reconcilers := pluginComponentReconcilers(plugin, *pluginInfo, rm.clusterVersion)
 	for _, reconciler := range reconcilers {
@@ -276,6 +271,11 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		if err != nil {
 			return rm.updateStatus(ctx, req, plugin, err), err
 		}
+	}
+
+	if pluginInfoErr != nil {
+		// If features are disabled allow pluginComponentReconcilers to remove uiplugin-related components before status update
+		return rm.updateStatus(ctx, req, plugin, pluginInfoErr), pluginInfoErr
 	}
 
 	if err := rm.registerPluginWithConsole(ctx, pluginInfo); err != nil {

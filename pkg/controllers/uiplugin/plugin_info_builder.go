@@ -44,7 +44,7 @@ var pluginTypeToConsoleName = map[uiv1alpha1.UIPluginType]string{
 	uiv1alpha1.TypeMonitoring:           "monitoring-console-plugin",
 }
 
-func PluginInfoBuilder(ctx context.Context, k client.Client, dk dynamic.Interface, plugin *uiv1alpha1.UIPlugin, pluginConf UIPluginsConfiguration, compatibilityInfo CompatibilityEntry, clusterVersion string, logger logr.Logger) (*UIPluginInfo, error) {
+func PluginInfoBuilder(ctx context.Context, k client.Client, dk dynamic.Interface, plugin *uiv1alpha1.UIPlugin, pluginConf UIPluginsConfiguration, compatibilityInfo CompatibilityEntry, clusterVersion string, logger logr.Logger, deregisterPluginFromConsole func(context.Context, string) error) (*UIPluginInfo, error) {
 	image := pluginConf.Images[compatibilityInfo.ImageKey]
 	if image == "" {
 		return nil, fmt.Errorf("no image provided for plugin type %s with key %s", plugin.Spec.Type, compatibilityInfo.ImageKey)
@@ -86,7 +86,7 @@ func PluginInfoBuilder(ctx context.Context, k client.Client, dk dynamic.Interfac
 		return createLoggingPluginInfo(plugin, namespace, plugin.Name, image, compatibilityInfo.Features, ctx, dk, logger)
 
 	case uiv1alpha1.TypeMonitoring:
-		return createMonitoringPluginInfo(plugin, namespace, plugin.Name, image, compatibilityInfo.Features, clusterVersion, pluginConf.Images["health-analyzer"], pluginConf.Images["perses"])
+		return createMonitoringPluginInfo(plugin, namespace, plugin.Name, image, compatibilityInfo.Features, clusterVersion, pluginConf.Images["health-analyzer"], pluginConf.Images["perses"], deregisterPluginFromConsole, ctx)
 	}
 
 	return nil, fmt.Errorf("plugin type not supported: %s", plugin.Spec.Type)
