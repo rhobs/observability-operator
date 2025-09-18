@@ -4,6 +4,7 @@ on:
 
 jobs:
   commit-lint:
+    if: (github.actor != 'dependabot[bot]') && ! startsWith(github.head_ref, 'dependabot/')
     name: Lint the commit messages
     runs-on: ubuntu-latest
     steps:
