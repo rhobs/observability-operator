@@ -41,8 +41,8 @@ metadata:
     capabilities: Basic Install
     categories: Monitoring
     certified: "false"
-    containerImage: quay.io/rhobs/observability-operator:1.3.0-250918115143
-    createdAt: "2025-09-18T11:54:16Z"
+    containerImage: quay.io/rhobs/observability-operator:1.3.0-250918131041
+    createdAt: "2025-09-18T13:13:16Z"
     description: A Go based Kubernetes operator to setup and manage highly available
       Monitoring Stack using Prometheus, Alertmanager and Thanos Querier.
     operatorframework.io/cluster-monitoring: "true"
@@ -58,7 +58,7 @@ metadata:
       ]
     operators.operatorframework.io/project_layout: unknown
     repository: https://github.com/rhobs/observability-operator
-  name: observability-operator.v1.3.0-250918115143
+  name: observability-operator.v1.3.0-250918131041
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -997,7 +997,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.namespace
-                image: quay.io/rhobs/observability-operator:1.3.0-250918115143
+                image: quay.io/rhobs/observability-operator:1.3.0-250918131041
                 imagePullPolicy: Always
                 livenessProbe:
                   httpGet:
@@ -1137,7 +1137,7 @@ spec:
   maturity: alpha
   provider:
     name: Red Hat
-  version: 1.3.0-250918115143
+  version: 1.3.0-250918131041
   webhookdefinitions:
   - admissionReviewVersions:
     - v1
