@@ -32,7 +32,7 @@ import (
 
 	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 	monitoringstack "github.com/rhobs/observability-operator/pkg/controllers/monitoring/monitoring-stack"
-	operator "github.com/rhobs/observability-operator/pkg/operator"
+	"github.com/rhobs/observability-operator/pkg/controllers/util"
 	"github.com/rhobs/observability-operator/test/e2e/framework"
 )
 
@@ -773,7 +773,7 @@ func assertPrometheusManagedFields(t *testing.T) {
 	mfs := prom.GetManagedFields()
 
 	idx := slices.IndexFunc(mfs, func(mf metav1.ManagedFieldsEntry) bool {
-		return mf.Manager == operator.ObservabilityOperatorName
+		return mf.Manager == util.OpName
 	})
 
 	if idx == -1 {

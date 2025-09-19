@@ -284,6 +284,7 @@ func newThanosStackCombo(t *testing.T, name string) (*msov1.ThanosQuerier, *msov
 	ms := ensureLabels(newMonitoringStack(t, name), labels)
 	return tq.(*msov1.ThanosQuerier), ms.(*msov1.MonitoringStack)
 }
+
 func ensureLabels(obj client.Object, wantLabels map[string]string) client.Object {
 	labels := obj.GetLabels()
 	if labels == nil {

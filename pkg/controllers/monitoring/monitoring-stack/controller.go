@@ -18,9 +18,7 @@ package monitoringstack
 
 import (
 	"context"
-	"fmt"
 	"slices"
-	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -40,15 +38,13 @@ import (
 )
 
 type resourceManager struct {
-	k8sClient             client.Client
-	scheme                *runtime.Scheme
-	logger                logr.Logger
-	instanceSelectorKey   string
-	instanceSelectorValue string
-	controller            controller.Controller
-	prometheus            PrometheusConfiguration
-	alertmanager          AlertmanagerConfiguration
-	thanos                ThanosConfiguration
+	k8sClient    client.Client
+	scheme       *runtime.Scheme
+	logger       logr.Logger
+	controller   controller.Controller
+	prometheus   PrometheusConfiguration
+	alertmanager AlertmanagerConfiguration
+	thanos       ThanosConfiguration
 }
 
 type PrometheusConfiguration struct {
@@ -65,10 +61,9 @@ type ThanosConfiguration struct {
 
 // Options allows for controller options to be set
 type Options struct {
-	InstanceSelector string
-	Prometheus       PrometheusConfiguration
-	Alertmanager     AlertmanagerConfiguration
-	Thanos           ThanosConfiguration
+	Prometheus   PrometheusConfiguration
+	Alertmanager AlertmanagerConfiguration
+	Thanos       ThanosConfiguration
 }
 
 const finalizerName = "monitoring.observability.openshift.io/finalizer"
@@ -92,20 +87,14 @@ const finalizerName = "monitoring.observability.openshift.io/finalizer"
 
 // RegisterWithManager registers the controller with Manager
 func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
-	split := strings.Split(opts.InstanceSelector, "=")
-	if len(split) != 2 {
-		return fmt.Errorf("invalid InstanceSelector: %s", opts.InstanceSelector)
-	}
 
 	rm := &resourceManager{
-		k8sClient:             mgr.GetClient(),
-		scheme:                mgr.GetScheme(),
-		logger:                ctrl.Log.WithName("observability-operator"),
-		instanceSelectorKey:   split[0],
-		instanceSelectorValue: split[1],
-		thanos:                opts.Thanos,
-		prometheus:            opts.Prometheus,
-		alertmanager:          opts.Alertmanager,
+		k8sClient:    mgr.GetClient(),
+		scheme:       mgr.GetScheme(),
+		logger:       ctrl.Log.WithName("observability-operator"),
+		thanos:       opts.Thanos,
+		prometheus:   opts.Prometheus,
+		alertmanager: opts.Alertmanager,
 	}
 	// We only want to trigger a reconciliation when the generation
 	// of a child changes. Until we need to update our the status for our own objects,
@@ -182,8 +171,6 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	}
 
 	reconcilers := stackComponentReconcilers(ms,
-		rm.instanceSelectorKey,
-		rm.instanceSelectorValue,
 		rm.thanos,
 		rm.prometheus,
 		rm.alertmanager,
