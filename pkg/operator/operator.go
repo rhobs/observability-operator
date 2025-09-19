@@ -23,6 +23,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
+	obsv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/observability/v1alpha1"
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 	stackctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/monitoring-stack"
 	tqctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/thanos-querier"
@@ -243,13 +244,20 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 			HealthProbeBindAddress: cfg.HealthProbeAddr,
 			PprofBindAddress:       "127.0.0.1:8083",
 			Cache: cache.Options{
+				// All controller created resources carry the label
+				// defined below. This is added in the reconcilers.
 				DefaultLabelSelector: labels.SelectorFromSet(map[string]string{ctrlutil.ResourceLabel: ctrlutil.OpName}),
 				ByObject: map[client.Object]cache.ByObject{
+					// We define exceptions for the cache and
+					// thus from the default label selector.
+					// Secrets are watched by some controllers
+					// that accept TLS artifacts in a secret.
 					&v1.Secret{}: cache.ByObject{
 						Label: labels.Everything(),
 					},
+					// The user-facing CRDs need to be
+					// cached in absence of any labels.
 					&stack.MonitoringStack{}: cache.ByObject{
-						// Transform: transformStripMonitoringStack(),
 						Label: labels.Everything(),
 					},
 					&stack.ThanosQuerier{}: cache.ByObject{
@@ -258,8 +266,16 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 					&uiv1alpha1.UIPlugin{}: cache.ByObject{
 						Label: labels.Everything(),
 					},
-					&v1.Service{}: cache.ByObject{
+					&obsv1alpha1.ClusterObservability{}: cache.ByObject{
 						Label: labels.Everything(),
+					},
+					// The operator controller watches the
+					// service created by the olm bundle, so
+					// it can create a ServiceMonitor that
+					// can be scraped by the OCP in-cluster
+					// stack
+					&v1.Service{}: cache.ByObject{
+						Label: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": ctrlutil.OpName}),
 					},
 				},
 			},
