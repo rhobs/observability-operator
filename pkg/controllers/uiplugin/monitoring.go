@@ -1,6 +1,7 @@
 package uiplugin
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -181,7 +182,7 @@ func addAcmAlertingProxy(pluginInfo *UIPluginInfo, name string, namespace string
 	)
 }
 
-func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string, clusterVersion string, healthAnalyzerImage string, persesImage string) (*UIPluginInfo, error) {
+func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string, clusterVersion string, healthAnalyzerImage string, persesImage string, deregisterPluginFromConsole func(context.Context, string) error, ctx context.Context) (*UIPluginInfo, error) {
 	config := plugin.Spec.Monitoring
 	if config == nil {
 		return nil, fmt.Errorf("monitoring configuration can not be empty for plugin type %s", plugin.Spec.Type)
@@ -193,20 +194,22 @@ func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, im
 	isValidIncidentsConfig := validateIncidentsConfig(config, clusterVersion)
 
 	atLeastOneValidConfig := isValidAcmConfig || isValidPersesConfig || isValidIncidentsConfig
+
+	pluginInfo := getBasePluginInfo(namespace, name, image)
 	if !atLeastOneValidConfig {
-		return nil, fmt.Errorf("all uiplugin monitoring configurations are invalid or not supported in this cluster version")
+		deregisterPluginFromConsole(ctx, pluginTypeToConsoleName[plugin.Spec.Type])
+		return pluginInfo, fmt.Errorf("all uiplugin monitoring configurations are invalid or not supported in this cluster version")
 	}
 
 	//  Add proxies and feature flags
-	pluginInfo := getBasePluginInfo(namespace, name, image)
 	if isValidAcmConfig {
 		addAcmAlertingProxy(pluginInfo, name, namespace, config)
 		features = append(features, "acm-alerting")
 	}
 	if isValidPersesConfig {
 		addPersesProxy(pluginInfo, namespace)
-		pluginInfo.PersesImage = persesImage
 		features = append(features, "perses-dashboards")
+		pluginInfo.PersesImage = persesImage
 	}
 	if isValidIncidentsConfig {
 		pluginInfo.HealthAnalyzerImage = healthAnalyzerImage
