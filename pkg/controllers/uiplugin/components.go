@@ -125,7 +125,7 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 		persesServiceAccountName := "perses" + serviceAccountSuffix
 		components = append(components, reconciler.NewUpdater(newServiceAccount("perses", namespace), plugin))
 		components = append(components, reconciler.NewUpdater(newClusterRoleBinding(namespace, persesServiceAccountName, "system:auth-delegator", persesServiceAccountName+":system:auth-delegator"), plugin))
-		components = append(components, reconciler.NewUpdater(newPersesClusterRole(), plugin))
+		components = append(components, reconciler.NewUpdater(newPersesClusterRole(plugin.Name, namespace), plugin))
 		components = append(components, reconciler.NewUpdater(newClusterRoleBinding(namespace, persesServiceAccountName, "perses-cr", persesServiceAccountName+":perses-cr"), plugin))
 		components = append(components, reconciler.NewUpdater(newPerses(namespace, pluginInfo.PersesImage), plugin))
 		components = append(components, reconciler.NewUpdater(newAcceleratorsDatasource(namespace), plugin))
@@ -583,6 +583,44 @@ func newKorrel8rConfigMap(name string, namespace string, info UIPluginInfo) (*co
 			Korrel8rConfigFileName: string(cfg),
 		},
 	}, nil
+}
+
+func pluginComponentCleanup(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPluginInfo) []reconciler.Reconciler {
+	var reconcilers []reconciler.Reconciler
+	namespace := pluginInfo.ResourceNamespace
+
+	// Clean up cluster-scoped resources that we know we created
+	// These are the same resources created in pluginComponentReconcilers
+
+	// For TroubleshootingPanel plugin, clean up korrel8r cluster roles and bindings
+	if plugin.Spec.Type == uiv1alpha1.TypeTroubleshootingPanel {
+		reconcilers = append(reconcilers,
+			reconciler.NewDeleter(korrel8rClusterRole(korrel8rSvcName, plugin.Name, namespace)),
+			reconciler.NewDeleter(korrel8rClusterRoleBinding(monitorClusterroleName, plugin.Name, namespace, plugin.Name)),
+			reconciler.NewDeleter(korrel8rClusterRoleBinding(korrel8rSvcName, plugin.Name, namespace, plugin.Name)),
+		)
+	}
+
+	// Health Analyzer cluster role bindings
+	if pluginInfo.HealthAnalyzerImage != "" {
+		serviceAccountName := plugin.Name + serviceAccountSuffix
+		reconcilers = append(reconcilers,
+			reconciler.NewDeleter(newClusterRoleBinding(namespace, serviceAccountName, "cluster-monitoring-view", "cluster-monitoring-view")),
+			reconciler.NewDeleter(newClusterRoleBinding(namespace, serviceAccountName, "system:auth-delegator", serviceAccountName+":system:auth-delegator")),
+		)
+	}
+
+	// Perses cluster role and bindings
+	if pluginInfo.PersesImage != "" {
+		persesServiceAccountName := "perses" + serviceAccountSuffix
+		reconcilers = append(reconcilers,
+			reconciler.NewDeleter(newClusterRoleBinding(namespace, persesServiceAccountName, "system:auth-delegator", persesServiceAccountName+":system:auth-delegator")),
+			reconciler.NewDeleter(newPersesClusterRole(plugin.Name, namespace)),
+			reconciler.NewDeleter(newClusterRoleBinding(namespace, persesServiceAccountName, "perses-cr", persesServiceAccountName+":perses-cr")),
+		)
+	}
+
+	return reconcilers
 }
 
 func componentLabels(pluginName string) map[string]string {

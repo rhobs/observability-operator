@@ -366,7 +366,7 @@ func newPerses(namespace string, persesImage string) *persesv1alpha1.Perses {
 	}
 }
 
-func newPersesClusterRole() *rbacv1.ClusterRole {
+func newPersesClusterRole(ownerPlugin string, namespace string) *rbacv1.ClusterRole {
 	return &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: rbacv1.SchemeGroupVersion.String(),
@@ -374,6 +374,9 @@ func newPersesClusterRole() *rbacv1.ClusterRole {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "perses-cr",
+			Labels: map[string]string{
+				"app.kubernetes.io/managed-by": "observability-operator",
+			},
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
