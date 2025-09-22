@@ -77,6 +77,8 @@ spec:
         type: file
         certPath: /ca/service-ca.crt
 ```
+> [!IMPORTANT]
+> The name `thanos-querier-datasource-secret` in the example isn't a Kubernetes secret. It's a reference to a Perses secret that the Perses Operator automatically generates from the datasource name and stores in the Perses backend. Therefore, the secret's name must match the datasource name, followed by the `-secret` suffix.
 
 This will allow a dashboard in the `perses-dev` namespace to fetch cluster metrics.
 
