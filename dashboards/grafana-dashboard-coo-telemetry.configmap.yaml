@@ -64,7 +64,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_TELEMETER-RECENT-PRODUCTION}"
+            "uid": "${datasource}"
           },
           "fieldConfig": {
             "defaults": {
@@ -158,7 +158,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_TELEMETER-RECENT-PRODUCTION}"
+            "uid": "${datasource}"
           },
           "fieldConfig": {
             "defaults": {
@@ -252,7 +252,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_TELEMETER-RECENT-PRODUCTION}"
+            "uid": "${datasource}"
           },
           "fieldConfig": {
             "defaults": {
@@ -344,7 +344,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_TELEMETER-RECENT-PRODUCTION}"
+            "uid": "${datasource}"
           },
           "fieldConfig": {
             "defaults": {
@@ -436,7 +436,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_TELEMETER-RECENT-PRODUCTION}"
+            "uid": "${datasource}"
           },
           "fieldConfig": {
             "defaults": {
@@ -529,7 +529,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_TELEMETER-RECENT-PRODUCTION}"
+            "uid": "${datasource}"
           },
           "fieldConfig": {
             "defaults": {
@@ -586,8 +586,8 @@ data:
             "overrides": []
           },
           "gridPos": {
-            "h": 8,
-            "w": 12,
+            "h": 7,
+            "w": 24,
             "x": 0,
             "y": 24
           },
@@ -631,6 +631,15 @@ data:
         "list": [
           {
             "current": {},
+            "name": "datasource",
+            "options": [],
+            "query": "prometheus",
+            "refresh": 1,
+            "regex": "/^telemeter-(recent|historical)/",
+            "type": "datasource"
+          },
+          {
+            "current": {},
             "definition": "label_values(csv_succeeded{name=~\"cluster-observability-operator.*\"},version)",
             "includeAll": true,
             "multi": true,
@@ -670,8 +679,8 @@ data:
       "timepicker": {},
       "timezone": "browser",
       "title": "Cluster observability operator - Overview",
-      "uid": "b5a313e7-bbd7-4aa5-aa8c-a890708451c3",
-      "version": 1,
+      "uid": "b5a313e7-bbd7-4aa5-aa8c-a890708451c5",
+      "version": 3,
       "weekStart": ""
     }
 kind: ConfigMap
