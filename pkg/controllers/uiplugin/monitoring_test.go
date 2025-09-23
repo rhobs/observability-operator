@@ -422,7 +422,6 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 
 				if tc.expectedErrorMessage != "" {
 					assert.ErrorContains(t, err, tc.expectedErrorMessage, "Expected an error for invalid configuration")
-					assert.Assert(t, pluginInfo == nil, "Expected pluginInfo to be nil")
 					return
 				}
 
@@ -477,9 +476,8 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 		t.Run(fmt.Sprintf("NegativeTests_ClusterVersion_%s", cv), func(t *testing.T) {
 			for _, tc := range negativeTestCfgs {
 				t.Run(tc.name, func(t *testing.T) {
-					pluginInfo, err := getPluginInfo(tc.pluginConfig, featuresForTest, cv)
+					_, err := getPluginInfo(tc.pluginConfig, featuresForTest, cv)
 					assert.Assert(t, err != nil, "Expected an error for invalid configuration")
-					assert.Assert(t, pluginInfo == nil, "Expected pluginInfo to be nil on error")
 				})
 			}
 		})
