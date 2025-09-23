@@ -16,24 +16,25 @@ import (
 )
 
 type UIPluginInfo struct {
-	Image               string
-	Korrel8rImage       string
-	HealthAnalyzerImage string
-	LokiServiceNames    map[string]string
-	TempoServiceNames   map[string]string
-	Name                string
-	ConsoleName         string
-	DisplayName         string
-	ExtraArgs           []string
-	LegacyProxies       []osv1alpha1.ConsolePluginProxy
-	Proxies             []osv1.ConsolePluginProxy
-	Role                *rbacv1.Role
-	RoleBinding         *rbacv1.RoleBinding
-	ClusterRoles        []*rbacv1.ClusterRole
-	ClusterRoleBindings []*rbacv1.ClusterRoleBinding
-	ConfigMap           *corev1.ConfigMap
-	ResourceNamespace   string
-	PersesImage         string
+	Image                      string
+	Korrel8rImage              string
+	HealthAnalyzerImage        string
+	LokiServiceNames           map[string]string
+	TempoServiceNames          map[string]string
+	Name                       string
+	ConsoleName                string
+	DisplayName                string
+	ExtraArgs                  []string
+	LegacyProxies              []osv1alpha1.ConsolePluginProxy
+	Proxies                    []osv1.ConsolePluginProxy
+	Role                       *rbacv1.Role
+	RoleBinding                *rbacv1.RoleBinding
+	ClusterRoles               []*rbacv1.ClusterRole
+	ClusterRoleBindings        []*rbacv1.ClusterRoleBinding
+	ConfigMap                  *corev1.ConfigMap
+	ResourceNamespace          string
+	PersesImage                string
+	AreMonitoringFeatsDisabled bool
 }
 
 var pluginTypeToConsoleName = map[uiv1alpha1.UIPluginType]string{
