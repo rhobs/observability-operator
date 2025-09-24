@@ -65,10 +65,10 @@ type OperatorConfiguration struct {
 	ThanosQuerier        tqctrl.ThanosConfiguration
 	UIPlugins            uictrl.UIPluginsConfiguration
 	FeatureGates         FeatureGates
-	ClusterObservability ClusterObservabilityConfiguration
+	ClusterObservability ObservabilityInstallerConfiguration
 }
 
-type ClusterObservabilityConfiguration struct {
+type ObservabilityInstallerConfiguration struct {
 	COONamespace     string
 	OpenTelemetryCSV string
 	TempoCSV         string
@@ -137,7 +137,7 @@ func NewOperatorConfiguration(opts ...func(*OperatorConfiguration)) *OperatorCon
 	return cfg
 }
 
-func WithClusterObservability(configuration ClusterObservabilityConfiguration) func(*OperatorConfiguration) {
+func WithClusterObservability(configuration ObservabilityInstallerConfiguration) func(*OperatorConfiguration) {
 	return func(oc *OperatorConfiguration) {
 		oc.ClusterObservability = configuration
 	}
@@ -266,7 +266,7 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 					&uiv1alpha1.UIPlugin{}: cache.ByObject{
 						Label: labels.Everything(),
 					},
-					&obsv1alpha1.ClusterObservability{}: cache.ByObject{
+					&obsv1alpha1.ObservabilityInstaller{}: cache.ByObject{
 						Label: labels.Everything(),
 					},
 					// The operator controller watches the

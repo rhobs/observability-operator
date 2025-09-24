@@ -48,7 +48,7 @@ func TestClusterObservabilityController(t *testing.T) {
 func testClusterObservabilityTracing(t *testing.T) {
 	ctx := context.Background()
 
-	// The ClusterObservability installs operators via subscriptions,
+	// The ObservabilityInstaller installs operators via subscriptions,
 	// therefore it is necessary to change the COO subscription to Automatic approval
 	subs := &olmv1alpha1.SubscriptionList{}
 	errSubs := f.K8sClient.List(ctx, subs, &client.ListOptions{
@@ -105,13 +105,13 @@ func testClusterObservabilityTracing(t *testing.T) {
 	require.NoError(t, err)
 	f.CleanUp(t, func() { f.K8sClient.Delete(ctx, secret) })
 
-	// Create ClusterObservability resource
-	clusterObs := &obsv1alpha1.ClusterObservability{
+	// Create ObservabilityInstaller resource
+	clusterObs := &obsv1alpha1.ObservabilityInstaller{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "coo",
 			Namespace: operandNamespace.Name,
 		},
-		Spec: obsv1alpha1.ClusterObservabilitySpec{
+		Spec: obsv1alpha1.ObservabilityInstallerSpec{
 			Capabilities: &obsv1alpha1.CapabilitiesSpec{
 				Tracing: obsv1alpha1.TracingSpec{
 					CommonCapabilitiesSpec: obsv1alpha1.CommonCapabilitiesSpec{
@@ -141,16 +141,16 @@ func testClusterObservabilityTracing(t *testing.T) {
 
 	// Create the resource
 	err = f.K8sClient.Create(ctx, clusterObs)
-	assert.NilError(t, err, "Failed to create ClusterObservability resource")
+	assert.NilError(t, err, "Failed to create ObservabilityInstaller resource")
 
 	// Verify resource exists
-	var createdClusterObs obsv1alpha1.ClusterObservability
+	var createdClusterObs obsv1alpha1.ObservabilityInstaller
 	err = f.K8sClient.Get(ctx, types.NamespacedName{Name: "coo", Namespace: operandNamespace.Name}, &createdClusterObs)
-	assert.NilError(t, err, "Failed to get ClusterObservability resource")
+	assert.NilError(t, err, "Failed to get ObservabilityInstaller resource")
 
 	// Wait for Tempo to be ready
 	err = wait.PollUntilContextTimeout(ctx, 1*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
-		var instance obsv1alpha1.ClusterObservability
+		var instance obsv1alpha1.ObservabilityInstaller
 		err := f.K8sClient.Get(ctx, types.NamespacedName{Name: "coo", Namespace: operandNamespace.Name}, &instance)
 		if apierrors.IsNotFound(err) {
 			return false, nil
@@ -165,7 +165,7 @@ func testClusterObservabilityTracing(t *testing.T) {
 	require.NoError(t, err)
 	// Wait for collector to be ready
 	err = wait.PollUntilContextTimeout(ctx, 1*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
-		var instance obsv1alpha1.ClusterObservability
+		var instance obsv1alpha1.ObservabilityInstaller
 		err := f.K8sClient.Get(ctx, types.NamespacedName{Name: "coo", Namespace: operandNamespace.Name}, &instance)
 		if apierrors.IsNotFound(err) {
 			return false, nil
@@ -257,11 +257,11 @@ func testClusterObservabilityTracing(t *testing.T) {
 
 	// Delete the resource
 	err = f.K8sClient.Delete(ctx, &createdClusterObs)
-	assert.NilError(t, err, "Failed to delete ClusterObservability resource")
+	assert.NilError(t, err, "Failed to delete ObservabilityInstaller resource")
 
 	// Verify resource is deleted
 	err = wait.PollUntilContextTimeout(ctx, 1*time.Second, 30*time.Second, true, func(ctx context.Context) (bool, error) {
-		var deletedClusterObs obsv1alpha1.ClusterObservability
+		var deletedClusterObs obsv1alpha1.ObservabilityInstaller
 		err := f.K8sClient.Get(ctx, types.NamespacedName{Name: "coo", Namespace: operandNamespace.Name}, &deletedClusterObs)
 		if apierrors.IsNotFound(err) {
 			return true, nil
