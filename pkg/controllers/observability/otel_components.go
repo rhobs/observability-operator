@@ -28,7 +28,7 @@ type templateOptions struct {
 	TempoName   string
 }
 
-func otelCollector(instance *obsv1alpha1.ClusterObservability) (*otelv1beta1.OpenTelemetryCollector, error) {
+func otelCollector(instance *obsv1alpha1.ObservabilityInstaller) (*otelv1beta1.OpenTelemetryCollector, error) {
 	w := bytes.NewBuffer(nil)
 	err := collectorConfigTemplate.Execute(w, templateOptions{Namespace: instance.Namespace, TempoName: tempoName(instance.Name), TempoTenant: tenantName})
 	if err != nil {
@@ -72,7 +72,7 @@ func otelCollectorName(instance string) string {
 	return fmt.Sprintf("%s", instance)
 }
 
-func otelCollectorComponentsRBAC(instance *obsv1alpha1.ClusterObservability) (*rbacv1.ClusterRole, *rbacv1.ClusterRoleBinding) {
+func otelCollectorComponentsRBAC(instance *obsv1alpha1.ObservabilityInstaller) (*rbacv1.ClusterRole, *rbacv1.ClusterRoleBinding) {
 	name := fmt.Sprintf("coo-otelcol-%s-components", instance.Name)
 	role := &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
@@ -120,7 +120,7 @@ func otelCollectorComponentsRBAC(instance *obsv1alpha1.ClusterObservability) (*r
 	return role, binding
 }
 
-func otelCollectorTempoRBAC(instance *obsv1alpha1.ClusterObservability) (*rbacv1.ClusterRole, *rbacv1.ClusterRoleBinding) {
+func otelCollectorTempoRBAC(instance *obsv1alpha1.ObservabilityInstaller) (*rbacv1.ClusterRole, *rbacv1.ClusterRoleBinding) {
 	name := fmt.Sprintf("coo-otelcol-%s-tempo", instance.Name)
 	role := &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{

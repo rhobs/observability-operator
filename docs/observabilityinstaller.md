@@ -1,6 +1,6 @@
-# ClusterObservability CRD
+# ObservabilityInstaller CRD
 
-This document describes the `ClusterObservability` Custom Resource Definition (CRD).
+This document describes the `ObservabilityInstaller` Custom Resource Definition (CRD).
 The goal of this CRD is to provide end-to-end observability capabilities with minimal configuration.
 Power users should be able to customize the underlying components via server-side apply.
 
@@ -12,7 +12,7 @@ Power users should be able to customize the underlying components via server-sid
 
 ```yaml
 apiVersion: observability.openshift.io/v1alpha1
-kind: ClusterObservability
+kind: ObservabilityInstaller
 metadata:
   name: logging-tracing
   namespace: observability
@@ -44,7 +44,7 @@ spec:
 
 Notes:
 * installs the Loki, ClusterLogForwarder, Tempo and opentelemetry operators
-* creates storage secret for `LokiStack` and `TempoStack` from the secret `minio` which is reconciled by the `ClusterObservability`
+* creates storage secret for `LokiStack` and `TempoStack` from the secret `minio` which is reconciled by the `ObservabilityInstaller`
 * deploys logging stack with `ClusterLogForwarder` and `LokiStack` in the `observability` namespace
 * deploys tracing stack with `OpenTelemetryCollector` and `TempoStack` in the `observability` namespace
 * Installs the UI plugins for Loki and Tempo
@@ -54,7 +54,7 @@ Notes:
 
 ```yaml
 apiVersion: observability.openshift.io/v1alpha1
-kind: ClusterObservability
+kind: ObservabilityInstaller
 metadata:
   name: logging-tracing
   namespace: observability
@@ -85,13 +85,13 @@ Notes:
 * deploys tracing stack with `OpenTelemetryCollector` and `TempoStack` in the `observability` namespace
 * deploys `OpenTelemetryCollector` in the `openshift-opentelemetry`
 * configures OTLP exporter on the collector to send traces to Dynatrace
-* configures collector to export trace data to Tempo deployed by the `ClusterObservability` CR
+* configures collector to export trace data to Tempo deployed by the `ObservabilityInstaller` CR
 
 ### Install only operators for a given capability
 
 ```yaml
 apiVersion: observability.openshift.io/v1alpha1
-kind: ClusterObservability
+kind: ObservabilityInstaller
 metadata:
   name: logging-tracing
   namespace: observability
@@ -119,7 +119,7 @@ Notes:
 
 ```yaml
 apiVersion: observability.openshift.io/v1alpha1
-kind: ClusterObservability
+kind: ObservabilityInstaller
 metadata:
   name: logging-tracing
   namespace: observability
@@ -148,7 +148,7 @@ In this case the COO cannot guarantee that installed operator versions are compa
 
 ## Storage configuration
 
-The storage section of the `ClusterObservability` CRD allows users to configure the storage for all supported observability backends.
+The storage section of the `ObservabilityInstaller` CRD allows users to configure the storage for all supported observability backends.
 At the moment, the only supported backed is Tempo (tracing capability). There are plans to support Loki (logging capability) and Prometheus/Thanos (metrics capability) in the future.
 Therefore, the storage configuration has to be flexible and work for all backend types.
 
@@ -159,7 +159,7 @@ Goals:
 
 ```yaml
 apiVersion: observability.openshift.io/v1alpha1
-kind: ClusterObservability
+kind: ObservabilityInstaller
 metadata:
   name: example
   namespace: observability
@@ -212,7 +212,7 @@ spec:
 * In the above example the tracing and logging capabilities will use S3 as object storage.
 * The controller transforms the configuration in `s3` secret into secrets required by the `LokiStack` and `TempoStack` instances.
 
-The various storage configuration per capability can be achieved by multiple `ClusterObservability` CRs, each with its own storage configuration.
+The various storage configuration per capability can be achieved by multiple `ObservabilityInstaller` CRs, each with its own storage configuration.
 
 ### Object storage types
 
@@ -221,7 +221,7 @@ There are plans to support all storage types required by the capabilities.
 
 #### Design principles
 
-The `ClusterObservability` object storage configuration is directly held in the CR and secrets are used only to reference sensitive data.
+The `ObservabilityInstaller` object storage configuration is directly held in the CR and secrets are used only to reference sensitive data.
 
 ##### Alternative thanos-io/objstore
 
