@@ -15,7 +15,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `make operator` - Generate manifests and build operator binary (default target)
 - `make build` - Build operator binary to `./tmp/operator`
 - `make operator-image` - Build operator container image
-- `go run ./cmd/operator/... --zap-devel --zap-log-level=100 --kubeconfig ~/.kube/config` - Run operator locally
+- Run operator locally (requires prometheus-operator dependencies):
+  1. `./hack/setup-e2e-env.sh` - Setup development environment with Kind cluster
+  2. Build and push operator images:
+     ```bash
+     make operator-image bundle-image operator-push bundle-push \
+         IMAGE_BASE="local-registry:30000/observability-operator" \
+         VERSION=0.0.0-dev \
+         PUSH_OPTIONS=--tls-verify=false
+     ```
+  3. Deploy operator bundle:
+     ```bash
+     ./tmp/bin/operator-sdk run bundle \
+         local-registry:30000/observability-operator-bundle:0.0.0-dev \
+         --install-mode AllNamespaces \
+         --namespace operators --skip-tls
+     ```
+  4. Scale down cluster operator: `kubectl scale --replicas=0 -n operators deployment/observability-operator`
+  5. Run locally: `go run ./cmd/operator/... --zap-devel --zap-log-level=100 --kubeconfig ~/.kube/config 2>&1 | tee tmp/operator.log`
 
 ### Testing
 - `make test-e2e` - Run end-to-end tests
@@ -46,7 +63,7 @@ The Observability Operator is a Kubernetes operator that manages monitoring/aler
 **Key Dependencies**:
 - Uses forked prometheus-operator (`github.com/rhobs/obo-prometheus-operator`) for compatibility
 - Integrates with OpenShift APIs for console UI plugins
-- Built on controller-runtime v0.21.0
+- Built on controller-runtime
 
 ### Deployment Structure
 
@@ -57,7 +74,7 @@ The Observability Operator is a Kubernetes operator that manages monitoring/aler
 
 ## Development Notes
 
-- Requires OLM (Operator Lifecycle Manager) for proper operation
+- Commonly deployed using OLM (Operator Lifecycle Manager), though manual installation is also supported
 - Generate manifests with `make generate` after modifying Go types in `pkg/apis/`
 - Use conventional commits for automatic changelog/release management
 - The operator can run locally while dependencies (prometheus-operator) run in-cluster
