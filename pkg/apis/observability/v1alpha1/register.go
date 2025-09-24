@@ -26,7 +26,7 @@ var (
 )
 
 func addTypes(s *runtime.Scheme) error {
-	s.AddKnownTypes(GroupVersion, &ClusterObservability{}, &ClusterObservabilityList{})
+	s.AddKnownTypes(GroupVersion, &ObservabilityInstaller{}, &ObservabilityInstallerList{})
 	metav1.AddToGroupVersion(s, GroupVersion)
 	return nil
 }

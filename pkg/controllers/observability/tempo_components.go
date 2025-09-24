@@ -18,7 +18,7 @@ const (
 	tenantID   = "1610b0c3-c509-4592-a256-a1871353dbfb"
 )
 
-func tempoStack(instance *obsv1alpha1.ClusterObservability) *tempov1alpha1.TempoStack {
+func tempoStack(instance *obsv1alpha1.ObservabilityInstaller) *tempov1alpha1.TempoStack {
 	tempo := &tempov1alpha1.TempoStack{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "TempoStack",
@@ -88,7 +88,7 @@ type tempoSecrets struct {
 	objectStorageCAConfigMap *corev1.ConfigMap
 }
 
-func tempoStackSecrets(ctx context.Context, k8sClient client.Client, instance obsv1alpha1.ClusterObservability) (*tempoSecrets, error) {
+func tempoStackSecrets(ctx context.Context, k8sClient client.Client, instance obsv1alpha1.ObservabilityInstaller) (*tempoSecrets, error) {
 	var objectStorageCAConfMap *corev1.ConfigMap
 	var objectStorageTLSSecret *corev1.Secret
 

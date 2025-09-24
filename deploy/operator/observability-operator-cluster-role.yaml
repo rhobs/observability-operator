@@ -226,7 +226,7 @@ rules:
 - apiGroups:
   - observability.openshift.io
   resources:
-  - clusterobservabilities
+  - observabilityinstallers
   - uiplugins
   verbs:
   - create
@@ -239,8 +239,8 @@ rules:
 - apiGroups:
   - observability.openshift.io
   resources:
-  - clusterobservabilities/finalizers
-  - clusterobservabilities/status
+  - observabilityinstallers/finalizers
+  - observabilityinstallers/status
   verbs:
   - delete
   - get

@@ -7,36 +7,36 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ClusterObservability defines the desired state of the observability stack.
+// ObservabilityInstaller defines the desired state of the observability stack.
 //
 // +k8s:openapi-gen=true
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:shortName=clobs;clobs
+// +kubebuilder:resource:shortName=obsinstall;obsinst
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="OpenTelemetry",type="string",JSONPath=".status.opentelemetry"
 // +kubebuilder:printcolumn:name="Tempo",type="string",JSONPath=".status.tempo"
-// +operator-sdk:csv:customresourcedefinitions:displayName="Cluster Observability"
+// +operator-sdk:csv:customresourcedefinitions:displayName="Observability Installer"
 // +kubebuilder:metadata:annotations="observability.openshift.io/api-support=TechPreview"
-type ClusterObservability struct {
+type ObservabilityInstaller struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	// Spec defines the desired state of the cluster observability.
-	Spec ClusterObservabilitySpec `json:"spec,omitempty"`
+	// Spec defines the desired state of the observability installer.
+	Spec ObservabilityInstallerSpec `json:"spec,omitempty"`
 
 	// Status of the signal manager.
-	Status ClusterObservabilityStatus `json:"status,omitempty"`
+	Status ObservabilityInstallerStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:resource
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-type ClusterObservabilityList struct {
+type ObservabilityInstallerList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []ClusterObservability `json:"items"`
+	Items           []ObservabilityInstaller `json:"items"`
 }
 
-type ClusterObservabilitySpec struct {
+type ObservabilityInstallerSpec struct {
 	// Capabilities defines the observability capabilities.
 	// Each capability has to be enabled explicitly.
 	// +kubebuilder:validation:Optional
@@ -44,8 +44,8 @@ type ClusterObservabilitySpec struct {
 	Capabilities *CapabilitiesSpec `json:"capabilities,omitempty"`
 }
 
-// ClusterObservabilityStatus defines the observed state of ClusterObservability.
-type ClusterObservabilityStatus struct {
+// ObservabilityInstallerStatus defines the observed state of ObservabilityInstaller.
+type ObservabilityInstallerStatus struct {
 	// OpenTelemetry defines the status of the OpenTelemetry capability.
 	// The value is in the form of instance namespace/name (version)
 	// +optional
