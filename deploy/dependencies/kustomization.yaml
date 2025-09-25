@@ -42,12 +42,12 @@ namePrefix: obo-
     # how to run the operator on all openshift version from 4.9-13. Currently the
     # webhook fails to deploy on 4.10
     # SEE: https://issues.redhat.com/browse/MON-3225 which should provide an actual fix
-patches:
   # first apply TP annotation to all our CRDs
+  # then add SSA annotation to selected CRDs
+patches:
 - path: patches/api-support-techpreview-annotation.yaml
   target:
     kind: CustomResourceDefinition
-  # then add SSA annotation to selected CRDs
 - path: patches/api-support-experimental-annotation.yaml
   target:
     kind: CustomResourceDefinition
