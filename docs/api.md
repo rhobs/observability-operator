@@ -97,6 +97,25 @@ MonitoringStackSpec is the specification for desired Monitoring Stack
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>createClusterRoleBinding</b></td>
+        <td>boolean</td>
+        <td>
+          CreateClusterRoleBinding for a Monitoring Stack Resource
+If a NamespaceSelector is given, the controller can create a
+ClusterRoleBinding for the Prometheus and Alertmanager
+ServiceAccounts. This allows the
+ServiceAccount access to all namespaces, allowing the
+ServiceDiscovery to work across namespaces out of the
+box. However by impersonating this ServiceAccount a user could elevate
+their access in unintended ways.
+To avoid this set CreateClusterRoleBinding to false. Note
+that admins must create the needed namespaced RoleBindings manually
+so that endpoint discovery works as expected.<br/>
+          <br/>
+            <i>Default</i>: true<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>logLevel</b></td>
         <td>enum</td>
         <td>

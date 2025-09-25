@@ -3,8 +3,8 @@ kind: Kustomization
 namespace: observability-operator
 images:
 - name: observability-operator
-  newName: observability-operator
-  newTag: 1.2.0
+  newName: quay.io/jfajersk/observability-operator
+  newTag: 1.2.1
 commonAnnotations:
   package-operator.run/phase: operator
 resources:
