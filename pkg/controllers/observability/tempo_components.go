@@ -66,7 +66,7 @@ func tempoStack(instance *obsv1alpha1.ClusterObservability) *tempov1alpha1.Tempo
 }
 
 func tempoName(instance string) string {
-	return fmt.Sprintf("%s", instance)
+	return instance
 }
 
 func tempoStorageCAConfigMapName(name string) string {

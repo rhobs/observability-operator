@@ -9,7 +9,6 @@ import (
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	monitoringv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
-	obsv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/observability/v1alpha1"
 	persesv1alpha1 "github.com/rhobs/perses-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -18,6 +17,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 
 	rhobsv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
+	obsv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/observability/v1alpha1"
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 )
 
