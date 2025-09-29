@@ -113,6 +113,24 @@ spec:
                     - privateKey
                     type: object
                 type: object
+              createClusterRoleBindings:
+                default: CreateClusterRoleBindings
+                description: |-
+                  CreateClusterRoleBindings for a Monitoring Stack Resource
+                  If a NamespaceSelector is given, the controller can create a
+                  ClusterRoleBinding for the Prometheus and Alertmanager
+                  ServiceAccounts. This allows the
+                  ServiceAccount access to all namespaces, allowing the
+                  ServiceDiscovery to work across namespaces out of the
+                  box. However by impersonating this ServiceAccount a user could elevate
+                  their access in unintended ways.
+                  To avoid this set CreateClusterRoleBindings to NoClusterRoleBindings. Note
+                  that admins must create the needed namespaced RoleBindings manually
+                  so that endpoint discovery works as expected.
+                enum:
+                - CreateClusterRoleBindings
+                - NoClusterRoleBindings
+                type: string
               logLevel:
                 default: info
                 description: Loglevel set log levels of configured components
