@@ -42,7 +42,7 @@ metadata:
     categories: Monitoring
     certified: "false"
     containerImage: observability-operator:1.2.0
-    createdAt: "2025-09-12T10:59:26Z"
+    createdAt: "2025-09-29T09:26:51Z"
     description: A Go based Kubernetes operator to setup and manage highly available
       Monitoring Stack using Prometheus, Alertmanager and Thanos Querier.
     operatorframework.io/cluster-monitoring: "true"
@@ -75,6 +75,9 @@ spec:
       kind: Alertmanager
       name: alertmanagers.monitoring.rhobs
       version: v1
+    - kind: ClusterObservability
+      name: clusterobservabilities.observability.openshift.io
+      version: v1alpha1
     - description: MonitoringStack is the Schema for the monitoringstacks API
       displayName: MonitoringStack
       kind: MonitoringStack
@@ -518,24 +521,7 @@ spec:
         - apiGroups:
           - observability.openshift.io
           resources:
-          - clusterobservability
-          verbs:
-          - get
-          - list
-          - watch
-        - apiGroups:
-          - observability.openshift.io
-          resources:
-          - clusterobservability/finalizers
-          - clusterobservability/status
-          - uiplugins/finalizers
-          - uiplugins/status
-          verbs:
-          - get
-          - update
-        - apiGroups:
-          - observability.openshift.io
-          resources:
+          - clusterobservabilities
           - uiplugins
           verbs:
           - create
@@ -546,6 +532,44 @@ spec:
           - update
           - watch
         - apiGroups:
+          - observability.openshift.io
+          resources:
+          - clusterobservabilities/finalizers
+          - clusterobservabilities/status
+          verbs:
+          - delete
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - observability.openshift.io
+          resources:
+          - uiplugins/finalizers
+          - uiplugins/status
+          verbs:
+          - get
+          - update
+        - apiGroups:
+          - opentelemetry.io
+          resources:
+          - opentelemetrycollectors
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - opentelemetry.io
+          resources:
+          - opentelemetrycollectors/status
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
           - operator.openshift.io
           resources:
           - consoles
@@ -553,6 +577,19 @@ spec:
           - get
           - list
           - patch
+          - watch
+        - apiGroups:
+          - operators.coreos.com
+          resources:
+          - clusterserviceversions
+          - subscriptions
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
           - watch
         - apiGroups:
           - perses.dev
@@ -633,11 +670,38 @@ spec:
           - watch
         - apiGroups:
           - tempo.grafana.com
+          resourceNames:
+          - traces
+          resources:
+          - application
+          verbs:
+          - create
+        - apiGroups:
+          - tempo.grafana.com
           resources:
           - tempomonolithics
-          - tempostacks
           verbs:
           - list
+        - apiGroups:
+          - tempo.grafana.com
+          resources:
+          - tempostacks
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - tempo.grafana.com
+          resources:
+          - tempostacks/status
+          verbs:
+          - get
+          - list
+          - watch
         serviceAccountName: observability-operator-sa
       - rules:
         - apiGroups:

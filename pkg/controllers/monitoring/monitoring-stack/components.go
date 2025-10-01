@@ -44,15 +44,13 @@ func stackComponentCleanup(ms *stack.MonitoringStack) []reconciler.Reconciler {
 
 func stackComponentReconcilers(
 	ms *stack.MonitoringStack,
-	instanceSelectorKey string,
-	instanceSelectorValue string,
 	thanos ThanosConfiguration,
 	prometheus PrometheusConfiguration,
 	alertmanager AlertmanagerConfiguration,
 ) []reconciler.Reconciler {
 	prometheusName := ms.Name + "-prometheus"
 	alertmanagerName := ms.Name + "-alertmanager"
-	additionalScrapeConfigsSecretName := ms.Name + "-prometheus-additional-scrape-configs"
+	additionalScrapeConfigsSecretName := ms.Name + "-self-scrape"
 	hasNsSelector := ms.Spec.NamespaceSelector != nil
 	deployAlertmanager := !ms.Spec.AlertmanagerConfig.Disabled
 
@@ -63,11 +61,10 @@ func stackComponentReconcilers(
 		reconciler.NewUpdater(newAdditionalScrapeConfigsSecret(ms, additionalScrapeConfigsSecretName), ms),
 		reconciler.NewUpdater(newPrometheus(ms, prometheusName,
 			additionalScrapeConfigsSecretName,
-			instanceSelectorKey, instanceSelectorValue,
 			thanos, prometheus), ms),
-		reconciler.NewUpdater(newPrometheusService(ms, instanceSelectorKey, instanceSelectorValue), ms),
-		reconciler.NewUpdater(newThanosSidecarService(ms, instanceSelectorKey, instanceSelectorValue), ms),
-		reconciler.NewOptionalUpdater(newPrometheusPDB(ms, instanceSelectorKey, instanceSelectorValue), ms,
+		reconciler.NewUpdater(newPrometheusService(ms), ms),
+		reconciler.NewUpdater(newThanosSidecarService(ms), ms),
+		reconciler.NewOptionalUpdater(newPrometheusPDB(ms), ms,
 			*ms.Spec.PrometheusConfig.Replicas > 1),
 
 		// Alertmanager Deployment
@@ -82,9 +79,9 @@ func stackComponentReconcilers(
 		reconciler.NewOptionalUpdater(newClusterRoleBinding(ms, alertmanagerName), ms, deployAlertmanager && hasNsSelector),
 		reconciler.NewOptionalUpdater(newRoleBindingForClusterRole(ms, alertmanagerName), ms, deployAlertmanager && !hasNsSelector),
 
-		reconciler.NewOptionalUpdater(newAlertmanager(ms, alertmanagerName, instanceSelectorKey, instanceSelectorValue, alertmanager), ms, deployAlertmanager),
-		reconciler.NewOptionalUpdater(newAlertmanagerService(ms, instanceSelectorKey, instanceSelectorValue), ms, deployAlertmanager),
-		reconciler.NewOptionalUpdater(newAlertmanagerPDB(ms, instanceSelectorKey, instanceSelectorValue), ms, deployAlertmanager),
+		reconciler.NewOptionalUpdater(newAlertmanager(ms, alertmanagerName, alertmanager), ms, deployAlertmanager),
+		reconciler.NewOptionalUpdater(newAlertmanagerService(ms), ms, deployAlertmanager),
+		reconciler.NewOptionalUpdater(newAlertmanagerPDB(ms), ms, deployAlertmanager),
 	}
 }
 
@@ -131,8 +128,6 @@ func newPrometheus(
 	ms *stack.MonitoringStack,
 	rbacResourceName string,
 	additionalScrapeConfigsSecretName string,
-	instanceSelectorKey string,
-	instanceSelectorValue string,
 	thanosCfg ThanosConfiguration,
 	prometheusCfg PrometheusConfiguration,
 ) *monv1.Prometheus {
@@ -148,7 +143,6 @@ func newPrometheus(
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ms.Name,
 			Namespace: ms.Namespace,
-			Labels:    objectLabels(ms.Name, ms.Name, instanceSelectorKey, instanceSelectorValue),
 		},
 
 		Spec: monv1.PrometheusSpec{
@@ -352,7 +346,7 @@ func newClusterRoleBinding(ms *stack.MonitoringStack, rbacResourceName string) *
 	return roleBinding
 }
 
-func newPrometheusService(ms *stack.MonitoringStack, instanceSelectorKey string, instanceSelectorValue string) *corev1.Service {
+func newPrometheusService(ms *stack.MonitoringStack) *corev1.Service {
 	name := ms.Name + "-prometheus"
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
@@ -362,7 +356,6 @@ func newPrometheusService(ms *stack.MonitoringStack, instanceSelectorKey string,
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: ms.Namespace,
-			Labels:    objectLabels(name, ms.Name, instanceSelectorKey, instanceSelectorValue),
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: podLabels("prometheus", ms.Name),
@@ -377,7 +370,7 @@ func newPrometheusService(ms *stack.MonitoringStack, instanceSelectorKey string,
 	}
 }
 
-func newThanosSidecarService(ms *stack.MonitoringStack, instanceSelectorKey string, instanceSelectorValue string) *corev1.Service {
+func newThanosSidecarService(ms *stack.MonitoringStack) *corev1.Service {
 	name := ms.Name + "-thanos-sidecar"
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
@@ -387,7 +380,6 @@ func newThanosSidecarService(ms *stack.MonitoringStack, instanceSelectorKey stri
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: ms.Namespace,
-			Labels:    objectLabels(name, ms.Name, instanceSelectorKey, instanceSelectorValue),
 		},
 		Spec: corev1.ServiceSpec{
 			// NOTE: Setting this to "None" makes a "headless service" (no virtual
@@ -545,7 +537,7 @@ func newAdditionalScrapeConfigsSecret(ms *stack.MonitoringStack, name string) *c
 	}
 }
 
-func newPrometheusPDB(ms *stack.MonitoringStack, instanceSelectorKey string, instanceSelectorValue string) *policyv1.PodDisruptionBudget {
+func newPrometheusPDB(ms *stack.MonitoringStack) *policyv1.PodDisruptionBudget {
 	name := ms.Name + "-prometheus"
 	selector := podLabels("prometheus", ms.Name)
 
@@ -557,7 +549,6 @@ func newPrometheusPDB(ms *stack.MonitoringStack, instanceSelectorKey string, ins
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: ms.Namespace,
-			Labels:    objectLabels(name, ms.Name, instanceSelectorKey, instanceSelectorValue),
 		},
 		Spec: policyv1.PodDisruptionBudgetSpec{
 			MinAvailable: &intstr.IntOrString{
@@ -568,14 +559,6 @@ func newPrometheusPDB(ms *stack.MonitoringStack, instanceSelectorKey string, ins
 				MatchLabels: selector,
 			},
 		},
-	}
-}
-
-func objectLabels(name string, msName string, instanceSelectorKey string, instanceSelectorValue string) map[string]string {
-	return map[string]string{
-		instanceSelectorKey:         instanceSelectorValue,
-		"app.kubernetes.io/name":    name,
-		"app.kubernetes.io/part-of": msName,
 	}
 }
 

@@ -8,6 +8,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	"github.com/rhobs/observability-operator/pkg/controllers/util"
 )
 
 const (
@@ -52,7 +54,7 @@ func (r Updater) Reconcile(ctx context.Context, c client.Client, scheme *runtime
 func NewUpdater(resource client.Object, owner metav1.Object) Updater {
 	return Updater{
 		resourceOwner: owner,
-		resource:      resource,
+		resource:      util.AddCommonLabels(resource, owner.GetName()),
 	}
 }
 
@@ -78,8 +80,8 @@ type Merger struct {
 	resource client.Object
 }
 
-func NewMerger(r client.Object) Merger {
-	return Merger{resource: r}
+func NewMerger(r client.Object, owner string) Merger {
+	return Merger{resource: util.AddCommonLabels(r, owner)}
 }
 
 func (r Merger) Reconcile(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {

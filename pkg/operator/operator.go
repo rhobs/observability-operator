@@ -10,29 +10,30 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apiserver/pkg/server/dynamiccertificates"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
+	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
+	obsv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/observability/v1alpha1"
+	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 	stackctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/monitoring-stack"
 	tqctrl "github.com/rhobs/observability-operator/pkg/controllers/monitoring/thanos-querier"
+	obsctrl "github.com/rhobs/observability-operator/pkg/controllers/observability"
 	opctrl "github.com/rhobs/observability-operator/pkg/controllers/operator"
 	uictrl "github.com/rhobs/observability-operator/pkg/controllers/uiplugin"
+	ctrlutil "github.com/rhobs/observability-operator/pkg/controllers/util"
 )
 
 const (
-	// NOTE: The instance selector label is hardcoded in static assets.
-	// Any change to that must be reflected here as well
-	instanceSelector = "app.kubernetes.io/managed-by=observability-operator"
-
-	ObservabilityOperatorName = "observability-operator"
-
 	// The mount path for the serving certificate seret is hardcoded in the
 	// static assets.
 	tlsMountPath = "/etc/tls/private"
@@ -55,15 +56,22 @@ type FeatureGates struct {
 }
 
 type OperatorConfiguration struct {
-	Namespace       string
-	MetricsAddr     string
-	HealthProbeAddr string
-	Prometheus      stackctrl.PrometheusConfiguration
-	Alertmanager    stackctrl.AlertmanagerConfiguration
-	ThanosSidecar   stackctrl.ThanosConfiguration
-	ThanosQuerier   tqctrl.ThanosConfiguration
-	UIPlugins       uictrl.UIPluginsConfiguration
-	FeatureGates    FeatureGates
+	Namespace            string
+	MetricsAddr          string
+	HealthProbeAddr      string
+	Prometheus           stackctrl.PrometheusConfiguration
+	Alertmanager         stackctrl.AlertmanagerConfiguration
+	ThanosSidecar        stackctrl.ThanosConfiguration
+	ThanosQuerier        tqctrl.ThanosConfiguration
+	UIPlugins            uictrl.UIPluginsConfiguration
+	FeatureGates         FeatureGates
+	ClusterObservability ClusterObservabilityConfiguration
+}
+
+type ClusterObservabilityConfiguration struct {
+	COONamespace     string
+	OpenTelemetryCSV string
+	TempoCSV         string
 }
 
 func WithNamespace(ns string) func(*OperatorConfiguration) {
@@ -127,6 +135,12 @@ func NewOperatorConfiguration(opts ...func(*OperatorConfiguration)) *OperatorCon
 		o(cfg)
 	}
 	return cfg
+}
+
+func WithClusterObservability(configuration ClusterObservabilityConfiguration) func(*OperatorConfiguration) {
+	return func(oc *OperatorConfiguration) {
+		oc.ClusterObservability = configuration
+	}
 }
 
 func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
@@ -229,16 +243,51 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 			Metrics:                metricsOpts,
 			HealthProbeBindAddress: cfg.HealthProbeAddr,
 			PprofBindAddress:       "127.0.0.1:8083",
+			Cache: cache.Options{
+				// All controller created resources carry the label
+				// defined below. This is added in the reconcilers.
+				DefaultLabelSelector: labels.SelectorFromSet(map[string]string{ctrlutil.ResourceLabel: ctrlutil.OpName}),
+				ByObject: map[client.Object]cache.ByObject{
+					// We define exceptions for the cache and
+					// thus from the default label selector.
+					// Secrets are watched by some controllers
+					// that accept TLS artifacts in a secret.
+					&v1.Secret{}: cache.ByObject{
+						Label: labels.Everything(),
+					},
+					// The user-facing CRDs need to be
+					// cached in absence of any labels.
+					&stack.MonitoringStack{}: cache.ByObject{
+						Label: labels.Everything(),
+					},
+					&stack.ThanosQuerier{}: cache.ByObject{
+						Label: labels.Everything(),
+					},
+					&uiv1alpha1.UIPlugin{}: cache.ByObject{
+						Label: labels.Everything(),
+					},
+					&obsv1alpha1.ClusterObservability{}: cache.ByObject{
+						Label: labels.Everything(),
+					},
+					// The operator controller watches the
+					// service created by the olm bundle, so
+					// it can create a ServiceMonitor that
+					// can be scraped by the OCP in-cluster
+					// stack
+					&v1.Service{}: cache.ByObject{
+						Label: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": ctrlutil.OpName}),
+					},
+				},
+			},
 		})
 	if err != nil {
 		return nil, fmt.Errorf("unable to create manager: %w", err)
 	}
 
 	if err := stackctrl.RegisterWithManager(mgr, stackctrl.Options{
-		InstanceSelector: instanceSelector,
-		Prometheus:       cfg.Prometheus,
-		Alertmanager:     cfg.Alertmanager,
-		Thanos:           cfg.ThanosSidecar,
+		Prometheus:   cfg.Prometheus,
+		Alertmanager: cfg.Alertmanager,
+		Thanos:       cfg.ThanosSidecar,
 	}); err != nil {
 		return nil, fmt.Errorf("unable to register monitoring stack controller: %w", err)
 	}
@@ -263,6 +312,29 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 	} else {
 		setupLog := ctrl.Log.WithName("setup")
 		setupLog.Info("OpenShift feature gate is disabled, Operator controller is not enabled")
+	}
+
+	if cfg.FeatureGates.OpenShift.Enabled {
+		if err := obsctrl.RegisterWithManager(mgr, obsctrl.Options{
+			COONamespace: cfg.ClusterObservability.COONamespace,
+			OpenTelemetryOperator: obsctrl.OperatorInstallConfig{
+				Namespace:   cfg.ClusterObservability.COONamespace,
+				PackageName: "opentelemetry-product",
+				StartingCSV: cfg.ClusterObservability.OpenTelemetryCSV,
+				Channel:     "stable",
+			},
+			TempoOperator: obsctrl.OperatorInstallConfig{
+				Namespace:   cfg.ClusterObservability.COONamespace,
+				PackageName: "tempo-product",
+				StartingCSV: cfg.ClusterObservability.TempoCSV,
+				Channel:     "stable",
+			},
+		}); err != nil {
+			return nil, fmt.Errorf("unable to register cluster observability controller: %w", err)
+		}
+	} else {
+		setupLog := ctrl.Log.WithName("setup")
+		setupLog.Info("OpenShift feature gate is disabled, cluster observability controller is not enabled")
 	}
 
 	if err := mgr.AddHealthzCheck("health probe", healthz.Ping); err != nil {

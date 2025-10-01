@@ -114,7 +114,7 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 	if pluginInfo.HealthAnalyzerImage != "" {
 		serviceAccountName := plugin.Name + serviceAccountSuffix
 		components = append(components, reconciler.NewUpdater(newClusterRoleBinding(namespace, serviceAccountName, "cluster-monitoring-view", "cluster-monitoring-view"), plugin))
-		components = append(components, reconciler.NewUpdater(newClusterRoleBinding(namespace, serviceAccountName, "system:auth-delegator", serviceAccountName+":system:auth-delegator"), plugin))
+		components = append(components, reconciler.NewUpdater(newClusterRoleBinding(namespace, serviceAccountName, "system:auth-delegator", serviceAccountName+"-system-auth-delegator"), plugin))
 		components = append(components, reconciler.NewUpdater(newHealthAnalyzerPrometheusRole(namespace), plugin))
 		components = append(components, reconciler.NewUpdater(newHealthAnalyzerPrometheusRoleBinding(namespace), plugin))
 		components = append(components, reconciler.NewUpdater(newHealthAnalyzerService(namespace), plugin))
@@ -125,9 +125,9 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 	if pluginInfo.PersesImage != "" {
 		persesServiceAccountName := "perses" + serviceAccountSuffix
 		components = append(components, reconciler.NewUpdater(newServiceAccount("perses", namespace), plugin))
-		components = append(components, reconciler.NewUpdater(newClusterRoleBinding(namespace, persesServiceAccountName, "system:auth-delegator", persesServiceAccountName+":system:auth-delegator"), plugin))
+		components = append(components, reconciler.NewUpdater(newClusterRoleBinding(namespace, persesServiceAccountName, "system:auth-delegator", persesServiceAccountName+"-system-auth-delegator"), plugin))
 		components = append(components, reconciler.NewUpdater(newPersesClusterRole(), plugin))
-		components = append(components, reconciler.NewUpdater(newClusterRoleBinding(namespace, persesServiceAccountName, "perses-cr", persesServiceAccountName+":perses-cr"), plugin))
+		components = append(components, reconciler.NewUpdater(newClusterRoleBinding(namespace, persesServiceAccountName, "perses-cr", persesServiceAccountName+"-perses-cr"), plugin))
 		components = append(components, reconciler.NewUpdater(newPerses(namespace, pluginInfo.PersesImage), plugin))
 		components = append(components, reconciler.NewUpdater(newAcceleratorsDatasource(namespace), plugin))
 		components = append(components, reconciler.NewUpdater(newAcceleratorsDashboard(namespace), plugin))

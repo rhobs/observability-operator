@@ -88,6 +88,8 @@ func main() {
 		metricsAddr      string
 		healthProbeAddr  string
 		openShiftEnabled bool
+		otelCSVName      string
+		tempoCSVName     string
 
 		setupLog = ctrl.Log.WithName("setup")
 	)
@@ -98,6 +100,8 @@ func main() {
 	flag.StringVar(&healthProbeAddr, "health-probe-bind-address", ":8081", "The address the health probe endpoint binds to.")
 	flag.Var(images, "images", fmt.Sprintf("Full images refs to use for containers managed by the operator. E.g thanos=quay.io/thanos/thanos:v0.33.0. Images used are %v", imagesUsed()))
 	flag.BoolVar(&openShiftEnabled, "openshift.enabled", false, "Enable OpenShift specific features such as Console Plugins.")
+	flag.StringVar(&otelCSVName, "opentelemetry-csv", "", "OpenTelemetry Operator starting CSV name. This can be used to install a specific OpenTelemetry Operator version. Empty string means the latest version will be installed.")
+	flag.StringVar(&tempoCSVName, "tempo-csv", "", "Tempo Operator starting CSV name. This can be used to install a specific Tempo Operator version. Empty string means the latest version will be installed.")
 
 	opts := zap.Options{
 		Development: true,
@@ -134,6 +138,11 @@ func main() {
 			operator.WithThanosSidecarImage(imgMap["thanos"]),
 			operator.WithThanosQuerierImage(imgMap["thanos"]),
 			operator.WithUIPluginImages(imgMap),
+			operator.WithClusterObservability(operator.ClusterObservabilityConfiguration{
+				COONamespace:     os.Getenv("NAMESPACE"),
+				OpenTelemetryCSV: otelCSVName,
+				TempoCSV:         tempoCSVName,
+			}),
 			operator.WithFeatureGates(operator.FeatureGates{
 				OpenShift: operator.OpenShiftFeatureGates{
 					Enabled: openShiftEnabled,

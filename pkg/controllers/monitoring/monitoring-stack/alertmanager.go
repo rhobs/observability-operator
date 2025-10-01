@@ -15,8 +15,6 @@ import (
 func newAlertmanager(
 	ms *stack.MonitoringStack,
 	rbacResourceName string,
-	instanceSelectorKey string,
-	instanceSelectorValue string,
 	alertmanagerCfg AlertmanagerConfiguration,
 ) *monv1.Alertmanager {
 	resourceSelector := ms.Spec.ResourceSelector
@@ -33,7 +31,6 @@ func newAlertmanager(
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ms.Name,
 			Namespace: ms.Namespace,
-			Labels:    objectLabels(ms.Name, ms.Name, instanceSelectorKey, instanceSelectorValue),
 		},
 		Spec: monv1.AlertmanagerSpec{
 			PodMetadata: &monv1.EmbeddedObjectMetadata{
@@ -106,7 +103,7 @@ func newAlertmanager(
 	return am
 }
 
-func newAlertmanagerService(ms *stack.MonitoringStack, instanceSelectorKey string, instanceSelectorValue string) *corev1.Service {
+func newAlertmanagerService(ms *stack.MonitoringStack) *corev1.Service {
 	name := ms.Name + "-alertmanager"
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
@@ -116,7 +113,6 @@ func newAlertmanagerService(ms *stack.MonitoringStack, instanceSelectorKey strin
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: ms.Namespace,
-			Labels:    objectLabels(name, ms.Name, instanceSelectorKey, instanceSelectorValue),
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: podLabels("alertmanager", ms.Name),
@@ -131,7 +127,7 @@ func newAlertmanagerService(ms *stack.MonitoringStack, instanceSelectorKey strin
 	}
 }
 
-func newAlertmanagerPDB(ms *stack.MonitoringStack, instanceSelectorKey string, instanceSelectorValue string) *policyv1.PodDisruptionBudget {
+func newAlertmanagerPDB(ms *stack.MonitoringStack) *policyv1.PodDisruptionBudget {
 	name := ms.Name + "-alertmanager"
 	selector := podLabels("alertmanager", ms.Name)
 
@@ -143,7 +139,6 @@ func newAlertmanagerPDB(ms *stack.MonitoringStack, instanceSelectorKey string, i
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: ms.Namespace,
-			Labels:    objectLabels(name, ms.Name, instanceSelectorKey, instanceSelectorValue),
 		},
 		Spec: policyv1.PodDisruptionBudgetSpec{
 			MinAvailable: &intstr.IntOrString{

@@ -52,6 +52,23 @@ const (
 	Error LogLevel = "error"
 )
 
+// +kubebuilder:validation:Enum=CreateClusterRoleBindings;NoClusterRoleBindings
+type ClusterRoleBindingPolicy string
+
+const (
+	// CreateClusterRoleBindings instructs the MonitoringStack to create the
+	// default ClusterRoleBindings if a NamespaceSelector is present. Note that
+	// this allows user who can access the Prometheus or Alertmanager
+	// ServiceAccounts to possibly elevate their priviledges.
+	CreateClusterRoleBindings ClusterRoleBindingPolicy = "CreateClusterRoleBindings"
+
+	// NoClusterRoleBindings instructs the MonitoringStack controller to _not_
+	// create any ClusterRoleBindings. If the MonitoringStack is configured with
+	// a NamespaceSelector, admin users will have to create the appropriate
+	// RoleBindings to allow access to the desired namespaces.
+	NoClusterRoleBindings ClusterRoleBindingPolicy = "NoClusterRoleBindings"
+)
+
 // MonitoringStackSpec is the specification for desired Monitoring Stack
 type MonitoringStackSpec struct {
 	// +optional
@@ -70,6 +87,21 @@ type MonitoringStackSpec struct {
 	// To monitor resources in the namespace where Monitoring Stack was created in, set to null. E.g. namespaceSelector:.
 	// +optional
 	NamespaceSelector *metav1.LabelSelector `json:"namespaceSelector,omitempty"`
+
+	// CreateClusterRoleBindings for a Monitoring Stack Resource
+	// If a NamespaceSelector is given, the controller can create a
+	// ClusterRoleBinding for the Prometheus and Alertmanager
+	// ServiceAccounts. This allows the
+	// ServiceAccount access to all namespaces, allowing the
+	// ServiceDiscovery to work across namespaces out of the
+	// box. However by impersonating this ServiceAccount a user could elevate
+	// their access in unintended ways.
+	// To avoid this set CreateClusterRoleBindings to NoClusterRoleBindings. Note
+	// that admins must create the needed namespaced RoleBindings manually
+	// so that endpoint discovery works as expected.
+	// +kubebuilder:default="CreateClusterRoleBindings"
+	// +optional
+	CreateClusterRoleBindings ClusterRoleBindingPolicy `json:"createClusterRoleBindings,omitempty"`
 
 	// Time duration to retain data for. Default is '120h',
 	// and must match the regular expression `[0-9]+(ms|s|m|h|d|w|y)` (milliseconds seconds minutes hours days weeks years).

@@ -38,6 +38,7 @@ type resourceManager struct {
 	controller       controller.Controller
 	pluginConf       UIPluginsConfiguration
 	clusterVersion   string
+	apiReader        client.Reader
 }
 
 type UIPluginsConfiguration struct {
@@ -129,6 +130,7 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 		logger:           logger,
 		pluginConf:       opts.PluginsConf,
 		clusterVersion:   clusterVersion.Status.Desired.Version,
+		apiReader:        mgr.GetAPIReader(),
 	}
 
 	generationChanged := builder.WithPredicates(predicate.GenerationChangedPredicate{})
@@ -337,7 +339,7 @@ func (rm resourceManager) updateStatus(ctx context.Context, req ctrl.Request, pl
 
 func (rm resourceManager) registerPluginWithConsole(ctx context.Context, pluginInfo *UIPluginInfo) error {
 	cluster := &operatorv1.Console{}
-	if err := rm.k8sClient.Get(ctx, client.ObjectKey{Name: "cluster"}, cluster); err != nil {
+	if err := rm.apiReader.Get(ctx, client.ObjectKey{Name: "cluster"}, cluster); err != nil {
 		return err
 	}
 
@@ -350,7 +352,7 @@ func (rm resourceManager) registerPluginWithConsole(ctx context.Context, pluginI
 	// Register the plugin with the console
 	cluster.Spec.Plugins = clusterPlugins
 
-	if err := reconciler.NewMerger(cluster).Reconcile(ctx, rm.k8sClient, rm.scheme); err != nil {
+	if err := reconciler.NewMerger(cluster, pluginInfo.ConsoleName).Reconcile(ctx, rm.k8sClient, rm.scheme); err != nil {
 		return err
 	}
 
@@ -359,7 +361,7 @@ func (rm resourceManager) registerPluginWithConsole(ctx context.Context, pluginI
 
 func (rm resourceManager) deregisterPluginFromConsole(ctx context.Context, pluginConsoleName string) error {
 	cluster := &operatorv1.Console{}
-	if err := rm.k8sClient.Get(ctx, client.ObjectKey{Name: "cluster"}, cluster); err != nil {
+	if err := rm.apiReader.Get(ctx, client.ObjectKey{Name: "cluster"}, cluster); err != nil {
 		return err
 	}
 
@@ -374,7 +376,7 @@ func (rm resourceManager) deregisterPluginFromConsole(ctx context.Context, plugi
 	// Deregister the plugin from the console
 	cluster.Spec.Plugins = clusterPlugins
 
-	if err := reconciler.NewMerger(cluster).Reconcile(ctx, rm.k8sClient, rm.scheme); err != nil {
+	if err := reconciler.NewMerger(cluster, pluginConsoleName).Reconcile(ctx, rm.k8sClient, rm.scheme); err != nil {
 		return err
 	}
 
