@@ -10,6 +10,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/go-logr/logr"
 	osv1 "github.com/openshift/api/console/v1"
 	osv1alpha1 "github.com/openshift/api/console/v1alpha1"
 	"golang.org/x/mod/semver"
@@ -62,7 +63,7 @@ func isVersionAheadOrEqual(currentVersion, version string) bool {
 	return semver.Compare(currentVersion, canonicalMinVersion) >= 0
 }
 
-func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPluginInfo, clusterVersion string) []reconciler.Reconciler {
+func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPluginInfo, clusterVersion string, logger logr.Logger) []reconciler.Reconciler {
 	namespace := pluginInfo.ResourceNamespace
 
 	components := []reconciler.Reconciler{
@@ -130,6 +131,13 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 		components = append(components, reconciler.NewUpdater(newPerses(namespace, pluginInfo.PersesImage), plugin))
 		components = append(components, reconciler.NewUpdater(newAcceleratorsDatasource(namespace), plugin))
 		components = append(components, reconciler.NewUpdater(newAcceleratorsDashboard(namespace), plugin))
+
+		apmDashboard, err := newAPMDashboard(namespace)
+		if err != nil {
+			logger.Error(err, "Cannot build APM dashboard")
+		} else {
+			components = append(components, reconciler.NewUpdater(apmDashboard, plugin))
+		}
 	}
 	return components
 }

@@ -3,7 +3,7 @@ module github.com/rhobs/observability-operator
 go 1.24.4
 
 require (
-	github.com/go-jose/go-jose/v4 v4.0.5 // indirect
+	github.com/go-jose/go-jose/v4 v4.1.0 // indirect
 	github.com/go-logr/logr v1.4.3
 	github.com/goccy/go-yaml v1.17.1
 	github.com/google/go-cmp v0.7.0
@@ -34,6 +34,10 @@ require (
 replace github.com/openshift/api => github.com/openshift/api v0.0.0-20240404200104-96ed2d49b255
 
 require (
+	github.com/perses/perses v0.51.1
+	github.com/perses/plugins/prometheus v0.52.1
+	github.com/perses/plugins/table v0.0.0-20250709083656-34e29fed0083
+	github.com/perses/plugins/timeserieschart v0.9.1
 	github.com/rhobs/observability-operator/pkg/apis v0.0.0-20250917135531-2aa32846c059
 	github.com/rhobs/perses v0.0.0-20250612171017-5d7686af9ae4
 	github.com/rhobs/perses-operator v0.1.10-0.20250612173146-78eb619430df
