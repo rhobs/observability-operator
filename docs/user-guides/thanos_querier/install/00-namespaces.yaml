@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: project-a
+  labels:
+    app: example
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: project-b
+  labels:
+    app: example
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: project-c
+  labels:
+    app: example

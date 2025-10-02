@@ -1,0 +1,18 @@
+apiVersion: v1
+data:
+  dashboard-datasource.yaml: |-
+    kind: "Datasource"
+    metadata:
+      name: "example-prometheus-datasource"
+      project: "openshift-config-managed"
+    spec:
+      plugin:
+        kind: "PrometheusDatasource"
+        spec:
+          direct_url: "http://thanos-querier-example.project-c.svc:10902/"
+kind: ConfigMap
+metadata:
+  labels:
+    console.openshift.io/dashboard-datasource: "true"
+  name: example-prometheus-datasource
+  namespace: openshift-config-managed
