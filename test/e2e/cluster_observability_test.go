@@ -3,7 +3,6 @@ package e2e
 import (
 	"context"
 	_ "embed"
-	"fmt"
 	"regexp"
 	"strings"
 	"testing"
@@ -155,14 +154,17 @@ func testClusterObservabilityTracing(t *testing.T) {
 		if apierrors.IsNotFound(err) {
 			return false, nil
 		}
+
+		t.Logf("Tempo status: %s\n", instance.Status.Tempo)
 		r, _ := regexp.Compile(`tracing-observability/coo \([0-9]+.*\)`)
-		fmt.Printf("Tempo status: %s\n", instance.Status.Tempo)
 		if r.MatchString(instance.Status.Tempo) {
 			return true, nil
 		}
+
 		return false, nil
 	})
 	require.NoError(t, err)
+
 	// Wait for collector to be ready
 	err = wait.PollUntilContextTimeout(ctx, 1*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
 		var instance obsv1alpha1.ClusterObservability
@@ -170,11 +172,13 @@ func testClusterObservabilityTracing(t *testing.T) {
 		if apierrors.IsNotFound(err) {
 			return false, nil
 		}
+
+		t.Logf("OTEL status: %s\n", instance.Status.OpenTelemetry)
 		r, _ := regexp.Compile(`tracing-observability/coo \([0-9]+.*\)`)
-		fmt.Printf("OTEL status: %s\n", instance.Status.OpenTelemetry)
 		if r.MatchString(instance.Status.OpenTelemetry) {
 			return true, nil
 		}
+
 		return false, nil
 	})
 	require.NoError(t, err)
@@ -213,11 +217,15 @@ func testClusterObservabilityTracing(t *testing.T) {
 		var job batchv1.Job
 		err := f.K8sClient.Get(ctx, types.NamespacedName{Name: "generate-traces-grpc", Namespace: operandNamespace.Name}, &job)
 		if apierrors.IsNotFound(err) {
+			t.Logf("trace generation job not found")
 			return false, nil
 		}
+
 		if job.Status.Succeeded > 0 {
 			return true, nil
 		}
+
+		t.Logf("trace generation job didn't succeed yet")
 		return false, nil
 	})
 	require.NoError(t, err)
@@ -246,11 +254,15 @@ func testClusterObservabilityTracing(t *testing.T) {
 		var job batchv1.Job
 		err := f.K8sClient.Get(ctx, types.NamespacedName{Name: "verify-traces-traceql-grpc", Namespace: operandNamespace.Name}, &job)
 		if apierrors.IsNotFound(err) {
+			t.Logf("trace verification job not found")
 			return false, nil
 		}
+
 		if job.Status.Succeeded > 0 {
 			return true, nil
 		}
+
+		t.Logf("trace verification job didn't succeed yet")
 		return false, nil
 	})
 	require.NoError(t, err)
@@ -266,7 +278,8 @@ func testClusterObservabilityTracing(t *testing.T) {
 		if apierrors.IsNotFound(err) {
 			return true, nil
 		}
-		return false, err
+
+		return false, nil
 	})
 	require.NoError(t, err)
 }
