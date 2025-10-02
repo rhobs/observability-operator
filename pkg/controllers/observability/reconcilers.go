@@ -50,11 +50,11 @@ func (s *operatorsStatus) getCSVByName(operatorName string) *olmv1alpha1.Cluster
 	return nil
 }
 
-// getReconcilers returns a list of reconcilers for the ClusterObservability instance.
+// getReconcilers returns a list of reconcilers for the ObservabilityInstaller instance.
 // The subByName is used to check if the operators are already installed, if not, they will be installed.
 // The csvByName is used to uninstall the operators, the name of the CSV contains the version therefore it must be retrieved from the cluster.
 // The CSV is not deleted when the subscription is deleted, so we need to delete it explicitly.
-func getReconcilers(ctx context.Context, k8sClient client.Client, instance *obsv1alpha1.ClusterObservability, opts Options, operatorsStatus operatorsStatus) ([]reconciler.Reconciler, error) {
+func getReconcilers(ctx context.Context, k8sClient client.Client, instance *obsv1alpha1.ObservabilityInstaller, opts Options, operatorsStatus operatorsStatus) ([]reconciler.Reconciler, error) {
 	var reconcilers []reconciler.Reconciler
 	//var otelOperator client.Object
 	//var tempoOperator client.Object

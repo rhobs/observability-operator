@@ -28,7 +28,7 @@ func TestGetReconcilers(t *testing.T) {
 
 	tests := []struct {
 		name                   string
-		instance               *obsv1alpha1.ClusterObservability
+		instance               *obsv1alpha1.ObservabilityInstaller
 		mockClient             func() *MockClient
 		installedSubscriptions []olmv1alpha1.Subscription
 	}{
@@ -46,12 +46,12 @@ func TestGetReconcilers(t *testing.T) {
 				mockClient.On("Patch", context.Background(), mock.IsType(&uiv1alpha1.UIPlugin{}), mock.Anything, mock.Anything).Return(nil)
 				return mockClient
 			},
-			instance: &obsv1alpha1.ClusterObservability{
+			instance: &obsv1alpha1.ObservabilityInstaller{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "test-namespace",
 				},
-				Spec: obsv1alpha1.ClusterObservabilitySpec{
+				Spec: obsv1alpha1.ObservabilityInstallerSpec{
 					Capabilities: &obsv1alpha1.CapabilitiesSpec{
 						Tracing: obsv1alpha1.TracingSpec{
 							CommonCapabilitiesSpec: obsv1alpha1.CommonCapabilitiesSpec{
@@ -80,12 +80,12 @@ func TestGetReconcilers(t *testing.T) {
 				mockClient.On("Patch", context.Background(), mock.IsType(&uiv1alpha1.UIPlugin{}), mock.Anything, mock.Anything).Return(nil)
 				return mockClient
 			},
-			instance: &obsv1alpha1.ClusterObservability{
+			instance: &obsv1alpha1.ObservabilityInstaller{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "test-namespace",
 				},
-				Spec: obsv1alpha1.ClusterObservabilitySpec{
+				Spec: obsv1alpha1.ObservabilityInstallerSpec{
 					Capabilities: &obsv1alpha1.CapabilitiesSpec{
 						Tracing: obsv1alpha1.TracingSpec{
 							CommonCapabilitiesSpec: obsv1alpha1.CommonCapabilitiesSpec{
@@ -130,12 +130,12 @@ func TestGetReconcilers(t *testing.T) {
 				mockClient.On("Delete", context.Background(), mock.IsType(&uiv1alpha1.UIPlugin{}), mock.Anything, mock.Anything).Return(nil)
 				return mockClient
 			},
-			instance: &obsv1alpha1.ClusterObservability{
+			instance: &obsv1alpha1.ObservabilityInstaller{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "test-namespace",
 				},
-				Spec: obsv1alpha1.ClusterObservabilitySpec{
+				Spec: obsv1alpha1.ObservabilityInstallerSpec{
 					Capabilities: &obsv1alpha1.CapabilitiesSpec{
 						Tracing: obsv1alpha1.TracingSpec{
 							CommonCapabilitiesSpec: obsv1alpha1.CommonCapabilitiesSpec{
@@ -164,12 +164,12 @@ func TestGetReconcilers(t *testing.T) {
 				mockClient.On("Delete", context.Background(), mock.IsType(&uiv1alpha1.UIPlugin{}), mock.Anything, mock.Anything).Return(nil)
 				return mockClient
 			},
-			instance: &obsv1alpha1.ClusterObservability{
+			instance: &obsv1alpha1.ObservabilityInstaller{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "test-namespace",
 				},
-				Spec: obsv1alpha1.ClusterObservabilitySpec{
+				Spec: obsv1alpha1.ObservabilityInstallerSpec{
 					Capabilities: &obsv1alpha1.CapabilitiesSpec{
 						Tracing: obsv1alpha1.TracingSpec{
 							CommonCapabilitiesSpec: obsv1alpha1.CommonCapabilitiesSpec{
@@ -193,12 +193,12 @@ func TestGetReconcilers(t *testing.T) {
 				mockClient.On("Patch", context.Background(), mock.IsType(&uiv1alpha1.UIPlugin{}), mock.Anything, mock.Anything).Return(nil)
 				return mockClient
 			},
-			instance: &obsv1alpha1.ClusterObservability{
+			instance: &obsv1alpha1.ObservabilityInstaller{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "test-namespace",
 				},
-				Spec: obsv1alpha1.ClusterObservabilitySpec{
+				Spec: obsv1alpha1.ObservabilityInstallerSpec{
 					Capabilities: &obsv1alpha1.CapabilitiesSpec{
 						Tracing: obsv1alpha1.TracingSpec{
 							CommonCapabilitiesSpec: obsv1alpha1.CommonCapabilitiesSpec{
