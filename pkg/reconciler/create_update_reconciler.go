@@ -9,6 +9,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	"github.com/rhobs/observability-operator/pkg/controllers/util"
 )
 
 type createUpdateReconciler struct {
@@ -34,6 +36,6 @@ func (r createUpdateReconciler) Reconcile(ctx context.Context, c client.Client, 
 func NewCreateUpdateReconciler(resource client.Object, owner metav1.Object) Reconciler {
 	return createUpdateReconciler{
 		resourceOwner: owner,
-		resource:      resource,
+		resource:      util.AddCommonLabels(resource, owner.GetName()),
 	}
 }
