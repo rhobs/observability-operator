@@ -33,10 +33,7 @@ require (
 
 replace github.com/openshift/api => github.com/openshift/api v0.0.0-20240404200104-96ed2d49b255
 
-replace github.com/rhobs/observability-operator/pkg/apis v0.0.0-unpublished => ./pkg/apis
-
 require (
-	github.com/rhobs/observability-operator/pkg/apis v0.0.0-unpublished
 	github.com/rhobs/perses v0.0.0-20250612171017-5d7686af9ae4
 	github.com/rhobs/perses-operator v0.1.10-0.20250612173146-78eb619430df
 	github.com/stretchr/testify v1.11.1
@@ -120,6 +117,7 @@ require (
 	github.com/prometheus/procfs v0.17.0 // indirect
 	github.com/prometheus/prometheus v0.304.2 // indirect
 	github.com/rhobs/obo-prometheus-operator/pkg/client v0.84.0-rhobs1 // indirect
+	github.com/rhobs/observability-operator/pkg/apis v0.0.0-20251002144945-36f5667d6b8d // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/spf13/cobra v1.9.1 // indirect
