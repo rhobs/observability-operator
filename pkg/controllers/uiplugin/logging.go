@@ -28,7 +28,7 @@ type loggingConfig struct {
 	Schema    string        `yaml:"schema,omitempty"`
 }
 
-func createLoggingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string, ctx context.Context, dk dynamic.Interface, logger logr.Logger) (*UIPluginInfo, error) {
+func createLoggingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string, ctx context.Context, dk dynamic.Interface, logger logr.Logger, korrel8rImage string) (*UIPluginInfo, error) {
 	lokiStack, err := getLokiStack(plugin, ctx, dk, logger)
 	if err != nil {
 		return nil, err
@@ -52,6 +52,62 @@ func createLoggingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image
 		extraArgs = append(extraArgs, fmt.Sprintf("-features=%s", strings.Join(features, ",")))
 	}
 
+	legacyProxies := []osv1alpha1.ConsolePluginProxy{
+		{
+			Type:      "Service",
+			Alias:     "backend",
+			Authorize: true,
+			Service: osv1alpha1.ConsolePluginProxyServiceConfig{
+				Name:      fmt.Sprintf("%s-gateway-http", lokiStackName),
+				Namespace: lokiStackNamespace,
+				Port:      8080,
+			},
+		},
+	}
+
+	if korrel8rImage != "" {
+		legacyProxies = append(legacyProxies, osv1alpha1.ConsolePluginProxy{
+			Type:      "Service",
+			Alias:     "korrel8r",
+			Authorize: true,
+			Service: osv1alpha1.ConsolePluginProxyServiceConfig{
+				Name:      korrel8rName,
+				Namespace: namespace,
+				Port:      port,
+			},
+		})
+	}
+
+	proxies := []osv1.ConsolePluginProxy{
+		{
+			Alias:         "backend",
+			Authorization: "UserToken",
+			Endpoint: osv1.ConsolePluginProxyEndpoint{
+				Type: osv1.ProxyTypeService,
+				Service: &osv1.ConsolePluginProxyServiceConfig{
+					Name:      fmt.Sprintf("%s-gateway-http", lokiStackName),
+					Namespace: lokiStackNamespace,
+					Port:      8080,
+				},
+			},
+		},
+	}
+
+	if korrel8rImage != "" {
+		proxies = append(proxies, osv1.ConsolePluginProxy{
+			Alias:         "korrel8r",
+			Authorization: "UserToken",
+			Endpoint: osv1.ConsolePluginProxyEndpoint{
+				Type: osv1.ProxyTypeService,
+				Service: &osv1.ConsolePluginProxyServiceConfig{
+					Name:      korrel8rName,
+					Namespace: namespace,
+					Port:      port,
+				},
+			},
+		})
+	}
+
 	pluginInfo := &UIPluginInfo{
 		Image:             image,
 		Name:              name,
@@ -59,54 +115,9 @@ func createLoggingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image
 		DisplayName:       "Logging View",
 		ExtraArgs:         extraArgs,
 		ResourceNamespace: namespace,
-		LegacyProxies: []osv1alpha1.ConsolePluginProxy{
-			{
-				Type:      "Service",
-				Alias:     "backend",
-				Authorize: true,
-				Service: osv1alpha1.ConsolePluginProxyServiceConfig{
-					Name:      fmt.Sprintf("%s-gateway-http", lokiStackName),
-					Namespace: lokiStackNamespace,
-					Port:      8080,
-				},
-			},
-			{
-				Type:      "Service",
-				Alias:     "korrel8r",
-				Authorize: true,
-				Service: osv1alpha1.ConsolePluginProxyServiceConfig{
-					Name:      korrel8rName,
-					Namespace: namespace,
-					Port:      port,
-				},
-			},
-		},
-		Proxies: []osv1.ConsolePluginProxy{
-			{
-				Alias:         "backend",
-				Authorization: "UserToken",
-				Endpoint: osv1.ConsolePluginProxyEndpoint{
-					Type: osv1.ProxyTypeService,
-					Service: &osv1.ConsolePluginProxyServiceConfig{
-						Name:      fmt.Sprintf("%s-gateway-http", lokiStackName),
-						Namespace: lokiStackNamespace,
-						Port:      8080,
-					},
-				},
-			},
-			{
-				Alias:         "korrel8r",
-				Authorization: "UserToken",
-				Endpoint: osv1.ConsolePluginProxyEndpoint{
-					Type: osv1.ProxyTypeService,
-					Service: &osv1.ConsolePluginProxyServiceConfig{
-						Name:      korrel8rName,
-						Namespace: namespace,
-						Port:      port,
-					},
-				},
-			},
-		},
+		LegacyProxies:     legacyProxies,
+		Proxies:           proxies,
+		Korrel8rImage:     korrel8rImage,
 		ConfigMap: &corev1.ConfigMap{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: corev1.SchemeGroupVersion.String(),
