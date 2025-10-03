@@ -1,0 +1,64 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: tempo-readiness-check
+  namespace: tracing-observability
+  labels:
+    app: tempo-readiness-check
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app: tempo-readiness-check
+      annotations:
+        service.beta.openshift.io/inject-cabundle: "true"
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: readiness-checker
+          image: curlimages/curl:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "=== Curl Request with mTLS Authentication (Ignore Hostname) ==="
+              curl -v -f -k \
+                --cert /etc/mtls/tls.crt \
+                --key /etc/mtls/tls.key \
+                --connect-timeout 10 \
+                --max-time 30 \
+                --show-error \
+                https://tempo-coo-ingester:3200/ready
+              
+              CURL_EXIT_CODE=$?
+              echo
+              echo "=== Curl Exit Code: $CURL_EXIT_CODE ==="
+              
+              if [ $CURL_EXIT_CODE -eq 0 ]; then
+                echo "SUCCESS: Service is ready!"
+                exit 0
+              else
+                echo "FAILED: Service is not ready (curl exit code: $CURL_EXIT_CODE)"
+                exit 1
+              fi
+          volumeMounts:
+            - name: service-ca
+              mountPath: /etc/ssl/certs
+              readOnly: true
+            - name: mtls-certs
+              mountPath: /etc/mtls
+              readOnly: true
+            - name: tempo-ca
+              mountPath: /etc/tempo-ca
+              readOnly: true
+      volumes:
+        - name: service-ca
+          configMap:
+            name: openshift-service-ca.crt
+        - name: mtls-certs
+          secret:
+            secretName: tempo-coo-gateway-mtls
+        - name: tempo-ca
+          configMap:
+            name: tempo-coo-ca-bundle
