@@ -6,7 +6,6 @@ metadata:
   labels:
     app: tempo-readiness-check
 spec:
-  backoffLimit: 3
   template:
     metadata:
       labels:
