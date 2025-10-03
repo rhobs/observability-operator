@@ -36,12 +36,9 @@ var (
 )
 
 func TestObservabilityInstallerController(t *testing.T) {
-	//if !f.IsOpenshiftCluster {
-	//	t.Skip("The tests are skipped on non-ocp cluster")
-	//}
-
-	//assert.NilError(t, obsv1alpha1.AddToScheme(scheme.Scheme))
-	//assert.NilError(t, olmv1alpha1.AddToScheme(scheme.Scheme))
+	if !f.IsOpenshiftCluster {
+		t.Skip("The tests are skipped on non-ocp cluster")
+	}
 
 	assertCRDExists(t, "observabilityinstallers.observability.openshift.io")
 
