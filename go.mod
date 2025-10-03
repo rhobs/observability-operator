@@ -5,7 +5,7 @@ go 1.24.4
 require (
 	github.com/go-jose/go-jose/v4 v4.0.5 // indirect
 	github.com/go-logr/logr v1.4.3
-	github.com/goccy/go-yaml v1.17.1
+	github.com/goccy/go-yaml v1.18.0
 	github.com/google/go-cmp v0.7.0
 	github.com/grafana/tempo-operator v0.16.0
 	github.com/open-telemetry/opentelemetry-operator v0.125.0
