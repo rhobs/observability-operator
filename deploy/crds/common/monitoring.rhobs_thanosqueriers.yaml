@@ -46,8 +46,11 @@ spec:
               deduplicate.
             properties:
               namespaceSelector:
-                description: Selector to select which namespaces the Monitoring Stack
-                  objects are discovered from.
+                description: |-
+                  namespaceSelector defines in which namespaces the MonitoringStack
+                  resources are discovered from.
+
+                  By default, resources are only discovered in the current namespace.
                 properties:
                   any:
                     description: |-
@@ -61,11 +64,21 @@ spec:
                     type: array
                 type: object
               replicaLabels:
+                description: |-
+                  replicaLabels is the list of labels used to deduplicate the data between
+                  highly-available replicas.
+
+                  Thanos Querier is always configured with `prometheus_replica` as replica
+                  label.
                 items:
                   type: string
                 type: array
               selector:
-                description: Selector to select Monitoring stacks to unify
+                description: |-
+                  selector is the label selector used to select MonitoringStack
+                  resources.
+
+                  By default, all resources are matched.
                 properties:
                   matchExpressions:
                     description: matchExpressions is a list of label selector requirements.
@@ -111,7 +124,8 @@ spec:
                 type: object
                 x-kubernetes-map-type: atomic
               webTLSConfig:
-                description: Configure TLS options for the Thanos web server.
+                description: webTLSConfig configures the TLS options for the Thanos
+                  web server.
                 properties:
                   certificate:
                     description: Reference to the TLS public certificate for the web

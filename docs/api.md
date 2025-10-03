@@ -3743,28 +3743,38 @@ deduplicate.
         <td><b><a href="#thanosquerierspecselector">selector</a></b></td>
         <td>object</td>
         <td>
-          Selector to select Monitoring stacks to unify<br/>
+          selector is the label selector used to select MonitoringStack
+resources.
+
+By default, all resources are matched.<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b><a href="#thanosquerierspecnamespaceselector">namespaceSelector</a></b></td>
         <td>object</td>
         <td>
-          Selector to select which namespaces the Monitoring Stack objects are discovered from.<br/>
+          namespaceSelector defines in which namespaces the MonitoringStack
+resources are discovered from.
+
+By default, resources are only discovered in the current namespace.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b>replicaLabels</b></td>
         <td>[]string</td>
         <td>
-          <br/>
+          replicaLabels is the list of labels used to deduplicate the data between
+highly-available replicas.
+
+Thanos Querier is always configured with `prometheus_replica` as replica
+label.<br/>
         </td>
         <td>false</td>
       </tr><tr>
         <td><b><a href="#thanosquerierspecwebtlsconfig">webTLSConfig</a></b></td>
         <td>object</td>
         <td>
-          Configure TLS options for the Thanos web server.<br/>
+          webTLSConfig configures the TLS options for the Thanos web server.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -3776,7 +3786,10 @@ deduplicate.
 
 
 
-Selector to select Monitoring stacks to unify
+selector is the label selector used to select MonitoringStack
+resources.
+
+By default, all resources are matched.
 
 <table>
     <thead>
@@ -3858,7 +3871,10 @@ merge patch.<br/>
 
 
 
-Selector to select which namespaces the Monitoring Stack objects are discovered from.
+namespaceSelector defines in which namespaces the MonitoringStack
+resources are discovered from.
+
+By default, resources are only discovered in the current namespace.
 
 <table>
     <thead>
@@ -3893,7 +3909,7 @@ list restricting them.<br/>
 
 
 
-Configure TLS options for the Thanos web server.
+webTLSConfig configures the TLS options for the Thanos web server.
 
 <table>
     <thead>
