@@ -27,6 +27,10 @@ import (
 var (
 	//go:embed traces_minio.yaml
 	minioManifests string
+	//go:embed traces_tempo_readiness.yaml
+	tempoReadinessManifest string
+	//go:embed traces_telemetrygen.yaml
+	telemetrygenManifest string
 	//go:embed traces_verify.yaml
 	verifyTracesManifests string
 )
@@ -35,9 +39,6 @@ func TestObservabilityInstallerController(t *testing.T) {
 	if !f.IsOpenshiftCluster {
 		t.Skip("The tests are skipped on non-ocp cluster")
 	}
-
-	//assert.NilError(t, obsv1alpha1.AddToScheme(scheme.Scheme))
-	//assert.NilError(t, olmv1alpha1.AddToScheme(scheme.Scheme))
 
 	assertCRDExists(t, "observabilityinstallers.observability.openshift.io")
 
@@ -64,21 +65,7 @@ func testObservabilityInstallerTracing(t *testing.T) {
 		if strings.TrimSpace(doc) == "" {
 			continue
 		}
-
-		// Create an unstructured object to decode the YAML into
-		obj := &unstructured.Unstructured{}
-
-		// Use the YAML decoder to convert the YAML string into the unstructured object
-		decoder := yamlutil.NewYAMLOrJSONDecoder(strings.NewReader(doc), 100)
-		err := decoder.Decode(&obj)
-		require.NoError(t, err)
-
-		// Use the client to create the object in the Kubernetes cluster
-		err = f.K8sClient.Create(context.Background(), obj)
-		if apierrors.IsAlreadyExists(err) {
-			continue
-		}
-		require.NoError(t, err)
+		obj := deployManifest(t, doc)
 		f.CleanUp(t, func() { f.K8sClient.Delete(ctx, obj) })
 	}
 
@@ -105,7 +92,7 @@ func testObservabilityInstallerTracing(t *testing.T) {
 	f.CleanUp(t, func() { f.K8sClient.Delete(ctx, secret) })
 
 	// Create ObservabilityInstaller resource
-	clusterObs := &obsv1alpha1.ObservabilityInstaller{
+	obsInstaller := &obsv1alpha1.ObservabilityInstaller{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "coo",
 			Namespace: operandNamespace.Name,
@@ -135,11 +122,11 @@ func testObservabilityInstallerTracing(t *testing.T) {
 	}
 
 	f.CleanUp(t, func() {
-		f.K8sClient.Delete(ctx, clusterObs)
+		f.K8sClient.Delete(ctx, obsInstaller)
 	})
 
 	// Create the resource
-	err = f.K8sClient.Create(ctx, clusterObs)
+	err = f.K8sClient.Create(ctx, obsInstaller)
 	assert.NilError(t, err, "Failed to create ObservabilityInstaller resource")
 
 	// Verify resource exists
@@ -183,88 +170,25 @@ func testObservabilityInstallerTracing(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	job := batchv1.Job{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "generate-traces-grpc",
-			Namespace: operandNamespace.Name,
-		},
-		Spec: batchv1.JobSpec{
-			Template: corev1.PodTemplateSpec{
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:  "telemetrygen",
-							Image: "ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.129.0",
-							Args: []string{
-								"traces",
-								"--otlp-endpoint=coo-collector.tracing-observability.svc.cluster.local:4317",
-								"--service=grpc",
-								"--otlp-insecure",
-								"--traces=10",
-							},
-						},
-					},
-					RestartPolicy: "Never",
-				},
-			},
-		},
-	}
-	err = f.K8sClient.Create(ctx, &job)
+	tempoReadinessObj := deployManifest(t, tempoReadinessManifest)
+	f.CleanUp(t, func() { f.K8sClient.Delete(ctx, tempoReadinessObj) })
+	err = jobHasCompleted(t, tempoReadinessObj.GetName(), operandNamespace.Name, time.Minute*5)
 	require.NoError(t, err)
 
-	// Check if the job succeeded
-	err = wait.PollUntilContextTimeout(ctx, 1*time.Second, 1*time.Minute, true, func(ctx context.Context) (bool, error) {
-		var job batchv1.Job
-		err := f.K8sClient.Get(ctx, types.NamespacedName{Name: "generate-traces-grpc", Namespace: operandNamespace.Name}, &job)
-		if apierrors.IsNotFound(err) {
-			t.Logf("trace generation job not found")
-			return false, nil
-		}
-
-		if job.Status.Succeeded > 0 {
-			return true, nil
-		}
-
-		t.Logf("trace generation job didn't succeed yet")
-		return false, nil
-	})
+	telemetrygenObj := deployManifest(t, telemetrygenManifest)
+	f.CleanUp(t, func() { f.K8sClient.Delete(ctx, telemetrygenObj) })
+	f.CleanUp(t, func() { f.K8sClient.Delete(ctx, telemetrygenObj) })
+	err = jobHasCompleted(t, telemetrygenObj.GetName(), operandNamespace.Name, time.Minute)
 	require.NoError(t, err)
 
 	for _, doc := range strings.Split(verifyTracesManifests, "---") {
 		if strings.TrimSpace(doc) == "" {
 			continue
 		}
-
-		// Create an unstructured object to decode the YAML into
-		obj := &unstructured.Unstructured{}
-
-		// Use the YAML decoder to convert the YAML string into the unstructured object
-		decoder := yamlutil.NewYAMLOrJSONDecoder(strings.NewReader(doc), 100)
-		err := decoder.Decode(&obj)
-		require.NoError(t, err)
-
-		// Use the client to create the object in the Kubernetes cluster
-		err = f.K8sClient.Create(context.Background(), obj)
-		require.NoError(t, err)
+		obj := deployManifest(t, doc)
 		f.CleanUp(t, func() { f.K8sClient.Delete(ctx, obj) })
 	}
-
-	// Check if the verify traces job succeeded
-	err = wait.PollUntilContextTimeout(ctx, 1*time.Second, 1*time.Minute, true, func(ctx context.Context) (bool, error) {
-		var job batchv1.Job
-		err := f.K8sClient.Get(ctx, types.NamespacedName{Name: "verify-traces-traceql-grpc", Namespace: operandNamespace.Name}, &job)
-		if apierrors.IsNotFound(err) {
-			t.Logf("trace verification job not found")
-			return false, nil
-		}
-
-		if job.Status.Succeeded > 0 {
-			return true, nil
-		}
-
-		t.Logf("trace verification job didn't succeed yet")
-		return false, nil
-	})
+	err = jobHasCompleted(t, "verify-traces-traceql-grpc", operandNamespace.Name, time.Minute)
 	require.NoError(t, err)
 
 	// Delete the resource
@@ -282,4 +206,38 @@ func testObservabilityInstallerTracing(t *testing.T) {
 		return false, nil
 	})
 	require.NoError(t, err)
+}
+
+func deployManifest(t *testing.T, manifest string) client.Object {
+	// Create an unstructured object to decode the YAML into
+	obj := &unstructured.Unstructured{}
+	// Use the YAML decoder to convert the YAML string into the unstructured object
+	decoder := yamlutil.NewYAMLOrJSONDecoder(strings.NewReader(manifest), 100)
+	err := decoder.Decode(&obj)
+	require.NoError(t, err)
+
+	// Use the client to create the object in the Kubernetes cluster
+	err = f.K8sClient.Create(context.Background(), obj)
+	if !apierrors.IsAlreadyExists(err) {
+		require.NoError(t, err)
+	}
+	return obj
+}
+
+func jobHasCompleted(t *testing.T, name, ns string, timeout time.Duration) error {
+	return wait.PollUntilContextTimeout(t.Context(), 1*time.Second, timeout, true, func(ctx context.Context) (bool, error) {
+		var job batchv1.Job
+		err := f.K8sClient.Get(ctx, types.NamespacedName{Name: name, Namespace: ns}, &job)
+		if apierrors.IsNotFound(err) {
+			t.Logf("job %s not found", name)
+			return false, nil
+		}
+
+		if job.Status.Succeeded > 0 {
+			return true, nil
+		}
+
+		t.Logf("job %s didn't succeed yet", name)
+		return false, nil
+	})
 }
