@@ -193,20 +193,23 @@ func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, im
 	isValidIncidentsConfig := validateIncidentsConfig(config, clusterVersion)
 
 	atLeastOneValidConfig := isValidAcmConfig || isValidPersesConfig || isValidIncidentsConfig
+
+	pluginInfo := getBasePluginInfo(namespace, name, image)
 	if !atLeastOneValidConfig {
-		return nil, fmt.Errorf("all uiplugin monitoring configurations are invalid or not supported in this cluster version")
+		pluginInfo.AreMonitoringFeatsDisabled = true
+		// pluginInfo must be return to controller to delete related components
+		return pluginInfo, fmt.Errorf("all uiplugin monitoring configurations are invalid or not supported in this cluster version")
 	}
 
 	//  Add proxies and feature flags
-	pluginInfo := getBasePluginInfo(namespace, name, image)
 	if isValidAcmConfig {
 		addAcmAlertingProxy(pluginInfo, name, namespace, config)
 		features = append(features, "acm-alerting")
 	}
 	if isValidPersesConfig {
 		addPersesProxy(pluginInfo, namespace)
-		pluginInfo.PersesImage = persesImage
 		features = append(features, "perses-dashboards")
+		pluginInfo.PersesImage = persesImage
 	}
 	if isValidIncidentsConfig {
 		pluginInfo.HealthAnalyzerImage = healthAnalyzerImage
@@ -374,6 +377,9 @@ func newPersesClusterRole() *rbacv1.ClusterRole {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "perses-cr",
+			Labels: map[string]string{
+				"app.kubernetes.io/managed-by": "observability-operator",
+			},
 		},
 		Rules: []rbacv1.PolicyRule{
 			{

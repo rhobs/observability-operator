@@ -53,7 +53,7 @@ type Options struct {
 const (
 	AvailableReason         = "UIPluginAvailable"
 	ReconciledReason        = "UIPluginReconciled"
-	FailedToReconcileReason = "UIPluginFailedToReconciled"
+	FailedToReconcileReason = "UIPluginFailedToReconcile"
 	ReconciledMessage       = "Plugin reconciled successfully"
 	NoReason                = "None"
 )
@@ -142,7 +142,6 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 		Owns(&v1.ServiceAccount{}, generationChanged).
 		Owns(&rbacv1.Role{}, generationChanged).
 		Owns(&rbacv1.RoleBinding{}, generationChanged).
-		Owns(&persesv1alpha1.Perses{}, generationChanged).
 		Owns(&persesv1alpha1.PersesDashboard{}, generationChanged).
 		Owns(&persesv1alpha1.PersesDatasource{}, generationChanged)
 
@@ -259,25 +258,33 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, err
 	}
 
-	pluginInfo, err := PluginInfoBuilder(ctx, rm.k8sClient, rm.k8sDynamicClient, plugin, rm.pluginConf, compatibilityInfo, rm.clusterVersion, rm.logger)
+	pluginInfo, pluginInfoErr := PluginInfoBuilder(ctx, rm.k8sClient, rm.k8sDynamicClient, plugin, rm.pluginConf, compatibilityInfo, rm.clusterVersion, rm.logger)
 
-	if err != nil {
-		logger.Error(err, "failed to reconcile plugin")
-		return ctrl.Result{}, err
+	if pluginInfo != nil {
+		reconcilers := pluginComponentReconcilers(plugin, *pluginInfo, rm.clusterVersion)
+		for _, reconciler := range reconcilers {
+			err := reconciler.Reconcile(ctx, rm.k8sClient, rm.scheme)
+			// handle creation / updation errors that can happen due to a stale cache by
+			// retrying after some time.
+			if apierrors.IsAlreadyExists(err) || apierrors.IsConflict(err) {
+				logger.V(8).Info("skipping reconcile error", "err", err)
+				return ctrl.Result{RequeueAfter: 2 * time.Second}, nil
+			}
+			if err != nil {
+				return rm.updateStatus(ctx, req, plugin, err), err
+			}
+		}
+		if pluginInfo.AreMonitoringFeatsDisabled {
+			// prevents double rendering of monitoring console-tabs
+			if err := rm.deregisterPluginFromConsole(ctx, pluginTypeToConsoleName[plugin.Spec.Type]); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
 	}
 
-	reconcilers := pluginComponentReconcilers(plugin, *pluginInfo, rm.clusterVersion)
-	for _, reconciler := range reconcilers {
-		err := reconciler.Reconcile(ctx, rm.k8sClient, rm.scheme)
-		// handle creation / updation errors that can happen due to a stale cache by
-		// retrying after some time.
-		if apierrors.IsAlreadyExists(err) || apierrors.IsConflict(err) {
-			logger.V(8).Info("skipping reconcile error", "err", err)
-			return ctrl.Result{RequeueAfter: 2 * time.Second}, nil
-		}
-		if err != nil {
-			return rm.updateStatus(ctx, req, plugin, err), err
-		}
+	if pluginInfoErr != nil {
+		// If features are disabled allow pluginComponentReconcilers to remove uiplugin-related components before status update
+		return rm.updateStatus(ctx, req, plugin, pluginInfoErr), pluginInfoErr
 	}
 
 	if err := rm.registerPluginWithConsole(ctx, pluginInfo); err != nil {
