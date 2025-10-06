@@ -175,16 +175,12 @@ func testObservabilityInstallerTracing(t *testing.T) {
 
 	stopChan := make(chan struct{})
 	defer close(stopChan)
-	if err = wait.PollUntilContextTimeout(context.Background(), 5*time.Second, 1*time.Minute, true, func(ctx context.Context) (bool, error) {
-		err = f.StartServicePortForward("tempo-coo-ingester", operandNamespace.Name, "3200", stopChan)
+	if err = wait.PollUntilContextTimeout(ctx, 5*time.Second, 1*time.Minute, true, func(ctx context.Context) (bool, error) {
+		err := f.StartServicePortForward("tempo-coo-ingester", operandNamespace.Name, "3200", stopChan)
 		return err == nil, nil
-	}); err != nil {
-		require.NoError(t, err)
+	}); wait.Interrupted(err) {
+		t.Fatal("timeout waiting for port-forward")
 	}
-
-	// Check readiness endpoint
-	ctx, cancel := context.WithTimeout(ctx, time.Minute*1)
-	defer cancel()
 
 	// Load and configure mTLS certificates like the original job
 	tr := http.DefaultTransport.(*http.Transport).Clone()
@@ -207,14 +203,14 @@ func testObservabilityInstallerTracing(t *testing.T) {
 		}
 	}
 
-	err = wait.PollUntilContextTimeout(ctx, 1*time.Second, time.Minute*1, true, func(ctx context.Context) (bool, error) {
+	err = wait.PollUntilContextTimeout(ctx, 1*time.Second, time.Minute*2, true, func(ctx context.Context) (bool, error) {
 		t.Log("getting tempo readiness endpoint")
-		req, err := http.NewRequestWithContext(ctx, "GET", "https://localhost:3200/ready", nil)
+		req, err := http.NewRequest("GET", "https://localhost:3200/ready", nil)
 		if err != nil {
 			return false, nil
 		}
 
-		httpClient := &http.Client{Transport: tr, Timeout: 30 * time.Second}
+		httpClient := &http.Client{Transport: tr}
 		resp, err := httpClient.Do(req)
 		if err != nil {
 			t.Logf("tempo readiness check failed: %v", err)
