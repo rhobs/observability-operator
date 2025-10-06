@@ -9,10 +9,10 @@ import (
 	"text/template"
 
 	go_yaml "github.com/goccy/go-yaml"
+	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	obsv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/observability/v1alpha1"
 )
 
@@ -69,7 +69,7 @@ func otelCollector(instance *obsv1alpha1.ObservabilityInstaller) (*otelv1beta1.O
 }
 
 func otelCollectorName(instance string) string {
-	return fmt.Sprintf("%s", instance)
+	return instance
 }
 
 func otelCollectorComponentsRBAC(instance *obsv1alpha1.ObservabilityInstaller) (*rbacv1.ClusterRole, *rbacv1.ClusterRoleBinding) {
