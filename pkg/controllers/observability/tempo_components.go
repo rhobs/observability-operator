@@ -190,7 +190,7 @@ func tempoStackSecrets(ctx context.Context, k8sClient client.Client, instance ob
 		tempoSecret.Data = map[string][]byte{
 			"bucket":   []byte(objectStorageSpec.S3STS.Bucket),
 			"role_arn": []byte(objectStorageSpec.S3STS.RoleARN),
-			"region":   []byte(objectStorageSpec.S3STS.RoleARN),
+			"region":   []byte(objectStorageSpec.S3STS.Region),
 		}
 	} else if objectStorageSpec.S3CCO != nil {
 		tempoSecret.Data = map[string][]byte{
