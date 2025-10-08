@@ -223,13 +223,37 @@ func TestGetReconcilers(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "empty spec",
+			mockClient: func() *MockClient {
+				mockClient := &MockClient{}
+				mockClient.On("Delete", context.Background(), mock.IsType(&olmv1alpha1.Subscription{}), mock.Anything).Return(nil)
+				mockClient.On("Delete", context.Background(), mock.IsType(&olmv1alpha1.ClusterServiceVersion{}), mock.Anything).Return(nil)
+				mockClient.On("Delete", context.Background(), mock.IsType(&corev1.Namespace{}), mock.Anything).Return(nil)
+				mockClient.On("Delete", context.Background(), mock.IsType(&otelv1beta1.OpenTelemetryCollector{}), mock.Anything, mock.Anything).Return(nil)
+				mockClient.On("Delete", context.Background(), mock.IsType(&rbacv1.ClusterRole{}), mock.Anything, mock.Anything).Return(nil)
+				mockClient.On("Delete", context.Background(), mock.IsType(&rbacv1.ClusterRoleBinding{}), mock.Anything, mock.Anything).Return(nil)
+				mockClient.On("Delete", context.Background(), mock.IsType(&tempov1alpha1.TempoStack{}), mock.Anything, mock.Anything).Return(nil)
+				mockClient.On("Delete", context.Background(), mock.IsType(&corev1.Secret{}), mock.Anything, mock.Anything).Return(nil)
+				mockClient.On("Delete", context.Background(), mock.IsType(&uiv1alpha1.UIPlugin{}), mock.Anything, mock.Anything).Return(nil)
+				return mockClient
+			},
+			instance: &obsv1alpha1.ObservabilityInstaller{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "test-namespace",
+				},
+				Spec: obsv1alpha1.ObservabilityInstallerSpec{},
+			},
+			installedSubscriptions: []olmv1alpha1.Subscription{},
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			mockClient := test.mockClient()
 
-			reconcilers, err := getReconcilers(context.Background(), mockClient, test.instance, Options{
+			reconcilers, err := getReconcilers(context.Background(), mockClient, mockClient, test.instance, Options{
 				COONamespace: "operators",
 				OpenTelemetryOperator: OperatorInstallConfig{
 					Namespace:   "operators",

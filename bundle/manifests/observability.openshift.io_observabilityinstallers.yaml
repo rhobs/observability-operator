@@ -350,8 +350,20 @@ spec:
                                   rule: (has(self.keySecret) && has(self.certSecret))
                                     || (!has(self.keySecret) && !has(self.certSecret))
                             type: object
+                            x-kubernetes-validations:
+                            - message: Exactly one storage type must be specified
+                              rule: '[has(self.s3), has(self.s3STS), has(self.s3CCO),
+                                has(self.azure), has(self.azureWIF), has(self.gcs),
+                                has(self.gcsWIF)].filter(x, x).size() == 1'
                         type: object
                     type: object
+                    x-kubernetes-validations:
+                    - message: Storage configuration is required when tracing is enabled
+                      rule: (!has(self.enabled) || !self.enabled) || [has(self.storage.objectStorage.s3),
+                        has(self.storage.objectStorage.s3STS), has(self.storage.objectStorage.s3CCO),
+                        has(self.storage.objectStorage.azure), has(self.storage.objectStorage.azureWIF),
+                        has(self.storage.objectStorage.gcs), has(self.storage.objectStorage.gcsWIF)].filter(x,
+                        x).size() > 0
                 type: object
             type: object
           status:

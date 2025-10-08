@@ -59,7 +59,9 @@ const (
 // +kubebuilder:rbac:groups=tempo.grafana.com,resources=application,resourceNames=traces,verbs=create
 
 type observabilityInstallerController struct {
-	client          client.Client
+	client client.Client
+	// Use the reader to access config maps which are not cached
+	apiReader       client.Reader
 	scheme          *runtime.Scheme
 	logger          logr.Logger
 	Options         Options
@@ -106,7 +108,7 @@ func (o observabilityInstallerController) Reconcile(ctx context.Context, request
 		o.logger.Error(err, "Failed to list subscriptions")
 		return ctrl.Result{}, err
 	}
-	reconcilers, err := getReconcilers(ctx, o.client, instance, o.Options, operatorsStatus{
+	reconcilers, err := getReconcilers(ctx, o.client, o.apiReader, instance, o.Options, operatorsStatus{
 		cooNamespace: o.Options.COONamespace,
 		csvs:         csvs.Items,
 		subs:         subs.Items,
@@ -277,6 +279,7 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 
 	controller := &observabilityInstallerController{
 		client:          mgr.GetClient(),
+		apiReader:       mgr.GetAPIReader(),
 		scheme:          mgr.GetScheme(),
 		logger:          logger,
 		Options:         opts,
