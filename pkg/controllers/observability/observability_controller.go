@@ -96,21 +96,15 @@ func (o observabilityInstallerController) Reconcile(ctx context.Context, request
 		}
 	}
 
-	csvs := &olmv1alpha1.ClusterServiceVersionList{}
-	err = o.client.List(ctx, csvs, &client.ListOptions{Namespace: o.Options.COONamespace})
-	if err != nil {
-		o.logger.Error(err, "Failed to list csvs")
-		return ctrl.Result{}, err
-	}
 	subs := &olmv1alpha1.SubscriptionList{}
-	err = o.client.List(ctx, subs, &client.ListOptions{})
+	// List all subscriptions to figure out if the operators are already installed
+	err = o.apiReader.List(ctx, subs, &client.ListOptions{})
 	if err != nil {
 		o.logger.Error(err, "Failed to list subscriptions")
 		return ctrl.Result{}, err
 	}
 	reconcilers, err := getReconcilers(ctx, o.client, o.apiReader, instance, o.Options, operatorsStatus{
 		cooNamespace: o.Options.COONamespace,
-		csvs:         csvs.Items,
 		subs:         subs.Items,
 	})
 	if err != nil {
