@@ -31,10 +31,6 @@ lint: lint-golang lint-shell
 lint-golang: $(GOLANGCI_LINT)
 	$(GOLANGCI_LINT) run ./... --fix
 
-# TODO(simonpasquier): remove this after #629 merges.
-.PHONY: lint-jsonnet fmt-jsonnet
-lint-jsonnet fmt-jsonnet:
-
 .PHONY: lint-shell
 lint-shell: $(SHELLCHECK)
 	find -name "*.sh" -print0 | xargs --null $(SHELLCHECK)
