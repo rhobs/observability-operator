@@ -12,8 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// extractValidationRuleFromSource extracts the XValidation rule from the TracingObjectStorageSpec struct annotation
-func extractValidationRuleFromSource() (string, error) {
+func extractTracingObjectStorageValidationRule() (string, error) {
 	// Read the source file directly since kubebuilder annotations are in comments
 	sourceFile := "tracing.go"
 
@@ -52,7 +51,7 @@ func structToMap(v interface{}) (map[string]interface{}, error) {
 
 func TestTracingObjectStorageSpecValidation(t *testing.T) {
 	// Extract the validation rule directly from the source code annotation
-	validationRule, err := extractValidationRuleFromSource()
+	validationRule, err := extractTracingObjectStorageValidationRule()
 	require.NoError(t, err, "Failed to extract validation rule from source annotation")
 
 	env, err := cel.NewEnv(cel.Variable("self", cel.MapType(cel.StringType, cel.DynType)))
@@ -70,9 +69,9 @@ func TestTracingObjectStorageSpecValidation(t *testing.T) {
 		expectValid bool
 	}{
 		{
-			name:        "no storage types specified - invalid",
+			name:        "no storage types specified - valid",
 			spec:        TracingObjectStorageSpec{},
-			expectValid: false,
+			expectValid: true,
 		},
 		{
 			name: "only S3 specified",
@@ -386,4 +385,3 @@ func extractTracingSpecValidationRule() (string, error) {
 
 	return match[1], nil
 }
-

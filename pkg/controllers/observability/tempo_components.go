@@ -62,11 +62,18 @@ func tempoStack(instance *obsv1alpha1.ObservabilityInstaller) *tempov1alpha1.Tem
 	}
 
 	if instance.Spec.Capabilities != nil && instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.TLS != nil {
+		tls := instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.TLS
 		tempo.Spec.Storage.TLS = tempov1alpha1.TLSSpec{
-			Enabled:    true,
-			CA:         tempoStorageCAConfigMapName(instance.Name),
-			Cert:       tempoStorageSecretName(instance.Name),
-			MinVersion: instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.TLS.MinVersion,
+			Enabled: true,
+		}
+		if tls.CAConfigMap != nil {
+			tempo.Spec.Storage.TLS.CA = tempoStorageCAConfigMapName(instance.Name)
+		}
+		if tls.CertSecret != nil {
+			tempo.Spec.Storage.TLS.Cert = tempoStorageSecretName(instance.Name)
+		}
+		if tls.MinVersion != "" {
+			tempo.Spec.Storage.TLS.MinVersion = tls.MinVersion
 		}
 	}
 
@@ -129,7 +136,7 @@ func tempoStackSecrets(ctx context.Context, k8sClient client.Client, k8sReader c
 
 		if tlsSpec.CertSecret != nil {
 			certSecret := &corev1.Secret{}
-			err := k8sClient.Get(ctx, client.ObjectKey{
+			err := k8sReader.Get(ctx, client.ObjectKey{
 				Namespace: instance.Namespace,
 				Name:      tlsSpec.CertSecret.Name,
 			}, certSecret)
@@ -147,11 +154,12 @@ func tempoStackSecrets(ctx context.Context, k8sClient client.Client, k8sReader c
 					Namespace: instance.Namespace,
 				},
 			}
+			objectStorageTLSSecret.Data = map[string][]byte{}
 			objectStorageTLSSecret.Data["tls.crt"] = certSecret.Data[tlsSpec.CertSecret.Key]
 		}
 		if tlsSpec.KeySecret != nil {
 			certSecret := &corev1.Secret{}
-			err := k8sClient.Get(ctx, client.ObjectKey{
+			err := k8sReader.Get(ctx, client.ObjectKey{
 				Namespace: instance.Namespace,
 				Name:      tlsSpec.KeySecret.Name,
 			}, certSecret)
@@ -159,7 +167,10 @@ func tempoStackSecrets(ctx context.Context, k8sClient client.Client, k8sReader c
 				return nil, fmt.Errorf("failed to get object storage cert secret %s: %w", tlsSpec.KeySecret.Name, err)
 			}
 
-			objectStorageTLSSecret.Data["tls.key"] = certSecret.Data[tlsSpec.KeySecret.Key]
+			// Set only if the cert was found, which initialized the secret
+			if objectStorageTLSSecret != nil {
+				objectStorageTLSSecret.Data["tls.key"] = certSecret.Data[tlsSpec.KeySecret.Key]
+			}
 		}
 	}
 

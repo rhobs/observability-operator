@@ -351,10 +351,11 @@ spec:
                                     || (!has(self.keySecret) && !has(self.certSecret))
                             type: object
                             x-kubernetes-validations:
-                            - message: Exactly one storage type must be specified
+                            - message: Only one or zero storage configurations can
+                                be specified
                               rule: '[has(self.s3), has(self.s3STS), has(self.s3CCO),
                                 has(self.azure), has(self.azureWIF), has(self.gcs),
-                                has(self.gcsWIF)].filter(x, x).size() == 1'
+                                has(self.gcsWIF)].filter(x, x).size() <= 1'
                         type: object
                     type: object
                     x-kubernetes-validations:

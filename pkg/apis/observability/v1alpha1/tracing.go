@@ -19,7 +19,7 @@ type TracingStorageSpec struct {
 }
 
 // TracingObjectStorageSpec defines the object storage for the tracing capability.
-// +kubebuilder:validation:XValidation:rule="[has(self.s3), has(self.s3STS), has(self.s3CCO), has(self.azure), has(self.azureWIF), has(self.gcs), has(self.gcsWIF)].filter(x, x).size() == 1",message="Exactly one storage type must be specified"
+// +kubebuilder:validation:XValidation:rule="[has(self.s3), has(self.s3STS), has(self.s3CCO), has(self.azure), has(self.azureWIF), has(self.gcs), has(self.gcsWIF)].filter(x, x).size() <= 1",message="Only one or zero storage configurations can be specified"
 type TracingObjectStorageSpec struct {
 	// S3 defines the S3 object storage configuration.
 	S3 *S3Spec `json:"s3,omitempty"`
