@@ -52,6 +52,7 @@ func stackComponentReconcilers(
 	alertmanagerName := ms.Name + "-alertmanager"
 	additionalScrapeConfigsSecretName := ms.Name + "-self-scrape"
 	hasNsSelector := ms.Spec.NamespaceSelector != nil
+	createCRB := hasNsSelector && ms.Spec.CreateClusterRoleBindings == stack.CreateClusterRoleBindings
 	deployAlertmanager := !ms.Spec.AlertmanagerConfig.Disabled
 
 	return []reconciler.Reconciler{
@@ -70,13 +71,13 @@ func stackComponentReconcilers(
 		// Alertmanager Deployment
 		reconciler.NewOptionalUpdater(newServiceAccount(alertmanagerName, ms.Namespace), ms, deployAlertmanager),
 		// create clusterrolebinding if nsSelector's present otherwise a rolebinding
-		reconciler.NewOptionalUpdater(newClusterRoleBinding(ms, prometheusName), ms, hasNsSelector),
+		reconciler.NewOptionalUpdater(newClusterRoleBinding(ms, prometheusName), ms, createCRB),
 		reconciler.NewOptionalUpdater(newRoleBindingForClusterRole(ms, prometheusName), ms, !hasNsSelector),
 
 		reconciler.NewOptionalUpdater(newAlertManagerClusterRole(alertmanagerName, rbacVerbs), ms, deployAlertmanager),
 
 		// create clusterrolebinding if alertmanager is enabled and namespace selector is also present in MonitoringStack
-		reconciler.NewOptionalUpdater(newClusterRoleBinding(ms, alertmanagerName), ms, deployAlertmanager && hasNsSelector),
+		reconciler.NewOptionalUpdater(newClusterRoleBinding(ms, alertmanagerName), ms, deployAlertmanager && createCRB),
 		reconciler.NewOptionalUpdater(newRoleBindingForClusterRole(ms, alertmanagerName), ms, deployAlertmanager && !hasNsSelector),
 
 		reconciler.NewOptionalUpdater(newAlertmanager(ms, alertmanagerName, alertmanager), ms, deployAlertmanager),
