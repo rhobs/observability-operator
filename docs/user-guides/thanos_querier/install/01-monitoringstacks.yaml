@@ -1,0 +1,31 @@
+apiVersion: monitoring.rhobs/v1alpha1
+kind: MonitoringStack
+metadata:
+  name: example
+  namespace: project-a
+  labels:
+    app: example
+spec:
+  alertmanagerConfig:
+    disabled: true
+  prometheusConfig:
+    replicas: 2
+  resourceSelector:
+    matchLabels:
+      app: example
+---
+apiVersion: monitoring.rhobs/v1alpha1
+kind: MonitoringStack
+metadata:
+  name: example
+  namespace: project-b
+  labels:
+    app: example
+spec:
+  alertmanagerConfig:
+    disabled: true
+  prometheusConfig:
+    replicas: 2
+  resourceSelector:
+    matchLabels:
+      app: example

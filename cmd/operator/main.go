@@ -138,7 +138,7 @@ func main() {
 			operator.WithThanosSidecarImage(imgMap["thanos"]),
 			operator.WithThanosQuerierImage(imgMap["thanos"]),
 			operator.WithUIPluginImages(imgMap),
-			operator.WithClusterObservability(operator.ClusterObservabilityConfiguration{
+			operator.WithObservabilityInstaller(operator.ObservabilityInstallerConfiguration{
 				COONamespace:     os.Getenv("NAMESPACE"),
 				OpenTelemetryCSV: otelCSVName,
 				TempoCSV:         tempoCSVName,

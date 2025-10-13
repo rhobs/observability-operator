@@ -9,10 +9,10 @@ import (
 	"text/template"
 
 	go_yaml "github.com/goccy/go-yaml"
+	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	obsv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/observability/v1alpha1"
 )
 
@@ -28,7 +28,7 @@ type templateOptions struct {
 	TempoName   string
 }
 
-func otelCollector(instance *obsv1alpha1.ClusterObservability) (*otelv1beta1.OpenTelemetryCollector, error) {
+func otelCollector(instance *obsv1alpha1.ObservabilityInstaller) (*otelv1beta1.OpenTelemetryCollector, error) {
 	w := bytes.NewBuffer(nil)
 	err := collectorConfigTemplate.Execute(w, templateOptions{Namespace: instance.Namespace, TempoName: tempoName(instance.Name), TempoTenant: tenantName})
 	if err != nil {
@@ -69,10 +69,10 @@ func otelCollector(instance *obsv1alpha1.ClusterObservability) (*otelv1beta1.Ope
 }
 
 func otelCollectorName(instance string) string {
-	return fmt.Sprintf("%s", instance)
+	return instance
 }
 
-func otelCollectorComponentsRBAC(instance *obsv1alpha1.ClusterObservability) (*rbacv1.ClusterRole, *rbacv1.ClusterRoleBinding) {
+func otelCollectorComponentsRBAC(instance *obsv1alpha1.ObservabilityInstaller) (*rbacv1.ClusterRole, *rbacv1.ClusterRoleBinding) {
 	name := fmt.Sprintf("coo-otelcol-%s-components", instance.Name)
 	role := &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
@@ -120,7 +120,7 @@ func otelCollectorComponentsRBAC(instance *obsv1alpha1.ClusterObservability) (*r
 	return role, binding
 }
 
-func otelCollectorTempoRBAC(instance *obsv1alpha1.ClusterObservability) (*rbacv1.ClusterRole, *rbacv1.ClusterRoleBinding) {
+func otelCollectorTempoRBAC(instance *obsv1alpha1.ObservabilityInstaller) (*rbacv1.ClusterRole, *rbacv1.ClusterRoleBinding) {
 	name := fmt.Sprintf("coo-otelcol-%s-tempo", instance.Name)
 	role := &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{

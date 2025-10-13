@@ -306,12 +306,27 @@ type ThanosQuerierList struct {
 // an optional namespace selector and a list of replica labels by which to
 // deduplicate.
 type ThanosQuerierSpec struct {
-	// Selector to select Monitoring stacks to unify
+	// selector is the label selector used to select MonitoringStack
+	// resources.
+	//
+	// By default, all resources are matched.
 	Selector metav1.LabelSelector `json:"selector"`
-	// Selector to select which namespaces the Monitoring Stack objects are discovered from.
+
+	// namespaceSelector defines in which namespaces the MonitoringStack
+	// resources are discovered from.
+	//
+	// By default, resources are only discovered in the current namespace.
 	NamespaceSelector NamespaceSelector `json:"namespaceSelector,omitempty"`
-	ReplicaLabels     []string          `json:"replicaLabels,omitempty"`
-	// Configure TLS options for the Thanos web server.
+
+	// replicaLabels is the list of labels used to deduplicate the data between
+	// highly-available replicas.
+	//
+	// Thanos Querier is always configured with `prometheus_replica` as replica
+	// label.
+	// +optional
+	ReplicaLabels []string `json:"replicaLabels,omitempty"`
+
+	// webTLSConfig configures the TLS options for the Thanos web server.
 	// +optional
 	WebTLSConfig *WebTLSConfig `json:"webTLSConfig,omitempty"`
 }

@@ -56,19 +56,19 @@ type FeatureGates struct {
 }
 
 type OperatorConfiguration struct {
-	Namespace            string
-	MetricsAddr          string
-	HealthProbeAddr      string
-	Prometheus           stackctrl.PrometheusConfiguration
-	Alertmanager         stackctrl.AlertmanagerConfiguration
-	ThanosSidecar        stackctrl.ThanosConfiguration
-	ThanosQuerier        tqctrl.ThanosConfiguration
-	UIPlugins            uictrl.UIPluginsConfiguration
-	FeatureGates         FeatureGates
-	ClusterObservability ClusterObservabilityConfiguration
+	Namespace              string
+	MetricsAddr            string
+	HealthProbeAddr        string
+	Prometheus             stackctrl.PrometheusConfiguration
+	Alertmanager           stackctrl.AlertmanagerConfiguration
+	ThanosSidecar          stackctrl.ThanosConfiguration
+	ThanosQuerier          tqctrl.ThanosConfiguration
+	UIPlugins              uictrl.UIPluginsConfiguration
+	FeatureGates           FeatureGates
+	ObservabilityInstaller ObservabilityInstallerConfiguration
 }
 
-type ClusterObservabilityConfiguration struct {
+type ObservabilityInstallerConfiguration struct {
 	COONamespace     string
 	OpenTelemetryCSV string
 	TempoCSV         string
@@ -137,9 +137,9 @@ func NewOperatorConfiguration(opts ...func(*OperatorConfiguration)) *OperatorCon
 	return cfg
 }
 
-func WithClusterObservability(configuration ClusterObservabilityConfiguration) func(*OperatorConfiguration) {
+func WithObservabilityInstaller(configuration ObservabilityInstallerConfiguration) func(*OperatorConfiguration) {
 	return func(oc *OperatorConfiguration) {
-		oc.ClusterObservability = configuration
+		oc.ObservabilityInstaller = configuration
 	}
 }
 
@@ -266,7 +266,7 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 					&uiv1alpha1.UIPlugin{}: cache.ByObject{
 						Label: labels.Everything(),
 					},
-					&obsv1alpha1.ClusterObservability{}: cache.ByObject{
+					&obsv1alpha1.ObservabilityInstaller{}: cache.ByObject{
 						Label: labels.Everything(),
 					},
 					// The operator controller watches the
@@ -316,17 +316,17 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 
 	if cfg.FeatureGates.OpenShift.Enabled {
 		if err := obsctrl.RegisterWithManager(mgr, obsctrl.Options{
-			COONamespace: cfg.ClusterObservability.COONamespace,
+			COONamespace: cfg.ObservabilityInstaller.COONamespace,
 			OpenTelemetryOperator: obsctrl.OperatorInstallConfig{
-				Namespace:   cfg.ClusterObservability.COONamespace,
+				Namespace:   cfg.ObservabilityInstaller.COONamespace,
 				PackageName: "opentelemetry-product",
-				StartingCSV: cfg.ClusterObservability.OpenTelemetryCSV,
+				StartingCSV: cfg.ObservabilityInstaller.OpenTelemetryCSV,
 				Channel:     "stable",
 			},
 			TempoOperator: obsctrl.OperatorInstallConfig{
-				Namespace:   cfg.ClusterObservability.COONamespace,
+				Namespace:   cfg.ObservabilityInstaller.COONamespace,
 				PackageName: "tempo-product",
-				StartingCSV: cfg.ClusterObservability.TempoCSV,
+				StartingCSV: cfg.ObservabilityInstaller.TempoCSV,
 				Channel:     "stable",
 			},
 		}); err != nil {

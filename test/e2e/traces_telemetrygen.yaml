@@ -1,0 +1,18 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generate-traces-grpc
+  namespace: tracing-observability
+spec:
+  template:
+    spec:
+      containers:
+        - name: telemetrygen
+          image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.129.0
+          args:
+            - traces
+            - --otlp-endpoint=coo-collector.tracing-observability.svc.cluster.local:4317
+            - --service=grpc
+            - --otlp-insecure
+            - --traces=10
+      restartPolicy: Never

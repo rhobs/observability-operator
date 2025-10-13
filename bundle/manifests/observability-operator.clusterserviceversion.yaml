@@ -42,7 +42,7 @@ metadata:
     categories: Monitoring
     certified: "false"
     containerImage: observability-operator:1.2.0
-    createdAt: "2025-09-29T09:26:51Z"
+    createdAt: "2025-10-02T08:35:53Z"
     description: A Go based Kubernetes operator to setup and manage highly available
       Monitoring Stack using Prometheus, Alertmanager and Thanos Querier.
     operatorframework.io/cluster-monitoring: "true"
@@ -75,13 +75,13 @@ spec:
       kind: Alertmanager
       name: alertmanagers.monitoring.rhobs
       version: v1
-    - kind: ClusterObservability
-      name: clusterobservabilities.observability.openshift.io
-      version: v1alpha1
     - description: MonitoringStack is the Schema for the monitoringstacks API
       displayName: MonitoringStack
       kind: MonitoringStack
       name: monitoringstacks.monitoring.rhobs
+      version: v1alpha1
+    - kind: ObservabilityInstaller
+      name: observabilityinstallers.observability.openshift.io
       version: v1alpha1
     - description: Perses is the Schema for the perses API
       displayName: Perses
@@ -521,7 +521,7 @@ spec:
         - apiGroups:
           - observability.openshift.io
           resources:
-          - clusterobservabilities
+          - observabilityinstallers
           - uiplugins
           verbs:
           - create
@@ -534,8 +534,8 @@ spec:
         - apiGroups:
           - observability.openshift.io
           resources:
-          - clusterobservabilities/finalizers
-          - clusterobservabilities/status
+          - observabilityinstallers/finalizers
+          - observabilityinstallers/status
           verbs:
           - delete
           - get

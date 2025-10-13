@@ -111,35 +111,44 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 		}
 	}
 
-	if pluginInfo.HealthAnalyzerImage != "" {
+	// Only add monitoring-specific components for monitoring plugins to prevent conflicts
+	// with other plugin types that shouldn't manage these resources
+	if plugin.Spec.Type == uiv1alpha1.TypeMonitoring {
+		monitoringConfig := plugin.Spec.Monitoring
 		serviceAccountName := plugin.Name + serviceAccountSuffix
-		components = append(components, reconciler.NewUpdater(newClusterRoleBinding(namespace, serviceAccountName, "cluster-monitoring-view", "cluster-monitoring-view"), plugin))
-		components = append(components, reconciler.NewUpdater(newClusterRoleBinding(namespace, serviceAccountName, "system:auth-delegator", serviceAccountName+"-system-auth-delegator"), plugin))
-		components = append(components, reconciler.NewUpdater(newHealthAnalyzerPrometheusRole(namespace), plugin))
-		components = append(components, reconciler.NewUpdater(newHealthAnalyzerPrometheusRoleBinding(namespace), plugin))
-		components = append(components, reconciler.NewUpdater(newHealthAnalyzerService(namespace), plugin))
-		components = append(components, reconciler.NewUpdater(newHealthAnalyzerDeployment(namespace, serviceAccountName, pluginInfo), plugin))
-		components = append(components, reconciler.NewUpdater(newHealthAnalyzerServiceMonitor(namespace), plugin))
-	}
+		incidentsEnabled := monitoringConfig != nil && monitoringConfig.Incidents != nil && monitoringConfig.Incidents.Enabled
+		components = append(components,
+			reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, serviceAccountName, "cluster-monitoring-view", "cluster-monitoring-view"), plugin, incidentsEnabled),
+			reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, serviceAccountName, "system:auth-delegator", serviceAccountName+"-system-auth-delegator"), plugin, incidentsEnabled),
+			reconciler.NewOptionalUpdater(newHealthAnalyzerPrometheusRole(namespace), plugin, incidentsEnabled),
+			reconciler.NewOptionalUpdater(newHealthAnalyzerPrometheusRoleBinding(namespace), plugin, incidentsEnabled),
+			reconciler.NewOptionalUpdater(newHealthAnalyzerService(namespace), plugin, incidentsEnabled),
+			reconciler.NewOptionalUpdater(newHealthAnalyzerDeployment(namespace, serviceAccountName, pluginInfo), plugin, incidentsEnabled),
+			reconciler.NewOptionalUpdater(newHealthAnalyzerServiceMonitor(namespace), plugin, incidentsEnabled),
+		)
 
-	if pluginInfo.PersesImage != "" {
 		persesServiceAccountName := "perses" + serviceAccountSuffix
-		components = append(components, reconciler.NewUpdater(newServiceAccount("perses", namespace), plugin))
-		components = append(components, reconciler.NewUpdater(newClusterRoleBinding(namespace, persesServiceAccountName, "system:auth-delegator", persesServiceAccountName+"-system-auth-delegator"), plugin))
-		components = append(components, reconciler.NewUpdater(newPersesClusterRole(), plugin))
-		components = append(components, reconciler.NewUpdater(newClusterRoleBinding(namespace, persesServiceAccountName, "perses-cr", persesServiceAccountName+"-perses-cr"), plugin))
-		components = append(components, reconciler.NewUpdater(newPerses(namespace, pluginInfo.PersesImage), plugin))
-		components = append(components, reconciler.NewUpdater(newAcceleratorsDatasource(namespace), plugin))
-		components = append(components, reconciler.NewUpdater(newAcceleratorsDashboard(namespace), plugin))
+		persesEnabled := monitoringConfig != nil && monitoringConfig.Perses != nil && monitoringConfig.Perses.Enabled
+		components = append(components,
+			reconciler.NewOptionalUpdater(newServiceAccount("perses", namespace), plugin, persesEnabled),
+			reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, persesServiceAccountName, "system:auth-delegator", persesServiceAccountName+"-system-auth-delegator"), plugin, persesEnabled),
+			reconciler.NewOptionalUpdater(newPersesClusterRole(), plugin, persesEnabled),
+			reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, persesServiceAccountName, "perses-cr", persesServiceAccountName+"-perses-cr"), plugin, persesEnabled),
+			reconciler.NewOptionalUnmanagedUpdater(newPerses(namespace, pluginInfo.PersesImage), plugin, persesEnabled),
+			reconciler.NewOptionalUpdater(newAcceleratorsDatasource(namespace), plugin, persesEnabled),
+			reconciler.NewOptionalUpdater(newAcceleratorsDashboard(namespace), plugin, persesEnabled),
+		)
 
 		apmDashboard, err := newAPMDashboard(namespace)
 		if err != nil {
 			logger.Error(err, "Cannot build APM dashboard")
 		} else {
-			components = append(components, reconciler.NewUpdater(apmDashboard, plugin))
+			components = append(components, reconciler.NewOptionalUpdater(apmDashboard, plugin, persesEnabled))
 		}
 	}
+
 	return components
+
 }
 
 func newClusterRoleBinding(namespace string, serviceAccountName string, roleName string, name string) *rbacv1.ClusterRoleBinding {

@@ -3,7 +3,6 @@ package e2e
 import (
 	"context"
 	_ "embed"
-	"fmt"
 	"regexp"
 	"strings"
 	"testing"
@@ -28,27 +27,28 @@ import (
 var (
 	//go:embed traces_minio.yaml
 	minioManifests string
+	//go:embed traces_tempo_readiness.yaml
+	tempoReadinessManifest string
+	//go:embed traces_telemetrygen.yaml
+	telemetrygenManifest string
 	//go:embed traces_verify.yaml
 	verifyTracesManifests string
 )
 
-func TestClusterObservabilityController(t *testing.T) {
+func TestObservabilityInstallerController(t *testing.T) {
 	if !f.IsOpenshiftCluster {
 		t.Skip("The tests are skipped on non-ocp cluster")
 	}
 
-	//assert.NilError(t, obsv1alpha1.AddToScheme(scheme.Scheme))
-	//assert.NilError(t, olmv1alpha1.AddToScheme(scheme.Scheme))
+	assertCRDExists(t, "observabilityinstallers.observability.openshift.io")
 
-	assertCRDExists(t, "clusterobservabilities.observability.openshift.io")
-
-	t.Run("ClusterObservabilityTracing", testClusterObservabilityTracing)
+	t.Run("ObservabilityInstallerTracing", testObservabilityInstallerTracing)
 }
 
-func testClusterObservabilityTracing(t *testing.T) {
+func testObservabilityInstallerTracing(t *testing.T) {
 	ctx := context.Background()
 
-	// The ClusterObservability installs operators via subscriptions,
+	// The ObservabilityInstaller installs operators via subscriptions,
 	// therefore it is necessary to change the COO subscription to Automatic approval
 	subs := &olmv1alpha1.SubscriptionList{}
 	errSubs := f.K8sClient.List(ctx, subs, &client.ListOptions{
@@ -65,21 +65,7 @@ func testClusterObservabilityTracing(t *testing.T) {
 		if strings.TrimSpace(doc) == "" {
 			continue
 		}
-
-		// Create an unstructured object to decode the YAML into
-		obj := &unstructured.Unstructured{}
-
-		// Use the YAML decoder to convert the YAML string into the unstructured object
-		decoder := yamlutil.NewYAMLOrJSONDecoder(strings.NewReader(doc), 100)
-		err := decoder.Decode(&obj)
-		require.NoError(t, err)
-
-		// Use the client to create the object in the Kubernetes cluster
-		err = f.K8sClient.Create(context.Background(), obj)
-		if apierrors.IsAlreadyExists(err) {
-			continue
-		}
-		require.NoError(t, err)
+		obj := deployManifest(t, doc)
 		f.CleanUp(t, func() { f.K8sClient.Delete(ctx, obj) })
 	}
 
@@ -105,13 +91,13 @@ func testClusterObservabilityTracing(t *testing.T) {
 	require.NoError(t, err)
 	f.CleanUp(t, func() { f.K8sClient.Delete(ctx, secret) })
 
-	// Create ClusterObservability resource
-	clusterObs := &obsv1alpha1.ClusterObservability{
+	// Create ObservabilityInstaller resource
+	obsInstaller := &obsv1alpha1.ObservabilityInstaller{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "coo",
 			Namespace: operandNamespace.Name,
 		},
-		Spec: obsv1alpha1.ClusterObservabilitySpec{
+		Spec: obsv1alpha1.ObservabilityInstallerSpec{
 			Capabilities: &obsv1alpha1.CapabilitiesSpec{
 				Tracing: obsv1alpha1.TracingSpec{
 					CommonCapabilitiesSpec: obsv1alpha1.CommonCapabilitiesSpec{
@@ -136,137 +122,122 @@ func testClusterObservabilityTracing(t *testing.T) {
 	}
 
 	f.CleanUp(t, func() {
-		f.K8sClient.Delete(ctx, clusterObs)
+		f.K8sClient.Delete(ctx, obsInstaller)
 	})
 
 	// Create the resource
-	err = f.K8sClient.Create(ctx, clusterObs)
-	assert.NilError(t, err, "Failed to create ClusterObservability resource")
+	err = f.K8sClient.Create(ctx, obsInstaller)
+	assert.NilError(t, err, "Failed to create ObservabilityInstaller resource")
 
 	// Verify resource exists
-	var createdClusterObs obsv1alpha1.ClusterObservability
+	var createdClusterObs obsv1alpha1.ObservabilityInstaller
 	err = f.K8sClient.Get(ctx, types.NamespacedName{Name: "coo", Namespace: operandNamespace.Name}, &createdClusterObs)
-	assert.NilError(t, err, "Failed to get ClusterObservability resource")
+	assert.NilError(t, err, "Failed to get ObservabilityInstaller resource")
 
 	// Wait for Tempo to be ready
 	err = wait.PollUntilContextTimeout(ctx, 1*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
-		var instance obsv1alpha1.ClusterObservability
+		var instance obsv1alpha1.ObservabilityInstaller
 		err := f.K8sClient.Get(ctx, types.NamespacedName{Name: "coo", Namespace: operandNamespace.Name}, &instance)
 		if apierrors.IsNotFound(err) {
 			return false, nil
 		}
+
+		t.Logf("Tempo status: %s\n", instance.Status.Tempo)
 		r, _ := regexp.Compile(`tracing-observability/coo \([0-9]+.*\)`)
-		fmt.Printf("Tempo status: %s\n", instance.Status.Tempo)
 		if r.MatchString(instance.Status.Tempo) {
 			return true, nil
 		}
+
 		return false, nil
 	})
 	require.NoError(t, err)
+
 	// Wait for collector to be ready
 	err = wait.PollUntilContextTimeout(ctx, 1*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
-		var instance obsv1alpha1.ClusterObservability
+		var instance obsv1alpha1.ObservabilityInstaller
 		err := f.K8sClient.Get(ctx, types.NamespacedName{Name: "coo", Namespace: operandNamespace.Name}, &instance)
 		if apierrors.IsNotFound(err) {
 			return false, nil
 		}
+
+		t.Logf("OTEL status: %s\n", instance.Status.OpenTelemetry)
 		r, _ := regexp.Compile(`tracing-observability/coo \([0-9]+.*\)`)
-		fmt.Printf("OTEL status: %s\n", instance.Status.OpenTelemetry)
 		if r.MatchString(instance.Status.OpenTelemetry) {
 			return true, nil
 		}
+
 		return false, nil
 	})
 	require.NoError(t, err)
 
-	job := batchv1.Job{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "generate-traces-grpc",
-			Namespace: operandNamespace.Name,
-		},
-		Spec: batchv1.JobSpec{
-			Template: corev1.PodTemplateSpec{
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:  "telemetrygen",
-							Image: "ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.129.0",
-							Args: []string{
-								"traces",
-								"--otlp-endpoint=coo-collector.tracing-observability.svc.cluster.local:4317",
-								"--service=grpc",
-								"--otlp-insecure",
-								"--traces=10",
-							},
-						},
-					},
-					RestartPolicy: "Never",
-				},
-			},
-		},
-	}
-	err = f.K8sClient.Create(ctx, &job)
+	tempoReadinessObj := deployManifest(t, tempoReadinessManifest)
+	f.CleanUp(t, func() { f.K8sClient.Delete(ctx, tempoReadinessObj) })
+	err = jobHasCompleted(t, tempoReadinessObj.GetName(), operandNamespace.Name, time.Minute*5)
 	require.NoError(t, err)
 
-	// Check if the job succeeded
-	err = wait.PollUntilContextTimeout(ctx, 1*time.Second, 1*time.Minute, true, func(ctx context.Context) (bool, error) {
-		var job batchv1.Job
-		err := f.K8sClient.Get(ctx, types.NamespacedName{Name: "generate-traces-grpc", Namespace: operandNamespace.Name}, &job)
-		if apierrors.IsNotFound(err) {
-			return false, nil
-		}
-		if job.Status.Succeeded > 0 {
-			return true, nil
-		}
-		return false, nil
-	})
+	telemetrygenObj := deployManifest(t, telemetrygenManifest)
+	f.CleanUp(t, func() { f.K8sClient.Delete(ctx, telemetrygenObj) })
+	f.CleanUp(t, func() { f.K8sClient.Delete(ctx, telemetrygenObj) })
+	err = jobHasCompleted(t, telemetrygenObj.GetName(), operandNamespace.Name, time.Minute)
 	require.NoError(t, err)
 
 	for _, doc := range strings.Split(verifyTracesManifests, "---") {
 		if strings.TrimSpace(doc) == "" {
 			continue
 		}
-
-		// Create an unstructured object to decode the YAML into
-		obj := &unstructured.Unstructured{}
-
-		// Use the YAML decoder to convert the YAML string into the unstructured object
-		decoder := yamlutil.NewYAMLOrJSONDecoder(strings.NewReader(doc), 100)
-		err := decoder.Decode(&obj)
-		require.NoError(t, err)
-
-		// Use the client to create the object in the Kubernetes cluster
-		err = f.K8sClient.Create(context.Background(), obj)
-		require.NoError(t, err)
+		obj := deployManifest(t, doc)
 		f.CleanUp(t, func() { f.K8sClient.Delete(ctx, obj) })
 	}
-
-	// Check if the verify traces job succeeded
-	err = wait.PollUntilContextTimeout(ctx, 1*time.Second, 1*time.Minute, true, func(ctx context.Context) (bool, error) {
-		var job batchv1.Job
-		err := f.K8sClient.Get(ctx, types.NamespacedName{Name: "verify-traces-traceql-grpc", Namespace: operandNamespace.Name}, &job)
-		if apierrors.IsNotFound(err) {
-			return false, nil
-		}
-		if job.Status.Succeeded > 0 {
-			return true, nil
-		}
-		return false, nil
-	})
+	err = jobHasCompleted(t, "verify-traces-traceql-grpc", operandNamespace.Name, time.Minute)
 	require.NoError(t, err)
 
 	// Delete the resource
 	err = f.K8sClient.Delete(ctx, &createdClusterObs)
-	assert.NilError(t, err, "Failed to delete ClusterObservability resource")
+	assert.NilError(t, err, "Failed to delete ObservabilityInstaller resource")
 
 	// Verify resource is deleted
 	err = wait.PollUntilContextTimeout(ctx, 1*time.Second, 30*time.Second, true, func(ctx context.Context) (bool, error) {
-		var deletedClusterObs obsv1alpha1.ClusterObservability
+		var deletedClusterObs obsv1alpha1.ObservabilityInstaller
 		err := f.K8sClient.Get(ctx, types.NamespacedName{Name: "coo", Namespace: operandNamespace.Name}, &deletedClusterObs)
 		if apierrors.IsNotFound(err) {
 			return true, nil
 		}
-		return false, err
+
+		return false, nil
 	})
 	require.NoError(t, err)
+}
+
+func deployManifest(t *testing.T, manifest string) client.Object {
+	// Create an unstructured object to decode the YAML into
+	obj := &unstructured.Unstructured{}
+	// Use the YAML decoder to convert the YAML string into the unstructured object
+	decoder := yamlutil.NewYAMLOrJSONDecoder(strings.NewReader(manifest), 100)
+	err := decoder.Decode(&obj)
+	require.NoError(t, err)
+
+	// Use the client to create the object in the Kubernetes cluster
+	err = f.K8sClient.Create(context.Background(), obj)
+	if !apierrors.IsAlreadyExists(err) {
+		require.NoError(t, err)
+	}
+	return obj
+}
+
+func jobHasCompleted(t *testing.T, name, ns string, timeout time.Duration) error {
+	return wait.PollUntilContextTimeout(t.Context(), 1*time.Second, timeout, true, func(ctx context.Context) (bool, error) {
+		var job batchv1.Job
+		err := f.K8sClient.Get(ctx, types.NamespacedName{Name: name, Namespace: ns}, &job)
+		if apierrors.IsNotFound(err) {
+			t.Logf("job %s not found", name)
+			return false, nil
+		}
+
+		if job.Status.Succeeded > 0 {
+			return true, nil
+		}
+
+		t.Logf("job %s didn't succeed yet", name)
+		return false, nil
+	})
 }

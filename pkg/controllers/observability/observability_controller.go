@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	tempov1alpha1 "github.com/grafana/tempo-operator/api/tempo/v1alpha1"
+	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -24,22 +26,20 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	tempov1alpha1 "github.com/grafana/tempo-operator/api/tempo/v1alpha1"
-	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	obsv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/observability/v1alpha1"
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 )
 
 const (
-	finalizerName = "observability.openshift.io/clusterobservability"
+	finalizerName = "observability.openshift.io/observabilityinstaller"
 
 	conditionReasonError    = "ReconcileError"
 	conditionTypeReconciled = "Reconciled"
 )
 
-// RBAC for the ClusterObservability CRD
-// +kubebuilder:rbac:groups=observability.openshift.io,resources=clusterobservabilities,verbs=get;list;watch;create;update;delete;patch
-// +kubebuilder:rbac:groups=observability.openshift.io,resources=clusterobservabilities/status;clusterobservabilities/finalizers,verbs=get;update;delete;patch
+// RBAC for the ObservabilityInstaller CRD
+// +kubebuilder:rbac:groups=observability.openshift.io,resources=observabilityinstallers,verbs=get;list;watch;create;update;delete;patch
+// +kubebuilder:rbac:groups=observability.openshift.io,resources=observabilityinstallers/status;observabilityinstallers/finalizers,verbs=get;update;delete;patch
 
 // RBAC for installing operators
 // +kubebuilder:rbac:groups=operators.coreos.com,resources=subscriptions,verbs=get;list;watch;create;update;patch;delete
@@ -58,8 +58,10 @@ const (
 // +kubebuilder:rbac:groups=observability.openshift.io,resources=uiplugins,verbs=get;list;watch;create;update;delete;patch
 // +kubebuilder:rbac:groups=tempo.grafana.com,resources=application,resourceNames=traces,verbs=create
 
-type clusterObservabilityController struct {
-	client          client.Client
+type observabilityInstallerController struct {
+	client client.Client
+	// Use the reader to access config maps which are not cached
+	apiReader       client.Reader
 	scheme          *runtime.Scheme
 	logger          logr.Logger
 	Options         Options
@@ -70,9 +72,9 @@ type clusterObservabilityController struct {
 	watchTempo      *sync.Once
 }
 
-var _ reconcile.TypedReconciler[reconcile.Request] = (*clusterObservabilityController)(nil)
+var _ reconcile.TypedReconciler[reconcile.Request] = (*observabilityInstallerController)(nil)
 
-func (o clusterObservabilityController) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+func (o observabilityInstallerController) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	o.logger.Info("Reconcile called", "request", request)
 
 	instance, err := o.getInstance(ctx, request)
@@ -94,21 +96,15 @@ func (o clusterObservabilityController) Reconcile(ctx context.Context, request r
 		}
 	}
 
-	csvs := &olmv1alpha1.ClusterServiceVersionList{}
-	err = o.client.List(ctx, csvs, &client.ListOptions{Namespace: o.Options.COONamespace})
-	if err != nil {
-		o.logger.Error(err, "Failed to list csvs")
-		return ctrl.Result{}, err
-	}
 	subs := &olmv1alpha1.SubscriptionList{}
-	err = o.client.List(ctx, subs, &client.ListOptions{})
+	// List all subscriptions to figure out if the operators are already installed
+	err = o.apiReader.List(ctx, subs, &client.ListOptions{})
 	if err != nil {
 		o.logger.Error(err, "Failed to list subscriptions")
 		return ctrl.Result{}, err
 	}
-	reconcilers, err := getReconcilers(ctx, o.client, instance, o.Options, operatorsStatus{
+	reconcilers, err := getReconcilers(ctx, o.client, o.apiReader, instance, o.Options, operatorsStatus{
 		cooNamespace: o.Options.COONamespace,
-		csvs:         csvs.Items,
 		subs:         subs.Items,
 	})
 	if err != nil {
@@ -169,8 +165,8 @@ func (o clusterObservabilityController) Reconcile(ctx context.Context, request r
 	return o.updateStatus(ctx, instance, nil), nil
 }
 
-func (o clusterObservabilityController) triggerReconcile(ctx context.Context, _ client.Object) []reconcile.Request {
-	instances := &obsv1alpha1.ClusterObservabilityList{}
+func (o observabilityInstallerController) triggerReconcile(ctx context.Context, _ client.Object) []reconcile.Request {
+	instances := &obsv1alpha1.ObservabilityInstallerList{}
 	listOps := &client.ListOptions{}
 	err := o.client.List(ctx, instances, listOps)
 	if err != nil {
@@ -189,8 +185,8 @@ func (o clusterObservabilityController) triggerReconcile(ctx context.Context, _ 
 	return requests
 }
 
-func (o clusterObservabilityController) getInstance(ctx context.Context, req ctrl.Request) (*obsv1alpha1.ClusterObservability, error) {
-	instance := obsv1alpha1.ClusterObservability{}
+func (o observabilityInstallerController) getInstance(ctx context.Context, req ctrl.Request) (*obsv1alpha1.ObservabilityInstaller, error) {
+	instance := obsv1alpha1.ObservabilityInstaller{}
 	if err := o.client.Get(ctx, req.NamespacedName, &instance); err != nil {
 		if apierrors.IsNotFound(err) {
 			o.logger.V(3).Info("instance could not be found; may be marked for deletion")
@@ -203,7 +199,7 @@ func (o clusterObservabilityController) getInstance(ctx context.Context, req ctr
 	return &instance, nil
 }
 
-func (o clusterObservabilityController) updateStatus(ctx context.Context, instance *obsv1alpha1.ClusterObservability, reconcileErr error) reconcile.Result {
+func (o observabilityInstallerController) updateStatus(ctx context.Context, instance *obsv1alpha1.ObservabilityInstaller, reconcileErr error) reconcile.Result {
 	if instance.Spec.Capabilities != nil {
 		capabilities := instance.Spec.Capabilities
 		if capabilities.Tracing.Enabled {
@@ -275,8 +271,9 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 		return fmt.Errorf("failed to create discovery client: %w", err)
 	}
 
-	controller := &clusterObservabilityController{
+	controller := &observabilityInstallerController{
 		client:          mgr.GetClient(),
+		apiReader:       mgr.GetAPIReader(),
 		scheme:          mgr.GetScheme(),
 		logger:          logger,
 		Options:         opts,
@@ -287,7 +284,7 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 	}
 
 	ctrlBuilder := ctrl.NewControllerManagedBy(mgr).
-		For(&obsv1alpha1.ClusterObservability{}).
+		For(&obsv1alpha1.ObservabilityInstaller{}).
 		Owns(&olmv1alpha1.Subscription{}).
 		Owns(&corev1.Secret{}).
 		Owns(&corev1.Namespace{}).

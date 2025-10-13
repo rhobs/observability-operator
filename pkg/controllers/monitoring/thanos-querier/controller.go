@@ -210,13 +210,16 @@ func (rm resourceManager) findSidecarServices(ctx context.Context, tQuerier *mso
 		logger.Info("Couldn't find any MonitoringStack")
 		return sidecarUrls, err
 	}
-	logger.Info("Found MonitoringStacks list", "length", len(msList.Items))
+	logger.Info("Evaluating MonitoringStacks", "length", len(msList.Items))
+
+	// Keep only the MonitoringStacks matching the ThanosQuerier's namespace selector.
 	for _, ms := range msList.Items {
 		if tQuerier.MatchesNamespace(ms.Namespace) {
 			serviceName := ms.Name + "-thanos-sidecar"
 			sidecarUrls = append(sidecarUrls, getEndpointUrl(serviceName, ms.Namespace))
 		}
 	}
+	logger.Info("Found matching MonitoringStacks", "length", len(sidecarUrls))
 
 	return sidecarUrls, nil
 }
