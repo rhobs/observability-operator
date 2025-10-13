@@ -329,6 +329,11 @@ func (m *MockClient) Patch(ctx context.Context, obj client.Object, patch client.
 	return args.Error(0)
 }
 
+func (m *MockClient) Apply(ctx context.Context, obj runtime.ApplyConfiguration, opts ...client.ApplyOption) error {
+	args := m.Called(ctx, obj, opts)
+	return args.Error(0)
+}
+
 func (m *MockClient) DeleteAllOf(ctx context.Context, obj client.Object, opts ...client.DeleteAllOfOption) error {
 	args := m.Called(ctx, obj, opts)
 	return args.Error(0)
