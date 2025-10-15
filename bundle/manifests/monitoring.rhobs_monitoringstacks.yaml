@@ -205,6 +205,10 @@ spec:
                       Defaults to the value of `false`.
                       The resulting endpoint is /api/v1/otlp/v1/metrics.
                     type: boolean
+                  enableAdminAPI:
+                    description: |- 
+                      Enable Prometheus admin API. Defaults to the value of `false`.
+                    type: boolean
                   enableRemoteWriteReceiver:
                     description: Enable Prometheus to be used as a receiver for the
                       Prometheus remote write protocol. Defaults to the value of `false`.

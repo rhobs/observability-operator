@@ -199,6 +199,11 @@ spec:
                   replicas: 2
                 description: Define prometheus config
                 properties:
+                  enableAdminAPI:
+                    description: |-
+                      Enable Prometheus Admin API
+                      Default to the value of `false`.
+                    type: boolean
                   enableOtlpHttpReceiver:
                     description: |-
                       Enable Prometheus to accept OpenTelemetry Metrics via the otlp/http protocol.

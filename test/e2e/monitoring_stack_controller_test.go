@@ -741,6 +741,7 @@ func assertPrometheusManagedFields(t *testing.T) {
 		ExternalLabels: map[string]string{
 			"key": "value",
 		},
+		EnableAdminAPI: true,
 		EnableRemoteWriteReceiver: true,
 		EnableOtlpHttpReceiver:    func(b bool) *bool { return &b }(true),
 		WebTLSConfig: &stack.WebTLSConfig{
@@ -947,6 +948,7 @@ const oboManagedFieldsJson = `
     "f:alertmanagers": {}
   },
   "f:arbitraryFSAccessThroughSMs": {},
+  "f:enableAdminAPI": {},
   "f:enableRemoteWriteReceiver": {},
   "f:externalLabels": {
     "f:key": {}
