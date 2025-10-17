@@ -479,6 +479,13 @@ The resulting endpoint is /api/v1/otlp/v1/metrics.<br/>
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>enableAdminAPI</b></td>
+        <td>boolean</td>
+        <td>
+          Enable Prometheus Admin API. Defaults to the value of `false`.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>enableRemoteWriteReceiver</b></td>
         <td>boolean</td>
         <td>

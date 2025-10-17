@@ -201,6 +201,7 @@ func newPrometheus(
 				},
 				RemoteWrite:               config.RemoteWrite,
 				ExternalLabels:            config.ExternalLabels,
+				EnableAdminAPI:            config.EnableAdminAPI,
 				EnableRemoteWriteReceiver: config.EnableRemoteWriteReceiver,
 				EnableFeatures: func() []monv1.EnableFeature {
 					if config.EnableOtlpHttpReceiver != nil && *config.EnableOtlpHttpReceiver {
