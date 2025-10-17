@@ -127,7 +127,8 @@ run_bundle() {
 	header "Running ObO Bundle"
 
 	./tmp/bin/operator-sdk run bundle "$BUNDLE_IMG" \
-		--install-mode AllNamespaces --namespace "$OPERATORS_NS" --skip-tls
+		--install-mode AllNamespaces --namespace "$OPERATORS_NS" --skip-tls \
+		--timeout 10m
 }
 
 log_events() {

@@ -261,7 +261,7 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	pluginInfo, pluginInfoErr := PluginInfoBuilder(ctx, rm.k8sClient, rm.k8sDynamicClient, plugin, rm.pluginConf, compatibilityInfo, rm.clusterVersion, rm.logger)
 
 	if pluginInfo != nil {
-		reconcilers := pluginComponentReconcilers(plugin, *pluginInfo, rm.clusterVersion)
+		reconcilers := pluginComponentReconcilers(plugin, *pluginInfo, rm.clusterVersion, rm.logger)
 		for _, reconciler := range reconcilers {
 			err := reconciler.Reconcile(ctx, rm.k8sClient, rm.scheme)
 			// handle creation / updation errors that can happen due to a stale cache by
