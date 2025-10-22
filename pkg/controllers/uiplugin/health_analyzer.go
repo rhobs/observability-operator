@@ -134,6 +134,10 @@ func newHealthAnalyzerDeployment(namespace string, serviceAccountName string, pl
 									Name:  "PROM_URL",
 									Value: "https://thanos-querier.openshift-monitoring.svc.cluster.local:9091/",
 								},
+								{
+									Name:  "ALERTMANAGER_URL",
+									Value: "https://alertmanager-main.openshift-monitoring.svc.cluster.local:9094",
+								},
 							},
 							SecurityContext: &corev1.SecurityContext{
 								RunAsNonRoot:             ptr.To(true),
