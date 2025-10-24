@@ -50,7 +50,7 @@ var compatibilityMatrix = []CompatibilityEntry{
 		MinClusterVersion: "v4.16",
 		MaxClusterVersion: "",
 		ImageKey:          "ui-troubleshooting-panel",
-		SupportLevel:      TechPreview,
+		SupportLevel:      GeneralAvailability,
 		Features:          []string{},
 	},
 	{
@@ -143,9 +143,19 @@ var compatibilityMatrix = []CompatibilityEntry{
 	{
 		PluginType:        uiv1alpha1.TypeMonitoring,
 		MinClusterVersion: "v4.19",
-		MaxClusterVersion: "",
+		MaxClusterVersion: "v4.20",
 		ImageKey:          "ui-monitoring",
 		SupportLevel:      TechPreview,
+		// feature flags for montioring are dynamically injected
+		// based on the cluster version and and UIPlugin CR configurations
+		Features: []string{},
+	},
+	{
+		PluginType:        uiv1alpha1.TypeMonitoring,
+		MinClusterVersion: "v4.20",
+		MaxClusterVersion: "",
+		ImageKey:          "ui-monitoring",
+		SupportLevel:      GeneralAvailability,
 		// feature flags for montioring are dynamically injected
 		// based on the cluster version and and UIPlugin CR configurations
 		Features: []string{},
