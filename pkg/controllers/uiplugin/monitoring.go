@@ -51,7 +51,7 @@ func validateIncidentsConfig(config *uiv1alpha1.MonitoringConfig, clusterVersion
 		clusterVersion = "v" + clusterVersion
 	}
 	canonicalClusterVersion := fmt.Sprintf("%s-0", semver.Canonical(clusterVersion))
-	minClusterVersionMet := semver.Compare(canonicalClusterVersion, "v4.19.0-0") >= 0
+	minClusterVersionMet := semver.Compare(canonicalClusterVersion, "v4.20.0-0") >= 0
 
 	return enabled && minClusterVersionMet
 }

@@ -261,4 +261,4 @@ spec:
 | --------------- | ------------------- | --------------------------------- |
 | 1.0.0+          | 4.14+               | `acm-alerting`                    |
 | 1.1.0+          | 4.15+               | `acm-alerting, perses-dashboards` |
-| 1.2.0+          | 4.19+               | `acm-alerting, perses-dashboards, incidents` |
+| 1.3.0+          | 4.20+               | `acm-alerting, perses-dashboards, incidents` |
