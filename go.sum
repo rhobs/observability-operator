@@ -253,8 +253,8 @@ github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674 h1:JeSE6pjso5T
 github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674/go.mod h1:r4w70xmWCQKmi1ONH4KIaBptdivuRPyosB9RmPlGEwA=
 github.com/grafana/regexp v0.0.0-20250905093917-f7b3be9d1853 h1:cLN4IBkmkYZNnk7EAJ0BHIethd+J6LqxFNw5mSiI2bM=
 github.com/grafana/regexp v0.0.0-20250905093917-f7b3be9d1853/go.mod h1:+JKpmjMGhpgPL+rXZ5nsZieVzvarn86asRlBg4uNGnk=
-github.com/grafana/tempo-operator v0.16.0 h1:/HLVmdC1mnEZMFjWCo1GJWS3DxzTdfjvyXAvq/dXURU=
-github.com/grafana/tempo-operator v0.16.0/go.mod h1:h3hQBqqiohdYhqltyj0DqLtkAbvEnkwo9Lp323zl3Bo=
+github.com/grafana/tempo-operator v0.18.0 h1:ihXddVx2/I9EbMTkPBnbnN0Uc19sjxAFDx2BqublXqQ=
+github.com/grafana/tempo-operator v0.18.0/go.mod h1:xt66ENn9wlMOqj0OAtoiNm3w+JIah4LAeX/XZgdsLsU=
 github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.2 h1:8Tjv8EJ+pM1xP8mK6egEbD1OgnVTyacbefKhmbLhIhU=
 github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.2/go.mod h1:pkJQ2tZHJ0aFOVEEot6oZmaVEZcRme73eIFmhiVuRWs=
 github.com/hashicorp/consul/api v1.32.0 h1:5wp5u780Gri7c4OedGEPzmlUEzi0g2KyiPphSr6zjVg=
