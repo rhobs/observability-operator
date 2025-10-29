@@ -43,6 +43,9 @@ jobs:
       - name: Lint Shell scripts
         run: make lint-shell
 
+      - name: Check for linter changes
+        run: git diff --exit-code
+
   generate:
     name: Verify generated code
     runs-on: ubuntu-latest
