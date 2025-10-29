@@ -236,6 +236,14 @@ type PrometheusConfig struct {
 	// Configure TLS options for the Prometheus web server.
 	// +optional
 	WebTLSConfig *WebTLSConfig `json:"webTLSConfig,omitempty"`
+	// Enable Prometheus Admin API.
+	// Defaults to the value of `false`.
+	// WARNING: Enabling the admin APIs enables mutating endpoints, to delete data,
+	// shutdown Prometheus, and more. Enabling this should be done with care and the
+	// user is advised to add additional authentication authorization via a proxy to
+	// ensure only clients authorized to perform these actions can do so.
+	// +optional
+	EnableAdminAPI bool `json:"enableAdminAPI,omitempty"`
 }
 
 type AlertmanagerConfig struct {

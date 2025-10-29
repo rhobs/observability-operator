@@ -199,6 +199,15 @@ spec:
                   replicas: 2
                 description: Define prometheus config
                 properties:
+                  enableAdminAPI:
+                    description: |-
+                      Enable Prometheus Admin API.
+                      Defaults to the value of `false`.
+                      WARNING: Enabling the admin APIs enables mutating endpoints, to delete data,
+                      shutdown Prometheus, and more. Enabling this should be done with care and the
+                      user is advised to add additional authentication authorization via a proxy to
+                      ensure only clients authorized to perform these actions can do so.
+                    type: boolean
                   enableOtlpHttpReceiver:
                     description: |-
                       Enable Prometheus to accept OpenTelemetry Metrics via the otlp/http protocol.

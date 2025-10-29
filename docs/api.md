@@ -470,6 +470,18 @@ Define prometheus config
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>enableAdminAPI</b></td>
+        <td>boolean</td>
+        <td>
+          Enable Prometheus Admin API.
+Defaults to the value of `false`.
+WARNING: Enabling the admin APIs enables mutating endpoints, to delete data,
+shutdown Prometheus, and more. Enabling this should be done with care and the
+user is advised to add additional authentication authorization via a proxy to
+ensure only clients authorized to perform these actions can do so.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>enableOtlpHttpReceiver</b></td>
         <td>boolean</td>
         <td>
