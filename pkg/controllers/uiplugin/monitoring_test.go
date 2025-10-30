@@ -310,25 +310,6 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 				persesImage:    true,
 				healthAnalyzer: true,
 			},
-			clusterVersionsToTest: []string{"v4.20"},
-		},
-		{
-			name:         "All monitoring configurations",
-			pluginConfig: pluginConfigAll,
-			proxies: proxiesStatus{
-				alertmanager: true,
-				thanos:       true,
-				perses:       true,
-			},
-			featureFlags: featureFlagsStatus{
-				acmAlerting: true,
-				perses:      true,
-				incidents:   false,
-			},
-			components: expectedComponents{
-				persesImage:    true,
-				healthAnalyzer: false,
-			},
 			clusterVersionsToTest: []string{"v4.19"},
 		},
 		{
@@ -414,12 +395,6 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 			clusterVersionsToTest: []string{"v4.18"},
 		},
 		{
-			name:                  "Incidents configuration only",
-			pluginConfig:          pluginConfigIncidents,
-			expectedErrorMessage:  "all uiplugin monitoring configurations are invalid or not supported in this cluster version",
-			clusterVersionsToTest: []string{"v4.19"},
-		},
-		{
 			name:         "Incidents configuration only",
 			pluginConfig: pluginConfigIncidents,
 			proxies: proxiesStatus{
@@ -436,7 +411,7 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 				persesImage:    false,
 				healthAnalyzer: true,
 			},
-			clusterVersionsToTest: []string{"v4.20"},
+			clusterVersionsToTest: []string{"v4.19"},
 		},
 	}
 
@@ -522,11 +497,17 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "v4.20.0") == true)
 		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "4.20.0") == true)
 
-		// should be invalid clusterVersion because UIPlugin incident feature is supported in OCP v4.20+
-		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "v4.19.0-0.nightly-2024-06-06-064349") == false)
-		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "4.19.0-0.nightly-2024-06-06-064349") == false)
-		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "v4.19") == false)
-		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "v4.19.0") == false)
-		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "4.19.0") == false)
+		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "v4.19.0-0.nightly-2024-06-06-064349") == true)
+		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "4.19.0-0.nightly-2024-06-06-064349") == true)
+		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "v4.19") == true)
+		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "v4.19.0") == true)
+		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "4.19.0") == true)
+
+		// should be invalid clusterVersion because UIPlugin incident feature is supported in OCP v4.19+
+		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "v4.18.0-0.nightly-2024-06-06-064349") == false)
+		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "4.18.0-0.nightly-2024-06-06-064349") == false)
+		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "v4.18") == false)
+		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "v4.18.0") == false)
+		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "4.18.0") == false)
 	})
 }
