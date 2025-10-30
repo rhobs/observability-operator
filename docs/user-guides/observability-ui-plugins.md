@@ -251,7 +251,7 @@ spec:
 | __Feature__         | __Description__                                                                                                          | __Support Level__    |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------ | -----------------    |
 | `acm-alerting`      | Adds alerting UI to multi-cluster view. Configures proxies to connect with any alertmanager and thanos-querier.          | Dev Preview          |
-| `incidents`         | Adds incidents UI to `Observe` section of OpenShift Console Platform. Deploys the [Cluster Health Analyzer](https://github.com/openshift/cluster-health-analyzer) and configures proxies in the plugin to connect with it. | General Availability (OCP 4.20+), Tech Preview (OCP 4.19) |
+| `incidents`         | Adds incidents UI to `Observe` section of OpenShift Console Platform. Deploys the [Cluster Health Analyzer](https://github.com/openshift/cluster-health-analyzer) and configures proxies in the plugin to connect with it. | General Availability |
 | `perses-dashboards` | Adds perses UI to `Observe` section of OpenShift Console Platform. Configures proxies to connect with a Perses instance. Installs Accelerator Perses Dashboard and Accelerator Perses Datasource. See details [here](./perses-dashboards.md) | Dev Preview          |
 
 
@@ -261,5 +261,5 @@ spec:
 | --------------- | ------------------- | --------------------------------- |
 | 1.0.0+          | 4.14+               | `acm-alerting`                    |
 | 1.1.0+          | 4.15+               | `acm-alerting, perses-dashboards` |
-| 1.2.0+          | 4.19                | `acm-alerting, perses-dashboards, incidents (Tech Preview)` |
-| 1.3.0+          | 4.20+               | `acm-alerting, perses-dashboards, incidents (General Availability)` |
+| 1.2.0           | 4.19+               | `acm-alerting, perses-dashboards, incidents (Tech Preview)` |
+| 1.3.0+          | 4.19+               | `acm-alerting, perses-dashboards, incidents (General Availability)` |
