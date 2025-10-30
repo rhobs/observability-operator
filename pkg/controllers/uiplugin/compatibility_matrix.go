@@ -143,16 +143,6 @@ var compatibilityMatrix = []CompatibilityEntry{
 	{
 		PluginType:        uiv1alpha1.TypeMonitoring,
 		MinClusterVersion: "v4.19",
-		MaxClusterVersion: "v4.20",
-		ImageKey:          "ui-monitoring",
-		SupportLevel:      TechPreview,
-		// feature flags for montioring are dynamically injected
-		// based on the cluster version and and UIPlugin CR configurations
-		Features: []string{},
-	},
-	{
-		PluginType:        uiv1alpha1.TypeMonitoring,
-		MinClusterVersion: "v4.20",
 		MaxClusterVersion: "",
 		ImageKey:          "ui-monitoring",
 		SupportLevel:      GeneralAvailability,
