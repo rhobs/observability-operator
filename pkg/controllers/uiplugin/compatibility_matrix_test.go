@@ -50,24 +50,28 @@ func TestLookupImageAndFeatures(t *testing.T) {
 		expectedKey      string
 		expectedErr      error
 		expectedFeatures []string
+		supportLevel     SupportLevel
 	}{
 		{
 			pluginType:     uiv1alpha1.TypeDashboards,
 			clusterVersion: "4.10",
 			expectedKey:    "",
 			expectedErr:    fmt.Errorf("dynamic plugins not supported before 4.11"),
+			supportLevel:   "",
 		},
 		{
 			pluginType:     uiv1alpha1.TypeDashboards,
 			clusterVersion: "4.11",
 			expectedKey:    "ui-dashboards",
 			expectedErr:    nil,
+			supportLevel:   DevPreview,
 		},
 		{
 			pluginType:     uiv1alpha1.TypeDashboards,
 			clusterVersion: "4.24.0-0.nightly-2024-03-11-200348",
 			expectedKey:    "ui-dashboards",
 			expectedErr:    nil,
+			supportLevel:   DevPreview,
 		},
 		{
 			pluginType:     uiv1alpha1.TypeLogging,
@@ -78,6 +82,7 @@ func TestLookupImageAndFeatures(t *testing.T) {
 				"dev-console",
 				"alerts",
 			},
+			supportLevel: GeneralAvailability,
 		},
 		{
 			pluginType:     uiv1alpha1.TypeLogging,
@@ -88,6 +93,7 @@ func TestLookupImageAndFeatures(t *testing.T) {
 				"dev-console",
 				"alerts",
 			},
+			supportLevel: GeneralAvailability,
 		},
 		{
 			pluginType:     uiv1alpha1.TypeLogging,
@@ -99,6 +105,7 @@ func TestLookupImageAndFeatures(t *testing.T) {
 				"alerts",
 				"dev-alerts",
 			},
+			supportLevel: GeneralAvailability,
 		},
 		{
 			pluginType:     uiv1alpha1.TypeLogging,
@@ -110,6 +117,7 @@ func TestLookupImageAndFeatures(t *testing.T) {
 				"alerts",
 				"dev-alerts",
 			},
+			supportLevel: GeneralAvailability,
 		},
 		{
 			pluginType:     uiv1alpha1.TypeLogging,
@@ -121,6 +129,7 @@ func TestLookupImageAndFeatures(t *testing.T) {
 				"alerts",
 				"dev-alerts",
 			},
+			supportLevel: GeneralAvailability,
 		},
 		{
 			pluginType:     uiv1alpha1.TypeLogging,
@@ -132,6 +141,7 @@ func TestLookupImageAndFeatures(t *testing.T) {
 				"alerts",
 				"dev-alerts",
 			},
+			supportLevel: GeneralAvailability,
 		},
 		{
 			pluginType:     uiv1alpha1.TypeLogging,
@@ -143,6 +153,7 @@ func TestLookupImageAndFeatures(t *testing.T) {
 				"alerts",
 				"dev-alerts",
 			},
+			supportLevel: GeneralAvailability,
 		},
 		{
 			pluginType:     uiv1alpha1.TypeLogging,
@@ -154,12 +165,14 @@ func TestLookupImageAndFeatures(t *testing.T) {
 				"alerts",
 				"dev-alerts",
 			},
+			supportLevel: GeneralAvailability,
 		},
 		{
 			pluginType:     uiv1alpha1.TypeLogging,
 			clusterVersion: "4.11",
 			expectedKey:    "ui-logging-pf4",
 			expectedErr:    nil,
+			supportLevel:   GeneralAvailability,
 		},
 		{
 			pluginType: uiv1alpha1.TypeTroubleshootingPanel,
@@ -168,96 +181,112 @@ func TestLookupImageAndFeatures(t *testing.T) {
 			clusterVersion: "4.15",
 			expectedKey:    "",
 			expectedErr:    fmt.Errorf("plugin %q: no compatible image found for cluster version %q", uiv1alpha1.TypeTroubleshootingPanel, "v4.15"),
+			supportLevel:   GeneralAvailability,
 		},
 		{
 			pluginType:     uiv1alpha1.TypeTroubleshootingPanel,
 			clusterVersion: "4.16",
 			expectedKey:    "ui-troubleshooting-panel",
 			expectedErr:    nil,
+			supportLevel:   GeneralAvailability,
 		},
 		{
 			pluginType:     uiv1alpha1.TypeTroubleshootingPanel,
 			clusterVersion: "4.24.0-0.nightly-2024-03-11-200348",
 			expectedKey:    "ui-troubleshooting-panel",
 			expectedErr:    nil,
+			supportLevel:   GeneralAvailability,
 		},
 		{
 			pluginType:     uiv1alpha1.TypeDistributedTracing,
 			clusterVersion: "4.10",
 			expectedKey:    "",
 			expectedErr:    fmt.Errorf("dynamic plugins not supported before 4.11"),
+			supportLevel:   "",
 		},
 		{
 			pluginType:     uiv1alpha1.TypeDistributedTracing,
 			clusterVersion: "4.11",
 			expectedKey:    "ui-distributed-tracing-pf4",
 			expectedErr:    nil,
+			supportLevel:   GeneralAvailability,
 		},
 		{
 			pluginType:     uiv1alpha1.TypeDistributedTracing,
 			clusterVersion: "4.14",
 			expectedKey:    "ui-distributed-tracing-pf4",
 			expectedErr:    nil,
+			supportLevel:   GeneralAvailability,
 		},
 		{
 			pluginType:     uiv1alpha1.TypeDistributedTracing,
 			clusterVersion: "4.15",
 			expectedKey:    "ui-distributed-tracing-pf5",
 			expectedErr:    nil,
+			supportLevel:   GeneralAvailability,
 		},
 		{
 			pluginType:     uiv1alpha1.TypeDistributedTracing,
 			clusterVersion: "v4.15.0-0.nightly-2024-06-06-064349",
 			expectedKey:    "ui-distributed-tracing-pf5",
 			expectedErr:    nil,
+			supportLevel:   GeneralAvailability,
 		},
 		{
 			pluginType:     uiv1alpha1.TypeDistributedTracing,
 			clusterVersion: "v4.15.46",
 			expectedKey:    "ui-distributed-tracing-pf5",
 			expectedErr:    nil,
+			supportLevel:   GeneralAvailability,
 		},
 		{
 			pluginType:     uiv1alpha1.TypeDistributedTracing,
 			clusterVersion: "4.18",
 			expectedKey:    "ui-distributed-tracing-pf5",
 			expectedErr:    nil,
+			supportLevel:   GeneralAvailability,
 		},
 		{
 			pluginType:     uiv1alpha1.TypeDistributedTracing,
 			clusterVersion: "4.19",
 			expectedKey:    "ui-distributed-tracing",
 			expectedErr:    nil,
+			supportLevel:   GeneralAvailability,
 		},
 		{
 			pluginType:     uiv1alpha1.TypeDistributedTracing,
 			clusterVersion: "4.24.0-0.nightly-2024-03-11-200348",
 			expectedKey:    "ui-distributed-tracing",
 			expectedErr:    nil,
+			supportLevel:   GeneralAvailability,
 		},
 		{
 			pluginType:     uiv1alpha1.TypeDistributedTracing,
 			clusterVersion: "4.16.0-rc.3",
 			expectedKey:    "ui-distributed-tracing-pf5",
 			expectedErr:    nil,
+			supportLevel:   GeneralAvailability,
 		},
 		{
 			pluginType:     "non-existent-plugin",
 			clusterVersion: "4.24.0-0.nightly-2024-03-11-200348",
 			expectedKey:    "",
 			expectedErr:    fmt.Errorf(`plugin "non-existent-plugin": no compatible image found for cluster version "v4.24.0-0.nightly-2024-03-11-200348"`),
+			supportLevel:   "",
 		},
 		{
 			pluginType:     uiv1alpha1.TypeTroubleshootingPanel,
 			clusterVersion: "v4.16.0-0.nightly-2024-06-06-064349",
 			expectedKey:    "ui-troubleshooting-panel",
 			expectedErr:    nil,
+			supportLevel:   GeneralAvailability,
 		},
 		{
 			pluginType:     uiv1alpha1.TypeMonitoring,
 			clusterVersion: "v4.14",
 			expectedKey:    "ui-monitoring",
 			expectedErr:    fmt.Errorf("plugin %q: no compatible image found for cluster version %q", uiv1alpha1.TypeMonitoring, "v4.14"),
+			supportLevel:   TechPreview,
 		},
 		{
 			pluginType:       uiv1alpha1.TypeMonitoring,
@@ -265,6 +294,7 @@ func TestLookupImageAndFeatures(t *testing.T) {
 			expectedKey:      "ui-monitoring-pf5",
 			expectedFeatures: []string{},
 			expectedErr:      nil,
+			supportLevel:     TechPreview,
 		},
 		{
 			pluginType:       uiv1alpha1.TypeMonitoring,
@@ -272,6 +302,7 @@ func TestLookupImageAndFeatures(t *testing.T) {
 			expectedKey:      "ui-monitoring-pf5",
 			expectedFeatures: []string{},
 			expectedErr:      nil,
+			supportLevel:     TechPreview,
 		},
 		{
 			pluginType:       uiv1alpha1.TypeMonitoring,
@@ -279,6 +310,7 @@ func TestLookupImageAndFeatures(t *testing.T) {
 			expectedKey:      "ui-monitoring",
 			expectedFeatures: []string{},
 			expectedErr:      nil,
+			supportLevel:     GeneralAvailability,
 		},
 		{
 			pluginType:       uiv1alpha1.TypeMonitoring,
@@ -286,6 +318,7 @@ func TestLookupImageAndFeatures(t *testing.T) {
 			expectedKey:      "ui-monitoring",
 			expectedFeatures: []string{},
 			expectedErr:      nil,
+			supportLevel:     GeneralAvailability,
 		},
 	} {
 		t.Run(fmt.Sprintf("%s/%s", tc.pluginType, tc.clusterVersion), func(t *testing.T) {
@@ -300,6 +333,8 @@ func TestLookupImageAndFeatures(t *testing.T) {
 
 			t.Logf("%s == %s", tc.expectedKey, info.ImageKey)
 			assert.Equal(t, tc.expectedKey, info.ImageKey)
+
+			assert.Equal(t, tc.supportLevel, info.SupportLevel)
 
 			if tc.expectedFeatures != nil {
 				assert.DeepEqual(t, tc.expectedFeatures, info.Features)

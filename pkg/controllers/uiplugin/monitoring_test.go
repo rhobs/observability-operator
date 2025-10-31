@@ -485,6 +485,12 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 
 	t.Run("Test validateIncidentsConfig() with valid and invalid clusterVersion formats", func(t *testing.T) {
 		// should not throw an error because all these are valid formats for clusterVersion
+		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "v4.21.0-0.nightly-2024-06-06-064349") == true)
+		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "4.21.0-0.nightly-2024-06-06-064349") == true)
+		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "v4.21") == true)
+		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "v4.21.0") == true)
+		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "4.21.0") == true)
+
 		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "v4.20.0-0.nightly-2024-06-06-064349") == true)
 		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "4.20.0-0.nightly-2024-06-06-064349") == true)
 		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "v4.20") == true)

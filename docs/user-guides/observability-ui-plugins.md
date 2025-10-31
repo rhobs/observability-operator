@@ -146,9 +146,9 @@ The plugin adds monitoring related UI features to the OpenShift web console, rel
 
 To deploy ACM related features the `acm-alerting` configuration must be enabled. In the UIPlugin Custom Resource (CR) you must pass the Alertmanager and ThanosQuerier Service endpoint (e.g. `https://alertmanager.open-cluster-management-observability.svc:9095` and `https://rbac-query-proxy.open-cluster-management-observability.svc:8443`). See the example in the next section `Plugin Creation.`
 
-To deploy the Incidents feature, the `incidents` configuration must be enabled. See the example in the next section, `Plugin Creation.` 
+To deploy the Incidents feature, the `incidents` configuration must be enabled. See the example in the next section, `Plugin Creation.`
 
-To deploy the Perses dashboard feature, the `perses-dashboards` configuration must be enabled. In the UIPlugin CR, you can optionally pass the service name and namespace of your Perses instance (e.g., `serviceName: perses-api-http` and `namespace: perses`). If these fields are left blank and `spec.monitoring.perses.enabled: true`, then default values will be assigned. These default values are `serviceName: perses-api-http` and `namespace: perses`. See the example in the next section, `Plugin Creation.` 
+To deploy the Perses dashboard feature, the `perses-dashboards` configuration must be enabled. In the UIPlugin CR, you can optionally pass the service name and namespace of your Perses instance (e.g., `serviceName: perses-api-http` and `namespace: perses`). If these fields are left blank and `spec.monitoring.perses.enabled: true`, then default values will be assigned. These default values are `serviceName: perses-api-http` and `namespace: perses`. See the example in the next section, `Plugin Creation.`
 Besides, when `spec.monitoring.perses.enabled: true`, Accelerator Perses dashboard and Accelerator Perses datasource are both created.
 
 ObO/COO operator creates the following roles:
@@ -219,7 +219,7 @@ roleRef:
   kind: ClusterRole
   name: persesdatasource-editor-role
 ```
- 
+
 Other pages which are typically distributed with the monitoring-plugin, such as `Admin > Observe > Dashboards`, are only available in the monitoring-plugin when deployed through [CMO](https://github.com/openshift/cluster-monitoring-operator).
 
 #### Plugin Creation
@@ -248,11 +248,11 @@ spec:
 
 #### Feature List
 
-| __Feature__         | __Description__                                                                                                          | __Support Level__ |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----------------- |
-| `acm-alerting`      | Adds alerting UI to multi-cluster view. Configures proxies to connect with any alertmanager and thanos-querier.          | Dev Preview      |
-| `incidents`         | Adds incidents UI to `Observe` section of OpenShift Console Platform. Deploys the [Cluster Health Analyzer](https://github.com/openshift/cluster-health-analyzer) and configures proxies in the plugin to connect with it. | Tech Preview      |
-| `perses-dashboards` | Adds perses UI to `Observe` section of OpenShift Console Platform. Configures proxies to connect with a Perses instance. Installs Accelerator Perses Dashboard and Accelerator Perses Datasource. See details [here](./perses-dashboards.md) | Dev Preview      |
+| __Feature__         | __Description__                                                                                                          | __Support Level__    |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------ | -----------------    |
+| `acm-alerting`      | Adds alerting UI to multi-cluster view. Configures proxies to connect with any alertmanager and thanos-querier.          | Dev Preview          |
+| `incidents`         | Adds incidents UI to `Observe` section of OpenShift Console Platform. Deploys the [Cluster Health Analyzer](https://github.com/openshift/cluster-health-analyzer) and configures proxies in the plugin to connect with it. | General Availability |
+| `perses-dashboards` | Adds perses UI to `Observe` section of OpenShift Console Platform. Configures proxies to connect with a Perses instance. Installs Accelerator Perses Dashboard and Accelerator Perses Datasource. See details [here](./perses-dashboards.md) | Dev Preview          |
 
 
 #### Feature Matrix
@@ -261,4 +261,5 @@ spec:
 | --------------- | ------------------- | --------------------------------- |
 | 1.0.0+          | 4.14+               | `acm-alerting`                    |
 | 1.1.0+          | 4.15+               | `acm-alerting, perses-dashboards` |
-| 1.2.0+          | 4.19+               | `acm-alerting, perses-dashboards, incidents` |
+| 1.2.0           | 4.19+               | `acm-alerting, perses-dashboards, incidents (Tech Preview)` |
+| 1.3.0+          | 4.19+               | `acm-alerting, perses-dashboards, incidents (General Availability)` |
