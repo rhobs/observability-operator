@@ -2,6 +2,49 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.3.0](https://github.com/rhobs/monitoring-stack-operator/commit/) (2025-11-03)
+
+
+### Features
+
+* add cluster-health-analyzer v0.5.1 ([#785](https://github.com/rhobs/monitoring-stack-operator/issues/785)) ([315b436](https://github.com/rhobs/monitoring-stack-operator/commit/315b43660968fe0e4a8e66e33a1fc4eb4643f9ea))
+* add clusterobservability spec for tracing and opentelemetry ([#754](https://github.com/rhobs/monitoring-stack-operator/issues/754)) ([84abac4](https://github.com/rhobs/monitoring-stack-operator/commit/84abac4afca3c5bf24f2874d15298ff81f44b0b0))
+* add controller for clusterobservability ([#793](https://github.com/rhobs/monitoring-stack-operator/issues/793)) ([#836](https://github.com/rhobs/monitoring-stack-operator/issues/836)) ([2aa3284](https://github.com/rhobs/monitoring-stack-operator/commit/2aa32846c0591dabf68795eddcc5747ebe2d67f5))
+* add CRD scaffolding for cluster observability / signal manager ([#748](https://github.com/rhobs/monitoring-stack-operator/issues/748)) ([a942029](https://github.com/rhobs/monitoring-stack-operator/commit/a9420299b75cc9a48dea3aaa3ebb671e92117af7))
+* add monitoring-plugin stream 0.4 and 0.5 ([#747](https://github.com/rhobs/monitoring-stack-operator/issues/747)) ([a3d2d47](https://github.com/rhobs/monitoring-stack-operator/commit/a3d2d4754de1f3c69a52479287d3ec4f13d9ddd0))
+* create ClusterRoleBIndings based on API field ([#888](https://github.com/rhobs/monitoring-stack-operator/issues/888)) ([01ad960](https://github.com/rhobs/monitoring-stack-operator/commit/01ad96036f8df6004b0981fcaf42bfa62e45a780))
+* deploying COO in place of OBO on MC clusters ([#792](https://github.com/rhobs/monitoring-stack-operator/issues/792)) ([99aa26d](https://github.com/rhobs/monitoring-stack-operator/commit/99aa26d20846925a10cbe25efe6be0665c3e245a))
+* enable deployment of common accelerator perses dashboard ([#744](https://github.com/rhobs/monitoring-stack-operator/issues/744)) ([f9a161e](https://github.com/rhobs/monitoring-stack-operator/commit/f9a161e531043f61b792adbeedede8c63522884c))
+* new Go module for the API ([#801](https://github.com/rhobs/monitoring-stack-operator/issues/801)) ([32736be](https://github.com/rhobs/monitoring-stack-operator/commit/32736be06093ceec8c926508557f578ffbe7df4d))
+* remove unnecessary API dependency ([#797](https://github.com/rhobs/monitoring-stack-operator/issues/797)) ([932eb15](https://github.com/rhobs/monitoring-stack-operator/commit/932eb1598c4407d5c10b58eeee50fb694ad16b3d))
+* TRACING-5214: Add APM dashboard ([#837](https://github.com/rhobs/monitoring-stack-operator/issues/837)) ([ed8af0f](https://github.com/rhobs/monitoring-stack-operator/commit/ed8af0fe8b525fc42d08a8289a2767c32cde5bf3))
+* update components for new health-analyzer version ([#896](https://github.com/rhobs/monitoring-stack-operator/issues/896)) ([aadd616](https://github.com/rhobs/monitoring-stack-operator/commit/aadd6167e6445b2c50f4cf6a83003d3987350104))
+* update image versions ([#913](https://github.com/rhobs/monitoring-stack-operator/issues/913)) ([db9ad5c](https://github.com/rhobs/monitoring-stack-operator/commit/db9ad5c840bcf4366b638251f3443b369f1ef54c))
+
+
+### Bug Fixes
+
+*  Update main.go korrel8r tag to release-coo-1.2 ([#746](https://github.com/rhobs/monitoring-stack-operator/issues/746)) ([053872d](https://github.com/rhobs/monitoring-stack-operator/commit/053872d2632999e8b1ce9bbffae92e8d693e4c6c))
+* add CreateClusterRoleBindings field to MonitoringStack ([#886](https://github.com/rhobs/monitoring-stack-operator/issues/886)) ([149f81e](https://github.com/rhobs/monitoring-stack-operator/commit/149f81e7d08eff4e8d4048bcf8496ffd15c26fc9))
+* add datasource variable ([#883](https://github.com/rhobs/monitoring-stack-operator/issues/883)) ([e6c0ecb](https://github.com/rhobs/monitoring-stack-operator/commit/e6c0ecb9b315c0e104f30450d489e70b06b4c294))
+* add default value to logs schema ([#751](https://github.com/rhobs/monitoring-stack-operator/issues/751)) ([f0448d8](https://github.com/rhobs/monitoring-stack-operator/commit/f0448d800bbfbc2b852c375a16492a7ed4e2dc46))
+* allow to create a logging plugin without a loki stack ([#743](https://github.com/rhobs/monitoring-stack-operator/issues/743)) ([9bf3c3e](https://github.com/rhobs/monitoring-stack-operator/commit/9bf3c3e9cc9be6c415c9b196ca624c2754072e27))
+* check lokistack value on lokistack discovery ([#753](https://github.com/rhobs/monitoring-stack-operator/issues/753)) ([cfb7a04](https://github.com/rhobs/monitoring-stack-operator/commit/cfb7a043d4be1b8f7367b439f83030205583c39a))
+* fix linter issues and add CI check for linter changes ([#887](https://github.com/rhobs/monitoring-stack-operator/issues/887)) ([670f2d9](https://github.com/rhobs/monitoring-stack-operator/commit/670f2d9dcf7ba7eeff8fac722eb0919c262567b2))
+* fix version of prometheus-operator client ([#875](https://github.com/rhobs/monitoring-stack-operator/issues/875)) ([ca66822](https://github.com/rhobs/monitoring-stack-operator/commit/ca668229e74bf68c09e3503b32eb35044f1788c8))
+* further fix github action olm publish failure ([#742](https://github.com/rhobs/monitoring-stack-operator/issues/742)) ([e2e2383](https://github.com/rhobs/monitoring-stack-operator/commit/e2e23834a650f7b2e83045620f8a5dffe203e248))
+* improve obsinstaller validation ([#905](https://github.com/rhobs/monitoring-stack-operator/issues/905)) ([6e9572d](https://github.com/rhobs/monitoring-stack-operator/commit/6e9572d91cddb0e60cff54787f2d367b072cd299))
+* logging plugin korrel8r proxy for missing service ([#898](https://github.com/rhobs/monitoring-stack-operator/issues/898)) ([ef8d92a](https://github.com/rhobs/monitoring-stack-operator/commit/ef8d92a6924f9760a06451b26416e2422e031926))
+* observabilityinstaller fix AWS STS config ([#903](https://github.com/rhobs/monitoring-stack-operator/issues/903)) ([1ea0b6b](https://github.com/rhobs/monitoring-stack-operator/commit/1ea0b6b4b78aab7e9c5acf2465d865db26d0e61f))
+* remove replace command after introducing API module ([#806](https://github.com/rhobs/monitoring-stack-operator/issues/806)) ([e41d1d3](https://github.com/rhobs/monitoring-stack-operator/commit/e41d1d386c9347fea0d6548c06eebc4ed8551e5c))
+* reverting - add cluster-health-analyzer v0.5.1 ([#785](https://github.com/rhobs/monitoring-stack-operator/issues/785)) ([#812](https://github.com/rhobs/monitoring-stack-operator/issues/812)) ([#834](https://github.com/rhobs/monitoring-stack-operator/issues/834)) ([0eb65b6](https://github.com/rhobs/monitoring-stack-operator/commit/0eb65b688a2d75a0fb16c97543be1428c0ffbc63))
+* server conflict error when enable OCP in test script ([#822](https://github.com/rhobs/monitoring-stack-operator/issues/822)) ([51591f3](https://github.com/rhobs/monitoring-stack-operator/commit/51591f316536444e92fdc40aa33d2076cebf03e4))
+* set 4.19 as GA for incidents ([#917](https://github.com/rhobs/monitoring-stack-operator/issues/917)) ([51d4408](https://github.com/rhobs/monitoring-stack-operator/commit/51d44085f28b698e1e47facdb2961e93506c4113))
+* sync Perses CRD with perses-operator ([#884](https://github.com/rhobs/monitoring-stack-operator/issues/884)) ([6bf1ec9](https://github.com/rhobs/monitoring-stack-operator/commit/6bf1ec98fbe831c0738ce287de78d9190244ce69))
+* test script for ocp ([#860](https://github.com/rhobs/monitoring-stack-operator/issues/860)) ([3abbf21](https://github.com/rhobs/monitoring-stack-operator/commit/3abbf21cc560d8f2c87ed0499796b850081f119b))
+* update uiplugin status errors and handle resource clean-up ([#873](https://github.com/rhobs/monitoring-stack-operator/issues/873)) ([aaea154](https://github.com/rhobs/monitoring-stack-operator/commit/aaea1548d53ac1de608d3fb784af411dffb477d8))
+* use apiReader for correct ui plugin registration ([#889](https://github.com/rhobs/monitoring-stack-operator/issues/889)) ([0545b00](https://github.com/rhobs/monitoring-stack-operator/commit/0545b0060570be10cc96573de339141c5c25d521))
+
 ## [1.0.0](https://github.com/rhobs/monitoring-stack-operator/commit/) (2024-12-11)
 
 
