@@ -102,7 +102,7 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 		}
 	}
 
-	if pluginInfo.Korrel8rImage != "" {
+	if plugin.Spec.Type == uiv1alpha1.TypeTroubleshootingPanel && pluginInfo.Korrel8rImage != "" {
 		components = append(components, reconciler.NewUpdater(newKorrel8rService(korrel8rName, namespace), plugin))
 		korrel8rCm, err := newKorrel8rConfigMap(korrel8rName, namespace, pluginInfo)
 		if err == nil && korrel8rCm != nil {
