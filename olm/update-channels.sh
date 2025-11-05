@@ -30,7 +30,11 @@ update_channel() {
 
   old=$(CHANNEL=$channel yq '.entries[] | select(.name == strenv(CHANNEL) and .schema == "olm.channel").entries[-1].name' "$CATALOG_TEMPLATE")
 
-  BUNDLE="$bundle_image" yq -i '.entries += {"image": strenv(BUNDLE),"schema": "olm.bundle"}' "$CATALOG_TEMPLATE"
+  prev_bundle_image=$(yq '.entries[-1].image' "$CATALOG_TEMPLATE")
+  if [ "$prev_bundle_image" != "$bundle_image" ]; then
+      #only add the latest bundle image if its a new entry. The update to another channel might have already added the bundle image we want
+      BUNDLE="$bundle_image" yq -i '.entries += {"image": strenv(BUNDLE),"schema": "olm.bundle"}' "$CATALOG_TEMPLATE"
+  fi
   (OLD=$old OP=$bundle CHANNEL=$channel yq -i '(.entries[] | select(.name == strenv(CHANNEL) and .schema == "olm.channel").entries) += [{"name": strenv(OP), "replaces": strenv(OLD)}]' "$CATALOG_TEMPLATE")
 }
 
