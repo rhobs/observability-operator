@@ -96,6 +96,8 @@ entries:
         replaces: observability-operator.v0.4.2-rc
       - name: observability-operator.v1.3.0-rc
         replaces: observability-operator.v0.4.2
+      - name: observability-operator.v1.3.0
+        replaces: observability-operator.v1.3.0-rc
     name: candidate
     package: observability-operator
     schema: olm.channel
@@ -187,6 +189,8 @@ entries:
         replaces: observability-operator.v0.4.2-rc
       - name: observability-operator.v1.3.0-rc
         replaces: observability-operator.v0.4.2
+      - name: observability-operator.v1.3.0
+        replaces: observability-operator.v1.3.0-rc
     name: development
     package: observability-operator
     schema: olm.channel
@@ -234,6 +238,8 @@ entries:
         replaces: observability-operator.v0.4.0
       - name: observability-operator.v0.4.2
         replaces: observability-operator.v0.4.1
+      - name: observability-operator.v1.3.0
+        replaces: observability-operator.v0.4.2
     name: stable
     package: observability-operator
     schema: olm.channel
@@ -324,5 +330,7 @@ entries:
   - image: quay.io/rhobs/observability-operator-bundle:0.4.2
     schema: olm.bundle
   - image: quay.io/rhobs/observability-operator-bundle:1.3.0-rc
+    schema: olm.bundle
+  - image: quay.io/rhobs/observability-operator-bundle:1.3.0
     schema: olm.bundle
 schema: olm.template.basic
