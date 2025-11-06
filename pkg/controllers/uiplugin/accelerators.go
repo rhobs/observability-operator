@@ -107,7 +107,7 @@ func newAcceleratorsDashboard(namespace string) *persesv1alpha1.PersesDashboard 
 					"0_1": getPanel("Memory Used Bytes", "accelerator_memory_used_bytes"),
 					"0_2": getPanel("Memory Total Bytes", "accelerator_memory_total_bytes"),
 					"0_3": getPanel("Power Usage (Watts)", "accelerator_power_usage_watts"),
-					"0_4": getPanel("Temperature (Celsius)", "accelerator_temperature_celcius"),
+					"0_4": getPanel("Temperature (Celsius)", "accelerator_temperature_celsius"),
 					"0_5": getPanel("SM Clock (Hertz)", "accelerator_sm_clock_hertz"),
 					"0_6": getPanel("Memory Clock (Hertz)", "accelerator_memory_clock_hertz"),
 				},
