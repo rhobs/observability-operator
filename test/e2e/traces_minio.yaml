@@ -45,7 +45,7 @@ spec:
               value: tempo
             - name: MINIO_SECRET_KEY
               value: supersecret
-          image: minio/minio
+          image: quay.io/minio/minio:RELEASE.2024-10-02T17-50-41Z
           name: minio
           ports:
             - containerPort: 9000
