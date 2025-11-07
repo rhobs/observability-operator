@@ -43,11 +43,8 @@ var compatibilityMatrix = []CompatibilityEntry{
 		SupportLevel:      DevPreview,
 	},
 	{
-		PluginType: uiv1alpha1.TypeTroubleshootingPanel,
-		// This plugin requires the monitoring-plugin from OpenShift 4.16 (at
-		// least) to render the "Troubleshooting Panel" button on the alert
-		// details page.
-		MinClusterVersion: "v4.16",
+		PluginType:        uiv1alpha1.TypeTroubleshootingPanel,
+		MinClusterVersion: "v4.19",
 		MaxClusterVersion: "",
 		ImageKey:          "ui-troubleshooting-panel",
 		SupportLevel:      GeneralAvailability,
