@@ -187,6 +187,13 @@ func TestLookupImageAndFeatures(t *testing.T) {
 			pluginType:     uiv1alpha1.TypeTroubleshootingPanel,
 			clusterVersion: "4.16",
 			expectedKey:    "ui-troubleshooting-panel",
+			expectedErr:    fmt.Errorf(`plugin "TroubleshootingPanel": no compatible image found for cluster version "v4.16"`),
+			supportLevel:   GeneralAvailability,
+		},
+		{
+			pluginType:     uiv1alpha1.TypeTroubleshootingPanel,
+			clusterVersion: "4.19",
+			expectedKey:    "ui-troubleshooting-panel",
 			expectedErr:    nil,
 			supportLevel:   GeneralAvailability,
 		},
@@ -276,7 +283,7 @@ func TestLookupImageAndFeatures(t *testing.T) {
 		},
 		{
 			pluginType:     uiv1alpha1.TypeTroubleshootingPanel,
-			clusterVersion: "v4.16.0-0.nightly-2024-06-06-064349",
+			clusterVersion: "v4.19.0-0.nightly-2024-06-06-064349",
 			expectedKey:    "ui-troubleshooting-panel",
 			expectedErr:    nil,
 			supportLevel:   GeneralAvailability,
