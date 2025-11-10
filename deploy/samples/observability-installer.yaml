@@ -1,0 +1,18 @@
+apiVersion: observability.openshift.io/v1alpha1
+kind: ObservabilityInstaller
+metadata:
+  name: sample-observability
+  namespace: observability
+spec:
+  capabilities:
+    tracing:
+      enabled: true
+      storage:
+        objectStorage:
+          s3:
+            bucket: tempo
+            endpoint: http://minio.minio.svc:9000
+            accessKeyID: tempo
+            accessKeySecret:
+              name: minio-secret
+              key: access_key_secret
