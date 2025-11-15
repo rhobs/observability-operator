@@ -16,7 +16,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: readiness-checker
-          image: curlimages/curl:latest
+          image: ghcr.io/grafana/tempo-operator/test-utils:main
           command:
             - /bin/sh
             - -c
