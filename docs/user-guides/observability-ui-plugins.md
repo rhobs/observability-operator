@@ -11,12 +11,10 @@ Using the Observability UI, you can install and manage plugins that extend the o
 
 | __COO Version__ |   __OCP Versions__  | __Dashboards__ | __Distributed Tracing__ | __Logging__ | __Troubleshooting Panel__ | __Monitoring__ |
 | --------------- | ------------------- | -------------- | ----------------------- | ----------- | ------------------------- | ---------------|
-| 0.2.0           | 4.11                |       ✔        |             ✘           |       ✘     |             ✘             |       ✘       |
-| 0.3.0 - 0.4.0   | 4.11 - 4.15         |       ✔        |             ✔           |       ✔     |             ✘             |       ✘       |
-| 0.3.0 - 0.4.0   | 4.16+               |       ✔        |             ✔           |       ✔     |             ✔             |       ✘       |
-| 1.0.0+          | 4.11 - 4.14         |       ✔        |             ✔           |       ✔     |             ✘             |       ✘       |
+| 0.2.0           | 4.12                |       ✔        |             ✘           |       ✘     |             ✘             |       ✘       |
+| 0.3.0+          | 4.12 - 4.14         |       ✔        |             ✔           |       ✔     |             ✘             |       ✘       |
 | 1.0.0+          | 4.15                |       ✔        |             ✔           |       ✔     |             ✘             |       ✔       |
-| 1.0.0+          | 4.16+               |       ✔        |             ✔           |       ✔     |             ✔             |       ✔       |
+| 1.3.0+          | 4.19+               |       ✔        |             ✔           |       ✔     |             ✔             |       ✔       |
 
 Some plugin offer additional features that are available dependant on the cluster version. COO will always deploy all features available for the cluster it is running on.
 
@@ -66,7 +64,7 @@ spec:
 
 | __COO Version__ |   __OCP Versions__  | __Features__                                          |
 | --------------- | ------------------- | ----------------------------------------------------- |
-| 0.3.0+          | 4.16+               | _No features configuration, just core functionality_  |
+| 1.3.0+          | 4.19+               | _No features configuration, just core functionality_  |
 
 ### Distributed Tracing
 
