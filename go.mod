@@ -12,10 +12,10 @@ require (
 	github.com/openshift/api v3.9.0+incompatible // PINNED: newer versions remove console/v1alpha1 API needed for OpenShift <4.17 compatibility
 	github.com/operator-framework/api v0.34.0
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.86.1
+	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.86.2
 	github.com/prometheus/common v0.67.1
-	github.com/rhobs/obo-prometheus-operator v0.86.1-rhobs1
-	github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.86.1-rhobs1
+	github.com/rhobs/obo-prometheus-operator v0.86.2-rhobs1
+	github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.86.2-rhobs1
 	go.uber.org/zap v1.27.0
 	golang.org/x/exp v0.0.0-20251002181428-27f1f14c8bb9
 	golang.org/x/mod v0.28.0
@@ -129,7 +129,7 @@ require (
 	github.com/prometheus/otlptranslator v0.0.2 // indirect
 	github.com/prometheus/procfs v0.17.0 // indirect
 	github.com/prometheus/prometheus v0.305.1-0.20250818080900-0a40df33fb4e // indirect
-	github.com/rhobs/obo-prometheus-operator/pkg/client v0.86.1-rhobs1 // indirect
+	github.com/rhobs/obo-prometheus-operator/pkg/client v0.86.2-rhobs1 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/spf13/cobra v1.10.1 // indirect
