@@ -5451,6 +5451,13 @@ Monitoring contains configuration for the monitoring console plugin.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#uipluginspecmonitoringhealthmonitoring">healthMonitoring</a></b></td>
+        <td>object</td>
+        <td>
+          Health monitoring feature enablement and configuration<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#uipluginspecmonitoringincidents">incidents</a></b></td>
         <td>object</td>
         <td>
@@ -5559,6 +5566,42 @@ ThanosQuerier points to the thanos-querier service of which it should create a p
           Url of the ThanosQuerier to proxy to.<br/>
         </td>
         <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### UIPlugin.spec.monitoring.healthMonitoring
+<sup><sup>[↩ Parent](#uipluginspecmonitoring)</sup></sup>
+
+
+
+Health monitoring feature enablement and configuration
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>mode</b></td>
+        <td>enum</td>
+        <td>
+          Mode is to configure the health monitoring mode.<br/>
+          <br/>
+            <i>Enum</i>: Disabled, Custom, All<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>features</b></td>
+        <td>[]enum</td>
+        <td>
+          Features are particular health monitoring features.<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 

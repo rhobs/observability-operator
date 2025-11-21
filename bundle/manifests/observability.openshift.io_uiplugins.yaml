@@ -186,6 +186,34 @@ spec:
                     - enabled
                     - thanosQuerier
                     type: object
+                  healthMonitoring:
+                    description: Health monitoring feature enablement and configuration
+                    properties:
+                      features:
+                        description: Features are particular health monitoring features.
+                        items:
+                          enum:
+                          - IncidentDetection
+                          - ComponentHealth
+                          type: string
+                        maxItems: 2
+                        type: array
+                        x-kubernetes-list-type: atomic
+                      mode:
+                        description: Mode is to configure the health monitoring mode.
+                        enum:
+                        - Disabled
+                        - Custom
+                        - All
+                        type: string
+                    required:
+                    - mode
+                    type: object
+                    x-kubernetes-validations:
+                    - message: features are required when mode is Custom, and forbidden
+                        otherwise
+                      rule: 'has(self.mode) && self.mode == ''Custom'' ?  has(self.features)
+                        : !has(self.features)'
                   incidents:
                     description: Incidents feature flag enablement
                     properties:
