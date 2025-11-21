@@ -5451,6 +5451,13 @@ Monitoring contains configuration for the monitoring console plugin.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#uipluginspecmonitoringcomponentshealth">componentsHealth</a></b></td>
+        <td>object</td>
+        <td>
+          ComponentsHealthReference is used to configure the components health monitoring feature.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#uipluginspecmonitoringincidents">incidents</a></b></td>
         <td>object</td>
         <td>
@@ -5557,6 +5564,33 @@ ThanosQuerier points to the thanos-querier service of which it should create a p
         <td>string</td>
         <td>
           Url of the ThanosQuerier to proxy to.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### UIPlugin.spec.monitoring.componentsHealth
+<sup><sup>[↩ Parent](#uipluginspecmonitoring)</sup></sup>
+
+
+
+ComponentsHealthReference is used to configure the components health monitoring feature.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>enabled</b></td>
+        <td>boolean</td>
+        <td>
+          Indicates if components health feature should be enabled.<br/>
         </td>
         <td>true</td>
       </tr></tbody>

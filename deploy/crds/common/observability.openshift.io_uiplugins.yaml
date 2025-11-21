@@ -186,6 +186,17 @@ spec:
                     - enabled
                     - thanosQuerier
                     type: object
+                  componentsHealth:
+                    description: ComponentsHealthReference is used to configure the
+                      components health monitoring feature.
+                    properties:
+                      enabled:
+                        description: Indicates if components health feature should
+                          be enabled.
+                        type: boolean
+                    required:
+                    - enabled
+                    type: object
                   incidents:
                     description: Incidents feature flag enablement
                     properties:
