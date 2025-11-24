@@ -106,6 +106,9 @@ const (
 //+kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
 //+kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=create
 //+kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors,verbs=get;create;update;patch;delete
+//+kubebuilder:rbac:groups=config.openshift.io,resources=clusteroperators,verbs=get;list
+//+kubebuilder:rbac:groups=machineconfiguration.openshift.io,resources=machineconfigpools,verbs=get;list
+//+kubebuilder:rbac:groups=kubevirt.io,resources=kubevirts,verbs=get;list
 
 const finalizerName = "uiplugin.observability.openshift.io/finalizer"
 

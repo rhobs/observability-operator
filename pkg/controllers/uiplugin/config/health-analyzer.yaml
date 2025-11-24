@@ -1,0 +1,47 @@
+# Default definition of the component tree used to evaluate component health
+# by the cluster-health-analyzer. 
+components:
+  - name: control-plane
+    children:
+    - name: nodes
+      objects:
+      - resource: nodes
+        selectors:
+        - matchLabels:
+            node-role.kubernetes.io/control-plane: []
+      - resource: machineconfigpools
+        group: machineconfiguration.openshift.io
+        selectors:
+        - matchLabels:
+            pools.operator.machineconfiguration.openshift.io/master: []
+    - name: capacity
+      children:
+      - name: cpu
+        alerts:
+          selectors:
+          - matchLabels:
+              alertname: ["KubeCPUOvercommit","HighOverallControlPlaneCPU", "ExtremelyHighIndividualControlPlaneCPU"]
+      - name: memory
+        alerts:
+          selectors:
+          - matchLabels:
+              alertname: ["HighOverallControlPlaneMemory", "ExtremelyHighIndividualControlPlaneMemory", "SystemMemoryExceedsReservation"]
+    - name: operators
+      children:
+      - name: etcd
+        alerts:
+          selectors:
+          - matchLabels:
+              namespace: ["openshift-etcd","openshift-etcd-operator"]
+  - name: addons
+    children:
+    - name: kubevirt
+      alerts:
+        selectors:
+        - matchLabels:
+            kubernetes_operator_part_of: ["kubevirt"]
+        - matchLabels:
+            namespace: ["openshift-cnv"]
+      objects:
+      - group: kubevirt.io
+        resource: kubevirts
