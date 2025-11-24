@@ -5373,7 +5373,7 @@ It always references a LokiStack in the "openshift-logging" namespace.<br/>
         <td>
           Schema is the schema to use for logs querying and display.
 
-Defatults to "viaq" if not specified, "select" is used to allow users to select the schema from the UI.<br/>
+Defaults to "viaq" if not specified. Use "otel" for OpenTelemetry schema, or "select" to allow users to choose the schema from the UI.<br/>
           <br/>
             <i>Enum</i>: viaq, otel, select<br/>
         </td>
