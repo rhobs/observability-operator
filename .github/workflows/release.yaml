@@ -8,7 +8,7 @@ jobs:
   e2e-tests-olm:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: e2e tests through OLM
         uses: ./.github/e2e-tests-olm
@@ -20,7 +20,7 @@ jobs:
     needs:
       - e2e-tests-olm
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -83,7 +83,7 @@ jobs:
     if: "startsWith(github.event.head_commit.message, 'chore(release):')"
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           token: ${{ secrets.REPOSITORY_PUSH_TOKEN }}
@@ -130,7 +130,7 @@ jobs:
     environment: quay
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           token: ${{ secrets.REPOSITORY_PUSH_TOKEN }}
