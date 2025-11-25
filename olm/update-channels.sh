@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+set -e -u -o pipefail
+
+
+#usage $0 channel1[,channel2,...] bundle
+
+to_upper() {
+  echo "$@" | tr '[:lower:]' '[:upper:]'
+}
+
+err() {
+  echo "ERROR: $*"
+}
+
+declare -r CATALOG_TEMPLATE="olm/index-template.yaml"
+
+update_channel() {
+  local channel="$1"; shift
+  local bundle="$1"; shift
+  local bundle_image="$1"; shift
+
+  echo "updating channel: $channel"
+
+  # dev releases are suffixed with `-$(date +%y%m%d%H%M%S)`, those are replaced.
+  # We track RC and actual releases fully.
+  if [ "$channel" == "development" ]; then
+      yq -i 'del(.entries[] | select(.image | test(".*-\d{12}$") and .schema == "olm.bundle"))' "$CATALOG_TEMPLATE"
+      CHANNEL=$channel yq -i 'del(.entries[] | select(.name == strenv(CHANNEL) and .schema == "olm.channel").entries[] | select(.name | test(".*-\d{12}$")))' "$CATALOG_TEMPLATE"
+  fi
+
+  old=$(CHANNEL=$channel yq '.entries[] | select(.name == strenv(CHANNEL) and .schema == "olm.channel").entries[-1].name' "$CATALOG_TEMPLATE")
+
+  prev_bundle_image=$(yq '.entries[-1].image' "$CATALOG_TEMPLATE")
+  if [ "$prev_bundle_image" != "$bundle_image" ]; then
+      #only add the latest bundle image if its a new entry. The update to another channel might have already added the bundle image we want
+      BUNDLE="$bundle_image" yq -i '.entries += {"image": strenv(BUNDLE),"schema": "olm.bundle"}' "$CATALOG_TEMPLATE"
+  fi
+  (OLD=$old OP=$bundle CHANNEL=$channel yq -i '(.entries[] | select(.name == strenv(CHANNEL) and .schema == "olm.channel").entries) += [{"name": strenv(OP), "replaces": strenv(OLD)}]' "$CATALOG_TEMPLATE")
+}
+
+main() {
+  cd "$(git rev-parse --show-toplevel)"
+  local channels="$1"; shift
+  local bundle="$1"; shift
+  local bundle_image="$1"; shift
+
+  echo "channels: $channels | bundle: $bundle | bundle_image: $bundle_image"
+
+  # convert comma seperated list to an array
+  local -a channel_list
+  readarray -td, channel_list <<< "$channels,"; unset 'channel_list[-1]'
+
+  for ch in "${channel_list[@]}"; do
+    update_channel "$ch" "$bundle" "$bundle_image"
+  done
+
+  return $?
+}
+
+main "$@"
