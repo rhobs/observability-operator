@@ -11,11 +11,19 @@ require (
 	github.com/open-telemetry/opentelemetry-operator v0.135.0
 	github.com/openshift/api v3.9.0+incompatible // PINNED: newer versions remove console/v1alpha1 API needed for OpenShift <4.17 compatibility
 	github.com/operator-framework/api v0.34.0
+	github.com/perses/perses v0.51.1
+	github.com/perses/plugins/prometheus v0.52.1
+	github.com/perses/plugins/table v0.0.0-20250709083656-34e29fed0083
+	github.com/perses/plugins/timeserieschart v0.9.1
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.86.2
 	github.com/prometheus/common v0.67.1
 	github.com/rhobs/obo-prometheus-operator v0.86.2-rhobs1
 	github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.86.2-rhobs1
+	github.com/rhobs/observability-operator/pkg/apis v0.0.0-20251009091129-76135c924ed6
+	github.com/rhobs/perses v0.0.0-20250612171017-5d7686af9ae4
+	github.com/rhobs/perses-operator v0.1.10-0.20250612173146-78eb619430df
+	github.com/stretchr/testify v1.11.1
 	go.uber.org/zap v1.27.0
 	golang.org/x/exp v0.0.0-20251002181428-27f1f14c8bb9
 	golang.org/x/mod v0.29.0
@@ -31,17 +39,9 @@ require (
 	sigs.k8s.io/controller-runtime v0.22.3
 )
 
-replace github.com/openshift/api => github.com/openshift/api v0.0.0-20240404200104-96ed2d49b255
-
-require (
-	github.com/perses/perses v0.51.1
-	github.com/perses/plugins/prometheus v0.52.1
-	github.com/perses/plugins/table v0.0.0-20250709083656-34e29fed0083
-	github.com/perses/plugins/timeserieschart v0.9.1
-	github.com/rhobs/observability-operator/pkg/apis v0.0.0-20251009091129-76135c924ed6
-	github.com/rhobs/perses v0.0.0-20250612171017-5d7686af9ae4
-	github.com/rhobs/perses-operator v0.1.10-0.20250612173146-78eb619430df
-	github.com/stretchr/testify v1.11.1
+replace (
+	github.com/openshift/api => github.com/openshift/api v0.0.0-20240404200104-96ed2d49b255
+	github.com/rhobs/observability-operator/pkg/apis => ./pkg/apis
 )
 
 require (

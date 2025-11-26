@@ -104,11 +104,17 @@ func TestMonitoringStackController(t *testing.T) {
 			assertAlertmanagersAreResilientToDisruption(t, pods)
 		},
 	}, {
-		name:     "invalid Prometheus replicas numbers",
+		name:     "invalid number of replicas for Prometheus",
 		scenario: validatePrometheusConfig,
 	}, {
 		name:     "Alertmanager disabled",
 		scenario: assertAlertmanagerNotDeployed,
+	}, {
+		name:     "single Alertmanager has no PDB",
+		scenario: singleAlertmanagerReplicaHasNoPDB,
+	}, {
+		name:     "invalid number of replicas for Alertmanagers",
+		scenario: validateAlertmanagerConfig,
 	}, {
 		name:     "Alertmanager deployed and removed",
 		scenario: assertAlertmanagerDeployedAndRemoved,
@@ -374,11 +380,16 @@ func validatePrometheusConfig(t *testing.T) {
 	}
 	err := f.K8sClient.Create(context.Background(), ms)
 	assert.ErrorContains(t, err, `invalid: spec.prometheusConfig.replicas`)
+}
 
-	validN := int32(1)
-	ms.Spec.PrometheusConfig.Replicas = &validN
-	err = f.K8sClient.Create(context.Background(), ms)
-	assert.NilError(t, err, `1 is a valid replica count`)
+func validateAlertmanagerConfig(t *testing.T) {
+	invalidN := int32(-1)
+	ms := newMonitoringStack(t, "invalid-alertmanager-config")
+	ms.Spec.AlertmanagerConfig = stack.AlertmanagerConfig{
+		Replicas: &invalidN,
+	}
+	err := f.K8sClient.Create(context.Background(), ms)
+	assert.ErrorContains(t, err, `invalid: spec.alertmanagerConfig.replicas`)
 }
 
 func singlePrometheusReplicaHasNoPDB(t *testing.T) {
@@ -398,6 +409,30 @@ func singlePrometheusReplicaHasNoPDB(t *testing.T) {
 
 	// Update replica count to 1
 	err = f.UpdateWithRetry(t, ms, framework.SetPrometheusReplicas(1))
+	assert.NilError(t, err, "failed to update monitoring stack")
+
+	// ensure there is no pdb
+	f.AssertResourceAbsent(pdbName, ms.Namespace, &pdb)(t)
+}
+
+func singleAlertmanagerReplicaHasNoPDB(t *testing.T) {
+	// asserts that no Alertmanager pdb is created for stacks with replicas set
+	// to 1 (otherwise upgrades are impossible).
+
+	// Initially, ensure that pdb is created by default for the default stack.
+	// This should later be removed when replicas is set to 1.
+	ms := newMonitoringStack(t, "single-replica")
+
+	err := f.K8sClient.Create(context.Background(), ms)
+	assert.NilError(t, err, "failed to create a monitoring stack")
+
+	// ensure pdb is created for default stack.
+	pdb := policyv1.PodDisruptionBudget{}
+	pdbName := ms.Name + "-alertmanager"
+	f.AssertResourceEventuallyExists(pdbName, ms.Namespace, &pdb)(t)
+
+	// Update replica count to 1
+	err = f.UpdateWithRetry(t, ms, framework.SetAlertmanagerReplicas(1))
 	assert.NilError(t, err, "failed to update monitoring stack")
 
 	// ensure there is no pdb

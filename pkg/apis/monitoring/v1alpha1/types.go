@@ -243,6 +243,13 @@ type AlertmanagerConfig struct {
 	// +optional
 	// +kubebuilder:default=false
 	Disabled bool `json:"disabled,omitempty"`
+
+	// Number of replicas/pods to deploy for Alertmanager.
+	// +optional
+	// +kubebuilder:default=2
+	// +kubebuilder:validation:Minimum=0
+	Replicas *int32 `json:"replicas,omitempty"`
+
 	// Configure TLS options for the Alertmanager web server.
 	// +optional
 	WebTLSConfig *WebTLSConfig `json:"webTLSConfig,omitempty"`

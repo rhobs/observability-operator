@@ -82,7 +82,7 @@ func stackComponentReconcilers(
 
 		reconciler.NewOptionalUpdater(newAlertmanager(ms, alertmanagerName, alertmanager), ms, deployAlertmanager),
 		reconciler.NewOptionalUpdater(newAlertmanagerService(ms), ms, deployAlertmanager),
-		reconciler.NewOptionalUpdater(newAlertmanagerPDB(ms), ms, deployAlertmanager),
+		reconciler.NewOptionalUpdater(newAlertmanagerPDB(ms), ms, deployAlertmanager && *ms.Spec.AlertmanagerConfig.Replicas > 1),
 	}
 }
 

@@ -216,6 +216,17 @@ Define Alertmanager config
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>replicas</b></td>
+        <td>integer</td>
+        <td>
+          Number of replicas/pods to deploy for Alertmanager.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Default</i>: 2<br/>
+            <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#monitoringstackspecalertmanagerconfigwebtlsconfig">webTLSConfig</a></b></td>
         <td>object</td>
         <td>
