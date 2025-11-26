@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"path/filepath"
 	"reflect"
+	"strings"
 
+	"github.com/blang/semver/v4"
 	monv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
 	corev1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
@@ -136,6 +138,18 @@ func newPrometheus(
 
 	config := ms.Spec.PrometheusConfig
 
+	detectedVersion := ""
+	if prometheusCfg.Image != "" {
+		parts := strings.Split(prometheusCfg.Image, ":")
+		if len(parts) > 1 {
+			tag := parts[len(parts)-1]
+			cleanTag := strings.TrimPrefix(tag, "v")
+			if _, err := semver.ParseTolerant(cleanTag); err == nil {
+				detectedVersion = cleanTag
+			}
+		}
+	}
+
 	prometheus := &monv1.Prometheus{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: monv1.SchemeGroupVersion.String(),
@@ -202,12 +216,8 @@ func newPrometheus(
 				RemoteWrite:               config.RemoteWrite,
 				ExternalLabels:            config.ExternalLabels,
 				EnableRemoteWriteReceiver: config.EnableRemoteWriteReceiver,
-				EnableFeatures: func() []monv1.EnableFeature {
-					if config.EnableOtlpHttpReceiver != nil && *config.EnableOtlpHttpReceiver {
-						return []monv1.EnableFeature{"otlp-write-receiver"}
-					}
-					return []monv1.EnableFeature{}
-				}(),
+				Version:                   detectedVersion,
+				EnableOTLPReceiver:        config.EnableOtlpHttpReceiver,
 			},
 			Retention:             ms.Spec.Retention,
 			RuleSelector:          prometheusSelector,
