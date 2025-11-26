@@ -50,6 +50,12 @@ spec:
                     default: false
                     description: Disables the deployment of Alertmanager.
                     type: boolean
+                  replicas:
+                    default: 2
+                    description: Number of replicas/pods to deploy for Alertmanager.
+                    format: int32
+                    minimum: 0
+                    type: integer
                   webTLSConfig:
                     description: Configure TLS options for the Alertmanager web server.
                     properties:
