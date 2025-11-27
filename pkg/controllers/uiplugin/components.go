@@ -139,7 +139,7 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 			reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, persesServiceAccountName, "system:auth-delegator", persesServiceAccountName+"-system-auth-delegator"), plugin, persesEnabled),
 			reconciler.NewOptionalUpdater(newPersesClusterRole(), plugin, persesEnabled),
 			reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, persesServiceAccountName, "perses-cr", persesServiceAccountName+"-perses-cr"), plugin, persesEnabled),
-			reconciler.NewOptionalUnmanagedUpdater(newPerses(namespace, pluginInfo.PersesImage), plugin, persesEnabled),
+			reconciler.NewOptionalUpdater(newPerses(namespace, pluginInfo.PersesImage), plugin, persesEnabled),
 			reconciler.NewOptionalUpdater(newAcceleratorsDatasource(namespace), plugin, persesEnabled),
 			reconciler.NewOptionalUpdater(newAcceleratorsDashboard(namespace), plugin, persesEnabled),
 		)
