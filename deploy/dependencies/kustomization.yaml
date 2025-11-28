@@ -77,6 +77,7 @@ patches:
                 - --alertmanager-instance-selector=app.kubernetes.io/managed-by=observability-operator
                 - --thanos-ruler-instance-selector=app.kubernetes.io/managed-by=observability-operator
                 - --watch-referenced-objects-in-all-namespaces=true
+                - --disable-unmanaged-prometheus-configuration=true
               resources:
                 requests:
                   cpu: 5m
