@@ -210,6 +210,7 @@ func newPrometheus(
 				}(),
 			},
 			Retention:             ms.Spec.Retention,
+			RetentionSize:         ms.Spec.RetentionSize,
 			RuleSelector:          prometheusSelector,
 			RuleNamespaceSelector: ms.Spec.NamespaceSelector,
 			Thanos: &monv1.ThanosSpec{
