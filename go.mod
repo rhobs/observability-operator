@@ -1,6 +1,6 @@
 module github.com/rhobs/observability-operator
 
-go 1.24.4
+go 1.25.0
 
 require (
 	github.com/go-jose/go-jose/v4 v4.1.2 // indirect
@@ -11,7 +11,7 @@ require (
 	github.com/open-telemetry/opentelemetry-operator v0.135.0
 	github.com/openshift/api v3.9.0+incompatible // PINNED: newer versions remove console/v1alpha1 API needed for OpenShift <4.17 compatibility
 	github.com/operator-framework/api v0.34.0
-	github.com/perses/perses v0.51.1
+	github.com/perses/perses v0.52.0
 	github.com/perses/plugins/prometheus v0.52.1
 	github.com/perses/plugins/table v0.0.0-20250709083656-34e29fed0083
 	github.com/perses/plugins/timeserieschart v0.9.1
@@ -120,7 +120,7 @@ require (
 	github.com/novln/docker-parser v1.0.0 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
-	github.com/perses/common v0.27.1-0.20250326140707-96e439b14e0e // indirect
+	github.com/perses/common v0.28.0 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus-community/prom-label-proxy v0.12.1 // indirect
 	github.com/prometheus/alertmanager v0.28.1 // indirect
@@ -139,7 +139,7 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
-	github.com/zitadel/oidc/v3 v3.38.1 // indirect
+	github.com/zitadel/oidc/v3 v3.44.0 // indirect
 	github.com/zitadel/schema v1.3.1 // indirect
 	go.mongodb.org/mongo-driver v1.17.4 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
