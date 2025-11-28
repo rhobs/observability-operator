@@ -103,10 +103,24 @@ type MonitoringStackSpec struct {
 	// +optional
 	CreateClusterRoleBindings ClusterRoleBindingPolicy `json:"createClusterRoleBindings,omitempty"`
 
-	// Time duration to retain data for. Default is '120h',
-	// and must match the regular expression `[0-9]+(ms|s|m|h|d|w|y)` (milliseconds seconds minutes hours days weeks years).
+	// Time duration to retain data for. Default is '120h', and the value must
+	// match the regular expression `[0-9]+(ms|s|m|h|d|w|y)` (milliseconds
+	// seconds minutes hours days weeks years).
+	//
+	// When both retention and retentionSize are defined, whichever triggers
+	// first will be applied.
+	//
 	// +kubebuilder:default="120h"
 	Retention monv1.Duration `json:"retention,omitempty"`
+
+	// retentionSize defines the maximum number of bytes used by the Prometheus
+	// data. By default the size is unlimited.
+	//
+	// When both retention and retentionSize are defined, whichever triggers
+	// first will be applied.
+	//
+	// +optional
+	RetentionSize monv1.ByteSize `json:"retentionSize,omitempty"`
 
 	// Define resources requests and limits for Monitoring Stack Pods.
 	// +optional

@@ -293,7 +293,6 @@ func reconcileRevertsManualChanges(t *testing.T) {
 	f.GetResourceWithRetry(t, ms.Name, ms.Namespace, &generated)
 
 	// update the prometheus created by monitoring-stack controller
-
 	modified := generated.DeepCopy()
 	modified.Spec.ServiceMonitorSelector = &metav1.LabelSelector{
 		MatchLabels: map[string]string{
@@ -348,28 +347,52 @@ func validateStackLogLevel(t *testing.T) {
 }
 
 func validateStackRetention(t *testing.T) {
-	invalidRetention := []monv1.Duration{
-		"100days",
-		"100ducks",
-		"100 days",
-		"100 hours",
-		"100 h",
-		"100 s",
-		"100d   ",
-	}
+	t.Run("time-based", func(t *testing.T) {
+		invalidRetention := []monv1.Duration{
+			"100days",
+			"100ducks",
+			"100 days",
+			"100 hours",
+			"100 h",
+			"100 s",
+			"100d   ",
+		}
 
-	ms := newMonitoringStack(t, "invalid-retention")
-	for _, v := range invalidRetention {
-		ms.Spec.Retention = v
-		err := f.K8sClient.Create(context.Background(), ms)
-		assert.ErrorContains(t, err, `spec.retention: Invalid value`)
-	}
+		ms := newMonitoringStack(t, "invalid-retention")
+		for _, v := range invalidRetention {
+			ms.Spec.Retention = v
+			err := f.K8sClient.Create(context.Background(), ms)
+			assert.ErrorContains(t, err, `spec.retention: Invalid value`)
+		}
 
-	validMS := newMonitoringStack(t, "valid-retention")
-	validMS.Spec.Retention = "100h"
+		validMS := newMonitoringStack(t, "valid-retention")
+		validMS.Spec.Retention = "100h"
 
-	err := f.K8sClient.Create(context.Background(), validMS)
-	assert.NilError(t, err, `100h is a valid retention period`)
+		err := f.K8sClient.Create(context.Background(), validMS)
+		assert.NilError(t, err, `100h is a valid retention period`)
+	})
+
+	t.Run("size-based", func(t *testing.T) {
+		invalidRetention := []monv1.ByteSize{
+			"1gb",
+			"1foo",
+			"1 GB",
+			"1GB   ",
+		}
+
+		ms := newMonitoringStack(t, "invalid-retention-size")
+		for _, v := range invalidRetention {
+			ms.Spec.RetentionSize = v
+			err := f.K8sClient.Create(context.Background(), ms)
+			assert.ErrorContains(t, err, `spec.retentionSize: Invalid value`)
+		}
+
+		validMS := newMonitoringStack(t, "valid-retention-size")
+		validMS.Spec.RetentionSize = "1GB"
+
+		err := f.K8sClient.Create(context.Background(), validMS)
+		assert.NilError(t, err)
+	})
 }
 
 func validatePrometheusConfig(t *testing.T) {

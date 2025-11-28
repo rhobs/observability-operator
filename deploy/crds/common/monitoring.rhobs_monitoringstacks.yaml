@@ -1715,9 +1715,22 @@ spec:
               retention:
                 default: 120h
                 description: |-
-                  Time duration to retain data for. Default is '120h',
-                  and must match the regular expression `[0-9]+(ms|s|m|h|d|w|y)` (milliseconds seconds minutes hours days weeks years).
+                  Time duration to retain data for. Default is '120h', and the value must
+                  match the regular expression `[0-9]+(ms|s|m|h|d|w|y)` (milliseconds
+                  seconds minutes hours days weeks years).
+
+                  When both retention and retentionSize are defined, whichever triggers
+                  first will be applied.
                 pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
+                type: string
+              retentionSize:
+                description: |-
+                  retentionSize defines the maximum number of bytes used by the Prometheus
+                  data. By default the size is unlimited.
+
+                  When both retention and retentionSize are defined, whichever triggers
+                  first will be applied.
+                pattern: (^0|([0-9]*[.])?[0-9]+((K|M|G|T|E|P)i?)?B)$
                 type: string
               tolerations:
                 description: Define tolerations for Monitoring Stack Pods.
