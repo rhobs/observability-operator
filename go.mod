@@ -1,6 +1,6 @@
 module github.com/rhobs/observability-operator
 
-go 1.24.4
+go 1.24.6
 
 require (
 	github.com/go-jose/go-jose/v4 v4.1.2 // indirect
@@ -10,7 +10,7 @@ require (
 	github.com/grafana/tempo-operator v0.18.0
 	github.com/open-telemetry/opentelemetry-operator v0.135.0
 	github.com/openshift/api v3.9.0+incompatible // PINNED: newer versions remove console/v1alpha1 API needed for OpenShift <4.17 compatibility
-	github.com/operator-framework/api v0.34.0
+	github.com/operator-framework/api v0.36.0
 	github.com/perses/perses v0.51.1
 	github.com/perses/plugins/prometheus v0.52.1
 	github.com/perses/plugins/table v0.0.0-20250709083656-34e29fed0083
