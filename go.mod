@@ -16,10 +16,10 @@ require (
 	github.com/perses/plugins/table v0.0.0-20250709083656-34e29fed0083
 	github.com/perses/plugins/timeserieschart v0.9.1
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.86.2
-	github.com/prometheus/common v0.67.1
-	github.com/rhobs/obo-prometheus-operator v0.86.2-rhobs1
-	github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.86.2-rhobs1
+	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.87.0
+	github.com/prometheus/common v0.67.3
+	github.com/rhobs/obo-prometheus-operator v0.87.0-rhobs1
+	github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.87.0-rhobs1
 	github.com/rhobs/observability-operator/pkg/apis v0.0.0-20251009091129-76135c924ed6
 	github.com/rhobs/perses v0.0.0-20250612171017-5d7686af9ae4
 	github.com/rhobs/perses-operator v0.1.10-0.20250612173146-78eb619430df
@@ -36,7 +36,7 @@ require (
 	k8s.io/client-go v0.34.2
 	k8s.io/component-base v0.34.2
 	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
-	sigs.k8s.io/controller-runtime v0.22.3
+	sigs.k8s.io/controller-runtime v0.22.4
 )
 
 replace (
@@ -92,6 +92,7 @@ require (
 	github.com/go-openapi/validate v0.25.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/golang-jwt/jwt/v5 v5.3.0 // indirect
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/cel-go v0.26.1 // indirect
 	github.com/google/gnostic-models v0.7.0 // indirect
@@ -123,13 +124,13 @@ require (
 	github.com/perses/common v0.27.1-0.20250326140707-96e439b14e0e // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus-community/prom-label-proxy v0.12.1 // indirect
-	github.com/prometheus/alertmanager v0.28.1 // indirect
+	github.com/prometheus/alertmanager v0.29.0 // indirect
 	github.com/prometheus/client_golang v1.23.2 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
-	github.com/prometheus/otlptranslator v0.0.2 // indirect
+	github.com/prometheus/otlptranslator v1.0.0 // indirect
 	github.com/prometheus/procfs v0.17.0 // indirect
-	github.com/prometheus/prometheus v0.305.1-0.20250818080900-0a40df33fb4e // indirect
-	github.com/rhobs/obo-prometheus-operator/pkg/client v0.86.2-rhobs1 // indirect
+	github.com/prometheus/prometheus v0.307.3 // indirect
+	github.com/rhobs/obo-prometheus-operator/pkg/client v0.87.0-rhobs1 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/spf13/cobra v1.10.1 // indirect
@@ -143,7 +144,7 @@ require (
 	github.com/zitadel/schema v1.3.1 // indirect
 	go.mongodb.org/mongo-driver v1.17.4 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
-	go.opentelemetry.io/collector/featuregate v1.37.0 // indirect
+	go.opentelemetry.io/collector/featuregate v1.42.0 // indirect
 	go.opentelemetry.io/contrib/otelconf v0.18.0 // indirect
 	go.opentelemetry.io/otel v1.38.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc v0.14.0 // indirect
@@ -170,14 +171,14 @@ require (
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.45.0 // indirect
 	golang.org/x/net v0.47.0 // indirect
-	golang.org/x/oauth2 v0.31.0 // indirect
+	golang.org/x/oauth2 v0.32.0 // indirect
 	golang.org/x/sync v0.18.0 // indirect
 	golang.org/x/sys v0.38.0 // indirect
 	golang.org/x/term v0.37.0 // indirect
 	golang.org/x/text v0.31.0 // indirect
 	golang.org/x/time v0.13.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.5.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20250825161204-c5933d9347a5 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20250929231259-57b25ae835d4 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251006185510-65f7160b3a87 // indirect
 	google.golang.org/grpc v1.76.0 // indirect
 	google.golang.org/protobuf v1.36.10 // indirect
