@@ -21,6 +21,7 @@ import (
 	policyv1 "k8s.io/api/policy/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -810,7 +811,13 @@ func assertPrometheusManagedFields(t *testing.T) {
 		Replicas:       &numOfRep,
 		ScrapeInterval: &scrapeInterval,
 		PersistentVolumeClaim: &corev1.PersistentVolumeClaimSpec{
-			VolumeName: "prom-store",
+			// We need to define the storage size request for the pods to come
+			// up.
+			Resources: corev1.VolumeResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceStorage: resource.MustParse("1Gi"),
+				},
+			},
 		},
 		RemoteWrite: []monv1.RemoteWriteSpec{
 			{
@@ -845,6 +852,8 @@ func assertPrometheusManagedFields(t *testing.T) {
 
 	err = f.K8sClient.Create(context.Background(), ms)
 	assert.NilError(t, err, "failed to create a monitoring stack")
+
+	f.AssertMonitoringStackReady(ms.Name, ms.Namespace, framework.WithTimeout(2*time.Minute))(t)
 
 	prom := monv1.Prometheus{}
 	f.GetResourceWithRetry(t, ms.Name, ms.Namespace, &prom)
@@ -1081,8 +1090,7 @@ const oboManagedFieldsJson = `
     "f:volumeClaimTemplate": {
       "f:metadata": {},
       "f:spec": {
-        "f:resources": {},
-        "f:volumeName": {}
+        "f:resources":  {"f:requests": {"f:storage": {}}}
       },
       "f:status": {}
     }

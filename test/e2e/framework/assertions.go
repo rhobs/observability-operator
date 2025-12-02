@@ -150,9 +150,9 @@ func (f *Framework) AssertStatefulsetReady(name, namespace string, fns ...Option
 		t.Helper()
 		key := types.NamespacedName{Name: name, Namespace: namespace}
 		if err := wait.PollUntilContextTimeout(context.Background(), option.PollInterval, option.WaitTimeout, true, func(ctx context.Context) (bool, error) {
-			pod := &appsv1.StatefulSet{}
-			err := f.K8sClient.Get(context.Background(), key, pod)
-			return err == nil && pod.Status.ReadyReplicas == *pod.Spec.Replicas, nil
+			ss := &appsv1.StatefulSet{}
+			err := f.K8sClient.Get(context.Background(), key, ss)
+			return err == nil && ss.Status.ReadyReplicas == *ss.Spec.Replicas, nil
 		}); err != nil {
 			t.Fatal(fmt.Errorf("statefulset %s was never ready with %v", name, err))
 		}
@@ -204,6 +204,57 @@ func (f *Framework) AssertStatefulSetContainerHasArg(t *testing.T, name, namespa
 		}); wait.Interrupted(err) {
 			t.Fatalf("StatefulSet %s failed to contain argument %q in container %q within timeout. Final args: %v",
 				name, expectedArg, containerName, statefulSet.Spec.Template.Spec.Containers[0].Args)
+		}
+	}
+}
+
+// AssertMonitoringStackReady asserts that a monitoring stack is successfully deployed.
+func (f *Framework) AssertMonitoringStackReady(name, namespace string, fns ...OptionFn) func(t *testing.T) {
+	option := AssertOption{
+		PollInterval: 5 * time.Second,
+		WaitTimeout:  DefaultTestTimeout,
+	}
+	for _, fn := range fns {
+		fn(&option)
+	}
+
+	return func(t *testing.T) {
+		t.Helper()
+		key := types.NamespacedName{Name: name, Namespace: namespace}
+		var loopErr error
+		if err := wait.PollUntilContextTimeout(context.Background(), option.PollInterval, option.WaitTimeout, true, func(ctx context.Context) (bool, error) {
+			ms := &v1alpha1.MonitoringStack{}
+			if err := f.K8sClient.Get(context.Background(), key, ms); err != nil {
+				loopErr = err
+				return false, nil
+			}
+
+			var foundAvailable bool
+			for _, cond := range ms.Status.Conditions {
+				if cond.Type == v1alpha1.ResourceDiscoveryCondition {
+					continue
+				}
+
+				if ms.Generation != cond.ObservedGeneration {
+					loopErr = fmt.Errorf("%s condition observed generation %d != generation %d", cond.Type, cond.ObservedGeneration, ms.Generation)
+					return false, nil
+				}
+
+				foundAvailable = foundAvailable || cond.Type == v1alpha1.AvailableCondition
+				if cond.Status != v1alpha1.ConditionTrue {
+					loopErr = fmt.Errorf("expected %s condition to be True, got %s", cond.Type, cond.Status)
+					return false, nil
+				}
+			}
+
+			if !foundAvailable {
+				loopErr = fmt.Errorf("%s condition not found", v1alpha1.AvailableCondition)
+				return false, nil
+			}
+
+			return true, nil
+		}); err != nil {
+			t.Fatal(fmt.Errorf("monitoringStack %s/%s was never ready: %w: %w", namespace, name, err, loopErr))
 		}
 	}
 }
