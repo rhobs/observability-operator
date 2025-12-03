@@ -10,10 +10,13 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
+	"go.uber.org/zap/zapcore"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"github.com/rhobs/observability-operator/pkg/operator"
 	"github.com/rhobs/observability-operator/test/e2e/framework"
@@ -32,6 +35,13 @@ var (
 
 func TestMain(m *testing.M) {
 	flag.Parse()
+
+	// Setup controller-runtime logger to avoid warning messages
+	opts := zap.Options{
+		Development: true,
+		TimeEncoder: zapcore.RFC3339TimeEncoder,
+	}
+	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	// Deferred calls are not executed on os.Exit from TestMain.
 	// As a workaround, we call another function in which we can add deferred calls.
