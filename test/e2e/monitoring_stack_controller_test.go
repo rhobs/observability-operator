@@ -67,6 +67,9 @@ func TestMonitoringStackController(t *testing.T) {
 		name:     "resource selector nil propagates to Prometheus",
 		scenario: nilResrouceSelectorPropagatesToPrometheus,
 	}, {
+		name:     "prometheus with nil resource selector becomes ready",
+		scenario: nilResourceSelectorPrometheusBecomesReady,
+	}, {
 		name:     "stack spec are reflected in Prometheus",
 		scenario: reconcileStack,
 	}, {
@@ -172,6 +175,21 @@ func nilResrouceSelectorPropagatesToPrometheus(t *testing.T) {
 	if wait.Interrupted(err) {
 		t.Fatal(fmt.Errorf("nil ResourceSelector did not propagate to Prometheus object"))
 	}
+}
+
+func nilResourceSelectorPrometheusBecomesReady(t *testing.T) {
+	ms := newMonitoringStack(t, "nil-selector-ready")
+	ms.Spec.ResourceSelector = nil
+
+	err := f.K8sClient.Create(context.Background(), ms)
+	assert.NilError(t, err, "failed to create monitoring stack with nil resourceSelector")
+
+	// Verify Prometheus CR is created
+	f.AssertResourceEventuallyExists(ms.Name, ms.Namespace, &monv1.Prometheus{})(t)
+
+	// Verify Prometheus pods become ready despite nil resourceSelector
+	// covers upstream issue #932
+	f.AssertStatefulsetReady("prometheus-"+ms.Name, ms.Namespace, framework.WithTimeout(5*time.Minute))(t)
 }
 
 func promConfigDefaultsAreApplied(t *testing.T) {
