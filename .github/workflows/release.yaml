@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: write
+
 jobs:
   e2e-tests-olm:
     runs-on: ubuntu-latest
