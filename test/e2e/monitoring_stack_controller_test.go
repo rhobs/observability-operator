@@ -133,6 +133,9 @@ func TestMonitoringStackController(t *testing.T) {
 	}, {
 		name:     "Prometheus stacks can scrape themselves behind TLS",
 		scenario: assertPrometheusScrapesItselfTLS,
+	}, {
+		name:     "Assert OTLP receiver flag is set when enabled in CR",
+		scenario: assertDefaultOTLPFlagIsSet,
 	}}
 	for _, tc := range ts {
 		t.Run(tc.name, tc.scenario)
@@ -1010,6 +1013,18 @@ func assertPrometheusScrapesItselfTLS(t *testing.T) {
 	}
 }
 
+func assertDefaultOTLPFlagIsSet(t *testing.T) {
+	ms := newMonitoringStack(t, "otlp-flag-test")
+	ms.Spec.PrometheusConfig = &stack.PrometheusConfig{
+		EnableOtlpHttpReceiver: ptr.To(true),
+	}
+
+	err := f.K8sClient.Create(context.Background(), ms)
+	assert.NilError(t, err, "failed to create a monitoring stack")
+
+	f.AssertStatefulSetContainerHasArg(t, "prometheus-"+ms.Name, e2eTestNamespace, "prometheus", "--web.enable-otlp-receiver")(t)
+}
+
 // Update this json when a new Prometheus field is set by MonitoringStack
 const oboManagedFieldsJson = `
 {
@@ -1039,9 +1054,7 @@ const oboManagedFieldsJson = `
   "f:probeNamespaceSelector": {},
   "f:probeSelector": {},
   "f:remoteWrite": {},
-  "f:enableFeatures": {
-    "v:\"otlp-write-receiver\"": {}
-  },
+  "f:enableOTLPReceiver": {},
   "f:replicas": {},
   "f:resources": {},
   "f:retention": {},
