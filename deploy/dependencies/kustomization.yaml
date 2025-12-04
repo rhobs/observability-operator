@@ -30,14 +30,20 @@ resources:
 - admission-webhook/alertmanager-config-validating-webhook.yaml
 - admission-webhook/prometheus-rule-validating-webhook.yaml
 
+images:
+- name: quay.io/rhobs/obo-prometheus-operator
+  newTag: v0.87.0-rhobs1
+- name: quay.io/rhobs/obo-prometheus-config-reloader
+  newTag: v0.87.0-rhobs1
+- name: quay.io/rhobs/obo-admission-webhook
+  newTag: v0.87.0-rhobs1
+
 
 namespace: operators
 namePrefix: obo-
 
 
   # rely on tls-certificates injected by OLM instead of mounting empty files
-
-
     # HACK: remove the RuntimeDefault from ALL deploymens until we figure out
     # how to run the operator on all openshift version from 4.9-13. Currently the
     # webhook fails to deploy on 4.10
@@ -70,9 +76,9 @@ patches:
         spec:
           containers:
             - name: prometheus-operator
-              image: quay.io/rhobs/obo-prometheus-operator:v0.86.1-rhobs1
+              image: quay.io/rhobs/obo-prometheus-operator
               args:
-                - --prometheus-config-reloader=quay.io/rhobs/obo-prometheus-config-reloader:v0.86.1-rhobs1
+                - --prometheus-config-reloader=quay.io/rhobs/obo-prometheus-config-reloader:v0.87.0-rhobs1
                 - --prometheus-instance-selector=app.kubernetes.io/managed-by=observability-operator
                 - --alertmanager-instance-selector=app.kubernetes.io/managed-by=observability-operator
                 - --thanos-ruler-instance-selector=app.kubernetes.io/managed-by=observability-operator
