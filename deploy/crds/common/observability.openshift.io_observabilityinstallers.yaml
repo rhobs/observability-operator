@@ -365,6 +365,15 @@ spec:
                         has(self.storage.objectStorage.azure), has(self.storage.objectStorage.azureWIF),
                         has(self.storage.objectStorage.gcs), has(self.storage.objectStorage.gcsWIF)].filter(x,
                         x).size() > 0
+                  troubleshooting:
+                    description: TroubleShooting defines the troubleshooting capabilities
+                    properties:
+                      enabled:
+                        description: |-
+                          Enabled indicates whether the troubleshooting capabilities are enabled.
+                          By default, it is set to false.
+                        type: boolean
+                    type: object
                 type: object
             type: object
           status:

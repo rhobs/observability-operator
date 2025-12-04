@@ -4191,6 +4191,13 @@ The tracing capability install an OpenTelemetry Operator instance and a Tempo in
 The Tempo instance is configured with a single tenant called application.<br/>
         </td>
         <td>false</td>
+      </tr><tr>
+        <td><b><a href="#observabilityinstallerspeccapabilitiestroubleshooting">troubleshooting</a></b></td>
+        <td>object</td>
+        <td>
+          TroubleShooting defines the troubleshooting capabilities<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -4954,6 +4961,34 @@ KeySecret is the name of a Secret containing a private key (e.g. tls.key).
           SecretName contains the name of the Secret containing the referenced value.<br/>
         </td>
         <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ObservabilityInstaller.spec.capabilities.troubleshooting
+<sup><sup>[↩ Parent](#observabilityinstallerspeccapabilities)</sup></sup>
+
+
+
+TroubleShooting defines the troubleshooting capabilities
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>enabled</b></td>
+        <td>boolean</td>
+        <td>
+          Enabled indicates whether the troubleshooting capabilities are enabled.
+By default, it is set to false.<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 

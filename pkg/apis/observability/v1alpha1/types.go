@@ -99,6 +99,11 @@ type CapabilitiesSpec struct {
 	// +optional
 	// +kubebuilder:validation:Optional
 	Tracing TracingSpec `json:"tracing,omitempty"`
+
+	// TroubleShooting defines the troubleshooting capabilities
+	// +optional
+	// +kubebuilder:validation:Optional
+	TroubleShooting TroubleShootingSpec `json:"troubleshooting,omitempty"`
 }
 
 // CommonCapabilitiesSpec defines the common capabilities.
