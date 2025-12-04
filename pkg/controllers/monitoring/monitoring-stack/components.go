@@ -251,7 +251,7 @@ func newPrometheus(
 				{
 					Name:      ms.Name + "-alertmanager",
 					Namespace: ptr.To(ms.Namespace),
-					Scheme:    "http",
+					Scheme:    ptr.To(monv1.Scheme("http")),
 					Port:      intstr.FromString("web"),
 				},
 			},
@@ -261,7 +261,7 @@ func newPrometheus(
 
 			prometheus.Spec.Secrets = append(prometheus.Spec.Secrets, caSecret.Name)
 
-			prometheus.Spec.Alerting.Alertmanagers[0].Scheme = "https"
+			prometheus.Spec.Alerting.Alertmanagers[0].Scheme = ptr.To(monv1.Scheme("https"))
 			prometheus.Spec.Alerting.Alertmanagers[0].TLSConfig = &monv1.TLSConfig{
 				SafeTLSConfig: monv1.SafeTLSConfig{
 					ServerName: ptr.To(ms.Name + "-alertmanager"),
