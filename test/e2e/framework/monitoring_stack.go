@@ -32,6 +32,12 @@ func SetAlertmanagerDisabled(disabled bool) MonitoringStackConfig {
 	}
 }
 
+func SetAlertmanagerReplicas(replicas int32) MonitoringStackConfig {
+	return func(ms *stack.MonitoringStack) {
+		ms.Spec.AlertmanagerConfig.Replicas = &replicas
+	}
+}
+
 // UpdateWithRetry updates monitoringstack with retry
 func (f *Framework) UpdateWithRetry(t *testing.T, ms *stack.MonitoringStack, fns ...MonitoringStackConfig) error {
 	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {

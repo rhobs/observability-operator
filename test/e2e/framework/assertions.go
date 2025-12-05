@@ -159,6 +159,55 @@ func (f *Framework) AssertStatefulsetReady(name, namespace string, fns ...Option
 	}
 }
 
+// AssertStatefulSetContainerHasArg asserts that a specific container in a StatefulSet's
+// Pod template contains the expected command-line argument.
+func (f *Framework) AssertStatefulSetContainerHasArg(t *testing.T, name, namespace, containerName, expectedArg string, fns ...OptionFn) func(t *testing.T) {
+	option := AssertOption{
+		PollInterval: 5 * time.Second,
+		WaitTimeout:  DefaultTestTimeout,
+	}
+	for _, fn := range fns {
+		fn(&option)
+	}
+
+	return func(t *testing.T) {
+		t.Helper()
+		statefulSet := &appsv1.StatefulSet{}
+		key := types.NamespacedName{Name: name, Namespace: namespace}
+
+		if err := wait.PollUntilContextTimeout(context.Background(), option.PollInterval, option.WaitTimeout, true, func(ctx context.Context) (bool, error) {
+
+			if err := f.K8sClient.Get(ctx, key, statefulSet); apierrors.IsNotFound(err) {
+				return false, nil
+			}
+
+			var container *v1.Container
+			for i, c := range statefulSet.Spec.Template.Spec.Containers {
+				if c.Name == containerName {
+					container = &statefulSet.Spec.Template.Spec.Containers[i]
+					break
+				}
+			}
+
+			if container == nil {
+				return false, fmt.Errorf("container %q not found in StatefulSet template", containerName)
+			}
+
+			for _, arg := range container.Args {
+				if arg == expectedArg {
+					return true, nil
+				}
+			}
+
+			t.Logf("StatefulSet %s container %q args are missing %q. Retrying...", name, containerName, expectedArg)
+			return false, nil
+		}); wait.Interrupted(err) {
+			t.Fatalf("StatefulSet %s failed to contain argument %q in container %q within timeout. Final args: %v",
+				name, expectedArg, containerName, statefulSet.Spec.Template.Spec.Containers[0].Args)
+		}
+	}
+}
+
 // AssertDeploymentReady asserts that a deployment has the desired number of pods running
 func (f *Framework) AssertDeploymentReady(name, namespace string, fns ...OptionFn) func(t *testing.T) {
 	option := AssertOption{

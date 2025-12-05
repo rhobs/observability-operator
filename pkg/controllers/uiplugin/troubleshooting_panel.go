@@ -19,9 +19,8 @@ import (
 )
 
 const (
-	korrel8rSvcName        = "korrel8r"
-	monitorClusterroleName = "cluster-monitoring"
-	alertmanagerRoleName   = "monitoring-alertmanager-view"
+	korrel8rSvcName      = "korrel8r"
+	alertmanagerRoleName = "monitoring-alertmanager-view"
 )
 
 func createTroubleshootingPanelPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string) (*UIPluginInfo, error) {
@@ -40,6 +39,7 @@ func createTroubleshootingPanelPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace
 		extraArgs = append(extraArgs, fmt.Sprintf("-features=%s", strings.Join(features, ",")))
 	}
 
+	serviceAccountName := plugin.Name + serviceAccountSuffix
 	pluginInfo := &UIPluginInfo{
 		Image:             image,
 		Name:              plugin.Name,
@@ -101,7 +101,7 @@ func createTroubleshootingPanelPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace
 				{
 					APIGroup:  corev1.SchemeGroupVersion.Group,
 					Kind:      "ServiceAccount",
-					Name:      plugin.Name + "-sa",
+					Name:      serviceAccountName,
 					Namespace: namespace,
 				},
 			},
@@ -115,8 +115,8 @@ func createTroubleshootingPanelPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace
 			korrel8rClusterRole(korrel8rSvcName),
 		},
 		ClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
-			korrel8rClusterRoleBinding(monitorClusterroleName, plugin.Name, namespace),
-			korrel8rClusterRoleBinding(korrel8rSvcName, plugin.Name, namespace),
+			newClusterRoleBinding(namespace, serviceAccountName, monitorClusterroleName, plugin.Name+"-"+monitorClusterroleName),
+			newClusterRoleBinding(namespace, serviceAccountName, korrel8rSvcName+"-view", plugin.Name+"-"+korrel8rSvcName),
 		},
 	}
 
@@ -234,32 +234,6 @@ func korrel8rClusterRole(name string) *rbacv1.ClusterRole {
 				Resources: []string{"application", "audit", "infrastructure", "network"},
 				Verbs:     []string{"get"},
 			},
-		},
-	}
-}
-
-func korrel8rClusterRoleBinding(name string, serviceAccountName string, namespace string) *rbacv1.ClusterRoleBinding {
-	korrel8rClusterroleBindingName := name + "-view"
-	return &rbacv1.ClusterRoleBinding{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: rbacv1.SchemeGroupVersion.String(),
-			Kind:       "ClusterRoleBinding",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: korrel8rClusterroleBindingName,
-		},
-		Subjects: []rbacv1.Subject{
-			{
-				APIGroup:  corev1.SchemeGroupVersion.Group,
-				Kind:      "ServiceAccount",
-				Name:      serviceAccountName + "-sa",
-				Namespace: namespace,
-			},
-		},
-		RoleRef: rbacv1.RoleRef{
-			APIGroup: rbacv1.SchemeGroupVersion.Group,
-			Kind:     "ClusterRole",
-			Name:     korrel8rClusterroleBindingName,
 		},
 	}
 }

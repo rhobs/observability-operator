@@ -35,6 +35,7 @@ const (
 	OpenshiftLoggingNs     = "openshift-logging"
 	OpenshiftNetobservNs   = "netobserv"
 	OpenshiftTracingNs     = "openshift-tracing"
+	monitorClusterroleName = "cluster-monitoring-view"
 
 	annotationPrefix = "observability.openshift.io/ui-plugin-"
 )
@@ -121,7 +122,7 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 			monitoringConfig.Incidents.Enabled &&
 			pluginInfo.HealthAnalyzerImage != ""
 		components = append(components,
-			reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, serviceAccountName, "cluster-monitoring-view", plugin.Name+"cluster-monitoring-view"), plugin, incidentsEnabled),
+			reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, serviceAccountName, monitorClusterroleName, plugin.Name+"-"+monitorClusterroleName), plugin, incidentsEnabled),
 			reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, serviceAccountName, "system:auth-delegator", serviceAccountName+"-system-auth-delegator"), plugin, incidentsEnabled),
 			reconciler.NewOptionalUpdater(newAlertManagerViewRoleBinding(serviceAccountName, namespace), plugin, incidentsEnabled),
 			reconciler.NewOptionalUpdater(newHealthAnalyzerPrometheusRole(namespace), plugin, incidentsEnabled),
@@ -138,7 +139,7 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 			reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, persesServiceAccountName, "system:auth-delegator", persesServiceAccountName+"-system-auth-delegator"), plugin, persesEnabled),
 			reconciler.NewOptionalUpdater(newPersesClusterRole(), plugin, persesEnabled),
 			reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, persesServiceAccountName, "perses-cr", persesServiceAccountName+"-perses-cr"), plugin, persesEnabled),
-			reconciler.NewOptionalUnmanagedUpdater(newPerses(namespace, pluginInfo.PersesImage), plugin, persesEnabled),
+			reconciler.NewOptionalUpdater(newPerses(namespace, pluginInfo.PersesImage), plugin, persesEnabled),
 			reconciler.NewOptionalUpdater(newAcceleratorsDatasource(namespace), plugin, persesEnabled),
 			reconciler.NewOptionalUpdater(newAcceleratorsDashboard(namespace), plugin, persesEnabled),
 		)

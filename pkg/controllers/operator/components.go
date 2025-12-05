@@ -45,7 +45,7 @@ func newServiceMonitor(namespace string) *monv1.ServiceMonitor {
 			Endpoints: []monv1.Endpoint{
 				{
 					Port:   "metrics",
-					Scheme: "https",
+					Scheme: ptr.To(monv1.Scheme("https")),
 					TLSConfig: &monv1.TLSConfig{
 						CAFile:   "/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt",
 						CertFile: "/etc/prometheus/secrets/metrics-client-certs/tls.crt",

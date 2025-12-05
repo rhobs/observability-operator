@@ -16,6 +16,7 @@ import (
 // +kubebuilder:printcolumn:name="OpenTelemetry",type="string",JSONPath=".status.opentelemetry"
 // +kubebuilder:printcolumn:name="Tempo",type="string",JSONPath=".status.tempo"
 // +operator-sdk:csv:customresourcedefinitions:displayName="Observability Installer"
+// +operator-sdk:csv:customresourcedefinitions:description="Provides end-to-end observability capabilities with minimal configuration. Simplifies deployment and management of observability components such as tracing."
 // +kubebuilder:metadata:annotations="observability.openshift.io/api-support=TechPreview"
 type ObservabilityInstaller struct {
 	metav1.TypeMeta   `json:",inline"`

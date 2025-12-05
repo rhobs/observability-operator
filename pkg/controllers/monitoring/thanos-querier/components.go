@@ -252,7 +252,7 @@ func newServiceMonitor(name string, namespace string, thanos *msoapi.ThanosQueri
 			Endpoints: []monv1.Endpoint{
 				{
 					Port:   "http",
-					Scheme: "http",
+					Scheme: ptr.To(monv1.Scheme("http")),
 				},
 			},
 			Selector: metav1.LabelSelector{
@@ -263,7 +263,7 @@ func newServiceMonitor(name string, namespace string, thanos *msoapi.ThanosQueri
 		},
 	}
 	if thanos.Spec.WebTLSConfig != nil {
-		serviceMonitor.Spec.Endpoints[0].Scheme = "https"
+		serviceMonitor.Spec.Endpoints[0].Scheme = ptr.To(monv1.Scheme("https"))
 		serviceMonitor.Spec.Endpoints[0].TLSConfig = &monv1.TLSConfig{
 			SafeTLSConfig: monv1.SafeTLSConfig{
 				CA: monv1.SecretOrConfigMap{

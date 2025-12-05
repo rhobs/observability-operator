@@ -135,6 +135,8 @@ spec:
 
 ### Monitoring
 
+#### Overview
+
 The plugin adds monitoring related UI features to the OpenShift web console, related to the Advance Cluster Management (ACM) perspective, incidents (cluster health analysis), and [Perses](https://github.com/perses/perses). A number of new pages and features are enabled through this plugin. Including, but not limited to:
 - `ACM > Observe > Alerting`
 - `ACM > Observe > Alerting > Silences`
@@ -142,23 +144,29 @@ The plugin adds monitoring related UI features to the OpenShift web console, rel
 - `OCP > Observe > Dashboards (Perses)`
 - `OCP > Observe > Incidents`
 
+##### ACM
+
 To deploy ACM related features the `acm-alerting` configuration must be enabled. In the UIPlugin Custom Resource (CR) you must pass the Alertmanager and ThanosQuerier Service endpoint (e.g. `https://alertmanager.open-cluster-management-observability.svc:9095` and `https://rbac-query-proxy.open-cluster-management-observability.svc:8443`). See the example in the next section `Plugin Creation.`
 
+##### Incident detection
+
 To deploy the Incidents feature, the `incidents` configuration must be enabled. See the example in the next section, `Plugin Creation.`
+
+##### Perses
 
 To deploy the Perses dashboard feature, the `perses-dashboards` configuration must be enabled. In the UIPlugin CR, you can optionally pass the service name and namespace of your Perses instance (e.g., `serviceName: perses-api-http` and `namespace: perses`). If these fields are left blank and `spec.monitoring.perses.enabled: true`, then default values will be assigned. These default values are `serviceName: perses-api-http` and `namespace: perses`. See the example in the next section, `Plugin Creation.`
 Besides, when `spec.monitoring.perses.enabled: true`, Accelerator Perses dashboard and Accelerator Perses datasource are both created.
 
-ObO/COO operator creates the following roles:
-- persesdashboard-editor-role - ability to create, read, update and delete perses dashboards CRD instance presented on ObO/COO operator under PersesDashboards tab, and view perses dashboards presentation in Dashboards (Perses)
-- persesdashboard-viewer-role - ability to only read/view perses dashboards CRD instance presented on ObO/COO operator under PersesDashboards tab, and view perses dashboards presentation in Dashboards (Perses)
-- persesdatasource-editor-role - ability to create, read, update and delete perses datasources CRD instance presented on ObO/COO operator under PersesDatasources tab, and view perses dashboards with data being loaded from perses datasource in Dashboards (Perses)
-- persesdatasource-viewer-role - ability to only read/view perses datasources CRD instance presented on ObO/COO operator under PersesDatasources tab, and view perses dashboards with data being loaded from perses datasource in Dashboards (Perses)
+The Cluster Observability Operator creates the following roles:
+- `persesdashboard-editor-role` - ability to create, read, update and delete `PersesDashboard` Custom Resources under the PersesDashboards tab, and view Perses dashboards presentation in Dashboards (Perses).
+- `persesdashboard-viewer-role` - ability to read `PersesDashboard` Custom Resources under the PersesDashboards tab, and view Perses dashboards presentation in Dashboards (Perses).
+- `persesdatasource-editor-role` - ability to create, read, update and delete `PersesDatasource` Custom Resources under the PersesDatasources tab, and view Perses dashboards with data being loaded from Perses datasource in Dashboards (Perses).
+- `persesdatasource-viewer-role` - ability to read `PersesDatasource` Custom Resources under the PersesDatasources tab, and view Perses dashboards with data being loaded from Perses datasource in Dashboards (Perses).
 
-When assigned via ClusterRoleBinding, user has access to all perses dashboards and perses datasources presented in all namespaces/projects. When assigned via RoleBinding, user has access to all perses dashboards and perses datasources presented in a given namespace/project.
+When assigned via `ClusterRoleBinding`, a user has access to all Perses dashboards and datasources in all namespaces/projects. When assigned via `RoleBinding`, user has access to all Perses dashboards and datasources in the given namespace/project.
 
 Examples:
-- user1 RoleBinding as persesdashboard-viewer-role and persesdatasource-viewer-role in openshift-cluster-observability-operator namespace:
+- Granting `user1` the `persesdashboard-viewer-role` and `persesdatasource-viewer-role` permissions in the `openshift-cluster-observability-operator`namespace via `RoleBinding`:
 ```yaml
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -189,7 +197,7 @@ roleRef:
   name: persesdatasource-viewer-role
 ```
 
-- user1 ClusterRoleBinding as persesdashboard-editor-role and persesdatasource-editor-role:
+- Granting `user1` the `persesdashboard-editor-role` and `persesdatasource-editor-role` permissions via `ClusterRoleBinding`:
 ```yaml
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -218,11 +226,11 @@ roleRef:
   name: persesdatasource-editor-role
 ```
 
-Other pages which are typically distributed with the monitoring-plugin, such as `Admin > Observe > Dashboards`, are only available in the monitoring-plugin when deployed through [CMO](https://github.com/openshift/cluster-monitoring-operator).
+Other pages which are typically distributed by the [monitoring-plugin](https://github.com/openshift/monitoring-plugin), such as `Admin > Observe > Dashboards`, are only available when deployed through [CMO](https://github.com/openshift/cluster-monitoring-operator).
 
 #### Plugin Creation
 
-To enable to monitoring console plugin, create a `UIPlugin` CR. The following example shows how to create a CR to enable the monitoring console plugin:
+To enable to the monitoring console plugin, create a `UIPlugin` resource:
 
 ```yaml
 apiVersion: observability.openshift.io/v1alpha1
@@ -248,7 +256,7 @@ spec:
 
 | __Feature__         | __Description__                                                                                                          | __Support Level__    |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------ | -----------------    |
-| `acm-alerting`      | Adds alerting UI to multi-cluster view. Configures proxies to connect with any alertmanager and thanos-querier.          | Dev Preview          |
+| `acm-alerting`      | Adds alerting UI to multi-cluster view. Configures proxies to connect with any Alertmanager and Thanos Query API.        | Dev Preview          |
 | `incidents`         | Adds incidents UI to `Observe` section of OpenShift Console Platform. Deploys the [Cluster Health Analyzer](https://github.com/openshift/cluster-health-analyzer) and configures proxies in the plugin to connect with it. | General Availability |
 | `perses-dashboards` | Adds perses UI to `Observe` section of OpenShift Console Platform. Configures proxies to connect with a Perses instance. Installs Accelerator Perses Dashboard and Accelerator Perses Datasource. See details [here](./perses-dashboards.md) | Dev Preview          |
 

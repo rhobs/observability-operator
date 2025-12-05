@@ -82,7 +82,7 @@ func stackComponentReconcilers(
 
 		reconciler.NewOptionalUpdater(newAlertmanager(ms, alertmanagerName, alertmanager), ms, deployAlertmanager),
 		reconciler.NewOptionalUpdater(newAlertmanagerService(ms), ms, deployAlertmanager),
-		reconciler.NewOptionalUpdater(newAlertmanagerPDB(ms), ms, deployAlertmanager),
+		reconciler.NewOptionalUpdater(newAlertmanagerPDB(ms), ms, deployAlertmanager && *ms.Spec.AlertmanagerConfig.Replicas > 1),
 	}
 }
 
@@ -202,14 +202,10 @@ func newPrometheus(
 				RemoteWrite:               config.RemoteWrite,
 				ExternalLabels:            config.ExternalLabels,
 				EnableRemoteWriteReceiver: config.EnableRemoteWriteReceiver,
-				EnableFeatures: func() []monv1.EnableFeature {
-					if config.EnableOtlpHttpReceiver != nil && *config.EnableOtlpHttpReceiver {
-						return []monv1.EnableFeature{"otlp-write-receiver"}
-					}
-					return []monv1.EnableFeature{}
-				}(),
+				EnableOTLPReceiver:        config.EnableOtlpHttpReceiver,
 			},
 			Retention:             ms.Spec.Retention,
+			RetentionSize:         ms.Spec.RetentionSize,
 			RuleSelector:          prometheusSelector,
 			RuleNamespaceSelector: ms.Spec.NamespaceSelector,
 			Thanos: &monv1.ThanosSpec{
@@ -255,7 +251,7 @@ func newPrometheus(
 				{
 					Name:      ms.Name + "-alertmanager",
 					Namespace: ptr.To(ms.Namespace),
-					Scheme:    "http",
+					Scheme:    ptr.To(monv1.Scheme("http")),
 					Port:      intstr.FromString("web"),
 				},
 			},
@@ -265,7 +261,7 @@ func newPrometheus(
 
 			prometheus.Spec.Secrets = append(prometheus.Spec.Secrets, caSecret.Name)
 
-			prometheus.Spec.Alerting.Alertmanagers[0].Scheme = "https"
+			prometheus.Spec.Alerting.Alertmanagers[0].Scheme = ptr.To(monv1.Scheme("https"))
 			prometheus.Spec.Alerting.Alertmanagers[0].TLSConfig = &monv1.TLSConfig{
 				SafeTLSConfig: monv1.SafeTLSConfig{
 					ServerName: ptr.To(ms.Name + "-alertmanager"),

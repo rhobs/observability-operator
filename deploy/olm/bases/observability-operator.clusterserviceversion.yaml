@@ -2,7 +2,37 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
-    alm-examples: "[]"
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "observability.openshift.io/v1alpha1",
+          "kind": "ObservabilityInstaller",
+          "metadata": {
+            "name": "sample-observability",
+            "namespace": "observability"
+          },
+          "spec": {
+            "capabilities": {
+              "tracing": {
+                "enabled": true,
+                "storage": {
+                  "objectStorage": {
+                    "s3": {
+                      "bucket": "tempo",
+                      "endpoint": "http://minio.minio.svc:9000",
+                      "accessKeyID": "tempo",
+                      "accessKeySecret": {
+                        "name": "minio-secret",
+                        "key": "access_key_secret"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
     capabilities: Basic Install
     categories: Monitoring
     certified: "false"
@@ -44,6 +74,11 @@ spec:
         displayName: MonitoringStack
         kind: MonitoringStack
         name: monitoringstacks.monitoring.rhobs
+        version: v1alpha1
+      - description: Provides end-to-end observability capabilities with minimal configuration. Simplifies deployment and management of observability components such as tracing.
+        displayName: Observability Installer
+        kind: ObservabilityInstaller
+        name: observabilityinstallers.observability.openshift.io
         version: v1alpha1
       - description: PodMonitor defines monitoring for a set of pods
         displayName: PodMonitor
