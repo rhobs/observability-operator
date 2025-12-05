@@ -49,18 +49,18 @@ kubectl port-forward -n project-c svc/thanos-querier-example 10902:localhost:109
 
 Then open `http://localhost:10902` in your browser. You can check that all Prometheus instances are present in the Stores page and that metrics are showing up.
 
-### Configuring a dashboard
+### Configuring a Perses dashboard
 
-To install the example dashboard (+datasource), run:
+To install the example Perses dashboard (+datasource), run:
 
 ```shell
-kubectl apply -f docs/user-guides/thanos_querier/dashboard
+kubectl apply -f docs/user-guides/thanos_querier/console
 ```
 
 To verify the installation, run:
 
 ```
-kubectl wait --for=condition=Available uiplugins dashboards
+kubectl wait --for=condition=Available uiplugins monitoring
 ```
 
-You should now be able to access the custom dashboard under `Observe > Dashboards`.
+You should now be able to access the custom dashboard under `Observe > Dashboards (Perses)` in the `project-d` namespace.

@@ -1,0 +1,127 @@
+---
+apiVersion: perses.dev/v1alpha1
+kind: PersesDashboard
+metadata:
+  name: app-overview
+  namespace: project-d
+  labels:
+    app.kubernetes.io/name: dashboard
+    app.kubernetes.io/part-of: monitoring
+spec:
+  display:
+    name: Overview
+  variables:
+    - kind: ListVariable
+      spec:
+        display:
+          hidden: false
+        allowAllValue: true
+        allowMultiple: true
+        sort: alphabetical-asc
+        plugin:
+          kind: PrometheusLabelValuesVariable
+          spec:
+            labelName: service
+            matchers:
+              - up{service=~"api|backend"}
+        name: service
+    - kind: ListVariable
+      spec:
+        display:
+          hidden: false
+        allowAllValue: true
+        allowMultiple: true
+        sort: alphabetical-asc
+        plugin:
+          kind: PrometheusLabelValuesVariable
+          spec:
+            labelName: namespace
+            matchers:
+              - up{service=~"$service"}
+        name: namespace
+  panels:
+    "0_0":
+      kind: Panel
+      spec:
+        display:
+          name: Requests rate (req/s)
+        plugin:
+          kind: TimeSeriesChart
+          spec: {}
+        queries:
+          - kind: TimeSeriesQuery
+            spec:
+              plugin:
+                kind: PrometheusTimeSeriesQuery
+                spec:
+                  datasource:
+                    kind: PrometheusDatasource
+                  query: sum by(service, namespace, code) (rate(http_requests_total{service=~"$service",namespace=~"$namespace"}[$__rate_interval]))
+                  seriesNameFormat: svc={{service}},code={{code}},namespace={{namespace}}
+    "0_1":
+      kind: Panel
+      spec:
+        display:
+          name: Errors
+        plugin:
+          kind: TimeSeriesChart
+          spec: {}
+        queries:
+          - kind: TimeSeriesQuery
+            spec:
+              plugin:
+                kind: PrometheusTimeSeriesQuery
+                spec:
+                  datasource:
+                    kind: PrometheusDatasource
+                  query: |-
+                    sum by(service, namespace) (rate(http_requests_total{service=~"$service",namespace=~"$namespace",code!~"2.."}[$__rate_interval]))
+                    /
+                    sum by(service, namespace) (rate(http_requests_total{service=~"$service",namespace=~"$namespace"}[$__rate_interval]))
+                  seriesNameFormat: svc={{service}},namespace={{namespace}}
+    "0_2":
+      kind: Panel
+      spec:
+        display:
+          name: Duration (90th percentile)
+        plugin:
+          kind: TimeSeriesChart
+          spec: {}
+        queries:
+          - kind: TimeSeriesQuery
+            spec:
+              plugin:
+                kind: PrometheusTimeSeriesQuery
+                spec:
+                  datasource:
+                    kind: PrometheusDatasource
+                  query: |-
+                    histogram_quantile(0.9, sum by (le,namespace,service) (rate(http_request_duration_seconds_bucket{service=~"$service",namespace=~"$namespace"}[$__rate_interval])))
+                  seriesNameFormat: svc={{service}},namespace={{namespace}}
+  layouts:
+    - kind: Grid
+      spec:
+        display:
+          title: Rate/Errors/Duration
+          collapse:
+            open: true
+        items:
+          - x: 0
+            "y": 1
+            width: 24
+            height: 7
+            content:
+              $ref: "#/spec/panels/0_0"
+          - x: 0
+            "y": 2
+            width: 24
+            height: 7
+            content:
+              $ref: "#/spec/panels/0_1"
+          - x: 0
+            "y": 3
+            width: 24
+            height: 7
+            content:
+              $ref: "#/spec/panels/0_2"
+  duration: 30m
