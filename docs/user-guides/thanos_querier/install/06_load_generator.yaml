@@ -1,0 +1,54 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: load-gen
+    app.kubernetes.io/part-of: myapp
+  name: load-gen
+  namespace: project-d
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: load-gen
+      app.kubernetes.io/part-of: myapp
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: load-gen
+        app.kubernetes.io/part-of: myapp
+    spec:
+      containers:
+        - image: registry.redhat.io/ubi9/ubi-minimal
+          imagePullPolicy: IfNotPresent
+          name: load-gen
+          command:
+            - /bin/sh
+            - -c
+            - |
+              # List of URLs to query
+              urls=(
+                "http://api.project-a.svc:8080/"
+                "http://api.project-b.svc:8080/"
+                "http://api.project-b.svc:8080/err"
+                "http://backend.project-c.svc:8080/"
+              )
+
+              while true; do
+                # Pick a random URL from the array
+                random_index=$((RANDOM % ${#urls[@]}))
+                url="${urls[$random_index]}"
+
+                # Query the URL (suppress output)
+                curl -s -o /dev/null "$url"
+
+                echo "Queried: $url"
+
+                # Generate random delay between 0 and 1 second (in milliseconds)
+                # RANDOM gives 0-32767, so we divide by 32767 to get 0-1 range
+                delay=$(awk -v r=$RANDOM 'BEGIN{printf "%.3f", r/32767}')
+
+                # Sleep for the random delay
+                sleep "$delay"
+              done

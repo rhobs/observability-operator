@@ -1,20 +1,32 @@
+---
 apiVersion: v1
 kind: Namespace
 metadata:
   name: project-a
   labels:
-    app: example
+    app.kubernetes.io/name: api-service
+    app.kubernetes.io/part-of: myapp
 ---
 apiVersion: v1
 kind: Namespace
 metadata:
   name: project-b
   labels:
-    app: example
+    app.kubernetes.io/name: api-service
+    app.kubernetes.io/part-of: myapp
 ---
 apiVersion: v1
 kind: Namespace
 metadata:
   name: project-c
   labels:
-    app: example
+    app.kubernetes.io/name: backend
+    app.kubernetes.io/part-of: myapp
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: project-d
+  labels:
+    app.kubernetes.io/name: query
+    app.kubernetes.io/part-of: monitoring

@@ -4,9 +4,9 @@ In conjunction with the Monitoring UIPlugin, the Cluster Observability Operator 
 
 ## Requirements to display Perses Dashboards in OpenShift Console
 
-- OpenShift 4.15 or later
-- The Cluster Observability Operator 1.2 or later installed and running
-- The Monitoring UIPlugin installed with the perses feature enabled
+- OpenShift 4.15 or later.
+- The Cluster Observability Operator 1.2 or later installed and running.
+- The [Monitoring UIPlugin](https://github.com/rhobs/observability-operator/blob/main/docs/user-guides/observability-ui-plugins.md#plugin-creation-4) installed with the Perses feature enabled.
 
 ## Adding a Perses Dashboard and Datasource
 
