@@ -1,0 +1,54 @@
+---
+apiVersion: monitoring.rhobs/v1
+kind: ServiceMonitor
+metadata:
+  name: api
+  namespace: project-a
+  labels:
+    app.kubernetes.io/name: api-service
+    app.kubernetes.io/part-of: myapp
+spec:
+  endpoints:
+    - interval: 30s
+      port: web
+      scheme: http
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: api-service
+      app.kubernetes.io/part-of: myapp
+---
+apiVersion: monitoring.rhobs/v1
+kind: ServiceMonitor
+metadata:
+  name: api
+  namespace: project-b
+  labels:
+    app.kubernetes.io/name: api-service
+    app.kubernetes.io/part-of: myapp
+spec:
+  endpoints:
+    - interval: 30s
+      port: web
+      scheme: http
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: api-service
+      app.kubernetes.io/part-of: myapp
+---
+apiVersion: monitoring.rhobs/v1
+kind: ServiceMonitor
+metadata:
+  name: backend
+  namespace: project-c
+  labels:
+    app.kubernetes.io/name: backend
+    app.kubernetes.io/part-of: myapp
+spec:
+  endpoints:
+    - interval: 30s
+      port: web
+      scheme: http
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: backend
+      app.kubernetes.io/part-of: myapp
