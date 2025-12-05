@@ -162,6 +162,9 @@ type MonitoringConfig struct {
 	//
 	// +kubebuilder:validation:Optional
 	Incidents *IncidentsReference `json:"incidents,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	ComponentsHealth *ComponentsHealthReference `json:"componentsHealth,omitempty"`
 }
 
 // AdvancedClusterManagementReference is used to configure references to the alertmanager and thanosQuerier that should be used
@@ -216,6 +219,14 @@ type PersesReference struct {
 // IncidentsReference is used to configure if the incidents feature flag should be enabled.
 type IncidentsReference struct {
 	// Indicates if incidents-related feature(s) should be enabled.
+	//
+	// +kubebuilder:validation:Required
+	Enabled bool `json:"enabled"`
+}
+
+// ComponentsHealthReference is used to configure the components health monitoring feature.
+type ComponentsHealthReference struct {
+	// Indicates if components health feature should be enabled.
 	//
 	// +kubebuilder:validation:Required
 	Enabled bool `json:"enabled"`
