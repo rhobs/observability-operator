@@ -67,6 +67,9 @@ func TestMonitoringStackController(t *testing.T) {
 		name:     "resource selector nil propagates to Prometheus",
 		scenario: nilResrouceSelectorPropagatesToPrometheus,
 	}, {
+		name:     "prometheus with nil resource selector becomes ready",
+		scenario: nilResourceSelectorPrometheusBecomesReady,
+	}, {
 		name:     "stack spec are reflected in Prometheus",
 		scenario: reconcileStack,
 	}, {
@@ -104,11 +107,17 @@ func TestMonitoringStackController(t *testing.T) {
 			assertAlertmanagersAreResilientToDisruption(t, pods)
 		},
 	}, {
-		name:     "invalid Prometheus replicas numbers",
+		name:     "invalid number of replicas for Prometheus",
 		scenario: validatePrometheusConfig,
 	}, {
 		name:     "Alertmanager disabled",
 		scenario: assertAlertmanagerNotDeployed,
+	}, {
+		name:     "single Alertmanager has no PDB",
+		scenario: singleAlertmanagerReplicaHasNoPDB,
+	}, {
+		name:     "invalid number of replicas for Alertmanagers",
+		scenario: validateAlertmanagerConfig,
 	}, {
 		name:     "Alertmanager deployed and removed",
 		scenario: assertAlertmanagerDeployedAndRemoved,
@@ -124,6 +133,9 @@ func TestMonitoringStackController(t *testing.T) {
 	}, {
 		name:     "Prometheus stacks can scrape themselves behind TLS",
 		scenario: assertPrometheusScrapesItselfTLS,
+	}, {
+		name:     "Assert OTLP receiver flag is set when enabled in CR",
+		scenario: assertDefaultOTLPFlagIsSet,
 	}}
 	for _, tc := range ts {
 		t.Run(tc.name, tc.scenario)
@@ -166,6 +178,21 @@ func nilResrouceSelectorPropagatesToPrometheus(t *testing.T) {
 	if wait.Interrupted(err) {
 		t.Fatal(fmt.Errorf("nil ResourceSelector did not propagate to Prometheus object"))
 	}
+}
+
+func nilResourceSelectorPrometheusBecomesReady(t *testing.T) {
+	ms := newMonitoringStack(t, "nil-selector-ready")
+	ms.Spec.ResourceSelector = nil
+
+	err := f.K8sClient.Create(context.Background(), ms)
+	assert.NilError(t, err, "failed to create monitoring stack with nil resourceSelector")
+
+	// Verify Prometheus CR is created
+	f.AssertResourceEventuallyExists(ms.Name, ms.Namespace, &monv1.Prometheus{})(t)
+
+	// Verify Prometheus pods become ready despite nil resourceSelector
+	// covers upstream issue #932
+	f.AssertStatefulsetReady("prometheus-"+ms.Name, ms.Namespace, framework.WithTimeout(5*time.Minute))(t)
 }
 
 func promConfigDefaultsAreApplied(t *testing.T) {
@@ -287,7 +314,6 @@ func reconcileRevertsManualChanges(t *testing.T) {
 	f.GetResourceWithRetry(t, ms.Name, ms.Namespace, &generated)
 
 	// update the prometheus created by monitoring-stack controller
-
 	modified := generated.DeepCopy()
 	modified.Spec.ServiceMonitorSelector = &metav1.LabelSelector{
 		MatchLabels: map[string]string{
@@ -342,28 +368,52 @@ func validateStackLogLevel(t *testing.T) {
 }
 
 func validateStackRetention(t *testing.T) {
-	invalidRetention := []monv1.Duration{
-		"100days",
-		"100ducks",
-		"100 days",
-		"100 hours",
-		"100 h",
-		"100 s",
-		"100d   ",
-	}
+	t.Run("time-based", func(t *testing.T) {
+		invalidRetention := []monv1.Duration{
+			"100days",
+			"100ducks",
+			"100 days",
+			"100 hours",
+			"100 h",
+			"100 s",
+			"100d   ",
+		}
 
-	ms := newMonitoringStack(t, "invalid-retention")
-	for _, v := range invalidRetention {
-		ms.Spec.Retention = v
-		err := f.K8sClient.Create(context.Background(), ms)
-		assert.ErrorContains(t, err, `spec.retention: Invalid value`)
-	}
+		ms := newMonitoringStack(t, "invalid-retention")
+		for _, v := range invalidRetention {
+			ms.Spec.Retention = v
+			err := f.K8sClient.Create(context.Background(), ms)
+			assert.ErrorContains(t, err, `spec.retention: Invalid value`)
+		}
 
-	validMS := newMonitoringStack(t, "valid-retention")
-	validMS.Spec.Retention = "100h"
+		validMS := newMonitoringStack(t, "valid-retention")
+		validMS.Spec.Retention = "100h"
 
-	err := f.K8sClient.Create(context.Background(), validMS)
-	assert.NilError(t, err, `100h is a valid retention period`)
+		err := f.K8sClient.Create(context.Background(), validMS)
+		assert.NilError(t, err, `100h is a valid retention period`)
+	})
+
+	t.Run("size-based", func(t *testing.T) {
+		invalidRetention := []monv1.ByteSize{
+			"1gb",
+			"1foo",
+			"1 GB",
+			"1GB   ",
+		}
+
+		ms := newMonitoringStack(t, "invalid-retention-size")
+		for _, v := range invalidRetention {
+			ms.Spec.RetentionSize = v
+			err := f.K8sClient.Create(context.Background(), ms)
+			assert.ErrorContains(t, err, `spec.retentionSize: Invalid value`)
+		}
+
+		validMS := newMonitoringStack(t, "valid-retention-size")
+		validMS.Spec.RetentionSize = "1GB"
+
+		err := f.K8sClient.Create(context.Background(), validMS)
+		assert.NilError(t, err)
+	})
 }
 
 func validatePrometheusConfig(t *testing.T) {
@@ -374,11 +424,16 @@ func validatePrometheusConfig(t *testing.T) {
 	}
 	err := f.K8sClient.Create(context.Background(), ms)
 	assert.ErrorContains(t, err, `invalid: spec.prometheusConfig.replicas`)
+}
 
-	validN := int32(1)
-	ms.Spec.PrometheusConfig.Replicas = &validN
-	err = f.K8sClient.Create(context.Background(), ms)
-	assert.NilError(t, err, `1 is a valid replica count`)
+func validateAlertmanagerConfig(t *testing.T) {
+	invalidN := int32(-1)
+	ms := newMonitoringStack(t, "invalid-alertmanager-config")
+	ms.Spec.AlertmanagerConfig = stack.AlertmanagerConfig{
+		Replicas: &invalidN,
+	}
+	err := f.K8sClient.Create(context.Background(), ms)
+	assert.ErrorContains(t, err, `invalid: spec.alertmanagerConfig.replicas`)
 }
 
 func singlePrometheusReplicaHasNoPDB(t *testing.T) {
@@ -398,6 +453,30 @@ func singlePrometheusReplicaHasNoPDB(t *testing.T) {
 
 	// Update replica count to 1
 	err = f.UpdateWithRetry(t, ms, framework.SetPrometheusReplicas(1))
+	assert.NilError(t, err, "failed to update monitoring stack")
+
+	// ensure there is no pdb
+	f.AssertResourceAbsent(pdbName, ms.Namespace, &pdb)(t)
+}
+
+func singleAlertmanagerReplicaHasNoPDB(t *testing.T) {
+	// asserts that no Alertmanager pdb is created for stacks with replicas set
+	// to 1 (otherwise upgrades are impossible).
+
+	// Initially, ensure that pdb is created by default for the default stack.
+	// This should later be removed when replicas is set to 1.
+	ms := newMonitoringStack(t, "single-replica")
+
+	err := f.K8sClient.Create(context.Background(), ms)
+	assert.NilError(t, err, "failed to create a monitoring stack")
+
+	// ensure pdb is created for default stack.
+	pdb := policyv1.PodDisruptionBudget{}
+	pdbName := ms.Name + "-alertmanager"
+	f.AssertResourceEventuallyExists(pdbName, ms.Namespace, &pdb)(t)
+
+	// Update replica count to 1
+	err = f.UpdateWithRetry(t, ms, framework.SetAlertmanagerReplicas(1))
 	assert.NilError(t, err, "failed to update monitoring stack")
 
 	// ensure there is no pdb
@@ -934,6 +1013,18 @@ func assertPrometheusScrapesItselfTLS(t *testing.T) {
 	}
 }
 
+func assertDefaultOTLPFlagIsSet(t *testing.T) {
+	ms := newMonitoringStack(t, "otlp-flag-test")
+	ms.Spec.PrometheusConfig = &stack.PrometheusConfig{
+		EnableOtlpHttpReceiver: ptr.To(true),
+	}
+
+	err := f.K8sClient.Create(context.Background(), ms)
+	assert.NilError(t, err, "failed to create a monitoring stack")
+
+	f.AssertStatefulSetContainerHasArg(t, "prometheus-"+ms.Name, e2eTestNamespace, "prometheus", "--web.enable-otlp-receiver")(t)
+}
+
 // Update this json when a new Prometheus field is set by MonitoringStack
 const oboManagedFieldsJson = `
 {
@@ -963,9 +1054,7 @@ const oboManagedFieldsJson = `
   "f:probeNamespaceSelector": {},
   "f:probeSelector": {},
   "f:remoteWrite": {},
-  "f:enableFeatures": {
-    "v:\"otlp-write-receiver\"": {}
-  },
+  "f:enableOTLPReceiver": {},
   "f:replicas": {},
   "f:resources": {},
   "f:retention": {},

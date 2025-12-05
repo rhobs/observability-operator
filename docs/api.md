@@ -173,10 +173,25 @@ To disable service discovery, set to null. E.g. resourceSelector:.<br/>
         <td><b>retention</b></td>
         <td>string</td>
         <td>
-          Time duration to retain data for. Default is '120h',
-and must match the regular expression `[0-9]+(ms|s|m|h|d|w|y)` (milliseconds seconds minutes hours days weeks years).<br/>
+          Time duration to retain data for. Default is '120h', and the value must
+match the regular expression `[0-9]+(ms|s|m|h|d|w|y)` (milliseconds
+seconds minutes hours days weeks years).
+
+When both retention and retentionSize are defined, whichever triggers
+first will be applied.<br/>
           <br/>
             <i>Default</i>: 120h<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>retentionSize</b></td>
+        <td>string</td>
+        <td>
+          retentionSize defines the maximum number of bytes used by the Prometheus
+data. By default the size is unlimited.
+
+When both retention and retentionSize are defined, whichever triggers
+first will be applied.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -213,6 +228,17 @@ Define Alertmanager config
           Disables the deployment of Alertmanager.<br/>
           <br/>
             <i>Default</i>: false<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>replicas</b></td>
+        <td>integer</td>
+        <td>
+          Number of replicas/pods to deploy for Alertmanager.<br/>
+          <br/>
+            <i>Format</i>: int32<br/>
+            <i>Default</i>: 2<br/>
+            <i>Minimum</i>: 0<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -5347,7 +5373,7 @@ It always references a LokiStack in the "openshift-logging" namespace.<br/>
         <td>
           Schema is the schema to use for logs querying and display.
 
-Defatults to "viaq" if not specified, "select" is used to allow users to select the schema from the UI.<br/>
+Defaults to "viaq" if not specified. Use "otel" for OpenTelemetry schema, or "select" to allow users to choose the schema from the UI.<br/>
           <br/>
             <i>Enum</i>: viaq, otel, select<br/>
         </td>
