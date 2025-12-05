@@ -1,26 +1,31 @@
-apiVersion: monitoring.rhobs/v1alpha1
-kind: MonitoringStack
-metadata:
-  name: example
-  namespace: project-a
-  labels:
-    app: example
-spec:
-  alertmanagerConfig:
-    disabled: true
-  prometheusConfig:
-    replicas: 2
-  resourceSelector:
-    matchLabels:
-      app: example
 ---
 apiVersion: monitoring.rhobs/v1alpha1
 kind: MonitoringStack
 metadata:
-  name: example
-  namespace: project-b
+  name: api-monitoring
+  namespace: project-a
   labels:
-    app: example
+    app.kubernetes.io/name: metrics
+    app.kubernetes.io/part-of: monitoring
+spec:
+  alertmanagerConfig:
+    disabled: true
+  prometheusConfig:
+    replicas: 2
+  resourceSelector: {}
+  namespaceSelector:
+    matchLabels:
+      app.kubernetes.io/name: api-service
+      app.kubernetes.io/part-of: myapp
+---
+apiVersion: monitoring.rhobs/v1alpha1
+kind: MonitoringStack
+metadata:
+  name: backend-monitoring
+  namespace: project-c
+  labels:
+    app.kubernetes.io/name: metrics
+    app.kubernetes.io/part-of: monitoring
 spec:
   alertmanagerConfig:
     disabled: true
@@ -28,4 +33,4 @@ spec:
     replicas: 2
   resourceSelector:
     matchLabels:
-      app: example
+      app.kubernetes.io/name: backend
