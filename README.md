@@ -11,6 +11,8 @@ The project relies heavily on the [controller-runtime](https://github.com/kubern
 Observability Operator requires Operator Lifecycle Manager (OLM) to be running
 in cluster. The easiest way is to use OpenShift where OLM is preinstalled.
 
+Once the operator is installed, you can follow-up with the [User Guides](docs/user-guides/README.md).
+
 ### OpenShift
 
 Add the Observability Operator Catalog as shown below.
