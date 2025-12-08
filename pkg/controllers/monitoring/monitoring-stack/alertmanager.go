@@ -21,7 +21,6 @@ func newAlertmanager(
 	if resourceSelector == nil {
 		resourceSelector = &metav1.LabelSelector{}
 	}
-	replicas := int32(2)
 
 	am := &monv1.Alertmanager{
 		TypeMeta: metav1.TypeMeta{
@@ -36,7 +35,7 @@ func newAlertmanager(
 			PodMetadata: &monv1.EmbeddedObjectMetadata{
 				Labels: podLabels("alertmanager", ms.Name),
 			},
-			Replicas:                   &replicas,
+			Replicas:                   ms.Spec.AlertmanagerConfig.Replicas,
 			ServiceAccountName:         rbacResourceName,
 			AlertmanagerConfigSelector: resourceSelector,
 			NodeSelector:               ms.Spec.NodeSelector,

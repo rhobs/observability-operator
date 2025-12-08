@@ -197,7 +197,7 @@ func newHealthAnalyzerServiceMonitor(namespace string) *monv1.ServiceMonitor {
 				{
 					Interval: "30s",
 					Port:     "metrics",
-					Scheme:   "https",
+					Scheme:   ptr.To(monv1.Scheme("https")),
 					TLSConfig: &monv1.TLSConfig{
 						SafeTLSConfig: monv1.SafeTLSConfig{
 							ServerName: ptr.To(name + "." + namespace + ".svc"),

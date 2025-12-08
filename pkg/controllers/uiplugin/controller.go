@@ -142,6 +142,7 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 		Owns(&v1.ServiceAccount{}, generationChanged).
 		Owns(&rbacv1.Role{}, generationChanged).
 		Owns(&rbacv1.RoleBinding{}, generationChanged).
+		Owns(&persesv1alpha1.Perses{}, generationChanged).
 		Owns(&persesv1alpha1.PersesDashboard{}, generationChanged).
 		Owns(&persesv1alpha1.PersesDatasource{}, generationChanged)
 

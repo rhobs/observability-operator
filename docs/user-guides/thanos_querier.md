@@ -27,7 +27,7 @@ We are going to create
 To install the example, run:
 
 ```shell
-kubectl apply -f docs/user-guides/thanos-querier/install
+kubectl apply -f docs/user-guides/thanos_querier/install
 ```
 
 To verify the installation, run:
@@ -50,7 +50,7 @@ Then open `http://localhost:10902` in your browser.
 To install the example dashboard (+datasource), run:
 
 ```shell
-kubectl apply -f thanos_querier/dashboard/
+kubectl apply -f docs/user-guides/thanos_querier/dashboard
 ```
 
 To verify the installation, run:
