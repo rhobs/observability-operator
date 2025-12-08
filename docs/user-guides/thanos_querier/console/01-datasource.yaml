@@ -1,0 +1,20 @@
+apiVersion: perses.dev/v1alpha1
+kind: PersesDatasource
+metadata:
+  name: metrics-api
+  namespace: project-d
+  labels:
+    app.kubernetes.io/name: datasource
+    app.kubernetes.io/part-of: monitoring
+spec:
+  config:
+    display:
+      name: "Thanos Querier (myapp)"
+    default: true
+    plugin:
+      kind: PrometheusDatasource
+      spec:
+        proxy:
+          kind: HTTPProxy
+          spec:
+            url: "http://thanos-querier-metrics-api.project-d.svc:10902"

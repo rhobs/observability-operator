@@ -1,15 +1,18 @@
+---
 apiVersion: monitoring.rhobs/v1alpha1
 kind: ThanosQuerier
 metadata:
-  name: example
-  namespace: project-c
+  name: metrics-api
+  namespace: project-d
   labels:
-    app: example
+    app.kubernetes.io/name: metrics-api
+    app.kubernetes.io/part-of: monitoring
 spec:
   selector:
     matchLabels:
-      app: example
+      app.kubernetes.io/part-of: monitoring
   namespaceSelector:
     matchNames:
-    - project-a
-    - project-b
+      - project-a
+      - project-b
+      - project-c
