@@ -1,0 +1,102 @@
+apiVersion: perses.dev/v1alpha1
+kind: PersesDashboard
+metadata:
+  name: cluster-overview
+  namespace: perses-example
+spec:
+  display:
+    name: Cluster Overview
+  panels:
+    "0_0":
+      kind: Panel
+      spec:
+        display:
+          name: CPU
+        plugin:
+          kind: StatChart
+          spec:
+            calculation: mean
+            format:
+              unit: percent-decimal
+            thresholds:
+              steps:
+                - color: green
+                  value: 0
+                - color: red
+                  value: 80
+        queries:
+          - kind: TimeSeriesQuery
+            spec:
+              plugin:
+                kind: PrometheusTimeSeriesQuery
+                spec:
+                  datasource:
+                    kind: PrometheusDatasource
+                  query: cluster:node_cpu:ratio_rate5m{}
+    "0_1":
+      kind: Panel
+      spec:
+        display:
+          name: Memory
+        plugin:
+          kind: StatChart
+          spec:
+            calculation: mean
+            format:
+              unit: percent-decimal
+            thresholds:
+              steps:
+                - color: green
+                  value: 0
+                - color: red
+                  value: 80
+        queries:
+          - kind: TimeSeriesQuery
+            spec:
+              plugin:
+                kind: PrometheusTimeSeriesQuery
+                spec:
+                  datasource:
+                    kind: PrometheusDatasource
+                  query: 1 - sum(:node_memory_MemAvailable_bytes:sum) / sum(node_memory_MemTotal_bytes{job="node-exporter"})
+    "0_2":
+      kind: Panel
+      spec:
+        display:
+          name: Welcome to Perses dashboards
+        plugin:
+          kind: Markdown
+          spec:
+            text: |-
+              This is a very simple dashboard which displays the overall
+              utilization of CPU and memory in the cluster based on the metrics
+              collected by the in-cluster monitoring stack.
+
+              Check the [Observability Operator](https://github.com/rhobs/observability-operator) repository for more examples.
+  layouts:
+    - kind: Grid
+      spec:
+        display:
+          title: Overview
+          collapse:
+            open: true
+        items:
+          - x: 0
+            "y": 1
+            width: 8
+            height: 6
+            content:
+              $ref: "#/spec/panels/0_2"
+          - x: 8
+            "y": 1
+            width: 4
+            height: 6
+            content:
+              $ref: "#/spec/panels/0_0"
+          - x: 12
+            "y": 1
+            width: 4
+            height: 6
+            content:
+              $ref: "#/spec/panels/0_1"
+  duration: 1h
