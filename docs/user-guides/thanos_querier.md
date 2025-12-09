@@ -36,7 +36,7 @@ kubectl apply -f docs/user-guides/thanos_querier/install
 To verify the installation, run:
 
 ```shell
-kubectl wait --for=condition=Available -A --timeout=10s -l app.kubernetes.io/part-of monitoringstacks
+kubectl wait --for=condition=Available -A --timeout=10s -l app.kubernetes.io/part-of=monitoring monitoringstacks
 kubectl wait --for=condition=Available -A --timeout=10s -l app.kubernetes.io/managed-by=observability-operator deployments
 kubectl wait --for=condition=Available -A --timeout=10s -l app.kubernetes.io/part-of=myapp deployments
 ```
