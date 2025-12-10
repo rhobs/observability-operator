@@ -4,12 +4,12 @@
 
 ![Architecture](federation/assets/cmo-obo-federation.png)
 
-This example deploys a MonitoringStack in `federate-cmo` namespace and ingests
-only a selected set of metrics from the in-cluster Prometheus.
+This example deploys a MonitoringStack in the `federate-cmo` namespace and ingests
+only a selected set of metrics from the in-cluster Prometheus stack.
 
 ## Steps
 
-Assuming that ObO is installed, follow the steps below to create a
+Assuming that the Observability Operator is installed, follow the steps below to create a
 MonitoringStack that uses the in-cluster Prometheus `/federate` endpoint to
 scrape selected metrics.
 
@@ -18,7 +18,6 @@ directory](federation/manifests)
 
 ### Create a Project to deploy MonitoringStack
 
-
 ```yaml
 apiVersion: v1
 kind: Namespace
@@ -26,9 +25,13 @@ metadata:
   name: federate-cmo
 ```
 
+Or run
+
+```sh
+kubectl apply -f docs/user-guides/federation/manifests/00-ns.yaml
+```
 
 ### Deploy Monitoring Stack
-
 
 Apply the following MonitoringStack
 
@@ -60,6 +63,11 @@ spec:
       memory: 1Gi
 ```
 
+Or run
+
+```sh
+kubectl apply -f docs/user-guides/federation/manifests/10-ms.yaml
+```
 
 ### Grant Permission to Federate In-Cluster Prometheus
 
@@ -82,6 +90,12 @@ subjects:
   #    SA name follows <monitoring stack name>-prometheus nomenclature
   name: federate-cmo-ms-prometheus
   namespace: federate-cmo
+```
+
+Or run
+
+```sh
+kubectl apply -f docs/user-guides/federation/manifests/11-crb.yaml
 ```
 
 ### Create ServiceMonitor for Federation
@@ -143,15 +157,27 @@ spec:
           name: openshift-service-ca.crt
 ```
 
+Or run
+
+```sh
+kubectl apply -f docs/user-guides/federation/manifests/20-smon-cmo.yaml
+```
+
 ## Validation
 
-Verify if the setup works by using either the  Prometheus UI or by inspecting
-`<prometheus>/api/v1/targets`
+Verify that the MonitoringStack resource is available:
+
+```sh
+kubectl wait --for=condition=Available -n federate-cmo --timeout=10s monitoringstacks federate-cmo-ms
+```
+
+You can verify if the setup works by using either the Prometheus UI or by inspecting
+`<prometheus>/api/v1/targets`.
 
 ### Prometheus UI
 
 Access Prometheus UI by port-forwarding the `federate-cmo-ms-prometheus`
-service created by ObO as follows
+service created by the Observability Operator as follows
 
 ```sh
 kubectl port-forward svc/federate-cmo-ms-prometheus 9090:9090 --address 0.0.0.0 -n federate-cmo
@@ -165,12 +191,12 @@ Run the following command to inspects all active targets for `federate-cmo-smon`
 service
 
 ```sh
-kubectl exec -it sts/prometheus-federate-cmo-ms -- \
-    wget -O- -q 'http://localhost:9090/api/v1/targets?state=active' |
-		jq '.data.activeTargets[]| select(.scrapePool | contains("federate-cmo-smon"))| .labels'
+kubectl exec -n federate-cmo -it sts/prometheus-federate-cmo-ms -- \
+    curl -s 'http://localhost:9090/api/v1/targets?state=active' |
+    jq '.data.activeTargets[]| select(.scrapePool | contains("federate-cmo-smon"))| .labels'
 ```
 
-The above should return the following json
+The above should return the following JSON:
 
 ```json
 {
@@ -178,3 +204,4 @@ The above should return the following json
   "job": "federate-cmo-ms-prometheus",
   "source": "my-openshift-cluster"
 }
+```
