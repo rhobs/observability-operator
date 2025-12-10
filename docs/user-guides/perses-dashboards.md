@@ -1,90 +1,87 @@
 # Perses Dashboards
 
-In conjunction with the Monitoring UIPlugin, the Cluster Observability Operator (COO) allows you to add dashboards and datasources to the OpenShift Console using [Perses](https://perses.dev/). This feature is currently in Dev Preview.
+In conjunction with the Monitoring UIPlugin, the Cluster Observability Operator (COO) allows you to add dashboards and datasources to the OpenShift Console leveraging [Perses](https://perses.dev/), the open dashboard tool for Prometheus and other data sources. This feature is currently in Dev Preview.
 
-## Requirements to display Perses Dashboards in OpenShift Console
+## Getting started
+
+### Pre-requisites
 
 - OpenShift 4.15 or later.
-- The Cluster Observability Operator 1.2 or later installed and running.
-- The [Monitoring UIPlugin](https://github.com/rhobs/observability-operator/blob/main/docs/user-guides/observability-ui-plugins.md#plugin-creation-4) installed with the Perses feature enabled.
+- The Cluster Observability Operator (1.2 or later) installed and running.
 
-## Adding a Perses Dashboard and Datasource
+### Installing the Monitoring UIPlugin
 
-COO embeds the [Perses Operator](https://github.com/perses/perses-operator), which is responsible for managing Perses dashboards and datasources. The COO provides directly the `PersesDashboard` and `PersesDatasource` custom resources (CRs) which are namespaced. This allows you to define RBAC policies for them using the standard Kubernetes RBAC model.
-
-### Add a Perses Dashboard and Datasource manually
-
-To add a Perses dashboard to the OpenShift Console, a `PersesDashboard` CR must be created. The Perses dashboard CR is namespaced, meaning it is scoped to a specific namespace in your OpenShift cluster.
+Apply the following manifest
 
 ```yaml
-apiVersion: perses.dev/v1alpha1
-kind: PersesDashboard
+apiVersion: observability.openshift.io/v1alpha1
+kind: UIPlugin
 metadata:
-  name: my-dashboard
-  namespace: my-namespace
+  name: monitoring
 spec:
-  # Perses Dashboard specification goes here
+  type: Monitoring
+  monitoring:
+    perses:
+      enabled: true
 ```
 
-Found a complete dashboard example [here](https://github.com/perses/perses-operator/blob/main/config/samples/openshift/openshift-cluster-sample-dashboard.yaml)
+Or run
+
+```sh
+kubectl apply -f docs/user-guides/perses-dashboards/plugin/
+```
+
+To verify the installation
+
+```sh
+kubectl wait --for=condition=Available --timeout=10s uiplugins monitoring
+```
+
+If you open the OpenShift console, you should see the new `Observe > Dashboards (Perses)` menu. Once `PersesDashboard` and `PersesDatasource` resources are created and the appropriate RBAC permissions are granted, a namespace selector will be available to show dashboards by the namespace(s) where the user has been granted RBAC permissions.
+
+Once the Monitoring UI Plugin is installed with Perses enabled, the Cluster Observability Operator deploys the [Perses Operator](https://github.com/perses/perses-operator), which is responsible for managing Perses dashboards and datasources. The COO also installs the `PersesDashboard` and `PersesDatasource` Custom Resources Definitions (CRDs). These CRDs are namespaced-scoped which allows to setup RBAC policies for them using the standard Kubernetes RBAC model.
+
+Please refer to the [Monitoring UI Plugin](https://github.com/rhobs/observability-operator/blob/main/docs/user-guides/observability-ui-plugins.md#plugin-creation-4) documentation for more details.
+
+### Deploying an example dashboard
+
+Run the following command
+
+```sh
+kubectl apply -f docs/user-guides/perses-dashboards/dashboard/
+```
+
+It will create
+1. The `perses-example` namespace.
+2. The `openshift-monitoring` datasource which can query metrics from the in-cluster Thanos Querier.
+3. The `cluster-overview` dashboard.
+
+To verify the installation
+
+```sh
+kubectl wait --for=condition=Available --timeout=10s -n perses-example persesdashboards cluster-overview
+```
+
+Go to the `Observe > Dashboards (Perses)` menu in the OpenShift console and select the `perses-example` namespace to display the dashboard:
+
+![Console](perses-dashboards/assets/console.png)
+
+Many other dashboards can be found either in the upstream [Perses operator](https://github.com/perses/perses-operator/blob/main/config/samples/openshift) repository or in the [Perses community mixins](github.com/perses/community-mixins) repository.
+
+## Developing new dashboards
 
 The dashboard specification to create a Perses dashboard CR can be obtained in two ways:
 
-1. **Export from Perses UI**: Export the specification directly from an existing Perses dashboard through the Perses UI.
+1. **Export from the Perses UI**: Export the specification directly from an existing Perses dashboard through the Perses UI.
 > [!NOTE]
 > The Perses UI can now export the CR directly.
 2. **Convert from Grafana**: Convert an existing Grafana dashboard definition to Perses format using the [`percli`](https://perses.dev/perses/docs/migration/).
 
+## Adding a Perses Dashboard and Datasource from an operator
 
-Similarly, to add a Perses datasource, a `PersesDatasource` CR must be created:
+Operators can manage their own `PersesDashboard` and `PersesDatasource` resources to display metrics collected from the operator and/or operands.
 
-```yaml
-apiVersion: perses.dev/v1alpha1
-kind: PersesDatasource
-metadata:
-  name: my-datasource
-  namespace: my-namespace
-spec:
-  config:
-    # Perses Datasource specification goes here
-```
-
-The Openshift Console monitors the cluster using the Cluster Monitoring Operator (CMO) and the Prometheus Operator. A Perses Datasource can be created to connect to the Prometheus instance in the cluster trough the thanos querier. The datasource CR can look like this:
-
-```yaml
-apiVersion: perses.dev/v1alpha1
-kind: PersesDatasource
-metadata:
-  name: thanos-querier-datasource
-  namespace: perses-dev
-spec:
-  config:
-    display:
-      name: "Thanos Querier Datasource"
-    default: true
-    plugin:
-      kind: "PrometheusDatasource"
-      spec:
-        proxy:
-          kind: HTTPProxy
-          spec:
-            url: https://thanos-querier.openshift-monitoring.svc.cluster.local:9091
-            secret: thanos-querier-datasource-secret
-  client:
-    tls:
-      enable: true
-      caCert:
-        type: file
-        certPath: /ca/service-ca.crt
-```
-> [!IMPORTANT]
-> The name `thanos-querier-datasource-secret` in the example isn't a Kubernetes secret. It's a reference to a Perses secret that the Perses Operator automatically generates from the datasource name and stores in the Perses backend. Therefore, the secret's name must match the datasource name, followed by the `-secret` suffix.
-
-This will allow a dashboard in the `perses-dev` namespace to fetch cluster metrics.
-
-### Add a Perses Dashboard and Datasource from an operator
-
-Similar to Prometheus ServiceMonitors, you can create Perses dashboards and datasources from an operator to define default dashboards and datasources based on the applications it deploys. Dashboards and datasources can be created programatically in the reconciliation loop. Either by creating the CR and definition directly from the [Perses Operator API](https://pkg.go.dev/github.com/perses/perses-operator/api/v1alpha1#Dashboard) or using the [Perses Go SDK](https://perses.dev/perses/docs/dac/go/dashboard/#example). For example:
+Dashboards and datasources can be created programatically either using the [Perses Operator API](https://pkg.go.dev/github.com/perses/perses-operator/api/v1alpha1#Dashboard) or using the [Perses Go SDK](https://perses.dev/perses/docs/dac/go/dashboard/#example). For example:
 
 ```go
 package dashboards
@@ -206,21 +203,20 @@ func Reconcile(k8sClient client.Client) {
 }
 ```
 
-More examples can be found in the [community dashboards repository](https://github.com/perses/community-dashboards)
+More examples can be found in the [community dashboards repository](https://github.com/perses/community-mixins)
 
 > [!IMPORTANT]
 > **Automatic Datasource Detection**: Notice that the above example does not set a specific datasource for the dashboard. This is because Perses will automatically detect the available datasources in the namespace and use the default one it finds. A specific datasource can be set by adding a `datasource` field in the panel query or by adding a datasource variable to the dashboard so users can select the datasource they want to use.
 
-## Perses dashboards and datasources RBAC
+## RBAC permissions
 
-The Perses operator creates the following cluster roles for datasources and dashboards. 
+The Perses operator creates the following `ClusterRole`s for datasources and dashboards:
+- `persesdashboard-editor-role`
+- `persesdashboard-viewer-role`
+- `persesdatasource-editor-role`
+- `persesdatasource-viewer-role`
 
-- persesdashboard-editor-role
-- persesdashboard-viewer-role
-- persesdatasource-editor-role
-- persesdatasource-viewer-role
-
-The following role bindings illustrate how to add viewer permissions for `user1` in the `my-namespace` namespace:
+The following `RoleBinding`s illustrate how to allow `user1` to view all dashboards in the `my-namespace` namespace:
 
 ```yaml
 kind: RoleBinding
@@ -252,6 +248,4 @@ roleRef:
   name: persesdatasource-viewer-role
 ```
 
-## Viewing Perses Dashboards in OpenShift Console
-
-Once the `PersesDashboard` and `PersesDatasource` CRs are created and the appropriate RBAC permissions are granted, you can view the dashboards in the OpenShift Console under the "Observe -> Perses Dashboards" section. A namespace selector will be available to filter dashboards by the namespaces where the user has been granted Perses RBAC permissions.
+Provided that `PersesDashboard` and `PersesDatasource` resources are created and that the appropriate RBAC permissions are granted, users can go to the `Observe > Dashboards (Perses)` menu and use the namespace selector to visualize dashboards to which they have access to.
