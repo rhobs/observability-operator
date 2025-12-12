@@ -52,6 +52,12 @@ const (
 
 	// TypeLogging deploys the Logging View Plugin for OpenShift Console.
 	TypeLogging UIPluginType = "Logging"
+
+	AllHealthMonitoringMode        HealthMonitoringMode    = "All"
+	DisabledHealtMonitoringMode    HealthMonitoringMode    = "Disabled"
+	CustomHealtMonitoringMode      HealthMonitoringMode    = "Custom"
+	IncidentDetectionHealthFeature HealthMonitoringFeature = "IncidentDetection"
+	ComponentHealthFeature         HealthMonitoringFeature = "ComponentHealth"
 )
 
 // DeploymentConfig contains options allowing the customization of the deployment hosting the UI Plugin.
@@ -162,6 +168,11 @@ type MonitoringConfig struct {
 	//
 	// +kubebuilder:validation:Optional
 	Incidents *IncidentsReference `json:"incidents,omitempty"`
+
+	// Health monitoring feature enablement and configuration
+	//
+	// +kubebuilder:validation:Optional
+	HealthMonitoring *HealtMonitoringReference `json:"healthMonitoring,omitempty"`
 }
 
 // AdvancedClusterManagementReference is used to configure references to the alertmanager and thanosQuerier that should be used
@@ -219,6 +230,29 @@ type IncidentsReference struct {
 	//
 	// +kubebuilder:validation:Required
 	Enabled bool `json:"enabled"`
+}
+
+// +kubebuilder:validation:Enum=Disabled;Custom;All
+type HealthMonitoringMode string
+
+// +kubebuilder:validation:Enum=IncidentDetection;ComponentHealth
+type HealthMonitoringFeature string
+
+// HealtMonitoringReference is used to configure the health monitoring.
+// +kubebuilder:validation:XValidation:rule="has(self.mode) && self.mode == 'Custom' ?  has(self.features) : !has(self.features)",message="features are required when mode is Custom, and forbidden otherwise"
+type HealtMonitoringReference struct {
+
+	// Mode is to configure the health monitoring mode.
+	//
+	// +kubebuilder:validation:Required
+	Mode HealthMonitoringMode `json:"mode,omitempty"`
+
+	// Features are particular health monitoring features.
+	//
+	// +kubebuilder:validation:MaxItems=2
+	// +listType=atomic
+	// +optional
+	Features []HealthMonitoringFeature `json:"features,omitempty"`
 }
 
 // UIPluginSpec is the specification for desired state of UIPlugin.
