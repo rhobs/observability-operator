@@ -5451,10 +5451,19 @@ Monitoring contains configuration for the monitoring console plugin.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#uipluginspecmonitoringclusterhealthanalyzer">clusterHealthAnalyzer</a></b></td>
+        <td>object</td>
+        <td>
+          ClusterHealthAnalyzer feature flag enablement<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#uipluginspecmonitoringincidents">incidents</a></b></td>
         <td>object</td>
         <td>
-          Incidents feature flag enablement<br/>
+          Incidents feature flag enablement
+
+Deprecated: Use clusterHealthAnalyzer instead<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -5563,12 +5572,41 @@ ThanosQuerier points to the thanos-querier service of which it should create a p
 </table>
 
 
+### UIPlugin.spec.monitoring.clusterHealthAnalyzer
+<sup><sup>[↩ Parent](#uipluginspecmonitoring)</sup></sup>
+
+
+
+ClusterHealthAnalyzer feature flag enablement
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>enabled</b></td>
+        <td>boolean</td>
+        <td>
+          Indicates if the cluster-health-analyzer features should be enabled.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
 ### UIPlugin.spec.monitoring.incidents
 <sup><sup>[↩ Parent](#uipluginspecmonitoring)</sup></sup>
 
 
 
 Incidents feature flag enablement
+
+Deprecated: Use clusterHealthAnalyzer instead
 
 <table>
     <thead>

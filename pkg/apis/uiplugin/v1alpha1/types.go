@@ -161,7 +161,14 @@ type MonitoringConfig struct {
 	// Incidents feature flag enablement
 	//
 	// +kubebuilder:validation:Optional
+	// Deprecated: Use clusterHealthAnalyzer instead
+	// +deprecated
 	Incidents *IncidentsReference `json:"incidents,omitempty"`
+
+	// ClusterHealthAnalyzer feature flag enablement
+	//
+	// +kubebuilder:validation:Optional
+	ClusterHealthAnalyzer ClusterHealthAnalyzerReference `json:"clusterHealthAnalyzer,omitempty"`
 }
 
 // AdvancedClusterManagementReference is used to configure references to the alertmanager and thanosQuerier that should be used
@@ -216,6 +223,14 @@ type PersesReference struct {
 // IncidentsReference is used to configure if the incidents feature flag should be enabled.
 type IncidentsReference struct {
 	// Indicates if incidents-related feature(s) should be enabled.
+	//
+	// +kubebuilder:validation:Required
+	Enabled bool `json:"enabled"`
+}
+
+// ClusterHealthAnalyzerReference is used to configure the cluster health analyzer features.
+type ClusterHealthAnalyzerReference struct {
+	// Indicates if the cluster-health-analyzer features should be enabled.
 	//
 	// +kubebuilder:validation:Required
 	Enabled bool `json:"enabled"`
