@@ -302,6 +302,7 @@ rules:
   - perses
   - persesdashboards
   - persesdatasources
+  - persesglobaldatasources
   verbs:
   - create
   - delete
@@ -316,6 +317,7 @@ rules:
   - perses/finalizers
   - persesdashboards/finalizers
   - persesdatasources/finalizers
+  - persesglobaldatasources/finalizers
   verbs:
   - update
 - apiGroups:
@@ -324,6 +326,7 @@ rules:
   - perses/status
   - persesdashboards/status
   - persesdatasources/status
+  - persesglobaldatasources/status
   verbs:
   - get
   - patch

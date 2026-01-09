@@ -162,6 +162,8 @@ The Cluster Observability Operator creates the following roles:
 - `persesdashboard-viewer-role` - ability to read `PersesDashboard` Custom Resources under the PersesDashboards tab, and view Perses dashboards presentation in Dashboards (Perses).
 - `persesdatasource-editor-role` - ability to create, read, update and delete `PersesDatasource` Custom Resources under the PersesDatasources tab, and view Perses dashboards with data being loaded from Perses datasource in Dashboards (Perses).
 - `persesdatasource-viewer-role` - ability to read `PersesDatasource` Custom Resources under the PersesDatasources tab, and view Perses dashboards with data being loaded from Perses datasource in Dashboards (Perses).
+- `persesglobaldatasource-editor-role` - ability to create, read, update and delete `PersesGlobalDatasource` Custom Resources under the PersesGlobalDatasources tab, and view Perses dashboards with data being loaded from Perses GlobalDatasource in Dashboards (Perses).
+- `persesglobaldatasource-viewer-role` - ability to read `PersesGlobalDatasource` Custom Resources under the PersesGlobalDatasources tab, and view Perses dashboards with data being loaded from Perses GlobalDatasource in Dashboards (Perses).
 
 When assigned via `ClusterRoleBinding`, a user has access to all Perses dashboards and datasources in all namespaces/projects. When assigned via `RoleBinding`, user has access to all Perses dashboards and datasources in the given namespace/project.
 
