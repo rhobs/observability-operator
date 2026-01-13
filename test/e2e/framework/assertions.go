@@ -20,6 +20,7 @@ import (
 	monv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -726,4 +727,14 @@ func (f *Framework) AssertPrometheusReplicaStatus(name, namespace string, expect
 			t.Fatal(fmt.Errorf("Prometheus %s/%s has unexpected number of replicas, got %d, expected %d", namespace, name, prom.Status.Replicas, expectedReplicas))
 		}
 	}
+}
+
+// AssertClusterRoleBindingExists asserts that a ClusterRoleBinding exists within the timeout
+func (f *Framework) AssertClusterRoleBindingExists(name string, fns ...OptionFn) func(t *testing.T) {
+	return f.AssertResourceEventuallyExists(name, "", &rbacv1.ClusterRoleBinding{}, fns...)
+}
+
+// AssertClusterRoleBindingAbsent asserts that a ClusterRoleBinding is not present or is deleted within the timeout
+func (f *Framework) AssertClusterRoleBindingAbsent(name string, fns ...OptionFn) func(t *testing.T) {
+	return f.AssertResourceAbsent(name, "", &rbacv1.ClusterRoleBinding{}, fns...)
 }
