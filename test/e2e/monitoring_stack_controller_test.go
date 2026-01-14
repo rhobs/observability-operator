@@ -1492,8 +1492,9 @@ func assertClusterRoleBindingCleanupOnPolicyChange(t *testing.T) {
 	updatedMS := &stack.MonitoringStack{}
 	f.GetResourceWithRetry(t, ms.Name, ms.Namespace, updatedMS)
 
-	updatedMS.Spec.CreateClusterRoleBindings = stack.NoClusterRoleBindings
-	err = f.K8sClient.Update(context.Background(), updatedMS)
+	err = f.UpdateWithRetry(t, updatedMS, func(ms *stack.MonitoringStack) {
+		ms.Spec.CreateClusterRoleBindings = stack.NoClusterRoleBindings
+	})
 	assert.NilError(t, err, "failed to update monitoring stack")
 
 	// Assert ClusterRoleBindings are removed
@@ -1504,8 +1505,9 @@ func assertClusterRoleBindingCleanupOnPolicyChange(t *testing.T) {
 	updatedMS2 := &stack.MonitoringStack{}
 	f.GetResourceWithRetry(t, ms.Name, ms.Namespace, updatedMS2)
 
-	updatedMS2.Spec.CreateClusterRoleBindings = stack.CreateClusterRoleBindings
-	err = f.K8sClient.Update(context.Background(), updatedMS2)
+	err = f.UpdateWithRetry(t, updatedMS2, func(ms *stack.MonitoringStack) {
+		ms.Spec.CreateClusterRoleBindings = stack.CreateClusterRoleBindings
+	})
 	assert.NilError(t, err, "failed to update monitoring stack")
 
 	// Assert ClusterRoleBindings are recreated
