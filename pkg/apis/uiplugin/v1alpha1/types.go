@@ -168,7 +168,7 @@ type MonitoringConfig struct {
 	// ClusterHealthAnalyzer feature flag enablement
 	//
 	// +kubebuilder:validation:Optional
-	ClusterHealthAnalyzer ClusterHealthAnalyzerReference `json:"clusterHealthAnalyzer,omitempty"`
+	ClusterHealthAnalyzer *ClusterHealthAnalyzerReference `json:"clusterHealthAnalyzer,omitempty"`
 }
 
 // AdvancedClusterManagementReference is used to configure references to the alertmanager and thanosQuerier that should be used
