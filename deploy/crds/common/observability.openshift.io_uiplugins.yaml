@@ -186,8 +186,21 @@ spec:
                     - enabled
                     - thanosQuerier
                     type: object
+                  clusterHealthAnalyzer:
+                    description: ClusterHealthAnalyzer feature flag enablement
+                    properties:
+                      enabled:
+                        description: Indicates if the cluster-health-analyzer features
+                          should be enabled.
+                        type: boolean
+                    required:
+                    - enabled
+                    type: object
                   incidents:
-                    description: Incidents feature flag enablement
+                    description: |-
+                      Incidents feature flag enablement
+
+                      Deprecated: Use clusterHealthAnalyzer instead
                     properties:
                       enabled:
                         description: Indicates if incidents-related feature(s) should
