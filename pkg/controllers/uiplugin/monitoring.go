@@ -6,7 +6,7 @@ import (
 
 	osv1 "github.com/openshift/api/console/v1"
 	osv1alpha1 "github.com/openshift/api/console/v1alpha1"
-	persesv1alpha2 "github.com/rhobs/perses-operator/api/v1alpha2"
+	persesv1alpha1 "github.com/rhobs/perses-operator/api/v1alpha1"
 	persesconfig "github.com/rhobs/perses/pkg/model/api/config"
 	persesrole "github.com/rhobs/perses/pkg/model/api/v1/role"
 	"golang.org/x/mod/semver"
@@ -263,11 +263,11 @@ func newMonitoringService(name string, namespace string) *corev1.Service {
 	}
 }
 
-func newPerses(namespace string, persesImage string) *persesv1alpha2.Perses {
+func newPerses(namespace string, persesImage string) *persesv1alpha1.Perses {
 	name := "perses"
-	return &persesv1alpha2.Perses{
+	return &persesv1alpha1.Perses{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: persesv1alpha2.GroupVersion.String(),
+			APIVersion: persesv1alpha1.GroupVersion.String(),
 			Kind:       "Perses",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -281,17 +281,13 @@ func newPerses(namespace string, persesImage string) *persesv1alpha2.Perses {
 				"app.kubernetes.io/managed-by": "observability-operator",
 			},
 		},
-		Spec: persesv1alpha2.PersesSpec{
-			Config: persesv1alpha2.PersesConfig{
+		Spec: persesv1alpha1.PersesSpec{
+			Config: persesv1alpha1.PersesConfig{
 				Config: persesconfig.Config{
 					Security: persesconfig.Security{
 						EnableAuth: true,
 						Authorization: persesconfig.AuthorizationConfig{
-							Provider: persesconfig.AuthorizationProvider{
-								Kubernetes: persesconfig.KubernetesAuthorizationProvider{
-									Enable: true,
-								},
-							},
+							Kubernetes: true,
 							GuestPermissions: []*persesrole.Permission{
 								{
 									Actions: []persesrole.Action{
@@ -299,6 +295,7 @@ func newPerses(namespace string, persesImage string) *persesv1alpha2.Perses {
 									},
 									Scopes: []persesrole.Scope{
 										"Folder",
+										"GlobalDatasource",
 										"GlobalSecret",
 										"GlobalVariable",
 										"Secret",
@@ -309,9 +306,9 @@ func newPerses(namespace string, persesImage string) *persesv1alpha2.Perses {
 						},
 						Authentication: persesconfig.AuthenticationConfig{
 							DisableSignUp: true,
-							Providers: persesconfig.AuthenticationProviders{
-								KubernetesProvider: persesconfig.K8sAuthnProvider{
-									Enable: true,
+							Providers: persesconfig.AuthProviders{
+								KubernetesProvider: persesconfig.KubernetesProvider{
+									Enabled: true,
 								},
 							},
 						},
@@ -326,45 +323,43 @@ func newPerses(namespace string, persesImage string) *persesv1alpha2.Perses {
 			},
 			Image:         persesImage,
 			ContainerPort: 8080,
-			// Set an empty PodSecurityContext to prevent the Perses operator from defaulting to invalid values
-			PodSecurityContext: &corev1.PodSecurityContext{},
-			TLS: &persesv1alpha2.TLS{
+			TLS: &persesv1alpha1.TLS{
 				Enable: true,
-				UserCert: &persesv1alpha2.Certificate{
-					SecretSource: persesv1alpha2.SecretSource{
-						Type:      persesv1alpha2.SecretSourceTypeSecret,
+				UserCert: &persesv1alpha1.Certificate{
+					SecretSource: persesv1alpha1.SecretSource{
+						Type:      persesv1alpha1.SecretSourceTypeSecret,
 						Name:      name,
 						Namespace: namespace,
 					},
 					CertPath:       "tls.crt",
 					PrivateKeyPath: "tls.key",
 				},
-				CaCert: &persesv1alpha2.Certificate{
-					SecretSource: persesv1alpha2.SecretSource{
-						Type:      persesv1alpha2.SecretSourceTypeConfigMap,
+				CaCert: &persesv1alpha1.Certificate{
+					SecretSource: persesv1alpha1.SecretSource{
+						Type:      persesv1alpha1.SecretSourceTypeConfigMap,
 						Name:      "openshift-service-ca.crt",
 						Namespace: namespace,
 					},
 					CertPath: "service-ca.crt",
 				},
 			},
-			Client: &persesv1alpha2.Client{
-				TLS: &persesv1alpha2.TLS{
+			Client: &persesv1alpha1.Client{
+				TLS: &persesv1alpha1.TLS{
 					Enable: true,
-					CaCert: &persesv1alpha2.Certificate{
-						SecretSource: persesv1alpha2.SecretSource{
-							Type:      persesv1alpha2.SecretSourceTypeConfigMap,
+					CaCert: &persesv1alpha1.Certificate{
+						SecretSource: persesv1alpha1.SecretSource{
+							Type:      persesv1alpha1.SecretSourceTypeConfigMap,
 							Name:      "openshift-service-ca.crt",
 							Namespace: namespace,
 						},
 						CertPath: "service-ca.crt",
 					},
 				},
-				KubernetesAuth: &persesv1alpha2.KubernetesAuth{
+				KubernetesAuth: &persesv1alpha1.KubernetesAuth{
 					Enable: true,
 				},
 			},
-			Service: &persesv1alpha2.PersesService{
+			Service: &persesv1alpha1.PersesService{
 				Annotations: map[string]string{
 					"service.beta.openshift.io/serving-cert-secret-name": name,
 				},
@@ -394,14 +389,8 @@ func newPersesClusterRole() *rbacv1.ClusterRole {
 			},
 			{
 				APIGroups: []string{"perses.dev"},
-				Resources: []string{"persesdashboards", "persesdatasources", "persesglobaldatasources"},
+				Resources: []string{"persesdashboards", "persesdatasources"},
 				Verbs:     []string{"get", "list", "watch", "create", "update", "delete", "patch"},
-			},
-			{
-				APIGroups:     []string{"security.openshift.io"},
-				Resources:     []string{"securitycontextconstraints"},
-				ResourceNames: []string{"nonroot", "nonroot-v2"},
-				Verbs:         []string{"use"},
 			},
 		},
 	}

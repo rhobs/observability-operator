@@ -37,9 +37,9 @@ To verify the installation
 kubectl wait --for=condition=Available --timeout=10s uiplugins monitoring
 ```
 
-If you open the OpenShift console, you should see the new `Observe > Dashboards (Perses)` menu. Once `PersesDashboard`,  `PersesDatasource`, and `PersesGlobalDatasource` resources are created and the appropriate RBAC permissions are granted, a namespace selector will be available to show dashboards by the namespace(s) where the user has been granted RBAC permissions.
+If you open the OpenShift console, you should see the new `Observe > Dashboards (Perses)` menu. Once `PersesDashboard` and `PersesDatasource` resources are created and the appropriate RBAC permissions are granted, a namespace selector will be available to show dashboards by the namespace(s) where the user has been granted RBAC permissions.
 
-Once the Monitoring UI Plugin is installed with Perses enabled, the Cluster Observability Operator deploys the [Perses Operator](https://github.com/perses/perses-operator), which is responsible for managing Perses dashboards and datasources. The COO also installs the `PersesDashboard`, `PersesDatasource` and `PersesGlobalDatasource` Custom Resources Definitions (CRDs). These CRDs are namespaced-scoped which allows to setup RBAC policies for them using the standard Kubernetes RBAC model.
+Once the Monitoring UI Plugin is installed with Perses enabled, the Cluster Observability Operator deploys the [Perses Operator](https://github.com/perses/perses-operator), which is responsible for managing Perses dashboards and datasources. The COO also installs the `PersesDashboard` and `PersesDatasource` Custom Resources Definitions (CRDs). These CRDs are namespaced-scoped which allows to setup RBAC policies for them using the standard Kubernetes RBAC model.
 
 Please refer to the [Monitoring UI Plugin](https://github.com/rhobs/observability-operator/blob/main/docs/user-guides/observability-ui-plugins.md#plugin-creation-4) documentation for more details.
 
@@ -215,8 +215,6 @@ The Perses operator creates the following `ClusterRole`s for datasources and das
 - `persesdashboard-viewer-role`
 - `persesdatasource-editor-role`
 - `persesdatasource-viewer-role`
-- `persesglobaldatasource-editor-role`
-- `persesglobaldatasource-viewer-role`
 
 The following `RoleBinding`s illustrate how to allow `user1` to view all dashboards in the `my-namespace` namespace:
 
@@ -250,4 +248,4 @@ roleRef:
   name: persesdatasource-viewer-role
 ```
 
-Provided that `PersesDashboard`, `PersesDatasource`, and `PersesGlobalDatasource` resources are created and that the appropriate RBAC permissions are granted, users can go to the `Observe > Dashboards (Perses)` menu and use the namespace selector to visualize dashboards to which they have access to.
+Provided that `PersesDashboard` and `PersesDatasource` resources are created and that the appropriate RBAC permissions are granted, users can go to the `Observe > Dashboards (Perses)` menu and use the namespace selector to visualize dashboards to which they have access to.

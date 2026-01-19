@@ -10,7 +10,7 @@ import (
 	osv1 "github.com/openshift/api/console/v1"
 	osv1alpha1 "github.com/openshift/api/console/v1alpha1"
 	operatorv1 "github.com/openshift/api/operator/v1"
-	persesv1alpha2 "github.com/rhobs/perses-operator/api/v1alpha2"
+	persesv1alpha1 "github.com/rhobs/perses-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -82,12 +82,9 @@ const (
 // +kubebuilder:rbac:groups=loki.grafana.com,resources=lokistacks,verbs=list;get
 
 // RBAC for perses
-// +kubebuilder:rbac:groups=perses.dev,resources=perses;persesdatasources;persesdashboards;persesglobaldatasources,verbs=get;list;watch;create;update;delete;patch
-// +kubebuilder:rbac:groups=perses.dev,resources=perses/status;persesdatasources/status;persesglobaldatasources/status;persesdashboards/status,verbs=get;patch;update
-// +kubebuilder:rbac:groups=perses.dev,resources=perses/finalizers;persesglobaldatasources/finalizers;persesdashboards/finalizers;persesdatasources/finalizers;persesdashboards/finalizers,verbs=update
-
-// RBAC for delegating the use of SCC nonroot-v2 (for OpenShift >= 4.11) and nonroot (for OpenShift < 4.11) for Perses
-//+kubebuilder:rbac:groups="security.openshift.io",resources=securitycontextconstraints,resourceNames=nonroot;nonroot-v2,verbs=use
+// +kubebuilder:rbac:groups=perses.dev,resources=perses;persesdatasources;persesdashboards,verbs=get;list;watch;create;update;delete;patch
+// +kubebuilder:rbac:groups=perses.dev,resources=perses/status;persesdatasources/status;persesdashboards/status,verbs=get;patch;update
+// +kubebuilder:rbac:groups=perses.dev,resources=perses/finalizers;persesdashboards/finalizers;persesdatasources/finalizers;persesdashboards/finalizers,verbs=update
 
 // RBAC for korrel8r
 //+kubebuilder:rbac:groups=apps,resources=daemonsets;deployments;replicasets;statefulsets,verbs=get;list;watch
@@ -145,10 +142,9 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 		Owns(&v1.ServiceAccount{}, generationChanged).
 		Owns(&rbacv1.Role{}, generationChanged).
 		Owns(&rbacv1.RoleBinding{}, generationChanged).
-		Owns(&persesv1alpha2.Perses{}, generationChanged).
-		Owns(&persesv1alpha2.PersesDashboard{}, generationChanged).
-		Owns(&persesv1alpha2.PersesDatasource{}, generationChanged).
-		Owns(&persesv1alpha2.PersesGlobalDatasource{}, generationChanged)
+		Owns(&persesv1alpha1.Perses{}, generationChanged).
+		Owns(&persesv1alpha1.PersesDashboard{}, generationChanged).
+		Owns(&persesv1alpha1.PersesDatasource{}, generationChanged)
 
 	if isVersionAheadOrEqual(rm.clusterVersion, "v4.17") {
 		ctrlBuilder.Owns(&osv1.ConsolePlugin{}, generationChanged)
