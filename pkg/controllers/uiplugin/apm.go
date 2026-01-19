@@ -13,9 +13,10 @@ import (
 	labelvalues "github.com/perses/plugins/prometheus/sdk/go/variable/label-values"
 	table "github.com/perses/plugins/table/sdk/go"
 	timeseries "github.com/perses/plugins/timeserieschart/sdk/go"
-	persesv1alpha1 "github.com/rhobs/perses-operator/api/v1alpha1"
+	persesv1alpha2 "github.com/rhobs/perses-operator/api/v1alpha2"
 	persesv1 "github.com/rhobs/perses/pkg/model/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 )
 
 func withServiceMetrics(variableMatchers string) dashboard.Option {
@@ -43,7 +44,7 @@ func withServiceMetrics(variableMatchers string) dashboard.Option {
 			timeseries.Chart(
 				timeseries.WithYAxis(timeseries.YAxis{
 					Format: &common.Format{
-						Unit: string(common.MilliSecondsUnit),
+						Unit: ptr.To(string(common.MilliSecondsUnit)),
 					},
 				}),
 				timeseries.WithLegend(timeseries.Legend{
@@ -93,7 +94,7 @@ func withOperationMetrics(variableMatchers string) dashboard.Option {
 						Name:   "value #1",
 						Header: "Request rate",
 						Format: &common.Format{
-							Unit:          string(common.RequestsPerSecondsUnit),
+							Unit:          ptr.To(string(common.RequestsPerSecondsUnit)),
 							DecimalPlaces: 3,
 						},
 					},
@@ -101,7 +102,7 @@ func withOperationMetrics(variableMatchers string) dashboard.Option {
 						Name:   "value #2",
 						Header: "Error rate",
 						Format: &common.Format{
-							Unit:          string(common.DecimalUnit),
+							Unit:          ptr.To(string(common.DecimalUnit)),
 							DecimalPlaces: 3,
 						},
 					},
@@ -109,7 +110,7 @@ func withOperationMetrics(variableMatchers string) dashboard.Option {
 						Name:   "value #3",
 						Header: "Duration",
 						Format: &common.Format{
-							Unit:          string(common.MilliSecondsUnit),
+							Unit:          ptr.To(string(common.MilliSecondsUnit)),
 							DecimalPlaces: 3,
 						},
 					},
@@ -175,7 +176,7 @@ func buildAPMDashboard() (dashboard.Builder, error) {
 	)
 }
 
-func newAPMDashboard(namespace string) (*persesv1alpha1.PersesDashboard, error) {
+func newAPMDashboard(namespace string) (*persesv1alpha2.PersesDashboard, error) {
 	builder, err := buildAPMDashboard()
 	if err != nil {
 		return nil, err
@@ -192,9 +193,9 @@ func newAPMDashboard(namespace string) (*persesv1alpha1.PersesDashboard, error) 
 		return nil, err
 	}
 
-	return &persesv1alpha1.PersesDashboard{
+	return &persesv1alpha2.PersesDashboard{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: persesv1alpha1.GroupVersion.String(),
+			APIVersion: persesv1alpha2.GroupVersion.String(),
 			Kind:       "PersesDashboard",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -204,8 +205,10 @@ func newAPMDashboard(namespace string) (*persesv1alpha1.PersesDashboard, error) 
 				"app.kubernetes.io/managed-by": "observability-operator",
 			},
 		},
-		Spec: persesv1alpha1.Dashboard{
-			DashboardSpec: rhobsDashboard.Spec,
+		Spec: persesv1alpha2.PersesDashboardSpec{
+			Config: persesv1alpha2.Dashboard{
+				DashboardSpec: rhobsDashboard.Spec,
+			},
 		},
 	}, nil
 }

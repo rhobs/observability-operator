@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
       - name: perses-operator
-        image: quay.io/openshift-observability-ui/perses-operator:v0.2-go-1.23
+        image: quay.io/openshift-observability-ui/perses-operator:v0.3.0-go-1.25
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

@@ -4,6 +4,13 @@ resources:
 - perses.dev_perses.yaml
 - perses.dev_persesdashboards.yaml
 - perses.dev_persesdatasources.yaml
+- perses.dev_persesglobaldatasources.yaml
 
 commonAnnotations:
   observability.openshift.io/api-support: DevPreview
+
+patchesStrategicMerge:
+- patches/webhook_in_perses.yaml
+- patches/webhook_in_persesdashboards.yaml
+- patches/webhook_in_persesdatasource.yaml
+- patches/webhook_in_persesglobaldatasource.yaml
