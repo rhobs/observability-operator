@@ -42,7 +42,7 @@ metadata:
     categories: Monitoring
     certified: "false"
     containerImage: observability-operator:1.3.0
-    createdAt: "2026-01-19T11:48:44Z"
+    createdAt: "2025-12-04T15:14:30Z"
     description: A Go based Kubernetes operator to setup and manage highly available
       Monitoring Stack using Prometheus, Alertmanager and Thanos Querier.
     operatorframework.io/cluster-monitoring: "true"
@@ -86,35 +86,21 @@ spec:
       kind: ObservabilityInstaller
       name: observabilityinstallers.observability.openshift.io
       version: v1alpha1
-    - kind: Perses
-      name: perses.perses.dev
-      version: v1alpha1
     - description: Perses is the Schema for the perses API
       displayName: Perses
       kind: Perses
       name: perses.perses.dev
-      version: v1alpha2
-    - kind: PersesDashboard
-      name: persesdashboards.perses.dev
       version: v1alpha1
     - description: A Perses Dashboard
       displayName: Perses Dashboard
       kind: PersesDashboard
       name: persesdashboards.perses.dev
-      version: v1alpha2
-    - kind: PersesDatasource
-      name: persesdatasources.perses.dev
       version: v1alpha1
     - description: A Perses Datasource
       displayName: Perses Datasource
       kind: PersesDatasource
       name: persesdatasources.perses.dev
-      version: v1alpha2
-    - description: A Perses GlobalDatasource
-      displayName: Perses GlobalDatasource
-      kind: PersesGlobalDatasource
-      name: persesglobaldatasources.perses.dev
-      version: v1alpha2
+      version: v1alpha1
     - description: PodMonitor defines monitoring for a set of pods
       displayName: PodMonitor
       kind: PodMonitor
@@ -618,7 +604,6 @@ spec:
           - perses
           - persesdashboards
           - persesdatasources
-          - persesglobaldatasources
           verbs:
           - create
           - delete
@@ -633,7 +618,6 @@ spec:
           - perses/finalizers
           - persesdashboards/finalizers
           - persesdatasources/finalizers
-          - persesglobaldatasources/finalizers
           verbs:
           - update
         - apiGroups:
@@ -642,7 +626,6 @@ spec:
           - perses/status
           - persesdashboards/status
           - persesdatasources/status
-          - persesglobaldatasources/status
           verbs:
           - get
           - patch
@@ -729,18 +712,6 @@ spec:
         serviceAccountName: observability-operator-sa
       - rules:
         - apiGroups:
-          - ""
-          resources:
-          - namespaces
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
           - apps
           resources:
           - deployments
@@ -822,32 +793,6 @@ spec:
           - perses.dev
           resources:
           - persesdashboards/status
-          verbs:
-          - get
-          - patch
-          - update
-        - apiGroups:
-          - perses.dev
-          resources:
-          - persesglobaldatasources
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - perses.dev
-          resources:
-          - persesglobaldatasources/finalizers
-          verbs:
-          - update
-        - apiGroups:
-          - perses.dev
-          resources:
-          - persesglobaldatasources/status
           verbs:
           - get
           - patch
@@ -1055,7 +1000,7 @@ spec:
               containers:
               - args:
                 - --namespace=$(NAMESPACE)
-                - --images=perses=quay.io/openshift-observability-ui/perses:v0.53.0-go-1.25
+                - --images=perses=quay.io/openshift-observability-ui/perses:v0.51.1-go-1.23
                 env:
                 - name: NAMESPACE
                   valueFrom:
@@ -1132,7 +1077,7 @@ spec:
                         operator: Exists
                     weight: 1
               containers:
-              - image: quay.io/openshift-observability-ui/perses-operator:v0.3.0-go-1.25
+              - image: quay.io/openshift-observability-ui/perses-operator:v0.2-go-1.23
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -1225,19 +1170,6 @@ spec:
     timeoutSeconds: 5
     type: ValidatingAdmissionWebhook
     webhookPath: /admission-alertmanagerconfigs/validate
-  - admissionReviewVersions:
-    - v1
-    containerPort: 443
-    conversionCRDs:
-    - perses.perses.dev
-    - persesdashboards.perses.dev
-    - persesglobaldatasources.perses.dev
-    deploymentName: perses-operator
-    generateName: cpersespersesdashboardspersesglobaldatasources.kb.io
-    sideEffects: None
-    targetPort: 9443
-    type: ConversionWebhook
-    webhookPath: /convert
   - admissionReviewVersions:
     - v1
     containerPort: 443

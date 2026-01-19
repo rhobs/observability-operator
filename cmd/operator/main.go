@@ -50,7 +50,7 @@ var defaultImages = map[string]string{
 	"health-analyzer":            "quay.io/openshiftanalytics/cluster-health-analyzer:v1.0.0",
 	"ui-monitoring-pf5":          "quay.io/openshift-observability-ui/monitoring-console-plugin:v0.4.3",
 	"ui-monitoring":              "quay.io/openshift-observability-ui/monitoring-console-plugin:v0.5.2",
-	"perses":                     "quay.io/openshift-observability-ui/perses:v0.53.0-go-1.25",
+	"perses":                     "quay.io/openshift-observability-ui/perses:v0.51.1-go-1.23",
 }
 
 func imagesUsed() []string {
