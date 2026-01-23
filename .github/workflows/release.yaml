@@ -90,6 +90,7 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.REPOSITORY_PUSH_TOKEN }}
+          persist-credentials: false
 
       # Bumping the version in the next step will also run code generation scripts
       # that depend on controller-gen.
