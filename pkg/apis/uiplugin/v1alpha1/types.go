@@ -283,6 +283,7 @@ const (
 	ReconciledCondition        ConditionType = "Reconciled"
 	AvailableCondition         ConditionType = "Available"
 	ResourceDiscoveryCondition ConditionType = "ResourceDiscovery"
+	DegradedCondition          ConditionType = "Degraded"
 )
 
 type Condition struct {
