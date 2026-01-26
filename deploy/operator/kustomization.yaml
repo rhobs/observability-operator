@@ -17,7 +17,7 @@ patches:
 - patch: |-
     - op: add
       path: /spec/template/spec/containers/0/args/-
-      value: --images=perses=quay.io/openshift-observability-ui/perses:v0.51.1-go-1.23
+      value: --images=perses=quay.io/openshift-observability-ui/perses:v0.53.0-go-1.25
   target:
     group: apps
     kind: Deployment

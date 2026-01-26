@@ -9,7 +9,7 @@ import (
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	monitoringv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
-	persesv1alpha1 "github.com/rhobs/perses-operator/api/v1alpha1"
+	persesv1alpha2 "github.com/rhobs/perses-operator/api/v1alpha2"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -39,7 +39,7 @@ func NewScheme(cfg *OperatorConfiguration) *runtime.Scheme {
 		utilruntime.Must(operatorv1.Install(scheme))
 		utilruntime.Must(corev1.AddToScheme(scheme))
 		utilruntime.Must(monv1.AddToScheme(scheme))
-		utilruntime.Must(persesv1alpha1.AddToScheme(scheme))
+		utilruntime.Must(persesv1alpha2.AddToScheme(scheme))
 		utilruntime.Must(olmv1alpha1.AddToScheme(scheme))
 	}
 
