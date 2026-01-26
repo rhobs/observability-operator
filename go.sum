@@ -208,8 +208,8 @@ github.com/go-viper/mapstructure/v2 v2.4.0 h1:EBsztssimR/CONLSZZ04E8qAkxNYq4Qp9L
 github.com/go-viper/mapstructure/v2 v2.4.0/go.mod h1:oJDH3BJKyqBA2TXFhDsKDGDTlndYOZ6rGS0BRZIxGhM=
 github.com/go-zookeeper/zk v1.0.4 h1:DPzxraQx7OrPyXq2phlGlNSIyWEsAox0RJmjTseMV6I=
 github.com/go-zookeeper/zk v1.0.4/go.mod h1:nOB03cncLtlp4t+UAkGSV+9beXP/akpekBwL+UX1Qcw=
-github.com/goccy/go-yaml v1.19.0 h1:EmkZ9RIsX+Uq4DYFowegAuJo8+xdX3T/2dwNPXbxEYE=
-github.com/goccy/go-yaml v1.19.0/go.mod h1:XBurs7gK8ATbW4ZPGKgcbrY1Br56PdM69F7LkFRi1kA=
+github.com/goccy/go-yaml v1.19.2 h1:PmFC1S6h8ljIz6gMRBopkjP1TVT7xuwrButHID66PoM=
+github.com/goccy/go-yaml v1.19.2/go.mod h1:XBurs7gK8ATbW4ZPGKgcbrY1Br56PdM69F7LkFRi1kA=
 github.com/gogo/protobuf v1.1.1/go.mod h1:r8qH/GZQm5c6nD/R0oafs1akxWv10x8SbQlK7atdtwQ=
 github.com/gogo/protobuf v1.3.2 h1:Ov1cvc58UF3b5XjBnZv7+opcTcQFZebYjWzi34vdm4Q=
 github.com/gogo/protobuf v1.3.2/go.mod h1:P1XiOD3dCwIKUDQYPy72D8LYyHL2YPYrpS2s69NZV8Q=
@@ -440,16 +440,8 @@ github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.87.0-rhobs1 h1:f
 github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.87.0-rhobs1/go.mod h1:amf29isbT7UfgLWDCamPG6jaELHKoXyCd25Nx3DBlNY=
 github.com/rhobs/obo-prometheus-operator/pkg/client v0.87.0-rhobs1 h1:/3w2Mky/kVuzNH19uT6vsSgmCuZwEFftjF0A7LuX+Mo=
 github.com/rhobs/obo-prometheus-operator/pkg/client v0.87.0-rhobs1/go.mod h1:FMfzfWcCGBtflg+gT1SNchG243iywu015rJskh1U+/c=
-github.com/rhobs/perses v0.0.0-20260108135452-fa4ca8ac8e73 h1:oVpyW74yXZzixJlsCprgnIkG1QnSd3t8XQIQRe84vQc=
-github.com/rhobs/perses v0.0.0-20260108135452-fa4ca8ac8e73/go.mod h1:t5HVls3hnD2zn9pg/sjVd3n1ULHUizAn69lX7Wf9wUE=
 github.com/rhobs/perses v0.0.0-20260113083341-bce6f0039b5d h1:hagDxkfSvy6vGxH0qPFIOQoPjdblKCfNAhjqCgsuy7Q=
 github.com/rhobs/perses v0.0.0-20260113083341-bce6f0039b5d/go.mod h1:t5HVls3hnD2zn9pg/sjVd3n1ULHUizAn69lX7Wf9wUE=
-github.com/rhobs/perses-operator v0.1.10-0.20260108143425-6efe058ff3ec h1:qDlJf6dGLi3DqVB6Tb7msGEM9AD9HhVOW+f724Az7fc=
-github.com/rhobs/perses-operator v0.1.10-0.20260108143425-6efe058ff3ec/go.mod h1:ciSWn2z4DA7/47GHN65UDDNvVXE/PSPlQ27csHytKRI=
-github.com/rhobs/perses-operator v0.1.10-0.20260113122614-fbdfa948934b h1:G7rsnn43gSfd/81rbZqbZwzD0wpGg6tqZ8VR+5fKMtA=
-github.com/rhobs/perses-operator v0.1.10-0.20260113122614-fbdfa948934b/go.mod h1:ciSWn2z4DA7/47GHN65UDDNvVXE/PSPlQ27csHytKRI=
-github.com/rhobs/perses-operator v0.1.10-0.20260113145446-31dca3123509 h1:qsacWU0fdzSvbLQEHnhsk5Pi0hwPZKQVdcbTHKhjM1E=
-github.com/rhobs/perses-operator v0.1.10-0.20260113145446-31dca3123509/go.mod h1:ciSWn2z4DA7/47GHN65UDDNvVXE/PSPlQ27csHytKRI=
 github.com/rhobs/perses-operator v0.1.10-0.20260119104604-801af29f7716 h1:fFiorvTDcBHhT/FSfrlEHrtHKg+p8h7nhPzP6bRY93c=
 github.com/rhobs/perses-operator v0.1.10-0.20260119104604-801af29f7716/go.mod h1:7XmXHWocDHqOerp3lmggbQzbBZ9VkK1+FCv/LGGMHvE=
 github.com/rogpeppe/go-internal v1.14.1 h1:UQB4HGPB6osV0SQTLymcB4TgvyWu6ZyliaW0tI/otEQ=
