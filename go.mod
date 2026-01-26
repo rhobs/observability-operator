@@ -10,7 +10,7 @@ require (
 	github.com/grafana/tempo-operator v0.18.0
 	github.com/open-telemetry/opentelemetry-operator v0.135.0
 	github.com/openshift/api v3.9.0+incompatible // PINNED: newer versions remove console/v1alpha1 API needed for OpenShift <4.17 compatibility
-	github.com/operator-framework/api v0.36.0
+	github.com/operator-framework/api v0.38.0
 	github.com/perses/perses v0.53.0-rc.0
 	github.com/perses/plugins/prometheus v0.57.0-rc.0
 	github.com/perses/plugins/table v0.11.0-rc.0
@@ -30,7 +30,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	gotest.tools/v3 v3.5.2
 	k8s.io/api v0.35.0
-	k8s.io/apiextensions-apiserver v0.34.2
+	k8s.io/apiextensions-apiserver v0.34.3
 	k8s.io/apimachinery v0.35.0
 	k8s.io/apiserver v0.34.3
 	k8s.io/client-go v0.35.0
@@ -132,7 +132,7 @@ require (
 	github.com/prometheus/prometheus v0.307.3 // indirect
 	github.com/rhobs/obo-prometheus-operator/pkg/client v0.87.0-rhobs1 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
-	github.com/sirupsen/logrus v1.9.3 // indirect
+	github.com/sirupsen/logrus v1.9.4 // indirect
 	github.com/spf13/cobra v1.10.2 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/stoewer/go-strcase v1.3.1 // indirect
