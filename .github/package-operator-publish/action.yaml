@@ -10,10 +10,6 @@ inputs:
 runs:
   using: composite
   steps:
-  - uses: actions/checkout@v3
-    with:
-      fetch-depth: 0
-
   - name: Setup Go environment
     uses: actions/setup-go@v5
     with:
