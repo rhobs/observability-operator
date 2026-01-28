@@ -95,6 +95,13 @@ rules:
 - apiGroups:
   - config.openshift.io
   resources:
+  - clusteroperators
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - config.openshift.io
+  resources:
   - clusterversions
   verbs:
   - get
@@ -122,6 +129,13 @@ rules:
   - list
   - watch
 - apiGroups:
+  - kubevirt.io
+  resources:
+  - kubevirts
+  verbs:
+  - get
+  - list
+- apiGroups:
   - loki.grafana.com
   resources:
   - application
@@ -134,6 +148,13 @@ rules:
   - loki.grafana.com
   resources:
   - lokistacks
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - machineconfiguration.openshift.io
+  resources:
+  - machineconfigpools
   verbs:
   - get
   - list
