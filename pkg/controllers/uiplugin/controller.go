@@ -241,7 +241,7 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	compatibilityInfo, err := lookupImageAndFeatures(plugin.Spec.Type, rm.clusterVersion)
 	if err != nil {
-		return ctrl.Result{}, err
+		return rm.updateStatus(ctx, req, plugin, err), err
 	}
 
 	if plugin.Annotations == nil {
@@ -260,7 +260,7 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		if err := rm.k8sClient.Update(ctx, plugin); err != nil {
 			return ctrl.Result{}, err
 		}
-		return ctrl.Result{}, err
+		return ctrl.Result{}, nil
 	}
 
 	pluginInfo, pluginInfoErr := PluginInfoBuilder(ctx, rm.k8sClient, rm.k8sDynamicClient, plugin, rm.pluginConf, compatibilityInfo, rm.clusterVersion, rm.logger)
@@ -282,7 +282,7 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		if pluginInfo.AreMonitoringFeatsDisabled {
 			// prevents double rendering of monitoring console-tabs
 			if err := rm.deregisterPluginFromConsole(ctx, pluginTypeToConsoleName[plugin.Spec.Type]); err != nil {
-				return ctrl.Result{}, err
+				return rm.updateStatus(ctx, req, plugin, err), err
 			}
 		}
 	}
@@ -304,6 +304,14 @@ func (rm resourceManager) updateStatus(ctx context.Context, req ctrl.Request, pl
 
 	if recError != nil {
 		pl.Status.Conditions = []uiv1alpha1.Condition{
+			{
+				Type:               uiv1alpha1.DegradedCondition,
+				Status:             uiv1alpha1.ConditionTrue,
+				Reason:             FailedToReconcileReason,
+				Message:            recError.Error(),
+				ObservedGeneration: pl.Generation,
+				LastTransitionTime: metav1.Now(),
+			},
 			{
 				Type:               uiv1alpha1.ReconciledCondition,
 				Status:             uiv1alpha1.ConditionFalse,
@@ -327,6 +335,13 @@ func (rm resourceManager) updateStatus(ctx context.Context, req ctrl.Request, pl
 				Status:             uiv1alpha1.ConditionTrue,
 				Reason:             ReconciledReason,
 				Message:            ReconciledMessage,
+				ObservedGeneration: pl.Generation,
+				LastTransitionTime: metav1.Now(),
+			},
+			{
+				Type:               uiv1alpha1.DegradedCondition,
+				Status:             uiv1alpha1.ConditionFalse,
+				Reason:             ReconciledReason,
 				ObservedGeneration: pl.Generation,
 				LastTransitionTime: metav1.Now(),
 			},
