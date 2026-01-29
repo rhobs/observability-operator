@@ -83,6 +83,9 @@ func newPrometheusClusterRole(ms *stack.MonitoringStack, rbacResourceName string
 			Resources:     []string{"securitycontextconstraints"},
 			ResourceNames: []string{"nonroot", "nonroot-v2"},
 			Verbs:         []string{"use"},
+		}, {
+			NonResourceURLs: []string{"/federate"},
+			Verbs:           []string{"get"},
 		}},
 	}
 }
