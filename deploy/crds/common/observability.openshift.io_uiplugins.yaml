@@ -138,6 +138,12 @@ spec:
                     - otel
                     - select
                     type: string
+                  showTimezoneSelector:
+                    description: |-
+                      ShowTimezoneSelector indicates whether to show the timezone selector in the UI.
+
+                      Defaults to false if not specified.
+                    type: boolean
                   timeout:
                     description: |-
                       Timeout is the maximum duration before a query timeout.

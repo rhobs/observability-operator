@@ -5379,6 +5379,15 @@ Defaults to "viaq" if not specified. Use "otel" for OpenTelemetry schema, or "se
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>showTimezoneSelector</b></td>
+        <td>boolean</td>
+        <td>
+          ShowTimezoneSelector indicates whether to show the timezone selector in the UI.
+
+Defaults to false if not specified.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>timeout</b></td>
         <td>string</td>
         <td>

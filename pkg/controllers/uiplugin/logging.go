@@ -23,9 +23,10 @@ import (
 )
 
 type loggingConfig struct {
-	LogsLimit int32         `yaml:"logsLimit,omitempty"`
-	Timeout   time.Duration `yaml:"timeout,omitempty"`
-	Schema    string        `yaml:"schema,omitempty"`
+	LogsLimit            int32         `yaml:"logsLimit,omitempty"`
+	Timeout              time.Duration `yaml:"timeout,omitempty"`
+	Schema               string        `yaml:"schema,omitempty"`
+	ShowTimezoneSelector bool          `yaml:"showTimezoneSelector,omitempty"`
 }
 
 func createLoggingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string, ctx context.Context, dk dynamic.Interface, logger logr.Logger, korrel8rImage string) (*UIPluginInfo, error) {
@@ -146,7 +147,7 @@ func marshalLoggingPluginConfig(cfg *uiv1alpha1.LoggingConfig) (string, error) {
 		return "", nil
 	}
 
-	if cfg.LogsLimit == 0 && cfg.Timeout == "" && cfg.Schema == "" {
+	if cfg.LogsLimit == 0 && cfg.Timeout == "" && cfg.Schema == "" && !cfg.ShowTimezoneSelector {
 		return "", nil
 	}
 
@@ -160,9 +161,10 @@ func marshalLoggingPluginConfig(cfg *uiv1alpha1.LoggingConfig) (string, error) {
 	}
 
 	pluginCfg := loggingConfig{
-		LogsLimit: cfg.LogsLimit,
-		Timeout:   timeout,
-		Schema:    cfg.Schema,
+		LogsLimit:            cfg.LogsLimit,
+		Timeout:              timeout,
+		Schema:               cfg.Schema,
+		ShowTimezoneSelector: cfg.ShowTimezoneSelector,
 	}
 
 	buf := &bytes.Buffer{}
