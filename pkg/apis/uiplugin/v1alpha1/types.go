@@ -128,6 +128,14 @@ type LoggingConfig struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum=viaq;otel;select
 	Schema string `json:"schema,omitempty"`
+
+	// ShowTimezoneSelector indicates whether to show the timezone selector in the UI.
+	//
+	// Defaults to false if not specified.
+	//
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OCP Console Logs show timezone selector",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:ocpConsoleLogsShowTimezoneSelector"}
+	// +kubebuilder:validation:Optional
+	ShowTimezoneSelector bool `json:"showTimezoneSelector,omitempty"`
 }
 
 // LokiStackReference is used to configure a reference to a LokiStack that should be used
