@@ -39,7 +39,7 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    categories: Monitoring
+    categories: Monitoring, Observability
     certified: "false"
     console.openshift.io/operator-monitoring-default: "true"
     containerImage: observability-operator:1.3.0
