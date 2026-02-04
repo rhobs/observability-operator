@@ -34,7 +34,7 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    categories: Monitoring
+    categories: Monitoring, Observability
     certified: "false"
     containerImage: "<IMG_OBSERVABILITY_OPERATOR>"
     description: >-
