@@ -121,15 +121,30 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 			monitoringConfig.Incidents != nil &&
 			monitoringConfig.Incidents.Enabled &&
 			pluginInfo.HealthAnalyzerImage != ""
+
+		healthAnalyzerEnabled := monitoringConfig != nil &&
+			monitoringConfig.ClusterHealthAnalyzer != nil &&
+			monitoringConfig.ClusterHealthAnalyzer.Enabled &&
+			pluginInfo.HealthAnalyzerImage != ""
+
+		deployHealthAnalyzer := incidentsEnabled || healthAnalyzerEnabled
+
 		components = append(components,
-			reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, serviceAccountName, monitorClusterroleName, plugin.Name+"-"+monitorClusterroleName), plugin, incidentsEnabled),
-			reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, serviceAccountName, "system:auth-delegator", serviceAccountName+"-system-auth-delegator"), plugin, incidentsEnabled),
-			reconciler.NewOptionalUpdater(newAlertManagerViewRoleBinding(serviceAccountName, namespace), plugin, incidentsEnabled),
-			reconciler.NewOptionalUpdater(newHealthAnalyzerPrometheusRole(namespace), plugin, incidentsEnabled),
-			reconciler.NewOptionalUpdater(newHealthAnalyzerPrometheusRoleBinding(namespace), plugin, incidentsEnabled),
-			reconciler.NewOptionalUpdater(newHealthAnalyzerService(namespace), plugin, incidentsEnabled),
-			reconciler.NewOptionalUpdater(newHealthAnalyzerDeployment(namespace, serviceAccountName, pluginInfo), plugin, incidentsEnabled),
-			reconciler.NewOptionalUpdater(newHealthAnalyzerServiceMonitor(namespace), plugin, incidentsEnabled),
+			reconciler.NewOptionalUpdater(componentsHealthClusterRole("components-health-view"), plugin, deployHealthAnalyzer),
+			reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, serviceAccountName, "components-health-view", plugin.Name+"-"+"components-health-view"), plugin, deployHealthAnalyzer),
+			reconciler.NewOptionalUpdater(newComponentHealthConfig(namespace), plugin, deployHealthAnalyzer),
+		)
+
+		components = append(components,
+			reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, serviceAccountName, "cluster-monitoring-view", plugin.Name+"cluster-monitoring-view"), plugin, deployHealthAnalyzer),
+			reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, serviceAccountName, "system:auth-delegator", serviceAccountName+"-system-auth-delegator"), plugin, deployHealthAnalyzer),
+			reconciler.NewOptionalUpdater(newAlertManagerViewRoleBinding(serviceAccountName, namespace), plugin, deployHealthAnalyzer),
+			reconciler.NewOptionalUpdater(newHealthAnalyzerPrometheusRole(namespace), plugin, deployHealthAnalyzer),
+			reconciler.NewOptionalUpdater(newHealthAnalyzerPrometheusRoleBinding(namespace), plugin, deployHealthAnalyzer),
+			reconciler.NewOptionalUpdater(newHealthAnalyzerService(namespace), plugin, deployHealthAnalyzer),
+			reconciler.NewOptionalUpdater(newHealthAnalyzerDeployment(namespace, serviceAccountName, pluginInfo.HealthAnalyzerImage),
+				plugin, deployHealthAnalyzer),
+			reconciler.NewOptionalUpdater(newHealthAnalyzerServiceMonitor(namespace), plugin, deployHealthAnalyzer),
 		)
 
 		persesServiceAccountName := "perses" + serviceAccountSuffix
@@ -432,6 +447,43 @@ func newService(info UIPluginInfo, namespace string) *corev1.Service {
 			},
 			Selector: componentLabels(info.Name),
 			Type:     corev1.ServiceTypeClusterIP,
+		},
+	}
+}
+
+// componentsHealthClusterRole creates a new clusterrole with the provided name.
+// The clusterrole has read permissions to the cluster resources and it is required
+// for the component health evaluation.
+func componentsHealthClusterRole(name string) *rbacv1.ClusterRole {
+	return &rbacv1.ClusterRole{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: rbacv1.SchemeGroupVersion.String(),
+			Kind:       "ClusterRole",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{""},
+				Resources: []string{"nodes"},
+				Verbs:     []string{"get", "list"},
+			},
+			{
+				APIGroups: []string{"config.openshift.io"},
+				Resources: []string{"clusteroperators"},
+				Verbs:     []string{"get", "list"},
+			},
+			{
+				APIGroups: []string{"machineconfiguration.openshift.io"},
+				Resources: []string{"machineconfigpools"},
+				Verbs:     []string{"get", "list"},
+			},
+			{
+				APIGroups: []string{"kubevirt.io"},
+				Resources: []string{"kubevirts"},
+				Verbs:     []string{"get", "list"},
+			},
 		},
 	}
 }

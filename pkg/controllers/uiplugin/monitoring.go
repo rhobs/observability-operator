@@ -44,6 +44,19 @@ func validatePersesConfig(config *uiv1alpha1.MonitoringConfig) bool {
 	return config.Perses != nil && config.Perses.Enabled
 }
 
+func validateHealthanalyzerConfig(config *uiv1alpha1.MonitoringConfig, clusterVersion string) bool {
+	enabled := config.ClusterHealthAnalyzer != nil &&
+		config.ClusterHealthAnalyzer.Enabled
+
+	if !strings.HasPrefix(clusterVersion, "v") {
+		clusterVersion = "v" + clusterVersion
+	}
+	canonicalClusterVersion := fmt.Sprintf("%s-0", semver.Canonical(clusterVersion))
+	minClusterVersionMet := semver.Compare(canonicalClusterVersion, "v4.19.0-0") >= 0
+
+	return enabled && minClusterVersionMet
+}
+
 func validateIncidentsConfig(config *uiv1alpha1.MonitoringConfig, clusterVersion string) bool {
 	enabled := config.Incidents != nil && config.Incidents.Enabled
 
@@ -191,8 +204,9 @@ func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, im
 	isValidAcmConfig := validateACMConfig(config)
 	isValidPersesConfig := validatePersesConfig(config)
 	isValidIncidentsConfig := validateIncidentsConfig(config, clusterVersion)
+	isValidHealthAnalyzerConfig := validateHealthanalyzerConfig(config, clusterVersion)
 
-	atLeastOneValidConfig := isValidAcmConfig || isValidPersesConfig || isValidIncidentsConfig
+	atLeastOneValidConfig := isValidAcmConfig || isValidPersesConfig || isValidIncidentsConfig || isValidHealthAnalyzerConfig
 
 	pluginInfo := getBasePluginInfo(namespace, name, image)
 	if !atLeastOneValidConfig {
@@ -214,6 +228,10 @@ func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, im
 	if isValidIncidentsConfig {
 		pluginInfo.HealthAnalyzerImage = healthAnalyzerImage
 		features = append(features, "incidents")
+	}
+	if isValidHealthAnalyzerConfig {
+		pluginInfo.HealthAnalyzerImage = healthAnalyzerImage
+		features = append(features, "cluster-health-analyzer")
 	}
 	addFeatureFlags(pluginInfo, features)
 
