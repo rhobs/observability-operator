@@ -19,6 +19,7 @@ import (
 	"gotest.tools/v3/assert"
 	corev1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -136,6 +137,12 @@ func TestMonitoringStackController(t *testing.T) {
 	}, {
 		name:     "Assert OTLP receiver flag is set when enabled in CR",
 		scenario: assertDefaultOTLPFlagIsSet,
+	}, {
+		name:     "ClusterRoleBinding NOT created with NoClusterRoleBindings policy",
+		scenario: assertNoClusterRoleBindingWithPolicy,
+	}, {
+		name:     "ClusterRoleBinding cleanup on policy change",
+		scenario: assertClusterRoleBindingCleanupOnPolicyChange,
 	}}
 	for _, tc := range ts {
 		t.Run(tc.name, tc.scenario)
@@ -1432,4 +1439,92 @@ func newPrometheusExampleAppPod(t *testing.T, name, ns string) *corev1.Pod {
 
 	f.CleanUp(t, func() { f.K8sClient.Delete(context.Background(), pod) })
 	return pod
+}
+
+func assertNoClusterRoleBindingWithPolicy(t *testing.T) {
+	stackName := "crb-no-policy"
+	nsLabels := map[string]string{"monitoring.rhobs/stack": stackName}
+
+	ms := newMonitoringStack(t, stackName, msNamespaceSelector(nsLabels))
+	// Explicitly set CreateClusterRoleBindings to NoClusterRoleBindings
+	ms.Spec.CreateClusterRoleBindings = stack.NoClusterRoleBindings
+
+	err := f.K8sClient.Create(context.Background(), ms)
+	assert.NilError(t, err, "failed to create a monitoring stack")
+
+	// Wait for MonitoringStack to become available
+	_ = f.GetStackWhenAvailable(t, ms.Name, ms.Namespace)
+
+	// Assert ClusterRoleBinding is NOT created for Prometheus
+	promCRBName := stackName + "-prometheus"
+	f.AssertResourceNeverExists(promCRBName, "", &rbacv1.ClusterRoleBinding{})(t)
+
+	// Assert ClusterRoleBinding is NOT created for Alertmanager
+	amCRBName := stackName + "-alertmanager"
+	f.AssertResourceNeverExists(amCRBName, "", &rbacv1.ClusterRoleBinding{})(t)
+
+	// Verify Prometheus is still created and becomes ready
+	f.AssertStatefulsetReady("prometheus-"+stackName, e2eTestNamespace, framework.WithTimeout(3*time.Minute))(t)
+
+	// Verify Alertmanager is still created and becomes ready
+	f.AssertStatefulsetReady("alertmanager-"+stackName, e2eTestNamespace, framework.WithTimeout(2*time.Minute))(t)
+}
+
+func assertClusterRoleBindingCleanupOnPolicyChange(t *testing.T) {
+	stackName := "crb-cleanup"
+	nsLabels := map[string]string{"monitoring.rhobs/stack": stackName}
+
+	// Step 1: Create MonitoringStack with NamespaceSelector (ClusterRoleBindings should be created)
+	ms := newMonitoringStack(t, stackName, msNamespaceSelector(nsLabels))
+	err := f.K8sClient.Create(context.Background(), ms)
+	assert.NilError(t, err, "failed to create a monitoring stack")
+
+	// Wait for MonitoringStack to become available
+	_ = f.GetStackWhenAvailable(t, ms.Name, ms.Namespace)
+
+	// Assert ClusterRoleBindings exist
+	promCRBName := stackName + "-prometheus"
+	amCRBName := stackName + "-alertmanager"
+	f.AssertClusterRoleBindingExists(promCRBName)(t)
+	f.AssertClusterRoleBindingExists(amCRBName)(t)
+
+	// Step 2: Update MonitoringStack to set CreateClusterRoleBindings to NoClusterRoleBindings
+	updatedMS := &stack.MonitoringStack{}
+	f.GetResourceWithRetry(t, ms.Name, ms.Namespace, updatedMS)
+
+	err = f.UpdateWithRetry(t, updatedMS, func(ms *stack.MonitoringStack) {
+		ms.Spec.CreateClusterRoleBindings = stack.NoClusterRoleBindings
+	})
+	assert.NilError(t, err, "failed to update monitoring stack")
+
+	// Assert ClusterRoleBindings are removed
+	f.AssertClusterRoleBindingAbsent(promCRBName)(t)
+	f.AssertClusterRoleBindingAbsent(amCRBName)(t)
+
+	// Step 3: Update MonitoringStack back to CreateClusterRoleBindings
+	updatedMS2 := &stack.MonitoringStack{}
+	f.GetResourceWithRetry(t, ms.Name, ms.Namespace, updatedMS2)
+
+	err = f.UpdateWithRetry(t, updatedMS2, func(ms *stack.MonitoringStack) {
+		ms.Spec.CreateClusterRoleBindings = stack.CreateClusterRoleBindings
+	})
+	assert.NilError(t, err, "failed to update monitoring stack")
+
+	// Assert ClusterRoleBindings are recreated
+	f.AssertClusterRoleBindingExists(promCRBName)(t)
+	f.AssertClusterRoleBindingExists(amCRBName)(t)
+
+	// Verify the recreated ClusterRoleBindings have correct references
+	var promCRB rbacv1.ClusterRoleBinding
+	key := types.NamespacedName{Name: promCRBName}
+	err = f.K8sClient.Get(context.Background(), key, &promCRB)
+	assert.NilError(t, err, "failed to get recreated prometheus ClusterRoleBinding")
+	assert.Equal(t, promCRB.Subjects[0].Name, stackName+"-prometheus", "unexpected ServiceAccount name after recreation")
+
+	var amCRB rbacv1.ClusterRoleBinding
+	key = types.NamespacedName{Name: amCRBName}
+	err = f.K8sClient.Get(context.Background(), key, &amCRB)
+	assert.NilError(t, err, "failed to get recreated alertmanager ClusterRoleBinding")
+	assert.Equal(t, amCRB.Subjects[0].Name, stackName+"-alertmanager", "unexpected ServiceAccount name after recreation")
+
 }
