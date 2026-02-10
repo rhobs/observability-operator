@@ -953,9 +953,7 @@ spec:
                 - containerPort: 8080
                   name: http
                 resources:
-                  limits:
-                    cpu: 100m
-                    memory: 500Mi
+                  limits: {}
                   requests:
                     cpu: 5m
                     memory: 150Mi
@@ -1026,9 +1024,7 @@ spec:
                 - containerPort: 8443
                   name: https
                 resources:
-                  limits:
-                    cpu: 200m
-                    memory: 200Mi
+                  limits: {}
                   requests:
                     cpu: 50m
                     memory: 50Mi
@@ -1095,9 +1091,7 @@ spec:
                     path: /healthz
                     port: 8081
                 resources:
-                  limits:
-                    cpu: 400m
-                    memory: 512Mi
+                  limits: {}
                   requests:
                     cpu: 100m
                     memory: 256Mi
@@ -1169,9 +1163,7 @@ spec:
                   initialDelaySeconds: 5
                   periodSeconds: 10
                 resources:
-                  limits:
-                    cpu: 500m
-                    memory: 512Mi
+                  limits: {}
                   requests:
                     cpu: 100m
                     memory: 128Mi
