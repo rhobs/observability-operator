@@ -45,3 +45,4 @@ components:
       objects:
       - group: kubevirt.io
         resource: kubevirts
+        namespace: openshift-cnv
