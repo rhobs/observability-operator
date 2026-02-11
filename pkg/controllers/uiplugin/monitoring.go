@@ -8,7 +8,6 @@ import (
 	osv1alpha1 "github.com/openshift/api/console/v1alpha1"
 	persesv1alpha2 "github.com/rhobs/perses-operator/api/v1alpha2"
 	persesconfig "github.com/rhobs/perses/pkg/model/api/config"
-	persesrole "github.com/rhobs/perses/pkg/model/api/v1/role"
 	"golang.org/x/mod/semver"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -308,20 +307,6 @@ func newPerses(namespace string, persesImage string) *persesv1alpha2.Perses {
 							Provider: persesconfig.AuthorizationProvider{
 								Kubernetes: persesconfig.KubernetesAuthorizationProvider{
 									Enable: true,
-								},
-							},
-							GuestPermissions: []*persesrole.Permission{
-								{
-									Actions: []persesrole.Action{
-										"*",
-									},
-									Scopes: []persesrole.Scope{
-										"Folder",
-										"GlobalSecret",
-										"GlobalVariable",
-										"Secret",
-										"Variable",
-									},
 								},
 							},
 						},
