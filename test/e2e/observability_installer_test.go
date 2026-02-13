@@ -2,7 +2,10 @@ package e2e
 
 import (
 	"context"
+	"crypto/tls"
 	_ "embed"
+	"fmt"
+	"net/http"
 	"regexp"
 	"strings"
 	"testing"
@@ -27,8 +30,6 @@ import (
 var (
 	//go:embed traces_minio.yaml
 	minioManifests string
-	//go:embed traces_tempo_readiness.yaml
-	tempoReadinessManifest string
 	//go:embed traces_telemetrygen.yaml
 	telemetrygenManifest string
 	//go:embed traces_verify.yaml
@@ -170,9 +171,61 @@ func testObservabilityInstallerTracing(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	tempoReadinessObj := deployManifest(t, tempoReadinessManifest)
-	f.CleanUp(t, func() { f.K8sClient.Delete(ctx, tempoReadinessObj) })
-	err = jobHasCompleted(t, tempoReadinessObj.GetName(), operandNamespace.Name, time.Minute*5)
+	fmt.Println("---> Tempo and OpenTelemetry Collector are ready")
+
+	stopChan := make(chan struct{})
+	defer close(stopChan)
+	if err = wait.PollUntilContextTimeout(ctx, 5*time.Second, 1*time.Minute, true, func(ctx context.Context) (bool, error) {
+		err := f.StartServicePortForward("tempo-coo-ingester", operandNamespace.Name, "3200", stopChan)
+		return err == nil, nil
+	}); wait.Interrupted(err) {
+		t.Fatal("timeout waiting for port-forward")
+	}
+
+	// Load and configure mTLS certificates like the original job
+	tr := http.DefaultTransport.(*http.Transport).Clone()
+	var mtlsSecret corev1.Secret
+	if err := f.K8sClient.Get(ctx, types.NamespacedName{Name: "tempo-coo-gateway-mtls", Namespace: operandNamespace.Name}, &mtlsSecret); err == nil {
+		clientCert, clientKey := mtlsSecret.Data["tls.crt"], mtlsSecret.Data["tls.key"]
+		if cert, err := tls.X509KeyPair(clientCert, clientKey); err == nil {
+			tr.TLSClientConfig = &tls.Config{
+				Certificates:       []tls.Certificate{cert},
+				InsecureSkipVerify: true, // equivalent to curl -k
+			}
+		} else {
+			tr.TLSClientConfig = &tls.Config{
+				InsecureSkipVerify: true, // fallback if cert parsing fails
+			}
+		}
+	} else {
+		tr.TLSClientConfig = &tls.Config{
+			InsecureSkipVerify: true, // fallback if secret not found
+		}
+	}
+
+	err = wait.PollUntilContextTimeout(ctx, 1*time.Second, time.Minute*2, true, func(ctx context.Context) (bool, error) {
+		t.Log("getting tempo readiness endpoint")
+		req, err := http.NewRequest("GET", "https://localhost:3200/ready", nil)
+		if err != nil {
+			return false, nil
+		}
+
+		httpClient := &http.Client{Transport: tr}
+		resp, err := httpClient.Do(req)
+		if err != nil {
+			t.Logf("tempo readiness check failed: %v", err)
+			return false, nil
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode == 200 {
+			t.Log("SUCCESS: Tempo service is ready!")
+			return true, nil
+		}
+
+		t.Logf("tempo readiness check returned status: %d", resp.StatusCode)
+		return false, nil
+	})
 	require.NoError(t, err)
 
 	telemetrygenObj := deployManifest(t, telemetrygenManifest)
