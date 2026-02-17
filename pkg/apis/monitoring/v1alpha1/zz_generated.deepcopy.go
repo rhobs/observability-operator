@@ -247,6 +247,11 @@ func (in *PrometheusConfig) DeepCopyInto(out *PrometheusConfig) {
 		*out = new(bool)
 		**out = **in
 	}
+	if in.EnableFeatures != nil {
+		in, out := &in.EnableFeatures, &out.EnableFeatures
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	if in.ScrapeInterval != nil {
 		in, out := &in.ScrapeInterval, &out.ScrapeInterval
 		*out = new(monitoringv1.Duration)
