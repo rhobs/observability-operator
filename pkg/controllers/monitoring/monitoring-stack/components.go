@@ -56,30 +56,31 @@ func stackComponentReconcilers(
 	deployAlertmanager := !ms.Spec.AlertmanagerConfig.Disabled
 
 	return []reconciler.Reconciler{
-		// Prometheus Deployment
+		// Create RBAC
 		reconciler.NewUpdater(newServiceAccount(prometheusName, ms.Namespace), ms),
-		reconciler.NewUpdater(newPrometheusClusterRole(prometheusName, rbacVerbs), ms),
-		reconciler.NewUpdater(newAdditionalScrapeConfigsSecret(ms, additionalScrapeConfigsSecretName), ms),
-		reconciler.NewUpdater(newPrometheus(ms, prometheusName,
-			additionalScrapeConfigsSecretName,
-			thanos, prometheus), ms),
-		reconciler.NewUpdater(newPrometheusService(ms), ms),
-		reconciler.NewUpdater(newThanosSidecarService(ms), ms),
-		reconciler.NewOptionalUpdater(newPrometheusPDB(ms), ms,
-			*ms.Spec.PrometheusConfig.Replicas > 1),
-
-		// Alertmanager Deployment
 		reconciler.NewOptionalUpdater(newServiceAccount(alertmanagerName, ms.Namespace), ms, deployAlertmanager),
+
+		reconciler.NewUpdater(newPrometheusClusterRole(prometheusName, rbacVerbs), ms),
 		// create clusterrolebinding if nsSelector's present otherwise a rolebinding
 		reconciler.NewOptionalUpdater(newClusterRoleBinding(ms, prometheusName), ms, createCRB),
 		reconciler.NewOptionalUpdater(newRoleBindingForClusterRole(ms, prometheusName), ms, !hasNsSelector),
 
 		reconciler.NewOptionalUpdater(newAlertManagerClusterRole(alertmanagerName, rbacVerbs), ms, deployAlertmanager),
-
 		// create clusterrolebinding if alertmanager is enabled and namespace selector is also present in MonitoringStack
 		reconciler.NewOptionalUpdater(newClusterRoleBinding(ms, alertmanagerName), ms, deployAlertmanager && createCRB),
 		reconciler.NewOptionalUpdater(newRoleBindingForClusterRole(ms, alertmanagerName), ms, deployAlertmanager && !hasNsSelector),
 
+		// Prometheus Deployment
+		reconciler.NewUpdater(newPrometheus(ms, prometheusName,
+			additionalScrapeConfigsSecretName,
+			thanos, prometheus), ms),
+		reconciler.NewUpdater(newPrometheusService(ms), ms),
+		reconciler.NewUpdater(newThanosSidecarService(ms), ms),
+		reconciler.NewUpdater(newAdditionalScrapeConfigsSecret(ms, additionalScrapeConfigsSecretName), ms),
+		reconciler.NewOptionalUpdater(newPrometheusPDB(ms), ms,
+			*ms.Spec.PrometheusConfig.Replicas > 1),
+
+		// Alertmanager Deployment
 		reconciler.NewOptionalUpdater(newAlertmanager(ms, alertmanagerName, alertmanager), ms, deployAlertmanager),
 		reconciler.NewOptionalUpdater(newAlertmanagerService(ms), ms, deployAlertmanager),
 		reconciler.NewOptionalUpdater(newAlertmanagerPDB(ms), ms, deployAlertmanager && *ms.Spec.AlertmanagerConfig.Replicas > 1),
