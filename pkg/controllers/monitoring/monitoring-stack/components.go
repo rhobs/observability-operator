@@ -50,6 +50,9 @@ func stackComponentReconcilers(
 ) []reconciler.Reconciler {
 	prometheusName := ms.Name + "-prometheus"
 	alertmanagerName := ms.Name + "-alertmanager"
+	namespace := ms.Namespace
+	prometheusClusterRoleName := ms.Name + "-prometheus" + "-" + namespace
+	alertmanagerClusterRoleName := ms.Name + "-alertmanager" + "-" + namespace
 	additionalScrapeConfigsSecretName := ms.Name + "-self-scrape"
 	hasNsSelector := ms.Spec.NamespaceSelector != nil
 	createCRB := hasNsSelector && ms.Spec.CreateClusterRoleBindings == stack.CreateClusterRoleBindings
@@ -58,7 +61,7 @@ func stackComponentReconcilers(
 	return []reconciler.Reconciler{
 		// Prometheus Deployment
 		reconciler.NewUpdater(newServiceAccount(prometheusName, ms.Namespace), ms),
-		reconciler.NewUpdater(newPrometheusClusterRole(prometheusName, rbacVerbs), ms),
+		reconciler.NewUpdater(newPrometheusClusterRole(prometheusClusterRoleName, rbacVerbs), ms),
 		reconciler.NewUpdater(newAdditionalScrapeConfigsSecret(ms, additionalScrapeConfigsSecretName), ms),
 		reconciler.NewUpdater(newPrometheus(ms, prometheusName,
 			additionalScrapeConfigsSecretName,
@@ -71,13 +74,13 @@ func stackComponentReconcilers(
 		// Alertmanager Deployment
 		reconciler.NewOptionalUpdater(newServiceAccount(alertmanagerName, ms.Namespace), ms, deployAlertmanager),
 		// create clusterrolebinding if nsSelector's present otherwise a rolebinding
-		reconciler.NewOptionalUpdater(newClusterRoleBinding(ms, prometheusName), ms, createCRB),
+		reconciler.NewOptionalUpdater(newClusterRoleBinding(ms, prometheusClusterRoleName), ms, createCRB),
 		reconciler.NewOptionalUpdater(newRoleBindingForClusterRole(ms, prometheusName), ms, !hasNsSelector),
 
-		reconciler.NewOptionalUpdater(newAlertManagerClusterRole(alertmanagerName, rbacVerbs), ms, deployAlertmanager),
+		reconciler.NewOptionalUpdater(newAlertManagerClusterRole(alertmanagerClusterRoleName, rbacVerbs), ms, deployAlertmanager),
 
 		// create clusterrolebinding if alertmanager is enabled and namespace selector is also present in MonitoringStack
-		reconciler.NewOptionalUpdater(newClusterRoleBinding(ms, alertmanagerName), ms, deployAlertmanager && createCRB),
+		reconciler.NewOptionalUpdater(newClusterRoleBinding(ms, alertmanagerClusterRoleName), ms, deployAlertmanager && createCRB),
 		reconciler.NewOptionalUpdater(newRoleBindingForClusterRole(ms, alertmanagerName), ms, deployAlertmanager && !hasNsSelector),
 
 		reconciler.NewOptionalUpdater(newAlertmanager(ms, alertmanagerName, alertmanager), ms, deployAlertmanager),
