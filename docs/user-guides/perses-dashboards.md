@@ -208,6 +208,54 @@ More examples can be found in the [community dashboards repository](https://gith
 > [!IMPORTANT]
 > **Automatic Datasource Detection**: Notice that the above example does not set a specific datasource for the dashboard. This is because Perses will automatically detect the available datasources in the namespace and use the default one it finds. A specific datasource can be set by adding a `datasource` field in the panel query or by adding a datasource variable to the dashboard so users can select the datasource they want to use.
 
+## Secrets 
+Perses secrets are exclusively managed by the Perses Operator with PersesDatasource and PersesGlobalDatasource resources under the client field for proxy configuration. Review the [perses-operator API docs](https://github.com/rhobs/perses-operator/blob/main/docs/api.md) for full specifications. 
+
+> [!IMPORTANT]
+To configure a secret to be used for proxy authentication, you can create a Kubernetes Secret with the necessary credentials and reference it in the `client` field used for the datasource proxy configuration. This will create a Perses secret in the project corresponding to the namespace where the CR is created. The secret will be named after the Datasource name with a `-secret` suffix. The secret must be referenced in `spec.config.spec.proxy.spec.secret`.
+
+The following `PersesDatasource` illustrate examples of how to configure a secret. 
+```yaml
+apiVersion: perses.dev/v1alpha1
+kind: PersesDatasource
+metadata:
+  name: prometheus-through-proxy
+  namespace: monitoring
+spec:
+  config: ...
+  # Optional datasource proxy client configuration
+  client:
+    basicAuth:
+      type: secret
+      name: k8s-basicauth-secret-name
+      namespace: optional-namespacename # if the secret resides in another namespace
+      username: "actual-username"
+      password_path: "password-key-in-secret" # or an actual path if type is `file`
+    oauth:
+      type: secret
+      name: k8s-oauth-secret-name
+      # namespace: monitoring
+      clientIDPath: client-id-key-in-secret
+      clientSecretPath: client-secret-key-in-secret
+      tokenURL: https://auth.example.com/token
+      scopes:
+        - read:metrics
+      endpointParams:
+        audience: prometheus
+      authStyle: dunno
+    tls:
+      enable: true
+      caCert:
+        type: secret # May be of type `secret`, `configmap` or `file`
+        name: prometheus-certs # In this case the k8s secret name
+        certPath: ca.crt # The key in the secret
+      userCert:
+        type: secret # May be of type `secret`, `configmap` or `file`
+        name: prometheus-certs
+        certPath: tls.crt
+        privateKeyPath: tls.key
+```
+
 ## RBAC permissions
 
 The Perses operator creates the following `ClusterRole`s for datasources and dashboards:
