@@ -53,11 +53,12 @@ spec:
                           secret or configmap)
                         type: string
                       namespace:
-                        description: Namsespace of certificate k8s resource (when
-                          type is secret or configmap)
+                        description: Namespace of certificate k8s resource (when type
+                          is secret or configmap)
                         type: string
                       password_path:
                         description: Path to password
+                        minLength: 1
                         type: string
                       type:
                         description: Type source type of secret
@@ -68,6 +69,7 @@ spec:
                         type: string
                       username:
                         description: Username for basic auth
+                        minLength: 1
                         type: string
                     required:
                     - password_path
@@ -111,8 +113,8 @@ spec:
                           secret or configmap)
                         type: string
                       namespace:
-                        description: Namsespace of certificate k8s resource (when
-                          type is secret or configmap)
+                        description: Namespace of certificate k8s resource (when type
+                          is secret or configmap)
                         type: string
                       scopes:
                         description: Scope specifies optional requested permissions.
@@ -123,6 +125,7 @@ spec:
                         description: |-
                           TokenURL is the resource server's token endpoint
                           URL. This is a constant specific to each server.
+                        minLength: 1
                         type: string
                       type:
                         description: Type source type of secret
@@ -143,13 +146,14 @@ spec:
                         properties:
                           certPath:
                             description: Path to Certificate
+                            minLength: 1
                             type: string
                           name:
                             description: Name of basic auth k8s resource (when type
                               is secret or configmap)
                             type: string
                           namespace:
-                            description: Namsespace of certificate k8s resource (when
+                            description: Namespace of certificate k8s resource (when
                               type is secret or configmap)
                             type: string
                           privateKeyPath:
@@ -177,13 +181,14 @@ spec:
                         properties:
                           certPath:
                             description: Path to Certificate
+                            minLength: 1
                             type: string
                           name:
                             description: Name of basic auth k8s resource (when type
                               is secret or configmap)
                             type: string
                           namespace:
-                            description: Namsespace of certificate k8s resource (when
+                            description: Namespace of certificate k8s resource (when
                               type is secret or configmap)
                             type: string
                           privateKeyPath:
@@ -221,7 +226,22 @@ spec:
                       The data typed is available in Cue.
                     properties:
                       kind:
+                        description: Kind is the type of the plugin (e.g., Panel,
+                          Variable, Datasource, etc.).
                         type: string
+                      metadata:
+                        description: Metadata is an optional field that contains additional
+                          information such as version and registry of the plugin.
+                        properties:
+                          registry:
+                            description: 'Registry is optional. If not provided, it
+                              means the default registry: "perses.dev".'
+                            type: string
+                          version:
+                            description: Version is optional. If not provided, it
+                              means the latest version available in the Perses instance.
+                            type: string
+                        type: object
                       spec:
                         x-kubernetes-preserve-unknown-fields: true
                     required:
@@ -232,6 +252,8 @@ spec:
                 - default
                 - plugin
                 type: object
+            required:
+            - config
             type: object
           status:
             description: PersesDatasourceStatus defines the observed state of PersesDatasource
@@ -321,8 +343,10 @@ spec:
           metadata:
             type: object
           spec:
+            description: DatasourceSpec defines the desired state of a Perses datasource
             properties:
               client:
+                description: Client authentication and TLS configuration for the datasource
                 properties:
                   basicAuth:
                     description: BasicAuth basic auth config for perses client
@@ -332,11 +356,12 @@ spec:
                           secret or configmap)
                         type: string
                       namespace:
-                        description: Namsespace of certificate k8s resource (when
-                          type is secret or configmap)
+                        description: Namespace of certificate k8s resource (when type
+                          is secret or configmap)
                         type: string
-                      password_path:
+                      passwordPath:
                         description: Path to password
+                        minLength: 1
                         type: string
                       type:
                         description: Type source type of secret
@@ -347,9 +372,10 @@ spec:
                         type: string
                       username:
                         description: Username for basic auth
+                        minLength: 1
                         type: string
                     required:
-                    - password_path
+                    - passwordPath
                     - type
                     - username
                     type: object
@@ -390,8 +416,8 @@ spec:
                           secret or configmap)
                         type: string
                       namespace:
-                        description: Namsespace of certificate k8s resource (when
-                          type is secret or configmap)
+                        description: Namespace of certificate k8s resource (when type
+                          is secret or configmap)
                         type: string
                       scopes:
                         description: Scope specifies optional requested permissions.
@@ -402,6 +428,7 @@ spec:
                         description: |-
                           TokenURL is the resource server's token endpoint
                           URL. This is a constant specific to each server.
+                        minLength: 1
                         type: string
                       type:
                         description: Type source type of secret
@@ -422,13 +449,14 @@ spec:
                         properties:
                           certPath:
                             description: Path to Certificate
+                            minLength: 1
                             type: string
                           name:
                             description: Name of basic auth k8s resource (when type
                               is secret or configmap)
                             type: string
                           namespace:
-                            description: Namsespace of certificate k8s resource (when
+                            description: Namespace of certificate k8s resource (when
                               type is secret or configmap)
                             type: string
                           privateKeyPath:
@@ -456,13 +484,14 @@ spec:
                         properties:
                           certPath:
                             description: Path to Certificate
+                            minLength: 1
                             type: string
                           name:
                             description: Name of basic auth k8s resource (when type
                               is secret or configmap)
                             type: string
                           namespace:
-                            description: Namsespace of certificate k8s resource (when
+                            description: Namespace of certificate k8s resource (when
                               type is secret or configmap)
                             type: string
                           privateKeyPath:
@@ -484,6 +513,7 @@ spec:
                     type: object
                 type: object
               config:
+                description: Perses datasource configuration
                 properties:
                   default:
                     type: boolean
@@ -500,7 +530,22 @@ spec:
                       The data typed is available in Cue.
                     properties:
                       kind:
+                        description: Kind is the type of the plugin (e.g., Panel,
+                          Variable, Datasource, etc.).
                         type: string
+                      metadata:
+                        description: Metadata is an optional field that contains additional
+                          information such as version and registry of the plugin.
+                        properties:
+                          registry:
+                            description: 'Registry is optional. If not provided, it
+                              means the default registry: "perses.dev".'
+                            type: string
+                          version:
+                            description: Version is optional. If not provided, it
+                              means the latest version available in the Perses instance.
+                            type: string
+                        type: object
                       spec:
                         x-kubernetes-preserve-unknown-fields: true
                     required:
@@ -512,10 +557,8 @@ spec:
                 - plugin
                 type: object
               instanceSelector:
-                description: |-
-                  A label selector is a label query over a set of resources. The result of matchLabels and
-                  matchExpressions are ANDed. An empty label selector matches all objects. A null
-                  label selector matches no objects.
+                description: InstanceSelector selects Perses instances where this
+                  datasource will be created
                 properties:
                   matchExpressions:
                     description: matchExpressions is a list of label selector requirements.
@@ -567,6 +610,8 @@ spec:
             description: PersesDatasourceStatus defines the observed state of PersesDatasource
             properties:
               conditions:
+                description: Conditions represent the latest observations of the PersesDatasource
+                  resource state
                 items:
                   description: Condition contains details for one aspect of the current
                     state of this API Resource.
