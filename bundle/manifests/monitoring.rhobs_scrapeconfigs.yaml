@@ -4,7 +4,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.19.0
     observability.openshift.io/api-support: TechPreview
-    operator.prometheus.io/version: 0.87.0-rhobs1
+    operator.prometheus.io/version: 0.89.0-rhobs1
   creationTimestamp: null
   labels:
     app.kubernetes.io/part-of: observability-operator
@@ -883,6 +883,15 @@ spec:
                     type: object
                     x-kubernetes-map-type: atomic
                 type: object
+              bodySizeLimit:
+                description: |-
+                  bodySizeLimit defines a per-scrape limit on the size of the uncompressed
+                  response body that will be accepted by Prometheus. Targets responding with
+                  a body larger than this many bytes will cause the scrape to fail.
+
+                  It requires Prometheus >= v2.28.0.
+                pattern: (^0|([0-9]*[.])?[0-9]+((K|M|G|T|E|P)i?)?B)$
+                type: string
               consulSDConfigs:
                 description: consulSDConfigs defines a list of Consul service discovery
                   configurations.
@@ -12538,6 +12547,11 @@ spec:
                   scrapes.
                 pattern: ^(0|(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?)$
                 type: string
+              scrapeNativeHistograms:
+                description: |-
+                  scrapeNativeHistograms defines whether to enable scraping of native histograms.
+                  It requires Prometheus >= v3.8.0.
+                type: boolean
               scrapeProtocols:
                 description: |-
                   scrapeProtocols defines the protocols to negotiate during a scrape. It tells clients the

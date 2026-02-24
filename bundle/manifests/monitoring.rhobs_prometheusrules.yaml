@@ -4,7 +4,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.19.0
     observability.openshift.io/api-support: TechPreview
-    operator.prometheus.io/version: 0.87.0-rhobs1
+    operator.prometheus.io/version: 0.89.0-rhobs1
   creationTimestamp: null
   labels:
     app.kubernetes.io/part-of: observability-operator
