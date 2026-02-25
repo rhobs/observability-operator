@@ -41,10 +41,6 @@ If you open the OpenShift console, you should see the new `Observe > Dashboards 
 
 Once the Monitoring UI Plugin is installed with Perses enabled, the Cluster Observability Operator deploys the [Perses Operator](https://github.com/rhobs/perses-operator), which is responsible for managing Perses dashboards and datasources. The COO also installs the `PersesDashboard`, `PersesDatasource` and `PersesGlobalDatasource` Custom Resources Definitions (CRDs). These CRDs are namespaced-scoped which allows to setup RBAC policies for them using the standard Kubernetes RBAC model.
 
-See the [perses-operator user guide](https://github.com/rhobs/perses-operator/blob/main/docs/user-guide.md) for more information on perses custom resource management and example configurations. 
-
-Please refer to the [Monitoring UI Plugin](https://github.com/rhobs/observability-operator/blob/main/docs/user-guides/observability-ui-plugins.md#plugin-creation-4) documentation for more details.
-
 ### Deploying an example dashboard
 
 Run the following command
@@ -68,7 +64,11 @@ Go to the `Observe > Dashboards (Perses)` menu in the OpenShift console and sele
 
 ![Console](perses-dashboards/assets/console.png)
 
-Many other dashboards can be found either in the upstream [Perses operator](https://github.com/perses/perses-operator/blob/main/config/samples/openshift) repository or in the [Perses community mixins](github.com/perses/community-mixins) repository.
+### Additional resources
+
+* See the [perses-operator user guide](https://github.com/rhobs/perses-operator/blob/main/docs/user-guide.md) for more information on Perses custom resource management and example configurations.
+* See the [Monitoring UI Plugin user guide](https://github.com/rhobs/observability-operator/blob/main/docs/user-guides/observability-ui-plugins.md#plugin-creation-4) to learn about the Monitoring UI Plugin configuration.
+* Find [OpenShift-specific dashboards](https://github.com/perses/perses-operator/blob/main/config/samples/openshift) from the upstream Perses operator repository and community dashboards from the [Perses community mixins](github.com/perses/community-mixins) repository.
 
 ## Developing new dashboards
 
@@ -209,8 +209,6 @@ More examples can be found in the [community dashboards repository](https://gith
 
 > [!IMPORTANT]
 > **Automatic Datasource Detection**: Notice that the above example does not set a specific datasource for the dashboard. This is because Perses will automatically detect the available datasources in the namespace and use the default one it finds. A specific datasource can be set by adding a `datasource` field in the panel query or by adding a datasource variable to the dashboard so users can select the datasource they want to use.
-
-```
 
 ## RBAC permissions
 
