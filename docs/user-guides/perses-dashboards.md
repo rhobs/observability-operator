@@ -39,7 +39,9 @@ kubectl wait --for=condition=Available --timeout=10s uiplugins monitoring
 
 If you open the OpenShift console, you should see the new `Observe > Dashboards (Perses)` menu. Once `PersesDashboard`,  `PersesDatasource`, and `PersesGlobalDatasource` resources are created and the appropriate RBAC permissions are granted, a namespace selector will be available to show dashboards by the namespace(s) where the user has been granted RBAC permissions.
 
-Once the Monitoring UI Plugin is installed with Perses enabled, the Cluster Observability Operator deploys the [Perses Operator](https://github.com/perses/perses-operator), which is responsible for managing Perses dashboards and datasources. The COO also installs the `PersesDashboard`, `PersesDatasource` and `PersesGlobalDatasource` Custom Resources Definitions (CRDs). These CRDs are namespaced-scoped which allows to setup RBAC policies for them using the standard Kubernetes RBAC model.
+Once the Monitoring UI Plugin is installed with Perses enabled, the Cluster Observability Operator deploys the [Perses Operator](https://github.com/rhobs/perses-operator), which is responsible for managing Perses dashboards and datasources. The COO also installs the `PersesDashboard`, `PersesDatasource` and `PersesGlobalDatasource` Custom Resources Definitions (CRDs). These CRDs are namespaced-scoped which allows to setup RBAC policies for them using the standard Kubernetes RBAC model.
+
+See the [perses-operator user guide](https://github.com/rhobs/perses-operator/blob/main/docs/user-guide.md) for more information on perses custom resource management and example configurations. 
 
 Please refer to the [Monitoring UI Plugin](https://github.com/rhobs/observability-operator/blob/main/docs/user-guides/observability-ui-plugins.md#plugin-creation-4) documentation for more details.
 
@@ -207,6 +209,8 @@ More examples can be found in the [community dashboards repository](https://gith
 
 > [!IMPORTANT]
 > **Automatic Datasource Detection**: Notice that the above example does not set a specific datasource for the dashboard. This is because Perses will automatically detect the available datasources in the namespace and use the default one it finds. A specific datasource can be set by adding a `datasource` field in the panel query or by adding a datasource variable to the dashboard so users can select the datasource they want to use.
+
+```
 
 ## RBAC permissions
 
