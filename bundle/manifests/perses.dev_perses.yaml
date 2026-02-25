@@ -982,11 +982,12 @@ spec:
                           secret or configmap)
                         type: string
                       namespace:
-                        description: Namsespace of certificate k8s resource (when
-                          type is secret or configmap)
+                        description: Namespace of certificate k8s resource (when type
+                          is secret or configmap)
                         type: string
                       password_path:
                         description: Path to password
+                        minLength: 1
                         type: string
                       type:
                         description: Type source type of secret
@@ -997,6 +998,7 @@ spec:
                         type: string
                       username:
                         description: Username for basic auth
+                        minLength: 1
                         type: string
                     required:
                     - password_path
@@ -1040,8 +1042,8 @@ spec:
                           secret or configmap)
                         type: string
                       namespace:
-                        description: Namsespace of certificate k8s resource (when
-                          type is secret or configmap)
+                        description: Namespace of certificate k8s resource (when type
+                          is secret or configmap)
                         type: string
                       scopes:
                         description: Scope specifies optional requested permissions.
@@ -1052,6 +1054,7 @@ spec:
                         description: |-
                           TokenURL is the resource server's token endpoint
                           URL. This is a constant specific to each server.
+                        minLength: 1
                         type: string
                       type:
                         description: Type source type of secret
@@ -1072,13 +1075,14 @@ spec:
                         properties:
                           certPath:
                             description: Path to Certificate
+                            minLength: 1
                             type: string
                           name:
                             description: Name of basic auth k8s resource (when type
                               is secret or configmap)
                             type: string
                           namespace:
-                            description: Namsespace of certificate k8s resource (when
+                            description: Namespace of certificate k8s resource (when
                               type is secret or configmap)
                             type: string
                           privateKeyPath:
@@ -1106,13 +1110,14 @@ spec:
                         properties:
                           certPath:
                             description: Path to Certificate
+                            minLength: 1
                             type: string
                           name:
                             description: Name of basic auth k8s resource (when type
                               is secret or configmap)
                             type: string
                           namespace:
-                            description: Namsespace of certificate k8s resource (when
+                            description: Namespace of certificate k8s resource (when
                               type is secret or configmap)
                             type: string
                           privateKeyPath:
@@ -1138,14 +1143,10 @@ spec:
                   api_prefix:
                     description: |-
                       Use it in case you want to prefix the API path.
-                      Warning: This parameter does not work anymore since the version v0.51.0. The functionality has been broken when changing the plugin system and it will be fixed in a future version.
-                      Until then, please avoid using it and avoid using a reverse proxy with a path prefix to serve Perses.
-                      Issues raised about this:
-                      - https://github.com/rhobs/perses/issues/3166
-                      - https://github.com/rhobs/perses/issues/2579
-                      - https://github.com/rhobs/perses/issues/2589
-                      - https://github.com/rhobs/perses/issues/3384
-                      - https://github.com/rhobs/perses/issues/3396
+                      This can be useful if you are running Perses behind a reverse proxy.
+                      By default, the API is served with the path /api.
+                      With this config, it will be served with the path <api_prefix>/api
+                      Example: "/perses"
                     type: string
                   dashboard:
                     description: Dashboard contains the configuration for the dashboard
@@ -1705,6 +1706,16 @@ spec:
                             type: boolean
                           options:
                             items:
+                              description: |-
+                                DurationString is a string that represents a duration, such as "1h", "30m", "15s", etc.
+                                It is used to unmarshal a duration string from JSON or YAML, and validate that it is a valid duration string.
+
+                                Not converting the duration string into a time.Duration type allows us to avoid the issue of changing the initial input with an alias.
+                                This is something that happens when we use Duration type, because when the duration is unmarshalled then marshaled again, the input can be changed with an equivalent duration.
+                                For example "14d" will be changed to "2w".
+
+                                So, use DurationString instead of Duration when you want to preserve the original input string.
+                                If, for any reason, you need to convert the DurationString to a time.Duration, you can use the ParseDuration function.
                               format: duration
                               pattern: ^(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?$
                               type: string
@@ -1721,7 +1732,15 @@ spec:
                         description: |-
                           ArchivePath is the path to the directory containing the archived plugins
                           When Perses is starting, it will extract the content of the archive in the folder specified in the `folder` attribute.
+                          DEPRECATED: This attribute is deprecated and will be removed in a future version. It is still supported for backward compatibility, but it is recommended to use the `archive_paths` attribute instead.
                         type: string
+                      archive_paths:
+                        description: |-
+                          ArchivePaths is the list of paths to the directories containing the archived plugins. It allows to specify multiple directories for the archived plugins.
+                          When Perses is starting, it will extract any archive found in the folders specified in this attribute in the folder specified in the `path` attribute.
+                        items:
+                          type: string
+                        type: array
                       enable_dev:
                         description: DevEnvironment is the configuration to use when
                           developing a plugin
@@ -2067,6 +2086,8 @@ spec:
                                       properties:
                                         enabled:
                                           type: boolean
+                                        logout_redirect_param_name:
+                                          type: string
                                       required:
                                       - enabled
                                       type: object
@@ -2324,7 +2345,10 @@ spec:
                     type: object
                 type: object
               containerPort:
+                default: 8080
                 format: int32
+                maximum: 65535
+                minimum: 1
                 type: integer
               image:
                 description: Image specifies the container image that should be used
@@ -2698,14 +2722,15 @@ spec:
                     properties:
                       certPath:
                         description: Path to Certificate
+                        minLength: 1
                         type: string
                       name:
                         description: Name of basic auth k8s resource (when type is
                           secret or configmap)
                         type: string
                       namespace:
-                        description: Namsespace of certificate k8s resource (when
-                          type is secret or configmap)
+                        description: Namespace of certificate k8s resource (when type
+                          is secret or configmap)
                         type: string
                       privateKeyPath:
                         description: Path to Private key certificate
@@ -2732,14 +2757,15 @@ spec:
                     properties:
                       certPath:
                         description: Path to Certificate
+                        minLength: 1
                         type: string
                       name:
                         description: Name of basic auth k8s resource (when type is
                           secret or configmap)
                         type: string
                       namespace:
-                        description: Namsespace of certificate k8s resource (when
-                          type is secret or configmap)
+                        description: Namespace of certificate k8s resource (when type
+                          is secret or configmap)
                         type: string
                       privateKeyPath:
                         description: Path to Private key certificate
@@ -3816,11 +3842,12 @@ spec:
                           secret or configmap)
                         type: string
                       namespace:
-                        description: Namsespace of certificate k8s resource (when
-                          type is secret or configmap)
+                        description: Namespace of certificate k8s resource (when type
+                          is secret or configmap)
                         type: string
-                      password_path:
+                      passwordPath:
                         description: Path to password
+                        minLength: 1
                         type: string
                       type:
                         description: Type source type of secret
@@ -3831,9 +3858,10 @@ spec:
                         type: string
                       username:
                         description: Username for basic auth
+                        minLength: 1
                         type: string
                     required:
-                    - password_path
+                    - passwordPath
                     - type
                     - username
                     type: object
@@ -3874,8 +3902,8 @@ spec:
                           secret or configmap)
                         type: string
                       namespace:
-                        description: Namsespace of certificate k8s resource (when
-                          type is secret or configmap)
+                        description: Namespace of certificate k8s resource (when type
+                          is secret or configmap)
                         type: string
                       scopes:
                         description: Scope specifies optional requested permissions.
@@ -3886,6 +3914,7 @@ spec:
                         description: |-
                           TokenURL is the resource server's token endpoint
                           URL. This is a constant specific to each server.
+                        minLength: 1
                         type: string
                       type:
                         description: Type source type of secret
@@ -3906,13 +3935,14 @@ spec:
                         properties:
                           certPath:
                             description: Path to Certificate
+                            minLength: 1
                             type: string
                           name:
                             description: Name of basic auth k8s resource (when type
                               is secret or configmap)
                             type: string
                           namespace:
-                            description: Namsespace of certificate k8s resource (when
+                            description: Namespace of certificate k8s resource (when
                               type is secret or configmap)
                             type: string
                           privateKeyPath:
@@ -3940,13 +3970,14 @@ spec:
                         properties:
                           certPath:
                             description: Path to Certificate
+                            minLength: 1
                             type: string
                           name:
                             description: Name of basic auth k8s resource (when type
                               is secret or configmap)
                             type: string
                           namespace:
-                            description: Namsespace of certificate k8s resource (when
+                            description: Namespace of certificate k8s resource (when
                               type is secret or configmap)
                             type: string
                           privateKeyPath:
@@ -3968,18 +3999,15 @@ spec:
                     type: object
                 type: object
               config:
+                description: Perses server configuration
                 properties:
                   api_prefix:
                     description: |-
                       Use it in case you want to prefix the API path.
-                      Warning: This parameter does not work anymore since the version v0.51.0. The functionality has been broken when changing the plugin system and it will be fixed in a future version.
-                      Until then, please avoid using it and avoid using a reverse proxy with a path prefix to serve Perses.
-                      Issues raised about this:
-                      - https://github.com/rhobs/perses/issues/3166
-                      - https://github.com/rhobs/perses/issues/2579
-                      - https://github.com/rhobs/perses/issues/2589
-                      - https://github.com/rhobs/perses/issues/3384
-                      - https://github.com/rhobs/perses/issues/3396
+                      This can be useful if you are running Perses behind a reverse proxy.
+                      By default, the API is served with the path /api.
+                      With this config, it will be served with the path <api_prefix>/api
+                      Example: "/perses"
                     type: string
                   dashboard:
                     description: Dashboard contains the configuration for the dashboard
@@ -4539,6 +4567,16 @@ spec:
                             type: boolean
                           options:
                             items:
+                              description: |-
+                                DurationString is a string that represents a duration, such as "1h", "30m", "15s", etc.
+                                It is used to unmarshal a duration string from JSON or YAML, and validate that it is a valid duration string.
+
+                                Not converting the duration string into a time.Duration type allows us to avoid the issue of changing the initial input with an alias.
+                                This is something that happens when we use Duration type, because when the duration is unmarshalled then marshaled again, the input can be changed with an equivalent duration.
+                                For example "14d" will be changed to "2w".
+
+                                So, use DurationString instead of Duration when you want to preserve the original input string.
+                                If, for any reason, you need to convert the DurationString to a time.Duration, you can use the ParseDuration function.
                               format: duration
                               pattern: ^(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?$
                               type: string
@@ -4555,7 +4593,15 @@ spec:
                         description: |-
                           ArchivePath is the path to the directory containing the archived plugins
                           When Perses is starting, it will extract the content of the archive in the folder specified in the `folder` attribute.
+                          DEPRECATED: This attribute is deprecated and will be removed in a future version. It is still supported for backward compatibility, but it is recommended to use the `archive_paths` attribute instead.
                         type: string
+                      archive_paths:
+                        description: |-
+                          ArchivePaths is the list of paths to the directories containing the archived plugins. It allows to specify multiple directories for the archived plugins.
+                          When Perses is starting, it will extract any archive found in the folders specified in this attribute in the folder specified in the `path` attribute.
+                        items:
+                          type: string
+                        type: array
                       enable_dev:
                         description: DevEnvironment is the configuration to use when
                           developing a plugin
@@ -4901,6 +4947,8 @@ spec:
                                       properties:
                                         enabled:
                                           type: boolean
+                                        logout_redirect_param_name:
+                                          type: string
                                       required:
                                       - enabled
                                       type: object
@@ -5158,7 +5206,10 @@ spec:
                     type: object
                 type: object
               containerPort:
+                default: 8080
                 format: int32
+                maximum: 65535
+                minimum: 1
                 type: integer
               image:
                 description: Image specifies the container image that should be used
@@ -5317,21 +5368,41 @@ spec:
                     format: int32
                     type: integer
                 type: object
+              logLevel:
+                description: LogLevel defines the log level for Perses.
+                enum:
+                - panic
+                - fatal
+                - error
+                - warning
+                - info
+                - debug
+                - trace
+                type: string
+              logMethodTrace:
+                description: |-
+                  LogMethodTrace when true, includes the calling method as a field in the log.
+                  It can be useful to see immediately where the log comes from.
+                type: boolean
               metadata:
                 description: Metadata to add to deployed pods
                 properties:
                   annotations:
                     additionalProperties:
                       type: string
+                    description: Annotations are key/value pairs attached to pods
+                      for non-identifying metadata
                     type: object
                   labels:
                     additionalProperties:
                       type: string
+                    description: Labels are key/value pairs attached to pods
                     type: object
                 type: object
               nodeSelector:
                 additionalProperties:
                   type: string
+                description: NodeSelector constrains pods to nodes with matching labels
                 type: object
               podSecurityContext:
                 description: |-
@@ -5567,6 +5638,37 @@ spec:
                         type: string
                     type: object
                 type: object
+              provisioning:
+                description: Provisioning configuration for provisioning secrets
+                properties:
+                  secretRefs:
+                    description: SecretRefs is a list of references to Kubernetes
+                      secrets used for provisioning sensitive data.
+                    items:
+                      properties:
+                        key:
+                          description: The key of the secret to select from.  Must
+                            be a valid secret key.
+                          type: string
+                        name:
+                          default: ""
+                          description: |-
+                            Name of the referent.
+                            This field is effectively required, but due to backwards compatibility is
+                            allowed to be empty. Instances of this type with an empty value here are
+                            almost certainly wrong.
+                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          type: string
+                        optional:
+                          description: Specify whether the Secret or its key must
+                            be defined
+                          type: boolean
+                      required:
+                      - key
+                      type: object
+                      x-kubernetes-map-type: atomic
+                    type: array
+                type: object
               readinessProbe:
                 description: |-
                   Probe describes a health check to be performed against a container to determine whether it is
@@ -5723,6 +5825,66 @@ spec:
               replicas:
                 format: int32
                 type: integer
+              resources:
+                description: Resources defines the compute resources configured for
+                  the container.
+                properties:
+                  claims:
+                    description: |-
+                      Claims lists the names of resources, defined in spec.resourceClaims,
+                      that are used by this container.
+
+                      This field depends on the
+                      DynamicResourceAllocation feature gate.
+
+                      This field is immutable. It can only be set for containers.
+                    items:
+                      description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                      properties:
+                        name:
+                          description: |-
+                            Name must match the name of one entry in pod.spec.resourceClaims of
+                            the Pod where this field is used. It makes that resource available
+                            inside a container.
+                          type: string
+                        request:
+                          description: |-
+                            Request is the name chosen for a request in the referenced claim.
+                            If empty, everything from the claim is made available, otherwise
+                            only the result of this request.
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    type: array
+                    x-kubernetes-list-map-keys:
+                    - name
+                    x-kubernetes-list-type: map
+                  limits:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: |-
+                      Limits describes the maximum amount of compute resources allowed.
+                      More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                    type: object
+                  requests:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: |-
+                      Requests describes the minimum amount of compute resources required.
+                      If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+                      otherwise to an implementation-defined value. Requests cannot exceed Limits.
+                      More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                    type: object
+                type: object
               service:
                 description: service specifies the service configuration for the perses
                   instance
@@ -5730,8 +5892,11 @@ spec:
                   annotations:
                     additionalProperties:
                       type: string
+                    description: Annotations attached to the service for non-identifying
+                      metadata
                     type: object
                   name:
+                    description: Name of the Kubernetes service
                     type: string
                 type: object
               serviceAccountName:
@@ -5766,14 +5931,15 @@ spec:
                     properties:
                       certPath:
                         description: Path to Certificate
+                        minLength: 1
                         type: string
                       name:
                         description: Name of basic auth k8s resource (when type is
                           secret or configmap)
                         type: string
                       namespace:
-                        description: Namsespace of certificate k8s resource (when
-                          type is secret or configmap)
+                        description: Namespace of certificate k8s resource (when type
+                          is secret or configmap)
                         type: string
                       privateKeyPath:
                         description: Path to Private key certificate
@@ -5800,14 +5966,15 @@ spec:
                     properties:
                       certPath:
                         description: Path to Certificate
+                        minLength: 1
                         type: string
                       name:
                         description: Name of basic auth k8s resource (when type is
                           secret or configmap)
                         type: string
                       namespace:
-                        description: Namsespace of certificate k8s resource (when
-                          type is secret or configmap)
+                        description: Namespace of certificate k8s resource (when type
+                          is secret or configmap)
                         type: string
                       privateKeyPath:
                         description: Path to Private key certificate
@@ -5870,6 +6037,8 @@ spec:
             description: PersesStatus defines the observed state of Perses
             properties:
               conditions:
+                description: Conditions represent the latest observations of the Perses
+                  resource state
                 items:
                   description: Condition contains details for one aspect of the current
                     state of this API Resource.
@@ -5923,6 +6092,20 @@ spec:
                   - reason
                   - status
                   - type
+                  type: object
+                type: array
+              provisioning:
+                description: Provisioning secrets versions
+                items:
+                  description: SecretVersion represents a secret version
+                  properties:
+                    name:
+                      type: string
+                    version:
+                      type: string
+                  required:
+                  - name
+                  - version
                   type: object
                 type: array
             type: object

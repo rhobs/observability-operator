@@ -71,7 +71,23 @@ spec:
                         The data typed is available in Cue.
                       properties:
                         kind:
+                          description: Kind is the type of the plugin (e.g., Panel,
+                            Variable, Datasource, etc.).
                           type: string
+                        metadata:
+                          description: Metadata is an optional field that contains
+                            additional information such as version and registry of
+                            the plugin.
+                          properties:
+                            registry:
+                              description: 'Registry is optional. If not provided,
+                                it means the default registry: "perses.dev".'
+                              type: string
+                            version:
+                              description: Version is optional. If not provided, it
+                                means the latest version available in the Perses instance.
+                              type: string
+                          type: object
                         spec:
                           x-kubernetes-preserve-unknown-fields: true
                       required:
@@ -109,6 +125,25 @@ spec:
                   - spec
                   type: object
                 type: array
+              links:
+                description: Links is an optional list of links to display at the
+                  dashboard level
+                items:
+                  properties:
+                    name:
+                      type: string
+                    renderVariables:
+                      type: boolean
+                    targetBlank:
+                      type: boolean
+                    tooltip:
+                      type: string
+                    url:
+                      type: string
+                  required:
+                  - url
+                  type: object
+                type: array
               panels:
                 additionalProperties:
                   properties:
@@ -143,7 +178,24 @@ spec:
                         plugin:
                           properties:
                             kind:
+                              description: Kind is the type of the plugin (e.g., Panel,
+                                Variable, Datasource, etc.).
                               type: string
+                            metadata:
+                              description: Metadata is an optional field that contains
+                                additional information such as version and registry
+                                of the plugin.
+                              properties:
+                                registry:
+                                  description: 'Registry is optional. If not provided,
+                                    it means the default registry: "perses.dev".'
+                                  type: string
+                                version:
+                                  description: Version is optional. If not provided,
+                                    it means the latest version available in the Perses
+                                    instance.
+                                  type: string
+                              type: object
                             spec:
                               x-kubernetes-preserve-unknown-fields: true
                           required:
@@ -160,7 +212,25 @@ spec:
                                   plugin:
                                     properties:
                                       kind:
+                                        description: Kind is the type of the plugin
+                                          (e.g., Panel, Variable, Datasource, etc.).
                                         type: string
+                                      metadata:
+                                        description: Metadata is an optional field
+                                          that contains additional information such
+                                          as version and registry of the plugin.
+                                        properties:
+                                          registry:
+                                            description: 'Registry is optional. If
+                                              not provided, it means the default registry:
+                                              "perses.dev".'
+                                            type: string
+                                          version:
+                                            description: Version is optional. If not
+                                              provided, it means the latest version
+                                              available in the Perses instance.
+                                            type: string
+                                        type: object
                                       spec:
                                         x-kubernetes-preserve-unknown-fields: true
                                     required:
@@ -296,8 +366,10 @@ spec:
           metadata:
             type: object
           spec:
+            description: PersesDashboardSpec defines the desired state of PersesDashboard
             properties:
               config:
+                description: Perses dashboard configuration
                 properties:
                   datasources:
                     additionalProperties:
@@ -317,7 +389,24 @@ spec:
                             The data typed is available in Cue.
                           properties:
                             kind:
+                              description: Kind is the type of the plugin (e.g., Panel,
+                                Variable, Datasource, etc.).
                               type: string
+                            metadata:
+                              description: Metadata is an optional field that contains
+                                additional information such as version and registry
+                                of the plugin.
+                              properties:
+                                registry:
+                                  description: 'Registry is optional. If not provided,
+                                    it means the default registry: "perses.dev".'
+                                  type: string
+                                version:
+                                  description: Version is optional. If not provided,
+                                    it means the latest version available in the Perses
+                                    instance.
+                                  type: string
+                              type: object
                             spec:
                               x-kubernetes-preserve-unknown-fields: true
                           required:
@@ -355,6 +444,25 @@ spec:
                       - spec
                       type: object
                     type: array
+                  links:
+                    description: Links is an optional list of links to display at
+                      the dashboard level
+                    items:
+                      properties:
+                        name:
+                          type: string
+                        renderVariables:
+                          type: boolean
+                        targetBlank:
+                          type: boolean
+                        tooltip:
+                          type: string
+                        url:
+                          type: string
+                      required:
+                      - url
+                      type: object
+                    type: array
                   panels:
                     additionalProperties:
                       properties:
@@ -389,7 +497,24 @@ spec:
                             plugin:
                               properties:
                                 kind:
+                                  description: Kind is the type of the plugin (e.g.,
+                                    Panel, Variable, Datasource, etc.).
                                   type: string
+                                metadata:
+                                  description: Metadata is an optional field that
+                                    contains additional information such as version
+                                    and registry of the plugin.
+                                  properties:
+                                    registry:
+                                      description: 'Registry is optional. If not provided,
+                                        it means the default registry: "perses.dev".'
+                                      type: string
+                                    version:
+                                      description: Version is optional. If not provided,
+                                        it means the latest version available in the
+                                        Perses instance.
+                                      type: string
+                                  type: object
                                 spec:
                                   x-kubernetes-preserve-unknown-fields: true
                               required:
@@ -406,7 +531,28 @@ spec:
                                       plugin:
                                         properties:
                                           kind:
+                                            description: Kind is the type of the plugin
+                                              (e.g., Panel, Variable, Datasource,
+                                              etc.).
                                             type: string
+                                          metadata:
+                                            description: Metadata is an optional field
+                                              that contains additional information
+                                              such as version and registry of the
+                                              plugin.
+                                            properties:
+                                              registry:
+                                                description: 'Registry is optional.
+                                                  If not provided, it means the default
+                                                  registry: "perses.dev".'
+                                                type: string
+                                              version:
+                                                description: Version is optional.
+                                                  If not provided, it means the latest
+                                                  version available in the Perses
+                                                  instance.
+                                                type: string
+                                            type: object
                                           spec:
                                             x-kubernetes-preserve-unknown-fields: true
                                         required:
@@ -455,10 +601,8 @@ spec:
                 - panels
                 type: object
               instanceSelector:
-                description: |-
-                  A label selector is a label query over a set of resources. The result of matchLabels and
-                  matchExpressions are ANDed. An empty label selector matches all objects. A null
-                  label selector matches no objects.
+                description: InstanceSelector selects Perses instances where this
+                  dashboard will be created
                 properties:
                   matchExpressions:
                     description: matchExpressions is a list of label selector requirements.
@@ -510,6 +654,8 @@ spec:
             description: PersesDashboardStatus defines the observed state of PersesDashboard
             properties:
               conditions:
+                description: Conditions represent the latest observations of the PersesDashboard
+                  resource state
                 items:
                   description: Condition contains details for one aspect of the current
                     state of this API Resource.
