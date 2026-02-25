@@ -16,7 +16,7 @@ require (
 	github.com/perses/plugins/table v0.11.0-rc.0
 	github.com/perses/plugins/timeserieschart v0.12.0-rc.0
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.87.0
+	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.89.0
 	github.com/prometheus/common v0.67.5
 	github.com/rhobs/obo-prometheus-operator v0.87.0-rhobs1
 	github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.87.0-rhobs1
