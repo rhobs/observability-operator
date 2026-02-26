@@ -1,11 +1,20 @@
 package uiplugin
 
 import (
+	"encoding/json"
+
+	"github.com/perses/perses/go-sdk/common"
+	"github.com/perses/perses/go-sdk/dashboard"
+	"github.com/perses/perses/go-sdk/panel"
+	panelgroup "github.com/perses/perses/go-sdk/panel-group"
+	listvariable "github.com/perses/perses/go-sdk/variable/list-variable"
+	"github.com/perses/perses/pkg/model/api/v1/variable"
+	"github.com/perses/plugins/prometheus/sdk/go/query"
+	labelvalues "github.com/perses/plugins/prometheus/sdk/go/variable/label-values"
+	timeseries "github.com/perses/plugins/timeserieschart/sdk/go"
 	persesv1alpha2 "github.com/rhobs/perses-operator/api/v1alpha2"
 	persesv1 "github.com/rhobs/perses/pkg/model/api/v1"
-	"github.com/rhobs/perses/pkg/model/api/v1/common"
-	"github.com/rhobs/perses/pkg/model/api/v1/dashboard"
-	"github.com/rhobs/perses/pkg/model/api/v1/variable"
+	persescommon "github.com/rhobs/perses/pkg/model/api/v1/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 )
@@ -26,11 +35,11 @@ func newAcceleratorsDatasource(namespace string) *persesv1alpha2.PersesDatasourc
 		Spec: persesv1alpha2.DatasourceSpec{
 			Config: persesv1alpha2.Datasource{
 				DatasourceSpec: persesv1.DatasourceSpec{
-					Display: &common.Display{
-						Name: "acceelerators datasource",
+					Display: &persescommon.Display{
+						Name: "Accelerators Datasource",
 					},
 					Default: true,
-					Plugin: common.Plugin{
+					Plugin: persescommon.Plugin{
 						Kind: "PrometheusDatasource",
 						Spec: map[string]interface{}{
 							"proxy": map[string]interface{}{
@@ -59,7 +68,81 @@ func newAcceleratorsDatasource(namespace string) *persesv1alpha2.PersesDatasourc
 	}
 }
 
-func newAcceleratorsDashboard(namespace string) *persesv1alpha2.PersesDashboard {
+func acceleratorPanel(panelName, targetMetric string) panelgroup.Option {
+	return panelgroup.AddPanel(panelName,
+		timeseries.Chart(
+			timeseries.WithLegend(timeseries.Legend{
+				Mode:     timeseries.ListMode,
+				Position: timeseries.BottomPosition,
+				Values:   []common.Calculation{},
+			}),
+			timeseries.WithVisual(timeseries.Visual{
+				AreaOpacity:  1,
+				ConnectNulls: false,
+				Display:      timeseries.LineDisplay,
+				LineWidth:    0.25,
+				Stack:        timeseries.AllStack,
+			}),
+			timeseries.WithYAxis(timeseries.YAxis{
+				Format: &common.Format{
+					Unit: ptr.To(string(common.DecimalUnit)),
+				},
+				Min: 0,
+			}),
+		),
+		panel.AddQuery(
+			query.PromQL(targetMetric,
+				query.SeriesNameFormat("{{vendor_id}}"),
+			),
+		),
+	)
+}
+
+func buildAcceleratorsDashboard() (dashboard.Builder, error) {
+	return dashboard.New("accelerators-dashboard",
+		dashboard.Name("Accelerators common metrics"),
+		dashboard.AddVariable("cluster",
+			listvariable.List(
+				listvariable.DisplayName("Cluster"),
+				listvariable.Hidden(false),
+				listvariable.AllowAllValue(false),
+				listvariable.AllowMultiple(false),
+				listvariable.SortingBy(variable.SortAlphabeticalAsc),
+				labelvalues.PrometheusLabelValues("cluster",
+					labelvalues.Matchers("up{job=\"kubelet\", metrics_path=\"/metrics/cadvisor\"}"),
+				),
+			),
+		),
+		dashboard.AddPanelGroup("Accelerators",
+			panelgroup.PanelsPerLine(2),
+			acceleratorPanel("GPU Utilization", "accelerator_gpu_utilization"),
+			acceleratorPanel("Memory Used Bytes", "accelerator_memory_used_bytes"),
+			acceleratorPanel("Memory Total Bytes", "accelerator_memory_total_bytes"),
+			acceleratorPanel("Power Usage (Watts)", "accelerator_power_usage_watts"),
+			acceleratorPanel("Temperature (Celsius)", "accelerator_temperature_celsius"),
+			acceleratorPanel("SM Clock (Hertz)", "accelerator_sm_clock_hertz"),
+			acceleratorPanel("Memory Clock (Hertz)", "accelerator_memory_clock_hertz"),
+		),
+	)
+}
+
+func newAcceleratorsDashboard(namespace string) (*persesv1alpha2.PersesDashboard, error) {
+	builder, err := buildAcceleratorsDashboard()
+	if err != nil {
+		return nil, err
+	}
+
+	// Workaround because of type conflict between Perses plugin types and Perses fork in rhobs org
+	rhobsDashboard := persesv1.Dashboard{}
+	bytes, err := json.Marshal(builder.Dashboard)
+	if err != nil {
+		return nil, err
+	}
+	err = rhobsDashboard.UnmarshalJSON(bytes)
+	if err != nil {
+		return nil, err
+	}
+
 	return &persesv1alpha2.PersesDashboard{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: persesv1alpha2.GroupVersion.String(),
@@ -74,131 +157,8 @@ func newAcceleratorsDashboard(namespace string) *persesv1alpha2.PersesDashboard 
 		},
 		Spec: persesv1alpha2.PersesDashboardSpec{
 			Config: persesv1alpha2.Dashboard{
-				DashboardSpec: persesv1.DashboardSpec{
-					Display: &common.Display{
-						Name: "Accelerators common metrics",
-					},
-					Variables: []dashboard.Variable{
-						{
-							Kind: variable.KindList,
-							Spec: &dashboard.ListVariableSpec{
-								Name: "cluster",
-								ListSpec: variable.ListSpec{
-									Display: &variable.Display{
-										Hidden: false,
-									},
-									AllowAllValue: false,
-									AllowMultiple: false,
-									Sort:          ptr.To(variable.SortAlphabeticalAsc),
-									Plugin: common.Plugin{
-										Kind: "PrometheusLabelValuesVariable",
-										Spec: map[string]interface{}{
-											"labelName": "cluster",
-											"matchers": []interface{}{
-												"up{job=\"kubelet\", metrics_path=\"/metrics/cadvisor\"}",
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-					Panels: map[string]*persesv1.Panel{
-						"0_0": getPanel("GPU Utilization", "accelerator_gpu_utilization"),
-						"0_1": getPanel("Memory Used Bytes", "accelerator_memory_used_bytes"),
-						"0_2": getPanel("Memory Total Bytes", "accelerator_memory_total_bytes"),
-						"0_3": getPanel("Power Usage (Watts)", "accelerator_power_usage_watts"),
-						"0_4": getPanel("Temperature (Celsius)", "accelerator_temperature_celsius"),
-						"0_5": getPanel("SM Clock (Hertz)", "accelerator_sm_clock_hertz"),
-						"0_6": getPanel("Memory Clock (Hertz)", "accelerator_memory_clock_hertz"),
-					},
-					Layouts: []dashboard.Layout{
-						{
-							Kind: dashboard.KindGridLayout,
-							Spec: dashboard.GridLayoutSpec{
-								Display: &dashboard.GridLayoutDisplay{
-									Title: "Accelerators",
-									Collapse: &dashboard.GridLayoutCollapse{
-										Open: true,
-									},
-								},
-								Items: []dashboard.GridItem{
-									getGridItem(0, 0, "#/spec/panels/0_0"),
-									getGridItem(12, 0, "#/spec/panels/0_1"),
-									getGridItem(0, 7, "#/spec/panels/0_2"),
-									getGridItem(12, 7, "#/spec/panels/0_3"),
-									getGridItem(0, 14, "#/spec/panels/0_4"),
-									getGridItem(12, 14, "#/spec/panels/0_5"),
-									getGridItem(0, 21, "#/spec/panels/0_6"),
-								},
-							},
-						},
-					},
-				},
+				DashboardSpec: rhobsDashboard.Spec,
 			},
 		},
-	}
-}
-
-func getPanel(panelName, targetMetric string) *persesv1.Panel {
-	return &persesv1.Panel{
-		Kind: "Panel",
-		Spec: persesv1.PanelSpec{
-			Display: &persesv1.PanelDisplay{
-				Name: panelName,
-			},
-			Plugin: common.Plugin{
-				Kind: "TimeSeriesChart",
-				Spec: map[string]interface{}{
-					"legend": map[string]interface{}{
-						"mode":     "list",
-						"position": "bottom",
-						"values":   []interface{}{}, // Empty array
-					},
-					"visual": map[string]interface{}{
-						"areaOpacity":  1,
-						"connectNulls": false,
-						"display":      "line",
-						"lineWidth":    0.25,
-						"stack":        "all",
-					},
-					"yAxis": map[string]interface{}{
-						"format": map[string]interface{}{
-							"unit": "decimal",
-						},
-						"min": 0,
-					},
-				},
-			},
-			Queries: []persesv1.Query{
-				{
-					Kind: "TimeSeriesQuery",
-					Spec: persesv1.QuerySpec{
-						Plugin: common.Plugin{
-							Kind: "PrometheusTimeSeriesQuery",
-							Spec: map[string]interface{}{
-								"datasource": map[string]interface{}{
-									"kind": "PrometheusDatasource",
-								},
-								"query":            targetMetric,
-								"seriesNameFormat": "{{vendor_id}}",
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
-func getGridItem(xPos, yPos int, ref string) dashboard.GridItem {
-	return dashboard.GridItem{
-		X:      xPos,
-		Y:      yPos,
-		Width:  12,
-		Height: 7,
-		Content: &common.JSONRef{
-			Ref: ref,
-		},
-	}
+	}, nil
 }
