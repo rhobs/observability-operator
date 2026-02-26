@@ -156,8 +156,14 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 			reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, persesServiceAccountName, "perses-cr", persesServiceAccountName+"-perses-cr"), plugin, persesEnabled),
 			reconciler.NewOptionalUpdater(newPerses(namespace, pluginInfo.PersesImage), plugin, persesEnabled),
 			reconciler.NewOptionalUpdater(newAcceleratorsDatasource(namespace), plugin, persesEnabled),
-			reconciler.NewOptionalUpdater(newAcceleratorsDashboard(namespace), plugin, persesEnabled),
 		)
+
+		acceleratorsDashboard, err := newAcceleratorsDashboard(namespace)
+		if err != nil {
+			logger.Error(err, "Cannot build Accelerators dashboard")
+		} else {
+			components = append(components, reconciler.NewOptionalUpdater(acceleratorsDashboard, plugin, persesEnabled))
+		}
 
 		apmDashboard, err := newAPMDashboard(namespace)
 		if err != nil {
