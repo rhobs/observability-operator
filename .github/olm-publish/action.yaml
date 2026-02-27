@@ -38,7 +38,15 @@ runs:
     # branch further down in this action. In some make targets we use main's sha
     # and by creating a branch here we can just assume local main is the same as
     # remote main.
-    run: git checkout -b olm-publish-action-scratch
+    run: |
+      # Discard any uncommitted changes from previous steps (e.g., standard-version)
+      git reset --hard HEAD
+      git clean -fd
+      git checkout -b olm-publish-action-scratch
+
+  - name: Fetch olm-catalog branch
+    shell: bash
+    run: git fetch origin olm-catalog
 
   - name: Git merge olm-catalog branch
     shell: bash
