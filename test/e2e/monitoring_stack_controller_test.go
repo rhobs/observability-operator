@@ -21,6 +21,7 @@ import (
 	policyv1 "k8s.io/api/policy/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -31,7 +32,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
-	monitoringstack "github.com/rhobs/observability-operator/pkg/controllers/monitoring/monitoring-stack"
 	"github.com/rhobs/observability-operator/pkg/controllers/util"
 	"github.com/rhobs/observability-operator/test/e2e/framework"
 )
@@ -273,26 +273,8 @@ func reconcileStack(t *testing.T) {
 	assert.Equal(t, expected.LogLevel, generated.Spec.LogLevel)
 	assert.Equal(t, expected.Retention, generated.Spec.Retention)
 
-	availableMs := f.GetStackWhenAvailable(t, ms.Name, ms.Namespace)
-	availableC := getConditionByType(availableMs.Status.Conditions, stack.AvailableCondition)
-	assertCondition(t, availableC, monitoringstack.AvailableReason, stack.AvailableCondition, availableMs)
-	reconciledC := getConditionByType(availableMs.Status.Conditions, stack.ReconciledCondition)
-	assertCondition(t, reconciledC, monitoringstack.ReconciledReason, stack.ReconciledCondition, availableMs)
-}
-
-func assertCondition(t *testing.T, c *stack.Condition, reason string, ctype stack.ConditionType, ms stack.MonitoringStack) {
-	assert.Check(t, c != nil, "failed to find %s status condition for %s monitoring stack", ctype, ms.Name)
-	assert.Check(t, c.Status == stack.ConditionTrue, "unexpected %s condition status", ctype)
-	assert.Check(t, c.Reason == reason, "unexpected %s condition reason", ctype)
-}
-
-func getConditionByType(conditions []stack.Condition, ctype stack.ConditionType) *stack.Condition {
-	for _, c := range conditions {
-		if c.Type == ctype {
-			return &c
-		}
-	}
-	return nil
+	_, err = f.GetMonitoringStackWhenReady(ms.Name, ms.Namespace)
+	assert.NilError(t, err)
 }
 
 func reconcileRevertsManualChanges(t *testing.T) {
@@ -547,21 +529,24 @@ func assertAlertmanagerNotDeployed(t *testing.T) {
 	if err := f.K8sClient.Create(context.Background(), ms); err != nil {
 		t.Fatal(err)
 	}
-	_ = f.GetStackWhenAvailable(t, ms.Name, ms.Namespace)
+	f.AssertMonitoringStackReady(ms.Name, ms.Namespace)(t)
 	f.AssertAlertmanagerAbsent(t, ms.Name, ms.Namespace)
 }
 
 func assertAlertmanagerDeployedAndRemoved(t *testing.T) {
 	ms := newMonitoringStack(t, "alertmanager-deployed-and-removed")
-	if err := f.K8sClient.Create(context.Background(), ms); err != nil {
-		t.Fatal(err)
-	}
-	updatedMS := f.GetStackWhenAvailable(t, ms.Name, ms.Namespace)
+	err := f.K8sClient.Create(context.Background(), ms)
+	assert.NilError(t, err)
+
+	updatedMS, err := f.GetMonitoringStackWhenReady(ms.Name, ms.Namespace)
+	assert.NilError(t, err)
+
 	var am monv1.Alertmanager
 	key := types.NamespacedName{Name: ms.Name, Namespace: ms.Namespace}
-	err := f.K8sClient.Get(context.Background(), key, &am)
+	err = f.K8sClient.Get(context.Background(), key, &am)
 	assert.NilError(t, err)
-	err = f.UpdateWithRetry(t, &updatedMS, framework.SetAlertmanagerDisabled(true))
+
+	err = f.UpdateWithRetry(t, updatedMS, framework.SetAlertmanagerDisabled(true))
 	assert.NilError(t, err, "failed to update monitoring stack to disable alertmanager")
 
 	f.AssertAlertmanagerAbsent(t, updatedMS.Name, updatedMS.Namespace)
@@ -810,7 +795,13 @@ func assertPrometheusManagedFields(t *testing.T) {
 		Replicas:       &numOfRep,
 		ScrapeInterval: &scrapeInterval,
 		PersistentVolumeClaim: &corev1.PersistentVolumeClaimSpec{
-			VolumeName: "prom-store",
+			// We need to define the storage size request for the pods to come
+			// up.
+			Resources: corev1.VolumeResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceStorage: resource.MustParse("1Gi"),
+				},
+			},
 		},
 		RemoteWrite: []monv1.RemoteWriteSpec{
 			{
@@ -845,6 +836,8 @@ func assertPrometheusManagedFields(t *testing.T) {
 
 	err = f.K8sClient.Create(context.Background(), ms)
 	assert.NilError(t, err, "failed to create a monitoring stack")
+
+	f.AssertMonitoringStackReady(ms.Name, ms.Namespace, framework.WithTimeout(2*time.Minute))(t)
 
 	prom := monv1.Prometheus{}
 	f.GetResourceWithRetry(t, ms.Name, ms.Namespace, &prom)
@@ -1081,8 +1074,7 @@ const oboManagedFieldsJson = `
     "f:volumeClaimTemplate": {
       "f:metadata": {},
       "f:spec": {
-        "f:resources": {},
-        "f:volumeName": {}
+        "f:resources":  {"f:requests": {"f:storage": {}}}
       },
       "f:status": {}
     }
