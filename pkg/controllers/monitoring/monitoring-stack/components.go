@@ -204,6 +204,7 @@ func newPrometheus(
 				ExternalLabels:            config.ExternalLabels,
 				EnableRemoteWriteReceiver: config.EnableRemoteWriteReceiver,
 				EnableOTLPReceiver:        config.EnableOtlpHttpReceiver,
+				EnableFeatures:            toEnableFeatures(config.EnableFeatures),
 			},
 			Retention:             ms.Spec.Retention,
 			RetentionSize:         ms.Spec.RetentionSize,
@@ -567,4 +568,16 @@ func podLabels(component string, msName string) map[string]string {
 		"app.kubernetes.io/component": component,
 		"app.kubernetes.io/part-of":   msName,
 	}
+}
+
+// toEnableFeatures converts a slice of strings to a slice of EnableFeature.
+func toEnableFeatures(features []string) []monv1.EnableFeature {
+	if len(features) == 0 {
+		return nil
+	}
+	result := make([]monv1.EnableFeature, len(features))
+	for i, f := range features {
+		result[i] = monv1.EnableFeature(f)
+	}
+	return result
 }
