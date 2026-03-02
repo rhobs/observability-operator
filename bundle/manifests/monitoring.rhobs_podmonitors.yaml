@@ -4,7 +4,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.19.0
     observability.openshift.io/api-support: TechPreview
-    operator.prometheus.io/version: 0.87.0-rhobs1
+    operator.prometheus.io/version: 0.89.0-rhobs1
   creationTimestamp: null
   labels:
     app.kubernetes.io/part-of: observability-operator
@@ -1187,6 +1187,11 @@ spec:
                   It requires Prometheus >= v2.45.0.
 
                   Notice: `scrapeClassicHistograms` corresponds to the `always_scrape_classic_histograms` field in the Prometheus configuration.
+                type: boolean
+              scrapeNativeHistograms:
+                description: |-
+                  scrapeNativeHistograms defines whether to enable scraping of native histograms.
+                  It requires Prometheus >= v3.8.0.
                 type: boolean
               scrapeProtocols:
                 description: |-

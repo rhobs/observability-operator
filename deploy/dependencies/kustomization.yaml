@@ -3,25 +3,25 @@ kind: Kustomization
 
 
 resources:
-- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.87.0-rhobs1/example/prometheus-operator-crd/monitoring.rhobs_alertmanagers.yaml
-- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.87.0-rhobs1/example/prometheus-operator-crd/monitoring.rhobs_podmonitors.yaml
-- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.87.0-rhobs1/example/prometheus-operator-crd/monitoring.rhobs_probes.yaml
-- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.87.0-rhobs1/example/prometheus-operator-crd/monitoring.rhobs_prometheuses.yaml
-- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.87.0-rhobs1/example/prometheus-operator-crd/monitoring.rhobs_prometheusrules.yaml
-- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.87.0-rhobs1/example/prometheus-operator-crd/monitoring.rhobs_servicemonitors.yaml
-- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.87.0-rhobs1/example/prometheus-operator-crd/monitoring.rhobs_thanosrulers.yaml
-- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.87.0-rhobs1/example/prometheus-operator-crd/monitoring.rhobs_prometheusagents.yaml
-- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.87.0-rhobs1/example/prometheus-operator-crd/monitoring.rhobs_alertmanagerconfigs.yaml
-- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.87.0-rhobs1/example/prometheus-operator-crd/monitoring.rhobs_scrapeconfigs.yaml
-- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.87.0-rhobs1/example/rbac/prometheus-operator/prometheus-operator-deployment.yaml
-- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.87.0-rhobs1/example/rbac/prometheus-operator/prometheus-operator-cluster-role-binding.yaml
-- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.87.0-rhobs1/example/rbac/prometheus-operator/prometheus-operator-cluster-role.yaml
-- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.87.0-rhobs1/example/rbac/prometheus-operator/prometheus-operator-service-account.yaml
-- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.87.0-rhobs1/example/rbac/prometheus-operator/prometheus-operator-service.yaml
-- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.87.0-rhobs1/example/admission-webhook/deployment.yaml
-- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.87.0-rhobs1/example/admission-webhook/service-account.yaml
-- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.87.0-rhobs1/example/admission-webhook/service.yaml
-- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.87.0-rhobs1/example/admission-webhook/pod-disruption-budget.yaml
+- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.89.0-rhobs1/example/prometheus-operator-crd/monitoring.rhobs_alertmanagers.yaml
+- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.89.0-rhobs1/example/prometheus-operator-crd/monitoring.rhobs_podmonitors.yaml
+- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.89.0-rhobs1/example/prometheus-operator-crd/monitoring.rhobs_probes.yaml
+- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.89.0-rhobs1/example/prometheus-operator-crd/monitoring.rhobs_prometheuses.yaml
+- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.89.0-rhobs1/example/prometheus-operator-crd/monitoring.rhobs_prometheusrules.yaml
+- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.89.0-rhobs1/example/prometheus-operator-crd/monitoring.rhobs_servicemonitors.yaml
+- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.89.0-rhobs1/example/prometheus-operator-crd/monitoring.rhobs_thanosrulers.yaml
+- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.89.0-rhobs1/example/prometheus-operator-crd/monitoring.rhobs_prometheusagents.yaml
+- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.89.0-rhobs1/example/prometheus-operator-crd/monitoring.rhobs_alertmanagerconfigs.yaml
+- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.89.0-rhobs1/example/prometheus-operator-crd/monitoring.rhobs_scrapeconfigs.yaml
+- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.89.0-rhobs1/example/rbac/prometheus-operator/prometheus-operator-deployment.yaml
+- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.89.0-rhobs1/example/rbac/prometheus-operator/prometheus-operator-cluster-role-binding.yaml
+- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.89.0-rhobs1/example/rbac/prometheus-operator/prometheus-operator-cluster-role.yaml
+- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.89.0-rhobs1/example/rbac/prometheus-operator/prometheus-operator-service-account.yaml
+- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.89.0-rhobs1/example/rbac/prometheus-operator/prometheus-operator-service.yaml
+- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.89.0-rhobs1/example/admission-webhook/deployment.yaml
+- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.89.0-rhobs1/example/admission-webhook/service-account.yaml
+- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.89.0-rhobs1/example/admission-webhook/service.yaml
+- https://raw.githubusercontent.com/rhobs/obo-prometheus-operator/v0.89.0-rhobs1/example/admission-webhook/pod-disruption-budget.yaml
 # NOTE: a service although automatically created by OLM for webhooks still
 # requires admission-webhook/service as the port generated by OLM uses 443
 # but assumes targetPort to be 443 as opposed to "https" port of webhook - 8443
@@ -32,11 +32,11 @@ resources:
 
 images:
 - name: quay.io/rhobs/obo-prometheus-operator
-  newTag: v0.87.0-rhobs1
+  newTag: v0.89.0-rhobs1
 - name: quay.io/rhobs/obo-prometheus-config-reloader
-  newTag: v0.87.0-rhobs1
+  newTag: v0.89.0-rhobs1
 - name: quay.io/rhobs/obo-admission-webhook
-  newTag: v0.87.0-rhobs1
+  newTag: v0.89.0-rhobs1
 
 
 namespace: operators
@@ -78,7 +78,7 @@ patches:
             - name: prometheus-operator
               image: quay.io/rhobs/obo-prometheus-operator
               args:
-                - --prometheus-config-reloader=quay.io/rhobs/obo-prometheus-config-reloader:v0.87.0-rhobs1
+                - --prometheus-config-reloader=quay.io/rhobs/obo-prometheus-config-reloader:v0.89.0-rhobs1
                 - --prometheus-instance-selector=app.kubernetes.io/managed-by=observability-operator
                 - --alertmanager-instance-selector=app.kubernetes.io/managed-by=observability-operator
                 - --thanos-ruler-instance-selector=app.kubernetes.io/managed-by=observability-operator
