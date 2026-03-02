@@ -5,7 +5,7 @@ metadata:
   labels:
     app.kubernetes.io/name: prometheus-operator-admission-webhook
     app.kubernetes.io/part-of: observability-operator
-    app.kubernetes.io/version: 0.87.0-rhobs1
+    app.kubernetes.io/version: 0.89.0-rhobs1
   name: obo-prometheus-operator-admission-webhook
 spec:
   ports:

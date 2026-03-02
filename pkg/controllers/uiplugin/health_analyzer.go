@@ -224,13 +224,19 @@ func newHealthAnalyzerServiceMonitor(namespace string) *monv1.ServiceMonitor {
 					Interval: "30s",
 					Port:     "metrics",
 					Scheme:   ptr.To(monv1.Scheme("https")),
-					TLSConfig: &monv1.TLSConfig{
-						SafeTLSConfig: monv1.SafeTLSConfig{
-							ServerName: ptr.To(name + "." + namespace + ".svc"),
+					HTTPConfigWithProxyAndTLSFiles: monv1.HTTPConfigWithProxyAndTLSFiles{
+						HTTPConfigWithTLSFiles: monv1.HTTPConfigWithTLSFiles{
+							TLSConfig: &monv1.TLSConfig{
+								TLSFilesConfig: monv1.TLSFilesConfig{
+									CAFile:   "/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt",
+									CertFile: "/etc/prometheus/secrets/metrics-client-certs/tls.crt",
+									KeyFile:  "/etc/prometheus/secrets/metrics-client-certs/tls.key",
+								},
+								SafeTLSConfig: monv1.SafeTLSConfig{
+									ServerName: ptr.To(name + "." + namespace + ".svc"),
+								},
+							},
 						},
-						CAFile:   "/etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt",
-						CertFile: "/etc/prometheus/secrets/metrics-client-certs/tls.crt",
-						KeyFile:  "/etc/prometheus/secrets/metrics-client-certs/tls.key",
 					},
 				},
 			},

@@ -267,7 +267,9 @@ func newPrometheus(
 				SafeTLSConfig: monv1.SafeTLSConfig{
 					ServerName: ptr.To(ms.Name + "-alertmanager"),
 				},
-				CAFile: filepath.Join(prometheusSecretsMountPoint, caSecret.Name, caSecret.Key),
+				TLSFilesConfig: monv1.TLSFilesConfig{
+					CAFile: filepath.Join(prometheusSecretsMountPoint, caSecret.Name, caSecret.Key),
+				},
 			}
 		}
 	}

@@ -32,10 +32,6 @@ runs:
       username: ${{ inputs.quay_login }}
       password: ${{ inputs.quay_token }}
 
-  - uses: actions/checkout@v3
-    with:
-      fetch-depth: 0
-
   - name: Create new integration branch
     shell: bash
     # Creating a branch here in order to avoid commiting to our local main
