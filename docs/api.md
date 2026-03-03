@@ -5727,7 +5727,7 @@ It should always be reconstructable from the state of the cluster and/or outside
 
 
 
-
+Condition contains details for one aspect of the current state of this API Resource.
 
 <table>
     <thead>
@@ -5771,17 +5771,16 @@ This field may not be empty.<br/>
         <td><b>status</b></td>
         <td>enum</td>
         <td>
-          status of the condition<br/>
+          status of the condition, one of True, False, Unknown.<br/>
           <br/>
-            <i>Enum</i>: True, False, Unknown, Degraded<br/>
+            <i>Enum</i>: True, False, Unknown<br/>
         </td>
         <td>true</td>
       </tr><tr>
         <td><b>type</b></td>
         <td>string</td>
         <td>
-          type of condition in CamelCase or in foo.example.com/CamelCase.
-The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)<br/>
+          type of condition in CamelCase or in foo.example.com/CamelCase.<br/>
         </td>
         <td>true</td>
       </tr><tr>
