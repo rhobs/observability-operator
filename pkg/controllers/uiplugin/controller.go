@@ -15,6 +15,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metaerrors "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -305,57 +306,55 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 func (rm resourceManager) updateStatus(ctx context.Context, req ctrl.Request, pl *uiv1alpha1.UIPlugin, recError error) ctrl.Result {
 	logger := rm.logger.WithValues("plugin", req.NamespacedName)
 
+	var changed bool
+
 	if recError != nil {
-		pl.Status.Conditions = []uiv1alpha1.Condition{
-			{
-				Type:               uiv1alpha1.DegradedCondition,
-				Status:             uiv1alpha1.ConditionTrue,
-				Reason:             FailedToReconcileReason,
-				Message:            recError.Error(),
-				ObservedGeneration: pl.Generation,
-				LastTransitionTime: metav1.Now(),
-			},
-			{
-				Type:               uiv1alpha1.ReconciledCondition,
-				Status:             uiv1alpha1.ConditionFalse,
-				Reason:             FailedToReconcileReason,
-				Message:            recError.Error(),
-				ObservedGeneration: pl.Generation,
-				LastTransitionTime: metav1.Now(),
-			},
-			{
-				Type:               uiv1alpha1.AvailableCondition,
-				Status:             uiv1alpha1.ConditionFalse,
-				Reason:             FailedToReconcileReason,
-				ObservedGeneration: pl.Generation,
-				LastTransitionTime: metav1.Now(),
-			},
-		}
+		changed = meta.SetStatusCondition(&pl.Status.Conditions, metav1.Condition{
+			Type:               string(uiv1alpha1.DegradedCondition),
+			Status:             metav1.ConditionTrue,
+			Reason:             FailedToReconcileReason,
+			Message:            recError.Error(),
+			ObservedGeneration: pl.Generation,
+		}) || changed
+		changed = meta.SetStatusCondition(&pl.Status.Conditions, metav1.Condition{
+			Type:               string(uiv1alpha1.ReconciledCondition),
+			Status:             metav1.ConditionFalse,
+			Reason:             FailedToReconcileReason,
+			Message:            recError.Error(),
+			ObservedGeneration: pl.Generation,
+		}) || changed
+
+		changed = meta.SetStatusCondition(&pl.Status.Conditions, metav1.Condition{
+			Type:               string(uiv1alpha1.AvailableCondition),
+			Status:             metav1.ConditionFalse,
+			Reason:             FailedToReconcileReason,
+			ObservedGeneration: pl.Generation,
+		}) || changed
 	} else {
-		pl.Status.Conditions = []uiv1alpha1.Condition{
-			{
-				Type:               uiv1alpha1.ReconciledCondition,
-				Status:             uiv1alpha1.ConditionTrue,
-				Reason:             ReconciledReason,
-				Message:            ReconciledMessage,
-				ObservedGeneration: pl.Generation,
-				LastTransitionTime: metav1.Now(),
-			},
-			{
-				Type:               uiv1alpha1.DegradedCondition,
-				Status:             uiv1alpha1.ConditionFalse,
-				Reason:             ReconciledReason,
-				ObservedGeneration: pl.Generation,
-				LastTransitionTime: metav1.Now(),
-			},
-			{
-				Type:               uiv1alpha1.AvailableCondition,
-				Status:             uiv1alpha1.ConditionTrue,
-				Reason:             AvailableReason,
-				ObservedGeneration: pl.Generation,
-				LastTransitionTime: metav1.Now(),
-			},
-		}
+		changed = meta.SetStatusCondition(&pl.Status.Conditions, metav1.Condition{
+			Type:               string(uiv1alpha1.ReconciledCondition),
+			Status:             metav1.ConditionTrue,
+			Reason:             ReconciledReason,
+			Message:            ReconciledMessage,
+			ObservedGeneration: pl.Generation,
+		}) || changed
+		changed = meta.SetStatusCondition(&pl.Status.Conditions, metav1.Condition{
+			Type:               string(uiv1alpha1.DegradedCondition),
+			Status:             metav1.ConditionFalse,
+			Reason:             ReconciledReason,
+			ObservedGeneration: pl.Generation,
+		}) || changed
+
+		changed = meta.SetStatusCondition(&pl.Status.Conditions, metav1.Condition{
+			Type:               string(uiv1alpha1.AvailableCondition),
+			Status:             metav1.ConditionTrue,
+			Reason:             AvailableReason,
+			ObservedGeneration: pl.Generation,
+		}) || changed
+	}
+
+	if !changed {
+		return ctrl.Result{}
 	}
 
 	err := rm.k8sClient.Status().Update(ctx, pl)
