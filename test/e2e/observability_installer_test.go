@@ -11,6 +11,7 @@ import (
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"github.com/stretchr/testify/require"
 	"gotest.tools/v3/assert"
+	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -27,8 +28,6 @@ import (
 var (
 	//go:embed traces_minio.yaml
 	minioManifests string
-	//go:embed traces_tempo_readiness.yaml
-	tempoReadinessManifest string
 	//go:embed traces_telemetrygen.yaml
 	telemetrygenManifest string
 	//go:embed traces_verify.yaml
@@ -170,9 +169,26 @@ func testObservabilityInstallerTracing(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	tempoReadinessObj := deployManifest(t, tempoReadinessManifest)
-	f.CleanUp(t, func() { f.K8sClient.Delete(ctx, tempoReadinessObj) })
-	err = jobHasCompleted(t, tempoReadinessObj.GetName(), operandNamespace.Name, time.Minute*5)
+	// Wait for tempo-coo-ingester StatefulSet to be ready
+	err = wait.PollUntilContextTimeout(ctx, 1*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
+		var sts appsv1.StatefulSet
+		err := f.K8sClient.Get(ctx, types.NamespacedName{Name: "tempo-coo-ingester", Namespace: operandNamespace.Name}, &sts)
+		if apierrors.IsNotFound(err) {
+			t.Log("tempo-coo-ingester StatefulSet not found yet")
+			return false, nil
+		}
+		if err != nil {
+			return false, err
+		}
+
+		if sts.Status.ReadyReplicas == *sts.Spec.Replicas && sts.Status.ReadyReplicas > 0 {
+			t.Logf("tempo-coo-ingester StatefulSet is ready (%d/%d replicas)", sts.Status.ReadyReplicas, *sts.Spec.Replicas)
+			return true, nil
+		}
+
+		t.Logf("tempo-coo-ingester StatefulSet not ready yet (%d/%d replicas)", sts.Status.ReadyReplicas, *sts.Spec.Replicas)
+		return false, nil
+	})
 	require.NoError(t, err)
 
 	telemetrygenObj := deployManifest(t, telemetrygenManifest)
