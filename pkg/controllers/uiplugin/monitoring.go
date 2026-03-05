@@ -13,11 +13,15 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 )
 
-const persesServiceName = "perses"
+const (
+	persesServiceName   = "perses"
+	PersesUserFSGroupID = int64(65534)
+)
 
 /*
 Requirements for ACM enablement
@@ -329,8 +333,12 @@ func newPerses(namespace string, persesImage string) *persesv1alpha2.Perses {
 			},
 			Image:         persesImage,
 			ContainerPort: 8080,
-			// Set an empty PodSecurityContext to prevent the Perses operator from defaulting to invalid values
-			PodSecurityContext: &corev1.PodSecurityContext{},
+			// Set PodSecurityContext to run as non-root user (nobody/65534) for OpenShift SCC compatibility
+			PodSecurityContext: &corev1.PodSecurityContext{
+				FSGroup:      ptr.To(int64(PersesUserFSGroupID)),
+				RunAsNonRoot: ptr.To(true),
+				RunAsUser:    ptr.To(int64(PersesUserFSGroupID)),
+			},
 			TLS: &persesv1alpha2.TLS{
 				Enable: true,
 				UserCert: &persesv1alpha2.Certificate{
