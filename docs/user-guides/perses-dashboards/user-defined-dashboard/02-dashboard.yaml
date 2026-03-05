@@ -1,0 +1,82 @@
+apiVersion: perses.dev/v1alpha1
+kind: PersesDashboard
+metadata:
+  name: application-overview
+  namespace: perses-example
+spec:
+  display:
+    name: Application Overview
+  panels:
+    "0_0":
+      kind: Panel
+      spec:
+        display:
+          name: Welcome to Perses dashboards
+        plugin:
+          kind: Markdown
+          spec:
+            text: |-
+              This is a very simple dashboard which displays metrics 
+              from applications running in 2 namespaces (project-1 and project-2).
+
+              The metrics are collected by the OpenShift user-defined monitoring.
+              You can use the drop-down list to filter the metrics by namespace label.
+
+              Check the [Observability Operator](https://github.com/rhobs/observability-operator) repository for more examples.
+    "0_1":
+      kind: Panel
+      spec:
+        display:
+          name: Number of targets
+        plugin:
+          kind: StatChart
+          spec: {}
+        queries:
+          - kind: TimeSeriesQuery
+            spec:
+              plugin:
+                kind: PrometheusTimeSeriesQuery
+                spec:
+                  datasource:
+                    kind: PrometheusDatasource
+                    name: openshift-user-defined-monitoring
+                  query: count(up{namespace=~"$namespace"})
+  layouts:
+    - kind: Grid
+      spec:
+        display:
+          title: Overview
+          collapse:
+            open: true
+        items:
+          - x: 0
+            "y": 1
+            width: 12
+            height: 6
+            content:
+              $ref: "#/spec/panels/0_0"
+          - x: 12
+            "y": 1
+            width: 6
+            height: 6
+            content:
+              $ref: "#/spec/panels/0_1"
+  variables:
+  - kind: ListVariable
+    spec:
+      allowAllValue: true
+      allowMultiple: true
+      display:
+        hidden: false
+        name: namespace
+      name: namespace
+      plugin:
+        kind: PrometheusLabelValuesVariable
+        spec:
+          datasource:
+            kind: PrometheusDatasource
+            name: openshift-user-defined-monitoring
+          labelName: namespace
+          matchers:
+          - up
+  duration: 1h

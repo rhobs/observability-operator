@@ -1,0 +1,24 @@
+apiVersion: perses.dev/v1alpha1
+kind: PersesDatasource
+metadata:
+  name: openshift-user-defined-monitoring
+  namespace: perses-example
+spec:
+  config:
+    default: false
+    display:
+      name: "User-defined Monitoring Datasource"
+    plugin:
+      kind: "PrometheusDatasource"
+      spec:
+        proxy:
+          kind: HTTPProxy
+          spec:
+            url: https://thanos-querier.openshift-monitoring.svc.cluster.local:9092?namespace=project-1&namespace=project-2
+            secret: openshift-user-defined-monitoring-secret
+  client:
+    tls:
+      enable: true
+      caCert:
+        type: file
+        certPath: /ca/service-ca.crt
