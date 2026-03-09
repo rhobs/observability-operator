@@ -69,7 +69,7 @@ type Options struct {
 const finalizerName = "monitoring.observability.openshift.io/finalizer"
 
 // RBAC for managing monitoring stacks
-//+kubebuilder:rbac:groups=monitoring.rhobs,resources=monitoringstacks,verbs=list;watch;create;update
+//+kubebuilder:rbac:groups=monitoring.rhobs,resources=monitoringstacks,verbs=list;watch;create;update;patch
 //+kubebuilder:rbac:groups=monitoring.rhobs,resources=monitoringstacks/status,verbs=get;update
 
 // RBAC for managing Prometheus Operator CRs
