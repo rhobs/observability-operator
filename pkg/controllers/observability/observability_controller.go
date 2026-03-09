@@ -88,11 +88,13 @@ func (o observabilityInstallerController) Reconcile(ctx context.Context, request
 
 	// Add finalizer for this CR
 	if !controllerutil.ContainsFinalizer(instance, finalizerName) {
-		if controllerutil.AddFinalizer(instance, finalizerName) {
-			err := o.client.Update(ctx, instance)
-			if err != nil {
-				return ctrl.Result{}, err
+		patch := client.MergeFrom(instance.DeepCopy())
+		controllerutil.AddFinalizer(instance, finalizerName)
+		if err := o.client.Patch(ctx, instance, patch); err != nil {
+			if apierrors.IsNotFound(err) {
+				return ctrl.Result{}, nil
 			}
+			return ctrl.Result{}, err
 		}
 	}
 
@@ -153,11 +155,13 @@ func (o observabilityInstallerController) Reconcile(ctx context.Context, request
 		if controllerutil.ContainsFinalizer(instance, finalizerName) {
 			// Once all finalizers have been
 			// removed, the object will be deleted.
-			if controllerutil.RemoveFinalizer(instance, finalizerName) {
-				err := o.client.Update(ctx, instance)
-				if err != nil {
-					return ctrl.Result{}, err
+			patch := client.MergeFrom(instance.DeepCopy())
+			controllerutil.RemoveFinalizer(instance, finalizerName)
+			if err := o.client.Patch(ctx, instance, patch); err != nil {
+				if apierrors.IsNotFound(err) {
+					return ctrl.Result{}, nil
 				}
+				return ctrl.Result{}, err
 			}
 		}
 	}
