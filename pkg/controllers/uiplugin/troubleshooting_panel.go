@@ -195,6 +195,11 @@ func korrel8rClusterRole(name string) *rbacv1.ClusterRole {
 				Verbs:     []string{"get", "list", "watch"},
 			},
 			{
+				APIGroups: []string{"discovery.k8s.io"},
+				Resources: []string{"endpointslices"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
 				APIGroups: []string{"rbac.authorization.k8s.io"},
 				Resources: []string{"roles", "rolebindings", "clusterroles", "clusterrolebindings"},
 				Verbs:     []string{"list", "watch"},

@@ -42,6 +42,7 @@ func newServiceMonitor(namespace string) *monv1.ServiceMonitor {
 		},
 
 		Spec: monv1.ServiceMonitorSpec{
+			ServiceDiscoveryRole: ptr.To(monv1.EndpointSliceRole),
 			Endpoints: []monv1.Endpoint{
 				{
 					Port:   "metrics",
@@ -85,6 +86,10 @@ func newPrometheusRole(namespace string) *rbacv1.Role {
 		Rules: []rbacv1.PolicyRule{{
 			APIGroups: []string{""},
 			Resources: []string{"services", "endpoints", "pods"},
+			Verbs:     []string{"get", "list", "watch"},
+		}, {
+			APIGroups: []string{"discovery.k8s.io"},
+			Resources: []string{"endpointslices"},
 			Verbs:     []string{"get", "list", "watch"},
 		}},
 	}

@@ -249,6 +249,7 @@ func newServiceMonitor(name string, namespace string, thanos *msoapi.ThanosQueri
 			Labels:    componentLabels(name),
 		},
 		Spec: monv1.ServiceMonitorSpec{
+			ServiceDiscoveryRole: ptr.To(monv1.EndpointSliceRole),
 			Endpoints: []monv1.Endpoint{
 				{
 					Port:   "http",

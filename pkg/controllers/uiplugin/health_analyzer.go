@@ -39,6 +39,11 @@ func newHealthAnalyzerPrometheusRole(namespace string) *rbacv1.Role {
 				Resources: []string{"services", "endpoints", "pods"},
 				Verbs:     []string{"get", "list", "watch"},
 			},
+			{
+				APIGroups: []string{"discovery.k8s.io"},
+				Resources: []string{"endpointslices"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
 		},
 	}
 	return role
@@ -219,6 +224,7 @@ func newHealthAnalyzerServiceMonitor(namespace string) *monv1.ServiceMonitor {
 			Namespace: namespace,
 		},
 		Spec: monv1.ServiceMonitorSpec{
+			ServiceDiscoveryRole: ptr.To(monv1.EndpointSliceRole),
 			Endpoints: []monv1.Endpoint{
 				{
 					Interval: "30s",
