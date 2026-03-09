@@ -18,7 +18,6 @@ package monitoringstack
 
 import (
 	"context"
-	"slices"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -32,6 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
@@ -149,11 +149,13 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		}
 
 		// Remove finalizer if present
-		if slices.Contains(ms.ObjectMeta.Finalizers, finalizerName) {
-			ms.ObjectMeta.Finalizers = slices.DeleteFunc(ms.ObjectMeta.Finalizers, func(currentFinalizerName string) bool {
-				return currentFinalizerName == finalizerName
-			})
-			if err := rm.k8sClient.Update(ctx, ms); err != nil {
+		if controllerutil.ContainsFinalizer(ms, finalizerName) {
+			patch := client.MergeFrom(ms.DeepCopy())
+			controllerutil.RemoveFinalizer(ms, finalizerName)
+			if err := rm.k8sClient.Patch(ctx, ms, patch); err != nil {
+				if errors.IsNotFound(err) {
+					return ctrl.Result{}, nil
+				}
 				return ctrl.Result{}, err
 			}
 		}
@@ -163,9 +165,13 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	}
 
 	// Add finalizer if not present
-	if !slices.Contains(ms.ObjectMeta.Finalizers, finalizerName) {
-		ms.ObjectMeta.Finalizers = append(ms.ObjectMeta.Finalizers, finalizerName)
-		if err := rm.k8sClient.Update(ctx, ms); err != nil {
+	if !controllerutil.ContainsFinalizer(ms, finalizerName) {
+		patch := client.MergeFrom(ms.DeepCopy())
+		controllerutil.AddFinalizer(ms, finalizerName)
+		if err := rm.k8sClient.Patch(ctx, ms, patch); err != nil {
+			if errors.IsNotFound(err) {
+				return ctrl.Result{}, nil
+			}
 			return ctrl.Result{}, err
 		}
 	}
