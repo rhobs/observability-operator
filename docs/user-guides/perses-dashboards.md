@@ -8,6 +8,7 @@ In conjunction with the Monitoring UIPlugin, the Cluster Observability Operator 
 
 - OpenShift 4.15 or later.
 - The Cluster Observability Operator (1.2 or later) installed and running.
+- User-defined monitoring [enabled](https://docs.redhat.com/en/documentation/monitoring_stack_for_red_hat_openshift/4.21/html/configuring_user_workload_monitoring/preparing-to-configure-the-monitoring-stack-uwm).
 
 ### Installing the Monitoring UIPlugin
 
@@ -41,12 +42,12 @@ If you open the OpenShift console, you should see the new `Observe > Dashboards 
 
 Once the Monitoring UI Plugin is installed with Perses enabled, the Cluster Observability Operator deploys the [Perses Operator](https://github.com/rhobs/perses-operator), which is responsible for managing Perses dashboards and datasources. The COO also installs the `PersesDashboard`, `PersesDatasource` and `PersesGlobalDatasource` Custom Resources Definitions (CRDs). These CRDs are namespaced-scoped which allows to setup RBAC policies for them using the standard Kubernetes RBAC model.
 
-### Deploying an example dashboard
+### Deploying a dashboard for platform metrics
 
 Run the following command
 
 ```sh
-kubectl apply -f docs/user-guides/perses-dashboards/dashboard/
+kubectl apply --server-side -f docs/user-guides/perses-dashboards/dashboard/
 ```
 
 It will create
@@ -63,6 +64,45 @@ kubectl wait --for=condition=Available --timeout=10s -n perses-example persesdas
 Go to the `Observe > Dashboards (Perses)` menu in the OpenShift console and select the `perses-example` namespace to display the dashboard:
 
 ![Console](perses-dashboards/assets/console.png)
+
+### Deploying a dashboard for user-defined metrics
+
+We deploy sample applications in 2 different namespaces (`project-1` and `project-2`) and configure the user-defined monitoring stack to scrape metrics from the applications.
+
+```sh
+kubectl create project-1
+kubectl apply --server-side -n project-1 -f docs/user-guides/perses-dashboards/user-defined-application/
+kubectl create project-2
+kubectl apply --server-side -n project-2 -f user-defined-monitoring-dashboards/user-defined-application/
+kubectl scale -n project-2 deployment prometheus-example-app --replicas=3
+```
+
+To verify the installation.
+
+```sh
+kubectl wait --for=condition=Available --timeout=10s -n project-1 deployment prometheus-example-app
+kubectl wait --for=condition=Available --timeout=10s -n project-2 deployment prometheus-example-app
+```
+
+Deploy the datasource and dashboard.
+
+```sh
+kubectl apply --server-side -f docs/user-guides/perses-dashboards/user-defined-dashboard/
+```
+
+It will create
+1. The `openshift-user-defined-monitoring` datasource which queries user-defined metrics for `project-1` and `project-2` namespaces from the in-cluster Thanos Querier.
+2. The `application-overview` dashboard.
+
+To verify the installation
+
+```sh
+kubectl wait --for=condition=Available --timeout=10s -n perses-example persesdashboards application-overview
+```
+
+Go to the `Observe > Dashboards (Perses)` menu in the OpenShift console, select the `perses-example` namespace and then select the `Application Overview` dashboard.
+
+![Console](perses-dashboards/assets/console2.png)
 
 ### Additional resources
 
