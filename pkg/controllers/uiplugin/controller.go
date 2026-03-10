@@ -25,6 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
@@ -222,11 +223,13 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		}
 
 		// Remove finalizer if present
-		if slices.Contains(plugin.ObjectMeta.Finalizers, finalizerName) {
-			plugin.ObjectMeta.Finalizers = slices.DeleteFunc(plugin.ObjectMeta.Finalizers, func(currentFinalizerName string) bool {
-				return currentFinalizerName == finalizerName
-			})
-			if err := rm.k8sClient.Update(ctx, plugin); err != nil {
+		if controllerutil.ContainsFinalizer(plugin, finalizerName) {
+			patch := client.MergeFrom(plugin.DeepCopy())
+			controllerutil.RemoveFinalizer(plugin, finalizerName)
+			if err := rm.k8sClient.Patch(ctx, plugin, patch); err != nil {
+				if apierrors.IsNotFound(err) {
+					return ctrl.Result{}, nil
+				}
 				return ctrl.Result{}, err
 			}
 		}
@@ -236,9 +239,13 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	}
 
 	// Add finalizer if not present
-	if !slices.Contains(plugin.ObjectMeta.Finalizers, finalizerName) {
-		plugin.ObjectMeta.Finalizers = append(plugin.ObjectMeta.Finalizers, finalizerName)
-		if err := rm.k8sClient.Update(ctx, plugin); err != nil {
+	if !controllerutil.ContainsFinalizer(plugin, finalizerName) {
+		patch := client.MergeFrom(plugin.DeepCopy())
+		controllerutil.AddFinalizer(plugin, finalizerName)
+		if err := rm.k8sClient.Patch(ctx, plugin, patch); err != nil {
+			if apierrors.IsNotFound(err) {
+				return ctrl.Result{}, nil
+			}
 			return ctrl.Result{}, err
 		}
 	}
