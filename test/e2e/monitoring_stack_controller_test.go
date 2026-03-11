@@ -862,10 +862,15 @@ func assertPrometheusManagedFields(t *testing.T) {
 	s, err := json.MarshalIndent(oboManagedFields.FieldsV1, "", "  ")
 	assert.NilError(t, err)
 
-	var objmap map[string]interface{}
+	var objmap map[string]map[string]interface{}
 	err = json.Unmarshal(s, &objmap)
 	assert.NilError(t, err)
 	have := objmap["f:spec"]
+
+	// Remove optional managed fields to ensure stability across various e2e environments
+	for _, optionalField := range oboOptionalManagedFields {
+		delete(have, optionalField)
+	}
 
 	var expected map[string]interface{}
 	err = json.Unmarshal([]byte(oboManagedFieldsJson), &expected)
@@ -1102,6 +1107,10 @@ const oboManagedFieldsJson = `
   }
 }
 `
+
+// When running tests in an environment where obo is passed the `--images=prometheus=...` flag
+// the f:image managed field will be set on the Prometheus CR
+var oboOptionalManagedFields = []string{"f:image"}
 
 func getAlertmanagerAlerts() ([]alert, error) {
 	client := http.Client{}
