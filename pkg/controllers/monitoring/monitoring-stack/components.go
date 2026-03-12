@@ -101,6 +101,10 @@ func newPrometheusClusterRole(rbacResourceName string, rbacVerbs []string) *rbac
 			Resources: []string{"services", "endpoints", "pods"},
 			Verbs:     rbacVerbs,
 		}, {
+			APIGroups: []string{"discovery.k8s.io"},
+			Resources: []string{"endpointslices"},
+			Verbs:     rbacVerbs,
+		}, {
 			APIGroups: []string{"extensions", "networking.k8s.io"},
 			Resources: []string{"ingresses"},
 			Verbs:     rbacVerbs,
