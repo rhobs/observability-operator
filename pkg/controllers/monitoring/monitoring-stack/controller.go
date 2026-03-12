@@ -80,6 +80,7 @@ const finalizerName = "monitoring.observability.openshift.io/finalizer"
 
 // RBAC for delegating permissions to Prometheus
 //+kubebuilder:rbac:groups="",resources=pods;services;endpoints,verbs=get;list;watch
+//+kubebuilder:rbac:groups=discovery.k8s.io,resources=endpointslices,verbs=get;list;watch
 //+kubebuilder:rbac:groups=extensions;networking.k8s.io,resources=ingresses,verbs=get;list;watch
 
 // RBAC for delegating the use of SCC nonroot-v2 (for OpenShift >= 4.11) and nonroot (for OpenShift < 4.11)
