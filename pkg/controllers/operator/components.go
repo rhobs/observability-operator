@@ -42,7 +42,6 @@ func newServiceMonitor(namespace string) *monv1.ServiceMonitor {
 		},
 
 		Spec: monv1.ServiceMonitorSpec{
-			ServiceDiscoveryRole: ptr.To(monv1.EndpointSliceRole),
 			Endpoints: []monv1.Endpoint{
 				{
 					Port:   "metrics",

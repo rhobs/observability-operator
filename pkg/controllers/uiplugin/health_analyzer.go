@@ -224,7 +224,6 @@ func newHealthAnalyzerServiceMonitor(namespace string) *monv1.ServiceMonitor {
 			Namespace: namespace,
 		},
 		Spec: monv1.ServiceMonitorSpec{
-			ServiceDiscoveryRole: ptr.To(monv1.EndpointSliceRole),
 			Endpoints: []monv1.Endpoint{
 				{
 					Interval: "30s",
