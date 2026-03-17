@@ -2,6 +2,7 @@ package reconciler
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -48,8 +49,8 @@ func (r Updater) Reconcile(ctx context.Context, c client.Client, scheme *runtime
 		}
 	}
 
-	if err := c.Patch(ctx, r.resource, client.Apply, client.ForceOwnership, client.FieldOwner("observability-operator")); err != nil {
-		return fmt.Errorf("%s/%s (%s): updater failed to patch: %w",
+	if err := c.Apply(ctx, &clientObjectApplyConfig{obj: r.resource}, client.ForceOwnership, client.FieldOwner("observability-operator")); err != nil {
+		return fmt.Errorf("%s/%s (%s): updater failed to apply: %w",
 			r.resource.GetNamespace(), r.resource.GetName(),
 			r.resource.GetObjectKind().GroupVersionKind().String(), err)
 	}
@@ -122,4 +123,45 @@ func NewOptionalUnmanagedUpdater(r client.Object, c metav1.Object, cond bool) Re
 		return NewUnmanagedUpdater(r, c)
 	}
 	return NewDeleter(r)
+}
+
+// clientObjectApplyConfig wraps a client.Object so it satisfies runtime.ApplyConfiguration,
+// allowing Updater to use client.Client.Apply() instead of the deprecated
+// client.Client.Patch(..., client.Apply, ...) path.
+//
+// The object is held as a plain field (not embedded) so the wrapper does NOT
+// satisfy runtime.Object. Without this, the typed client's type-switch would
+// hit the runtime.Object branch and try to look up *clientObjectApplyConfig
+// in the scheme, causing "no kind is registered" errors at runtime.
+//
+// Serialisation is identical to the old applyPatch path: apply.NewRequest
+// calls json.Marshal on this wrapper, which delegates to the underlying object.
+type clientObjectApplyConfig struct {
+	obj client.Object
+}
+
+func (a *clientObjectApplyConfig) IsApplyConfiguration() {}
+
+func (a *clientObjectApplyConfig) GetName() *string {
+	n := a.obj.GetName()
+	return &n
+}
+
+func (a *clientObjectApplyConfig) GetNamespace() *string {
+	ns := a.obj.GetNamespace()
+	return &ns
+}
+
+func (a *clientObjectApplyConfig) GetKind() *string {
+	k := a.obj.GetObjectKind().GroupVersionKind().Kind
+	return &k
+}
+
+func (a *clientObjectApplyConfig) GetAPIVersion() *string {
+	av := a.obj.GetObjectKind().GroupVersionKind().GroupVersion().String()
+	return &av
+}
+
+func (a *clientObjectApplyConfig) MarshalJSON() ([]byte, error) {
+	return json.Marshal(a.obj)
 }
