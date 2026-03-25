@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"strings"
 
+	configv1 "github.com/openshift/api/config/v1"
 	osv1 "github.com/openshift/api/console/v1"
 	osv1alpha1 "github.com/openshift/api/console/v1alpha1"
+	"github.com/openshift/library-go/pkg/crypto"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -15,7 +17,7 @@ import (
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 )
 
-func createDistributedTracingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string) (*UIPluginInfo, error) {
+func createDistributedTracingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string, tlsProfile *configv1.TLSProfileSpec) (*UIPluginInfo, error) {
 	distributedTracingConfig := plugin.Spec.DistributedTracing
 
 	configYaml, err := marshalDistributedTracingPluginConfig(distributedTracingConfig)
@@ -30,6 +32,8 @@ func createDistributedTracingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, 
 	if len(features) > 0 {
 		extraArgs = append(extraArgs, fmt.Sprintf("-features=%s", strings.Join(features, ",")))
 	}
+
+	extraArgs = append(extraArgs, tlsProfileArgs(tlsProfile)...)
 
 	pluginInfo := &UIPluginInfo{
 		Image:             image,
@@ -145,4 +149,25 @@ func marshalDistributedTracingPluginConfig(cfg *uiv1alpha1.DistributedTracingCon
 	}
 
 	return buf.String(), nil
+}
+
+// tlsProfileArgs returns container args for the given TLS profile spec:
+// -tls-min-version=<version> and -tls-ciphers=<comma-separated-ciphers>.
+// Ciphers are converted from OpenSSL names (used by OpenShift API) to IANA
+// names (expected by k8s.io/component-base/cli/flag).
+func tlsProfileArgs(spec *configv1.TLSProfileSpec) []string {
+	if spec == nil {
+		return nil
+	}
+
+	args := []string{
+		fmt.Sprintf("-tls-min-version=%s", spec.MinTLSVersion),
+	}
+
+	if len(spec.Ciphers) > 0 {
+		ianaCiphers := crypto.OpenSSLToIANACipherSuites(spec.Ciphers)
+		args = append(args, fmt.Sprintf("-tls-cipher-suites=%s", strings.Join(ianaCiphers, ",")))
+	}
+
+	return args
 }

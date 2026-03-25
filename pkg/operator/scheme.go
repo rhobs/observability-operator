@@ -3,6 +3,7 @@ package operator
 import (
 	tempov1alpha1 "github.com/grafana/tempo-operator/api/tempo/v1alpha1"
 	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
+	configv1 "github.com/openshift/api/config/v1"
 	osv1 "github.com/openshift/api/console/v1"
 	osv1alpha1 "github.com/openshift/api/console/v1alpha1"
 	operatorv1 "github.com/openshift/api/operator/v1"
@@ -34,6 +35,7 @@ func NewScheme(cfg *OperatorConfiguration) *runtime.Scheme {
 	utilruntime.Must(tempov1alpha1.AddToScheme(scheme))
 
 	if cfg.FeatureGates.OpenShift.Enabled {
+		utilruntime.Must(configv1.Install(scheme))
 		utilruntime.Must(osv1.Install(scheme))
 		utilruntime.Must(osv1alpha1.Install(scheme))
 		utilruntime.Must(operatorv1.Install(scheme))
