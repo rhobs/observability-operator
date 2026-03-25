@@ -44,7 +44,7 @@ kubectl wait --for=condition=Available -A --timeout=10s -l app.kubernetes.io/par
 To access the Thanos Query UI, run:
 
 ```shell
-kubectl port-forward -n project-c svc/thanos-querier-example 10902:localhost:10902
+kubectl port-forward -n project-d svc/thanos-querier-metrics-api 10902:localhost:10902
 ```
 
 Then open `http://localhost:10902` in your browser. You can check that all Prometheus instances are present in the Stores page and that metrics are showing up.
