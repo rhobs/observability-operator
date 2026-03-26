@@ -152,7 +152,7 @@ func marshalDistributedTracingPluginConfig(cfg *uiv1alpha1.DistributedTracingCon
 }
 
 // tlsProfileArgs returns container args for the given TLS profile spec:
-// -tls-min-version=<version> and -tls-ciphers=<comma-separated-ciphers>.
+// -tls-min-version=<version> and -tls-cipher-suites=<comma-separated-ciphers>.
 // Ciphers are converted from OpenSSL names (used by OpenShift API) to IANA
 // names (expected by k8s.io/component-base/cli/flag).
 func tlsProfileArgs(spec *configv1.TLSProfileSpec) []string {
