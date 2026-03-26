@@ -14,7 +14,7 @@ require (
 	github.com/perses/perses v0.53.0
 	github.com/perses/plugins/prometheus v0.57.0
 	github.com/perses/plugins/table v0.11.0
-	github.com/perses/plugins/timeserieschart v0.12.0
+	github.com/perses/plugins/timeserieschart v0.12.1
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.89.0
 	github.com/prometheus/common v0.67.5
