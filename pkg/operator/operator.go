@@ -337,7 +337,9 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 			InitialTLSProfileSpec: initialTLSProfileSpec,
 			OnProfileChange: func(_ context.Context, _, _ configv1.TLSProfileSpec) {
 				setupLog.Info("TLS security profile changed, triggering graceful restart")
-				cfg.CancelFunc()
+				if cfg.CancelFunc != nil {
+					cfg.CancelFunc()
+				}
 			},
 		}
 		if err = watcher.SetupWithManager(mgr); err != nil {
