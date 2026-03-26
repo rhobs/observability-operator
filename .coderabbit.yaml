@@ -1,0 +1,26 @@
+# Initial configuration taken from the internal "Using CodeRabbit" document.
+# Inherits org-wide settings from https://github.com/openshift/coderabbit/blob/main/.coderabbit.yaml
+---
+inheritance: true
+reviews:
+  high_level_summary: false
+  high_level_summary_in_walkthrough: true
+  sequence_diagrams: false
+  collapse_walkthrough: true
+  changed_files_summary: false
+  poem: false
+  path_instructions:
+    - path: '**'
+      instructions: >-
+        Focus on major issues impacting performance, readability, maintainability and security.
+        Avoid nitpicks and avoid verbosity.
+  auto_review:
+    ignore_title_keywords:
+      - WIP
+    labels:
+      - '!work-in-progress'
+knowledge_base:
+  # We currently have Data Retention turned off, which is required for some knowledge base features.
+  opt_out: true
+  web_search:
+    enabled: false
