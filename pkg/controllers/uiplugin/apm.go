@@ -40,7 +40,7 @@ func withServiceMetrics(variableMatchers string) dashboard.Option {
 				),
 			),
 		),
-		panelgroup.AddPanel("Duration",
+		panelgroup.AddPanel("Latency",
 			timeseries.Chart(
 				timeseries.WithYAxis(timeseries.YAxis{
 					Format: &common.Format{
@@ -102,13 +102,13 @@ func withOperationMetrics(variableMatchers string) dashboard.Option {
 						Name:   "value #2",
 						Header: "Error rate",
 						Format: &common.Format{
-							Unit:          ptr.To(string(common.DecimalUnit)),
+							Unit:          ptr.To(string(common.RequestsPerSecondsUnit)),
 							DecimalPlaces: 3,
 						},
 					},
 					{
 						Name:   "value #3",
-						Header: "Duration",
+						Header: "P95 Latency",
 						Format: &common.Format{
 							Unit:          ptr.To(string(common.MilliSecondsUnit)),
 							DecimalPlaces: 3,
@@ -123,7 +123,7 @@ func withOperationMetrics(variableMatchers string) dashboard.Option {
 			panel.AddQuery(
 				query.PromQL(
 					fmt.Sprintf(`sum(rate({__name__=~"traces_span_metrics_calls(_total)?", %s}[$__rate_interval])) by (span_name) > 0`, variableMatchers),
-					query.SeriesNameFormat("req/s"),
+					query.SeriesNameFormat("Request rate"),
 				),
 			),
 			panel.AddQuery(
@@ -134,8 +134,8 @@ func withOperationMetrics(variableMatchers string) dashboard.Option {
 			),
 			panel.AddQuery(
 				query.PromQL(
-					fmt.Sprintf(`sum(rate({__name__=~"traces_span_metrics_duration(_milliseconds)?_sum", %s}[$__rate_interval])) by (span_name) / sum(rate({__name__=~"traces_span_metrics_duration(_milliseconds)?_count", %s}[$__rate_interval])) by (span_name) > 0`, variableMatchers, variableMatchers),
-					query.SeriesNameFormat("Duration"),
+					fmt.Sprintf(`histogram_quantile(.95, sum(rate({__name__=~"traces_span_metrics_duration(_milliseconds)?_bucket", %s}[$__rate_interval])) by (span_name, le)) > 0`, variableMatchers),
+					query.SeriesNameFormat("P95 Latency"),
 				),
 			),
 		),
@@ -143,7 +143,7 @@ func withOperationMetrics(variableMatchers string) dashboard.Option {
 }
 
 func buildAPMDashboard() (dashboard.Builder, error) {
-	variableMatchers := `namespace="$namespace", service="$collector", service_name="$service"`
+	variableMatchers := `namespace="$namespace", service="$collector", service_name="$service", span_kind=~"${span_kind}"`
 
 	return dashboard.New("apm",
 		dashboard.Name("Application Performance Monitoring (APM)"),
@@ -168,6 +168,20 @@ func buildAPMDashboard() (dashboard.Builder, error) {
 				listvariable.DisplayName("Service"),
 				labelvalues.PrometheusLabelValues("service_name",
 					labelvalues.Matchers(`{__name__=~"traces_span_metrics_calls(_total)?", namespace="$namespace", service="$collector"}`),
+				),
+			),
+		),
+		dashboard.AddVariable("span_kind",
+			listvariable.List(
+				listvariable.DisplayName("Span Kind"),
+				// Filter by SPAN_KIND_SERVER by default to avoid double-counting requests when both the caller and callee are instrumented,
+				// as each side generates its own span (CLIENT and SERVER).
+				listvariable.DefaultValue("SPAN_KIND_SERVER"),
+				listvariable.AllowMultiple(true),
+				listvariable.AllowAllValue(true),
+				listvariable.CustomAllValue(".*"),
+				labelvalues.PrometheusLabelValues("span_kind",
+					labelvalues.Matchers(`{__name__=~"traces_span_metrics_calls(_total)?"}`),
 				),
 			),
 		),
