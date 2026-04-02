@@ -319,13 +319,7 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 	if cfg.FeatureGates.OpenShift.Enabled {
 		setupLog := ctrl.Log.WithName("setup")
 
-		// Create a temporary client to fetch initial TLS profile before manager starts.
-		tempClient, clientErr := client.New(restConfig, client.Options{Scheme: scheme})
-		if clientErr != nil {
-			return nil, fmt.Errorf("unable to create temporary client for TLS profile fetch: %w", clientErr)
-		}
-
-		initialTLSProfileSpec, err := openshifttls.FetchAPIServerTLSProfile(ctx, tempClient)
+		initialTLSProfileSpec, err := openshifttls.FetchAPIServerTLSProfile(ctx, mgr.GetClient())
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch TLS profile from cluster: %w", err)
 		}
