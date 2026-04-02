@@ -81,7 +81,7 @@ func PluginInfoBuilder(ctx context.Context, k client.Client, dk dynamic.Interfac
 		return pluginInfo, nil
 
 	case uiv1alpha1.TypeDistributedTracing:
-		return createDistributedTracingPluginInfo(plugin, namespace, plugin.Name, image, []string{}, pluginConf.TLSProfileSpec)
+		return createDistributedTracingPluginInfo(plugin, namespace, plugin.Name, image, []string{})
 
 	case uiv1alpha1.TypeLogging:
 		return createLoggingPluginInfo(plugin, namespace, plugin.Name, image, compatibilityInfo.Features, ctx, dk, logger, pluginConf.Images["korrel8r"])

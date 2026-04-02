@@ -46,7 +46,6 @@ type resourceManager struct {
 type UIPluginsConfiguration struct {
 	Images             map[string]string
 	ResourcesNamespace string
-	TLSProfileSpec     *configv1.TLSProfileSpec
 }
 
 type Options struct {
@@ -74,8 +73,8 @@ const (
 // +kubebuilder:rbac:groups=operator.openshift.io,resources=consoles,verbs=get;patch;list;watch
 // +kubebuilder:rbac:groups=console.openshift.io,resources=consoleplugins,verbs=get;list;watch;create;update;delete;patch
 
-// RBAC for reading cluster version and APIServer TLS profile
-// +kubebuilder:rbac:groups=config.openshift.io,resources=clusterversions;apiservers,verbs=get;list;watch
+// RBAC for reading cluster version
+// +kubebuilder:rbac:groups=config.openshift.io,resources=clusterversions,verbs=get;list;watch
 
 // RBAC for distributed tracing
 // +kubebuilder:rbac:groups=tempo.grafana.com,resources=tempostacks;tempomonolithics,verbs=list
