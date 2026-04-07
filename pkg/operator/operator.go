@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
+	configv1 "github.com/openshift/api/config/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -31,6 +32,8 @@ import (
 	opctrl "github.com/rhobs/observability-operator/pkg/controllers/operator"
 	uictrl "github.com/rhobs/observability-operator/pkg/controllers/uiplugin"
 	ctrlutil "github.com/rhobs/observability-operator/pkg/controllers/util"
+
+	openshifttls "github.com/openshift/controller-runtime-common/pkg/tls"
 )
 
 const (
@@ -66,6 +69,8 @@ type OperatorConfiguration struct {
 	UIPlugins              uictrl.UIPluginsConfiguration
 	FeatureGates           FeatureGates
 	ObservabilityInstaller ObservabilityInstallerConfiguration
+	// CancelFunc is called to trigger graceful shutdown (e.g., on TLS profile change).
+	CancelFunc context.CancelFunc
 }
 
 type ObservabilityInstallerConfiguration struct {
@@ -140,6 +145,12 @@ func NewOperatorConfiguration(opts ...func(*OperatorConfiguration)) *OperatorCon
 func WithObservabilityInstaller(configuration ObservabilityInstallerConfiguration) func(*OperatorConfiguration) {
 	return func(oc *OperatorConfiguration) {
 		oc.ObservabilityInstaller = configuration
+	}
+}
+
+func WithCancelFunc(cancel context.CancelFunc) func(*OperatorConfiguration) {
+	return func(oc *OperatorConfiguration) {
+		oc.CancelFunc = cancel
 	}
 }
 
@@ -236,6 +247,50 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 		}
 	}
 
+	cacheOptions := cache.Options{
+		// All controller created resources carry the label
+		// defined below. This is added in the reconcilers.
+		DefaultLabelSelector: labels.SelectorFromSet(map[string]string{ctrlutil.ResourceLabel: ctrlutil.OpName}),
+		ByObject: map[client.Object]cache.ByObject{
+			// We define exceptions for the cache and
+			// thus from the default label selector.
+			// Secrets are watched by some controllers
+			// that accept TLS artifacts in a secret.
+			&v1.Secret{}: cache.ByObject{
+				Label: labels.Everything(),
+			},
+			// The user-facing CRDs need to be
+			// cached in absence of any labels.
+			&stack.MonitoringStack{}: cache.ByObject{
+				Label: labels.Everything(),
+			},
+			&stack.ThanosQuerier{}: cache.ByObject{
+				Label: labels.Everything(),
+			},
+			&uiv1alpha1.UIPlugin{}: cache.ByObject{
+				Label: labels.Everything(),
+			},
+			&obsv1alpha1.ObservabilityInstaller{}: cache.ByObject{
+				Label: labels.Everything(),
+			},
+			// The operator controller watches the
+			// service created by the olm bundle, so
+			// it can create a ServiceMonitor that
+			// can be scraped by the OCP in-cluster
+			// stack
+			&v1.Service{}: cache.ByObject{
+				Label: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": ctrlutil.OpName}),
+			},
+		},
+	}
+
+	if cfg.FeatureGates.OpenShift.Enabled {
+		// APIServer CR is watched for TLS profile changes.
+		cacheOptions.ByObject[&configv1.APIServer{}] = cache.ByObject{
+			Label: labels.Everything(),
+		}
+	}
+
 	mgr, err := ctrl.NewManager(
 		restConfig,
 		ctrl.Options{
@@ -243,42 +298,7 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 			Metrics:                metricsOpts,
 			HealthProbeBindAddress: cfg.HealthProbeAddr,
 			PprofBindAddress:       "127.0.0.1:8083",
-			Cache: cache.Options{
-				// All controller created resources carry the label
-				// defined below. This is added in the reconcilers.
-				DefaultLabelSelector: labels.SelectorFromSet(map[string]string{ctrlutil.ResourceLabel: ctrlutil.OpName}),
-				ByObject: map[client.Object]cache.ByObject{
-					// We define exceptions for the cache and
-					// thus from the default label selector.
-					// Secrets are watched by some controllers
-					// that accept TLS artifacts in a secret.
-					&v1.Secret{}: cache.ByObject{
-						Label: labels.Everything(),
-					},
-					// The user-facing CRDs need to be
-					// cached in absence of any labels.
-					&stack.MonitoringStack{}: cache.ByObject{
-						Label: labels.Everything(),
-					},
-					&stack.ThanosQuerier{}: cache.ByObject{
-						Label: labels.Everything(),
-					},
-					&uiv1alpha1.UIPlugin{}: cache.ByObject{
-						Label: labels.Everything(),
-					},
-					&obsv1alpha1.ObservabilityInstaller{}: cache.ByObject{
-						Label: labels.Everything(),
-					},
-					// The operator controller watches the
-					// service created by the olm bundle, so
-					// it can create a ServiceMonitor that
-					// can be scraped by the OCP in-cluster
-					// stack
-					&v1.Service{}: cache.ByObject{
-						Label: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": ctrlutil.OpName}),
-					},
-				},
-			},
+			Cache:                  cacheOptions,
 		})
 	if err != nil {
 		return nil, fmt.Errorf("unable to create manager: %w", err)
@@ -297,6 +317,27 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 	}
 
 	if cfg.FeatureGates.OpenShift.Enabled {
+		setupLog := ctrl.Log.WithName("setup")
+
+		initialTLSProfileSpec, err := openshifttls.FetchAPIServerTLSProfile(ctx, mgr.GetClient())
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch TLS profile from cluster: %w", err)
+		}
+
+		watcher := &openshifttls.SecurityProfileWatcher{
+			Client:                mgr.GetClient(),
+			InitialTLSProfileSpec: initialTLSProfileSpec,
+			OnProfileChange: func(_ context.Context, _, _ configv1.TLSProfileSpec) {
+				setupLog.Info("TLS security profile changed, triggering graceful restart")
+				if cfg.CancelFunc != nil {
+					cfg.CancelFunc()
+				}
+			},
+		}
+		if err = watcher.SetupWithManager(mgr); err != nil {
+			return nil, fmt.Errorf("unable to setup TLS profile watcher: %w", err)
+		}
+
 		if err := uictrl.RegisterWithManager(mgr, uictrl.Options{PluginsConf: cfg.UIPlugins}); err != nil {
 			return nil, fmt.Errorf("unable to register observability-ui-plugin controller: %w", err)
 		}
