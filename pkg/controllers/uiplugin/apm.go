@@ -26,7 +26,7 @@ func withServiceMetrics(variableMatchers string) dashboard.Option {
 			timeseries.Chart(),
 			panel.AddQuery(
 				query.PromQL(
-					fmt.Sprintf("sum(rate(traces_span_metrics_calls{%s}[$__rate_interval]))", variableMatchers),
+					fmt.Sprintf(`sum(rate({__name__=~"traces_span_metrics_calls(_total)?", %s}[$__rate_interval]))`, variableMatchers),
 					query.SeriesNameFormat("req/s"),
 				),
 			),
@@ -35,7 +35,7 @@ func withServiceMetrics(variableMatchers string) dashboard.Option {
 			timeseries.Chart(),
 			panel.AddQuery(
 				query.PromQL(
-					fmt.Sprintf("sum(rate(traces_span_metrics_calls{%s, status_code=\"STATUS_CODE_ERROR\"}[$__rate_interval])) or vector(0)", variableMatchers),
+					fmt.Sprintf(`sum(rate({__name__=~"traces_span_metrics_calls(_total)?", %s, status_code="STATUS_CODE_ERROR"}[$__rate_interval])) or vector(0)`, variableMatchers),
 					query.SeriesNameFormat("error/s"),
 				),
 			),
@@ -53,19 +53,19 @@ func withServiceMetrics(variableMatchers string) dashboard.Option {
 			),
 			panel.AddQuery(
 				query.PromQL(
-					fmt.Sprintf("histogram_quantile(.95, sum(rate(traces_span_metrics_duration_bucket{%s}[$__rate_interval])) by (le))", variableMatchers),
+					fmt.Sprintf(`histogram_quantile(.95, sum(rate({__name__=~"traces_span_metrics_duration(_milliseconds)?_bucket", %s}[$__rate_interval])) by (le))`, variableMatchers),
 					query.SeriesNameFormat("95th"),
 				),
 			),
 			panel.AddQuery(
 				query.PromQL(
-					fmt.Sprintf("histogram_quantile(.75, sum(rate(traces_span_metrics_duration_bucket{%s}[$__rate_interval])) by (le))", variableMatchers),
+					fmt.Sprintf(`histogram_quantile(.75, sum(rate({__name__=~"traces_span_metrics_duration(_milliseconds)?_bucket", %s}[$__rate_interval])) by (le))`, variableMatchers),
 					query.SeriesNameFormat("75th"),
 				),
 			),
 			panel.AddQuery(
 				query.PromQL(
-					fmt.Sprintf("histogram_quantile(.50, sum(rate(traces_span_metrics_duration_bucket{%s}[$__rate_interval])) by (le))", variableMatchers),
+					fmt.Sprintf(`histogram_quantile(.50, sum(rate({__name__=~"traces_span_metrics_duration(_milliseconds)?_bucket", %s}[$__rate_interval])) by (le))`, variableMatchers),
 					query.SeriesNameFormat("50th"),
 				),
 			),
@@ -122,20 +122,20 @@ func withOperationMetrics(variableMatchers string) dashboard.Option {
 			),
 			panel.AddQuery(
 				query.PromQL(
-					fmt.Sprintf("sum(rate(traces_span_metrics_calls{%s}[$__rate_interval])) by (span_name) > 0", variableMatchers),
+					fmt.Sprintf(`sum(rate({__name__=~"traces_span_metrics_calls(_total)?", %s}[$__rate_interval])) by (span_name) > 0`, variableMatchers),
 					query.SeriesNameFormat("req/s"),
 				),
 			),
 			panel.AddQuery(
 				query.PromQL(
-					fmt.Sprintf("sum(rate(traces_span_metrics_calls{%s, status_code=\"STATUS_CODE_ERROR\"}[$__rate_interval])) by (span_name) > 0", variableMatchers),
+					fmt.Sprintf(`sum(rate({__name__=~"traces_span_metrics_calls(_total)?", %s, status_code="STATUS_CODE_ERROR"}[$__rate_interval])) by (span_name) > 0`, variableMatchers),
 					query.SeriesNameFormat("Error rate"),
 				),
 			),
 			panel.AddQuery(
 				query.PromQL(
-					fmt.Sprintf("sum(rate(traces_span_metrics_duration_sum{%s}[5m]) / rate(traces_span_metrics_duration_count{%s}[5m])) by (span_name) > 0", variableMatchers, variableMatchers),
-					query.SeriesNameFormat("95th"),
+					fmt.Sprintf(`sum(rate({__name__=~"traces_span_metrics_duration(_milliseconds)?_sum", %s}[$__rate_interval])) by (span_name) / sum(rate({__name__=~"traces_span_metrics_duration(_milliseconds)?_count", %s}[$__rate_interval])) by (span_name) > 0`, variableMatchers, variableMatchers),
+					query.SeriesNameFormat("Duration"),
 				),
 			),
 		),
@@ -143,7 +143,7 @@ func withOperationMetrics(variableMatchers string) dashboard.Option {
 }
 
 func buildAPMDashboard() (dashboard.Builder, error) {
-	variableMatchers := "namespace=\"$namespace\", service=\"$collector\", service_name=\"$service\""
+	variableMatchers := `namespace="$namespace", service="$collector", service_name="$service"`
 
 	return dashboard.New("apm",
 		dashboard.Name("Application Performance Monitoring (APM)"),
@@ -151,7 +151,7 @@ func buildAPMDashboard() (dashboard.Builder, error) {
 			listvariable.List(
 				listvariable.DisplayName("OTEL Collector Namespace"),
 				labelvalues.PrometheusLabelValues("namespace",
-					labelvalues.Matchers("traces_span_metrics_calls{}"),
+					labelvalues.Matchers(`{__name__=~"traces_span_metrics_calls(_total)?"}`),
 				),
 			),
 		),
@@ -159,7 +159,7 @@ func buildAPMDashboard() (dashboard.Builder, error) {
 			listvariable.List(
 				listvariable.DisplayName("OTEL Collector"),
 				labelvalues.PrometheusLabelValues("service",
-					labelvalues.Matchers("traces_span_metrics_calls{namespace=\"$namespace\"}"),
+					labelvalues.Matchers(`{__name__=~"traces_span_metrics_calls(_total)?", namespace="$namespace"}`),
 				),
 			),
 		),
@@ -167,7 +167,7 @@ func buildAPMDashboard() (dashboard.Builder, error) {
 			listvariable.List(
 				listvariable.DisplayName("Service"),
 				labelvalues.PrometheusLabelValues("service_name",
-					labelvalues.Matchers("traces_span_metrics_calls{namespace=\"$namespace\", service=\"$collector\"}"),
+					labelvalues.Matchers(`{__name__=~"traces_span_metrics_calls(_total)?", namespace="$namespace", service="$collector"}`),
 				),
 			),
 		),
