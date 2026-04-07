@@ -422,12 +422,26 @@ func (f *Framework) GetPodMetrics(pod *v1.Pod, opts ...func(*HTTPOptions)) ([]by
 // It returns an error if the request fails. Otherwise the result is passed to
 // the callback function for additional checks.
 func (f *Framework) AssertPromQLResult(t *testing.T, expr string, callback func(model.Value) error) error {
+	return f.AssertPromQLResultWithOptions(t, expr, callback)
+}
+
+// AssertPromQLResultWithOptions is like AssertPromQLResult but accepts
+// WithTimeout and WithPollInterval options to override the default polling
+// parameters.
+func (f *Framework) AssertPromQLResultWithOptions(t *testing.T, expr string, callback func(model.Value) error, fns ...OptionFn) error {
 	t.Helper()
+	option := AssertOption{
+		PollInterval: 20 * time.Second,
+		WaitTimeout:  3 * DefaultTestTimeout,
+	}
+	for _, fn := range fns {
+		fn(&option)
+	}
 	var (
 		pollErr error
 		v       model.Value
 	)
-	if err := wait.PollUntilContextTimeout(context.Background(), 20*time.Second, 3*DefaultTestTimeout, true, func(context.Context) (bool, error) {
+	if err := wait.PollUntilContextTimeout(context.Background(), option.PollInterval, option.WaitTimeout, true, func(context.Context) (bool, error) {
 		v, pollErr = f.getPromQLResult(context.Background(), expr)
 		if pollErr != nil {
 			t.Logf("error from getPromQLResult(): %s", pollErr)
