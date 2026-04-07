@@ -118,6 +118,18 @@ var compatibilityMatrix = []CompatibilityEntry{
 	{
 		PluginType:        uiv1alpha1.TypeLogging,
 		MinClusterVersion: "v4.15",
+		MaxClusterVersion: "v4.22",
+		ImageKey:          "ui-logging-pf5",
+		SupportLevel:      GeneralAvailability,
+		Features: []string{
+			"dev-console",
+			"alerts",
+			"dev-alerts",
+		},
+	},
+	{
+		PluginType:        uiv1alpha1.TypeLogging,
+		MinClusterVersion: "v4.22",
 		MaxClusterVersion: "",
 		ImageKey:          "ui-logging",
 		SupportLevel:      GeneralAvailability,

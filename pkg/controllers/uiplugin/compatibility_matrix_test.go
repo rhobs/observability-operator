@@ -122,7 +122,7 @@ func TestLookupImageAndFeatures(t *testing.T) {
 		{
 			pluginType:     uiv1alpha1.TypeLogging,
 			clusterVersion: "v4.15",
-			expectedKey:    "ui-logging",
+			expectedKey:    "ui-logging-pf5",
 			expectedErr:    nil,
 			expectedFeatures: []string{
 				"dev-console",
@@ -134,7 +134,7 @@ func TestLookupImageAndFeatures(t *testing.T) {
 		{
 			pluginType:     uiv1alpha1.TypeLogging,
 			clusterVersion: "v4.15.0-0.nightly-2024-06-06-064349",
-			expectedKey:    "ui-logging",
+			expectedKey:    "ui-logging-pf5",
 			expectedErr:    nil,
 			expectedFeatures: []string{
 				"dev-console",
@@ -146,7 +146,7 @@ func TestLookupImageAndFeatures(t *testing.T) {
 		{
 			pluginType:     uiv1alpha1.TypeLogging,
 			clusterVersion: "4.15.46",
-			expectedKey:    "ui-logging",
+			expectedKey:    "ui-logging-pf5",
 			expectedErr:    nil,
 			expectedFeatures: []string{
 				"dev-console",
@@ -158,7 +158,7 @@ func TestLookupImageAndFeatures(t *testing.T) {
 		{
 			pluginType:     uiv1alpha1.TypeLogging,
 			clusterVersion: "v4.16.9",
-			expectedKey:    "ui-logging",
+			expectedKey:    "ui-logging-pf5",
 			expectedErr:    nil,
 			expectedFeatures: []string{
 				"dev-console",
@@ -173,6 +173,66 @@ func TestLookupImageAndFeatures(t *testing.T) {
 			expectedKey:    "ui-logging-pf4",
 			expectedErr:    nil,
 			supportLevel:   GeneralAvailability,
+		},
+		{
+			pluginType:     uiv1alpha1.TypeLogging,
+			clusterVersion: "v4.21.1",
+			expectedKey:    "ui-logging-pf5",
+			expectedErr:    nil,
+			expectedFeatures: []string{
+				"dev-console",
+				"alerts",
+				"dev-alerts",
+			},
+			supportLevel: GeneralAvailability,
+		},
+		{
+			pluginType:     uiv1alpha1.TypeLogging,
+			clusterVersion: "v4.22",
+			expectedKey:    "ui-logging",
+			expectedErr:    nil,
+			expectedFeatures: []string{
+				"dev-console",
+				"alerts",
+				"dev-alerts",
+			},
+			supportLevel: GeneralAvailability,
+		},
+		{
+			pluginType:     uiv1alpha1.TypeLogging,
+			clusterVersion: "v4.22.1",
+			expectedKey:    "ui-logging",
+			expectedErr:    nil,
+			expectedFeatures: []string{
+				"dev-console",
+				"alerts",
+				"dev-alerts",
+			},
+			supportLevel: GeneralAvailability,
+		},
+		{
+			pluginType:     uiv1alpha1.TypeLogging,
+			clusterVersion: "v4.22.12",
+			expectedKey:    "ui-logging",
+			expectedErr:    nil,
+			expectedFeatures: []string{
+				"dev-console",
+				"alerts",
+				"dev-alerts",
+			},
+			supportLevel: GeneralAvailability,
+		},
+		{
+			pluginType:     uiv1alpha1.TypeLogging,
+			clusterVersion: "v4.22.0-0.nightly-2024-06-06-064349",
+			expectedKey:    "ui-logging",
+			expectedErr:    nil,
+			expectedFeatures: []string{
+				"dev-console",
+				"alerts",
+				"dev-alerts",
+			},
+			supportLevel: GeneralAvailability,
 		},
 		{
 			pluginType: uiv1alpha1.TypeTroubleshootingPanel,
