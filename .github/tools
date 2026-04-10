@@ -3,7 +3,7 @@
 golangci-lint v1.63.4
 controller-gen v0.19.0
 kustomize v5.5.0
-oc v4.8.11
+oc 4.17.12
 operator-sdk v1.41.1
 opm v1.57.0
 promq v0.0.1

@@ -27,9 +27,8 @@ GOLANGCI_LINT_VERSION = v1.63.4
 PROMQ = $(TOOLS_DIR)/promq
 PROMQ_VERSION = v0.0.1
 
-# NOTE: oc is NOT downloadable using the OC_VERSION in its URL, so this has to be manually updated
 OC = $(TOOLS_DIR)/oc
-OC_VERSION = v4.8.11
+OC_VERSION = 4.17.12
 
 CRDOC = $(TOOLS_DIR)/crdoc
 CRDOC_VERSION = v0.6.2
@@ -110,12 +109,14 @@ $(OC) oc: $(TOOLS_DIR)
 		set -ex ;\
 		[[ -f $(OC) ]] && exit 0 ;\
 		OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) && \
-		curl -sSLo $(OC) https://mirror.openshift.com/pub/openshift-v4/$${ARCH}/clients/oc/latest/$${OS}/oc.tar.gz ;\
-		tar -xf $(TOOLS_DIR)/oc -C $(TOOLS_DIR) ;\
-		rm -f $(TOOLS_DIR)/README.md ;\
-		$(OC) version ;\
-		version=$(OC_VERSION) ;\
-		$(OC) version | grep -q $${version##v} ;\
+		case $${OS} in darwin) OC_OS=mac ;; linux) OC_OS=linux ;; *) echo "unsupported OS: $${OS}" ; exit 1 ;; esac && \
+		case $${ARCH} in arm64) OC_SUFFIX="-$${ARCH}" ;; amd64) OC_SUFFIX="" ;; *) echo "unsupported ARCH: $${ARCH}" ; exit 1 ;; esac && \
+		OC_URL="https://mirror.openshift.com/pub/openshift-v4/clients/ocp/$(OC_VERSION)/openshift-client-$${OC_OS}$${OC_SUFFIX}.tar.gz" && \
+		TMP_ARCHIVE=$$(mktemp) && \
+		curl -sSLo $${TMP_ARCHIVE} $${OC_URL} && \
+		tar -xzf $${TMP_ARCHIVE} -C $(TOOLS_DIR) && \
+		rm -f $${TMP_ARCHIVE} $(TOOLS_DIR)/README.md && \
+		$(OC) version --client ;\
 	}
 
 .PHONY: crdoc
@@ -132,7 +133,8 @@ $(SHELLCHECK) shellcheck: $(TOOLS_DIR)
 		set -ex ;\
 		[[ -f $(SHELLCHECK) ]] && exit 0 ;\
 		cd $$(mktemp -d) ;\
-		OS=$(shell go env GOOS) && ARCH=$(shell uname -m) && \
+		OS=$(shell go env GOOS) && ARCH=$(shell go env GOARCH) && \
+		case $${ARCH} in arm64) ARCH=aarch64 ;; amd64) ARCH=x86_64 ;; *) echo "unsupported ARCH: $${ARCH}" ; exit 1 ;; esac && \
 		curl -sSLo shellcheck-stable.tar.xz https://github.com/koalaman/shellcheck/releases/download/stable/shellcheck-stable.$${OS}.$${ARCH}.tar.xz ;\
 		tar -xJf shellcheck-stable.tar.xz ;\
 		cp shellcheck-stable/shellcheck $(SHELLCHECK) ;\
