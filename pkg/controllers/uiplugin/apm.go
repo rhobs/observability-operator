@@ -102,7 +102,7 @@ func withOperationMetrics(variableMatchers string) dashboard.Option {
 						Name:   "value #2",
 						Header: "Error rate",
 						Format: &common.Format{
-							Unit:          ptr.To(string(common.RequestsPerSecondsUnit)),
+							Unit:          ptr.To(string(common.DecimalUnit)),
 							DecimalPlaces: 3,
 						},
 					},
