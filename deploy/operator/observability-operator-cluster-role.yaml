@@ -95,18 +95,19 @@ rules:
 - apiGroups:
   - config.openshift.io
   resources:
-  - clusteroperators
-  verbs:
-  - get
-  - list
-- apiGroups:
-  - config.openshift.io
-  resources:
+  - apiservers
   - clusterversions
   verbs:
   - get
   - list
   - watch
+- apiGroups:
+  - config.openshift.io
+  resources:
+  - clusteroperators
+  verbs:
+  - get
+  - list
 - apiGroups:
   - console.openshift.io
   resources:
