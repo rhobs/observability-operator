@@ -318,7 +318,13 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 	if cfg.FeatureGates.OpenShift.Enabled {
 		setupLog := ctrl.Log.WithName("setup")
 
-		initialTLSProfileSpec, err := openshifttls.FetchAPIServerTLSProfile(ctx, mgr.GetClient())
+		// Use a direct (non-cached) client for the initial fetch because the
+		// manager's cache hasn't started yet at this point.
+		directClient, err := client.New(restConfig, client.Options{Scheme: scheme})
+		if err != nil {
+			return nil, fmt.Errorf("failed to create client for TLS profile fetch: %w", err)
+		}
+		initialTLSProfileSpec, err := openshifttls.FetchAPIServerTLSProfile(ctx, directClient)
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch TLS profile from cluster: %w", err)
 		}
