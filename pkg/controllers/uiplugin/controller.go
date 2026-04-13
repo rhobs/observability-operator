@@ -76,6 +76,9 @@ const (
 // RBAC for reading cluster version
 // +kubebuilder:rbac:groups=config.openshift.io,resources=clusterversions,verbs=get;list;watch
 
+// RBAC for reading TLS security profile from APIServer
+// +kubebuilder:rbac:groups=config.openshift.io,resources=apiservers,verbs=get;list;watch
+
 // RBAC for distributed tracing
 // +kubebuilder:rbac:groups=tempo.grafana.com,resources=tempostacks;tempomonolithics,verbs=list
 
