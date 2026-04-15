@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -126,7 +127,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	ctx := ctrl.SetupSignalHandler()
+	// Create a cancellable context for graceful shutdown on TLS profile change.
+	// When the cluster's TLS security profile changes, the watcher cancels this
+	// context, triggering a graceful shutdown and restart with the new TLS settings.
+	signalCtx := ctrl.SetupSignalHandler()
+	ctx, cancel := context.WithCancel(signalCtx)
+	defer cancel()
 
 	op, err := operator.New(
 		ctx,
@@ -149,6 +155,7 @@ func main() {
 					Enabled: openShiftEnabled,
 				},
 			}),
+			operator.WithCancelFunc(cancel),
 		))
 	if err != nil {
 		setupLog.Error(err, "cannot create a new operator")

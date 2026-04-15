@@ -43,7 +43,7 @@ metadata:
     certified: "false"
     console.openshift.io/operator-monitoring-default: "true"
     containerImage: observability-operator:1.3.0
-    createdAt: "2026-03-09T07:53:46Z"
+    createdAt: "2026-04-13T16:39:41Z"
     description: A Go based Kubernetes operator to setup and manage highly available
       Monitoring Stack using Prometheus, Alertmanager and Thanos Querier.
     operatorframework.io/cluster-monitoring: "true"
@@ -412,18 +412,19 @@ spec:
         - apiGroups:
           - config.openshift.io
           resources:
-          - clusteroperators
-          verbs:
-          - get
-          - list
-        - apiGroups:
-          - config.openshift.io
-          resources:
+          - apiservers
           - clusterversions
           verbs:
           - get
           - list
           - watch
+        - apiGroups:
+          - config.openshift.io
+          resources:
+          - clusteroperators
+          verbs:
+          - get
+          - list
         - apiGroups:
           - console.openshift.io
           resources:
