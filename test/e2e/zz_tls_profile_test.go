@@ -61,12 +61,10 @@ func TestTLSProfileWatcher(t *testing.T) {
 // running and healthy when the cluster uses the default TLS profile (no
 // tlsSecurityProfile set on the APIServer CR, which defaults to Intermediate).
 func assertOperatorRunningWithDefaultTLSProfile(t *testing.T) {
-	// Verify the APIServer CR exists and is readable.
 	apiServer := &configv1.APIServer{}
 	err := f.K8sClient.Get(context.Background(), types.NamespacedName{Name: "cluster"}, apiServer)
 	assert.NilError(t, err, "failed to get APIServer CR")
 
-	// Verify the operator deployment is ready.
 	f.AssertDeploymentReady(operatorDeploymentName, f.OperatorNamespace,
 		framework.WithTimeout(2*time.Minute))(t)
 
@@ -78,36 +76,29 @@ func assertOperatorRunningWithDefaultTLSProfile(t *testing.T) {
 func assertOperatorRestartsOnTLSProfileChange(t *testing.T) {
 	ctx := context.Background()
 
-	// Save original APIServer spec so we can restore it.
 	apiServer := &configv1.APIServer{}
 	err := f.K8sClient.Get(ctx, types.NamespacedName{Name: "cluster"}, apiServer)
 	assert.NilError(t, err, "failed to get APIServer CR")
 	originalTLSProfile := apiServer.Spec.TLSSecurityProfile
 
-	// Ensure we restore the original profile even if the test fails.
 	f.CleanUp(t, func() {
 		restoreTLSProfile(t, originalTLSProfile)
 	})
 
-	// Wait for the operator to be stable before we start.
 	f.AssertDeploymentReady(operatorDeploymentName, f.OperatorNamespace,
 		framework.WithTimeout(2*time.Minute))(t)
 
-	// Record the current container restart count.
 	initialRestarts := getOperatorContainerRestartCount(t)
 	t.Logf("container restart count before TLS change: %d", initialRestarts)
 
-	// Change TLS profile to Old.
 	t.Log("setting TLS profile to Old")
 	setTLSProfile(t, &configv1.TLSSecurityProfile{
 		Type: configv1.TLSProfileOldType,
 		Old:  &configv1.OldTLSProfile{},
 	})
 
-	// The operator should restart: wait for the restart count to increase.
 	waitForOperatorContainerRestart(t, initialRestarts)
 
-	// After restart, the operator should become ready again.
 	f.AssertDeploymentReady(operatorDeploymentName, f.OperatorNamespace,
 		framework.WithTimeout(5*time.Minute))(t)
 	t.Log("operator restarted and is ready after TLS profile change to Old")
@@ -131,12 +122,8 @@ func assertOperatorRestartsOnCustomTLSProfile(t *testing.T) {
 	f.AssertDeploymentReady(operatorDeploymentName, f.OperatorNamespace,
 		framework.WithTimeout(5*time.Minute))(t)
 
-	// Wait for the restart count to stabilize — the previous test's cleanup
-	// may have triggered a restart that hasn't completed yet.
 	initialRestarts := waitForStableRestartCount(t)
 
-	// Set a Custom TLS profile that differs from the default Intermediate
-	// profile by using a smaller cipher list (a subset of Intermediate's ciphers).
 	t.Log("setting TLS profile to Custom")
 	setTLSProfile(t, &configv1.TLSSecurityProfile{
 		Type: configv1.TLSProfileCustomType,
@@ -173,7 +160,6 @@ func assertOperatorStableOnNonTLSChange(t *testing.T) {
 		framework.WithTimeout(5*time.Minute))(t)
 	initialRestarts := waitForStableRestartCount(t)
 
-	// Update a non-TLS field: add a test annotation.
 	const testAnnotation = "observability-operator.rhobs/e2e-tls-test"
 	apiServer := &configv1.APIServer{}
 	err := f.K8sClient.Get(ctx, types.NamespacedName{Name: "cluster"}, apiServer)
@@ -201,22 +187,36 @@ func assertOperatorStableOnNonTLSChange(t *testing.T) {
 	assert.NilError(t, err, "failed to patch APIServer with test annotation")
 	t.Log("added test annotation to APIServer CR")
 
-	// Wait a reasonable period and verify the restart count has not increased.
+	originalPod := getRunningOperatorPod(t)
+	originalPodUID := originalPod.UID
+
 	t.Log("waiting 60s to confirm operator does not restart")
+	var lastErr error
 	err = wait.PollUntilContextTimeout(ctx, 10*time.Second, 60*time.Second, true, func(ctx context.Context) (bool, error) {
-		currentRestarts := getOperatorContainerRestartCount(t)
-		if currentRestarts > initialRestarts {
-			return true, fmt.Errorf("operator restarted unexpectedly: restart count changed from %d to %d", initialRestarts, currentRestarts)
+		pod, podErr := runningOperatorPod()
+		if podErr != nil {
+			lastErr = podErr
+			return false, nil
 		}
-		return false, nil // keep polling — we want this to NOT match (timeout = success)
+		lastErr = nil
+		if pod.UID != originalPodUID {
+			return true, fmt.Errorf("operator pod replaced unexpectedly: old UID=%s, new UID=%s", originalPodUID, pod.UID)
+		}
+		for _, cs := range pod.Status.ContainerStatuses {
+			if cs.Name == operatorContainerName && cs.RestartCount > initialRestarts {
+				return true, fmt.Errorf("operator restarted unexpectedly: restart count changed from %d to %d", initialRestarts, cs.RestartCount)
+			}
+		}
+		return false, nil
 	})
 
 	if wait.Interrupted(err) {
-		// Timeout means the restart count never changed — that's what we want.
+		if lastErr != nil {
+			t.Fatalf("operator pod was not observable during stability window: %v", lastErr)
+		}
 		t.Log("operator remained stable after non-TLS APIServer change")
 		return
 	}
-	// If we get here, it means the restart count increased — fail.
 	assert.NilError(t, err, "operator should not restart on non-TLS APIServer changes")
 }
 
@@ -254,8 +254,7 @@ func restoreTLSProfile(t *testing.T, profile *configv1.TLSSecurityProfile) {
 		return
 	}
 
-	// Wait for operator to recover after the restore.
-	_ = wait.PollUntilContextTimeout(ctx, 5*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
+	if err := wait.PollUntilContextTimeout(ctx, 5*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
 		dep := &appsv1.Deployment{}
 		if err := f.K8sClient.Get(ctx, types.NamespacedName{
 			Name:      operatorDeploymentName,
@@ -264,55 +263,82 @@ func restoreTLSProfile(t *testing.T, profile *configv1.TLSSecurityProfile) {
 			return false, nil
 		}
 		return dep.Status.ReadyReplicas == *dep.Spec.Replicas, nil
-	})
+	}); err != nil {
+		t.Logf("cleanup: operator deployment did not become ready: %v", err)
+	}
 }
 
-// getOperatorContainerRestartCount returns the total restart count of the
-// operator container in the running operator pod.
-func getOperatorContainerRestartCount(t *testing.T) int32 {
-	t.Helper()
-
-	pod := getRunningOperatorPod(t)
+// operatorContainerRestartCount returns the restart count for the operator
+// container, or an error if the pod or container cannot be found. This is
+// safe to call inside poll loops since it does not call t.Fatal.
+func operatorContainerRestartCount() (int32, error) {
+	pod, err := runningOperatorPod()
+	if err != nil {
+		return 0, err
+	}
 	for _, cs := range pod.Status.ContainerStatuses {
 		if cs.Name == operatorContainerName {
-			return cs.RestartCount
+			return cs.RestartCount, nil
 		}
 	}
-
-	t.Fatalf("container %q not found in operator pod", operatorContainerName)
-	return 0
+	return 0, fmt.Errorf("container %q not found in operator pod", operatorContainerName)
 }
 
-// getRunningOperatorPod returns the running operator pod.
-func getRunningOperatorPod(t *testing.T) *corev1.Pod {
-	t.Helper()
+// runningOperatorPod returns the running operator pod, or an error if it
+// cannot be found. This is safe to call inside poll loops since it does
+// not call t.Fatal.
+func runningOperatorPod() (*corev1.Pod, error) {
+	ctx := context.Background()
 
 	dep := &appsv1.Deployment{}
-	err := f.K8sClient.Get(context.Background(), types.NamespacedName{
+	if err := f.K8sClient.Get(ctx, types.NamespacedName{
 		Name:      operatorDeploymentName,
 		Namespace: f.OperatorNamespace,
-	}, dep)
-	assert.NilError(t, err, "failed to get operator deployment")
+	}, dep); err != nil {
+		return nil, fmt.Errorf("failed to get operator deployment: %w", err)
+	}
 
 	selector, err := metav1.LabelSelectorAsSelector(dep.Spec.Selector)
-	assert.NilError(t, err, "failed to parse deployment selector")
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse deployment selector: %w", err)
+	}
 
 	var pods corev1.PodList
-	err = f.K8sClient.List(context.Background(), &pods,
+	if err := f.K8sClient.List(ctx, &pods,
 		client.InNamespace(f.OperatorNamespace),
 		client.MatchingLabelsSelector{Selector: selector},
-	)
-	assert.NilError(t, err, "failed to list operator pods")
+	); err != nil {
+		return nil, fmt.Errorf("failed to list operator pods: %w", err)
+	}
 
 	for i := range pods.Items {
 		p := &pods.Items[i]
 		if p.Status.Phase == corev1.PodRunning && p.DeletionTimestamp == nil {
-			return p
+			return p, nil
 		}
 	}
 
-	t.Fatal("no running operator pod found")
-	return nil
+	return nil, fmt.Errorf("no running operator pod found")
+}
+
+// getOperatorContainerRestartCount returns the restart count for the operator
+// container. It calls t.Fatal if the pod or container cannot be found; use
+// operatorContainerRestartCount() instead when calling from inside poll loops.
+func getOperatorContainerRestartCount(t *testing.T) int32 {
+	t.Helper()
+	count, err := operatorContainerRestartCount()
+	assert.NilError(t, err)
+	return count
+}
+
+// getRunningOperatorPod returns the running operator pod. It calls t.Fatal if
+// the pod cannot be found; use runningOperatorPod() instead when calling from
+// inside poll loops.
+func getRunningOperatorPod(t *testing.T) *corev1.Pod {
+	t.Helper()
+	pod, err := runningOperatorPod()
+	assert.NilError(t, err)
+	return pod
 }
 
 // waitForOperatorContainerRestart polls until the operator process has
@@ -322,7 +348,6 @@ func getRunningOperatorPod(t *testing.T) *corev1.Pod {
 func waitForOperatorContainerRestart(t *testing.T, baselineRestarts int32) {
 	t.Helper()
 
-	// Record the current pod UID so we can detect pod replacement.
 	originalPod := getRunningOperatorPod(t)
 	originalPodUID := originalPod.UID
 
@@ -352,14 +377,12 @@ func waitForOperatorContainerRestart(t *testing.T, baselineRestarts int32) {
 			if p.DeletionTimestamp != nil {
 				continue
 			}
-			// Detect pod replacement (new pod UID).
 			if p.UID != originalPodUID && p.Status.Phase == corev1.PodRunning {
 				t.Logf("operator pod replaced: old UID=%s, new UID=%s", originalPodUID, p.UID)
 				return true, nil
 			}
-			// Detect container restart within the same pod.
 			for _, cs := range p.Status.ContainerStatuses {
-				if cs.RestartCount > baselineRestarts {
+				if cs.Name == operatorContainerName && cs.RestartCount > baselineRestarts {
 					t.Logf("operator container restarted: restart count %d -> %d", baselineRestarts, cs.RestartCount)
 					return true, nil
 				}
@@ -381,7 +404,10 @@ func waitForStableRestartCount(t *testing.T) int32 {
 	var stableSince time.Time
 
 	err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
-		current := getOperatorContainerRestartCount(t)
+		current, restartErr := operatorContainerRestartCount()
+		if restartErr != nil {
+			return false, nil
+		}
 		if current != lastCount {
 			lastCount = current
 			stableSince = time.Now()
@@ -391,20 +417,26 @@ func waitForStableRestartCount(t *testing.T) int32 {
 			return false, nil
 		}
 
-		// Also verify the container has been running long enough for
-		// the watcher to process its initial reconcile event.
-		pod := getRunningOperatorPod(t)
+		pod, podErr := runningOperatorPod()
+		if podErr != nil {
+			return false, nil
+		}
 		for _, cs := range pod.Status.ContainerStatuses {
-			if cs.State.Running != nil {
-				uptime := time.Since(cs.State.Running.StartedAt.Time)
-				if uptime < 15*time.Second {
-					t.Logf("operator container uptime %s < 15s, waiting longer", uptime.Round(time.Second))
-					return false, nil
-				}
+			if cs.Name != operatorContainerName {
+				continue
 			}
+			if cs.State.Running == nil {
+				return false, nil
+			}
+			uptime := time.Since(cs.State.Running.StartedAt.Time)
+			if uptime < 15*time.Second {
+				t.Logf("operator container uptime %s < 15s, waiting longer", uptime.Round(time.Second))
+				return false, nil
+			}
+			return true, nil
 		}
 
-		return true, nil
+		return false, nil
 	})
 	assert.NilError(t, err, "operator restart count did not stabilize within timeout")
 	t.Logf("operator restart count stabilized at %d", lastCount)
