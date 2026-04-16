@@ -29,6 +29,9 @@ type CompatibilityEntry struct {
 	ImageKey          string
 	SupportLevel      SupportLevel
 	Features          []string
+	// SupportsTLSProfile indicates whether this plugin image supports
+	// -tls-min-version and -tls-cipher-suites command flags.
+	SupportsTLSProfile bool
 }
 
 type ListFunction func(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error
@@ -157,7 +160,8 @@ var compatibilityMatrix = []CompatibilityEntry{
 		SupportLevel:      GeneralAvailability,
 		// feature flags for montioring are dynamically injected
 		// based on the cluster version and and UIPlugin CR configurations
-		Features: []string{},
+		Features:           []string{},
+		SupportsTLSProfile: true,
 	},
 }
 

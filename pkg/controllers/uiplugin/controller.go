@@ -46,6 +46,7 @@ type resourceManager struct {
 type UIPluginsConfiguration struct {
 	Images             map[string]string
 	ResourcesNamespace string
+	TLSProfile         configv1.TLSProfileSpec
 }
 
 type Options struct {

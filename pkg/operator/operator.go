@@ -329,6 +329,8 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 			return nil, fmt.Errorf("failed to fetch TLS profile from cluster: %w", err)
 		}
 
+		cfg.UIPlugins.TLSProfile = initialTLSProfileSpec
+
 		watcher := &openshifttls.SecurityProfileWatcher{
 			Client:                mgr.GetClient(),
 			InitialTLSProfileSpec: initialTLSProfileSpec,
