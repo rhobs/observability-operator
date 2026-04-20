@@ -12,7 +12,7 @@ type S3Spec struct {
 	AccessKeyID string `json:"accessKeyID"`
 	// AccessKeySecret is a reference to a secret containing the access key secret for the S3.
 	// +kubebuilder:validation:Required
-	AccessKeySecret SecretKeySelector `json:"accessKeySecret,omitempty"`
+	AccessKeySecret SecretKeySelector `json:"accessKeySecret"`
 	// Region is the region where the S3 bucket is located.
 	// +kubebuilder:validation:Optional
 	Region string `json:"region,omitempty"`
@@ -107,15 +107,15 @@ type SecretKeySelector struct {
 
 // ConfigMapKeySelector encodes a reference to a single key in a ConfigMap in the same namespace.
 type ConfigMapKeySelector struct {
-	// Key contains the name of the key inside the referenced Secret.
+	// Key contains the name of the key inside the referenced ConfigMap.
 	//
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Key Name",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:text"}
 	Key string `json:"key"`
 
-	// SecretName contains the name of the Secret containing the referenced value.
+	// Name contains the name of the ConfigMap containing the referenced value.
 	//
 	// +kubebuilder:validation:Required
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Secret Name",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:text"}
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="ConfigMap Name",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:text"}
 	Name string `json:"name"`
 }

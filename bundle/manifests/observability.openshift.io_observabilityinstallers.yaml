@@ -180,8 +180,8 @@ spec:
                                 - keyJSONSecret
                                 type: object
                               gcsWIF:
-                                description: GCSSToken defines the Google Cloud Storage
-                                  configuration using short-lived tokens.
+                                description: GCSWIF defines the Google Cloud Storage
+                                  configuration using Workload Identity Federation.
                                 properties:
                                   audience:
                                     description: Audience is the optional audience.
@@ -295,12 +295,11 @@ spec:
                                     properties:
                                       key:
                                         description: Key contains the name of the
-                                          key inside the referenced Secret.
+                                          key inside the referenced ConfigMap.
                                         type: string
                                       name:
-                                        description: SecretName contains the name
-                                          of the Secret containing the referenced
-                                          value.
+                                        description: Name contains the name of the
+                                          ConfigMap containing the referenced value.
                                         type: string
                                     required:
                                     - key
@@ -360,11 +359,12 @@ spec:
                     type: object
                     x-kubernetes-validations:
                     - message: Storage configuration is required when tracing is enabled
-                      rule: (!has(self.enabled) || !self.enabled) || [has(self.storage.objectStorage.s3),
+                      rule: (!has(self.enabled) || !self.enabled) || (has(self.storage)
+                        && has(self.storage.objectStorage) && [has(self.storage.objectStorage.s3),
                         has(self.storage.objectStorage.s3STS), has(self.storage.objectStorage.s3CCO),
                         has(self.storage.objectStorage.azure), has(self.storage.objectStorage.azureWIF),
                         has(self.storage.objectStorage.gcs), has(self.storage.objectStorage.gcsWIF)].filter(x,
-                        x).size() > 0
+                        x).size() > 0)
                 type: object
             type: object
           status:
