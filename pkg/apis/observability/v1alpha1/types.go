@@ -45,6 +45,13 @@ type ObservabilityInstallerSpec struct {
 	Capabilities *CapabilitiesSpec `json:"capabilities,omitempty"`
 }
 
+func (s *ObservabilityInstallerSpec) GetCapabilities() *CapabilitiesSpec {
+	if s != nil {
+		return s.Capabilities
+	}
+	return nil
+}
+
 // ObservabilityInstallerStatus defines the observed state of ObservabilityInstaller.
 type ObservabilityInstallerStatus struct {
 	// OpenTelemetry defines the status of the OpenTelemetry capability.
@@ -98,7 +105,14 @@ type CapabilitiesSpec struct {
 	// The Tempo instance is configured with a single tenant called application.
 	// +optional
 	// +kubebuilder:validation:Optional
-	Tracing TracingSpec `json:"tracing,omitempty"`
+	Tracing *TracingSpec `json:"tracing,omitempty"`
+}
+
+func (c *CapabilitiesSpec) GetTracing() *TracingSpec {
+	if c != nil {
+		return c.Tracing
+	}
+	return nil
 }
 
 // CommonCapabilitiesSpec defines the common capabilities.
@@ -112,7 +126,14 @@ type CommonCapabilitiesSpec struct {
 	// Operators defines the operators installation for the capability.
 	// +optional
 	// +kubebuilder:validation:Optional
-	Operators OperatorsSpec `json:"operators,omitempty"`
+	Operators *OperatorsSpec `json:"operators,omitempty"`
+}
+
+func (c *CommonCapabilitiesSpec) GetOperators() *OperatorsSpec {
+	if c != nil {
+		return c.Operators
+	}
+	return nil
 }
 
 // OperatorsSpec defines the operators installation.
