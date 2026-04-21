@@ -1,12 +1,12 @@
 package v1alpha1
 
 // TracingSpec defines the desired state of the tracing capability.
-// +kubebuilder:validation:XValidation:rule="(!has(self.enabled) || !self.enabled) || [has(self.storage.objectStorage.s3), has(self.storage.objectStorage.s3STS), has(self.storage.objectStorage.s3CCO), has(self.storage.objectStorage.azure), has(self.storage.objectStorage.azureWIF), has(self.storage.objectStorage.gcs), has(self.storage.objectStorage.gcsWIF)].filter(x, x).size() > 0",message="Storage configuration is required when tracing is enabled"
+// +kubebuilder:validation:XValidation:rule="(!has(self.enabled) || !self.enabled) || (has(self.storage) && has(self.storage.objectStorage) && [has(self.storage.objectStorage.s3), has(self.storage.objectStorage.s3STS), has(self.storage.objectStorage.s3CCO), has(self.storage.objectStorage.azure), has(self.storage.objectStorage.azureWIF), has(self.storage.objectStorage.gcs), has(self.storage.objectStorage.gcsWIF)].filter(x, x).size() > 0)",message="Storage configuration is required when tracing is enabled"
 type TracingSpec struct {
 	CommonCapabilitiesSpec `json:",inline"`
 
 	// Storage defines the storage for the tracing capability
-	Storage TracingStorageSpec `json:"storage,omitempty"`
+	Storage *TracingStorageSpec `json:"storage,omitempty"`
 }
 
 // TracingStorageSpec defines the storage for tracing capability.
@@ -15,7 +15,7 @@ type TracingStorageSpec struct {
 	// +optional
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Object storage config"
-	ObjectStorageSpec TracingObjectStorageSpec `json:"objectStorage,omitempty"`
+	ObjectStorageSpec *TracingObjectStorageSpec `json:"objectStorage,omitempty"`
 }
 
 // TracingObjectStorageSpec defines the object storage for the tracing capability.
@@ -35,8 +35,8 @@ type TracingObjectStorageSpec struct {
 
 	// GCS defines the Google Cloud Storage configuration.
 	GCS *GCSSpec `json:"gcs,omitempty"`
-	// GCSSToken defines the Google Cloud Storage configuration using short-lived tokens.
-	GCSSTSSpec *GCSWIFSpec `json:"gcsWIF,omitempty"`
+	// GCSWIF defines the Google Cloud Storage configuration using Workload Identity Federation.
+	GCSWIF *GCSWIFSpec `json:"gcsWIF,omitempty"`
 
 	// TLS configuration for reaching the object storage endpoint.
 	//

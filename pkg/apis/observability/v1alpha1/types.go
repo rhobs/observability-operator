@@ -98,7 +98,7 @@ type CapabilitiesSpec struct {
 	// The Tempo instance is configured with a single tenant called application.
 	// +optional
 	// +kubebuilder:validation:Optional
-	Tracing TracingSpec `json:"tracing,omitempty"`
+	Tracing *TracingSpec `json:"tracing,omitempty"`
 }
 
 // CommonCapabilitiesSpec defines the common capabilities.
@@ -112,7 +112,7 @@ type CommonCapabilitiesSpec struct {
 	// Operators defines the operators installation for the capability.
 	// +optional
 	// +kubebuilder:validation:Optional
-	Operators OperatorsSpec `json:"operators,omitempty"`
+	Operators *OperatorsSpec `json:"operators,omitempty"`
 }
 
 // OperatorsSpec defines the operators installation.

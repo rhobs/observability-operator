@@ -206,7 +206,7 @@ func (o observabilityInstallerController) getInstance(ctx context.Context, req c
 func (o observabilityInstallerController) updateStatus(ctx context.Context, instance *obsv1alpha1.ObservabilityInstaller, reconcileErr error) reconcile.Result {
 	if instance.Spec.Capabilities != nil {
 		capabilities := instance.Spec.Capabilities
-		if capabilities.Tracing.Enabled {
+		if capabilities.Tracing != nil && capabilities.Tracing.Enabled {
 			otelcol := &otelv1beta1.OpenTelemetryCollector{}
 			err := o.client.Get(ctx, types.NamespacedName{
 				Namespace: instance.Namespace,

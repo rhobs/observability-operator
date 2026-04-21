@@ -140,7 +140,7 @@ func TestTracingObjectStorageSpecValidation(t *testing.T) {
 		{
 			name: "only GCSWIFSpec specified",
 			spec: TracingObjectStorageSpec{
-				GCSSTSSpec: &GCSWIFSpec{
+				GCSWIF: &GCSWIFSpec{
 					Bucket:        "test-bucket",
 					KeyJSONSecret: SecretKeySelector{Name: "test-secret", Key: "key"},
 				},
@@ -288,8 +288,8 @@ func TestTracingSpecValidation(t *testing.T) {
 				CommonCapabilitiesSpec: CommonCapabilitiesSpec{
 					Enabled: false,
 				},
-				Storage: TracingStorageSpec{
-					ObjectStorageSpec: TracingObjectStorageSpec{
+				Storage: &TracingStorageSpec{
+					ObjectStorageSpec: &TracingObjectStorageSpec{
 						S3: &S3Spec{
 							Bucket:          "test-bucket",
 							Endpoint:        "test-endpoint",
@@ -307,8 +307,8 @@ func TestTracingSpecValidation(t *testing.T) {
 				CommonCapabilitiesSpec: CommonCapabilitiesSpec{
 					Enabled: true,
 				},
-				Storage: TracingStorageSpec{
-					ObjectStorageSpec: TracingObjectStorageSpec{
+				Storage: &TracingStorageSpec{
+					ObjectStorageSpec: &TracingObjectStorageSpec{
 						S3: &S3Spec{
 							Bucket:          "test-bucket",
 							Endpoint:        "test-endpoint",
@@ -335,8 +335,8 @@ func TestTracingSpecValidation(t *testing.T) {
 				CommonCapabilitiesSpec: CommonCapabilitiesSpec{
 					Enabled: true,
 				},
-				Storage: TracingStorageSpec{
-					ObjectStorageSpec: TracingObjectStorageSpec{},
+				Storage: &TracingStorageSpec{
+					ObjectStorageSpec: &TracingObjectStorageSpec{},
 				},
 			},
 			expectValid: false,
