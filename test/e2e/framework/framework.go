@@ -14,6 +14,7 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/pkg/errors"
+	"golang.org/x/mod/semver"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
@@ -25,6 +26,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/portforward"
 	"k8s.io/client-go/transport/spdy"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -256,4 +258,102 @@ func (f *Framework) CleanUp(t *testing.T, cleanupFunc func()) {
 			cleanupFunc()
 		}
 	})
+}
+
+// SkipIfClusterVersionBelow skips the test if the cluster version is below
+// minVersion. The minVersion string should be a semver-compatible version
+// (e.g. "4.19" or "v4.19").
+func (f *Framework) SkipIfClusterVersionBelow(t *testing.T, minVersion string) {
+	t.Helper()
+	cv := &configv1.ClusterVersion{}
+	err := f.K8sClient.Get(t.Context(), client.ObjectKey{Name: "version"}, cv)
+	if err != nil {
+		t.Fatalf("failed to determine cluster version: %v", err)
+		return
+	}
+
+	actual := cv.Status.Desired.Version
+	if actual == "" {
+		t.Fatal("cluster version is empty")
+		return
+	}
+	t.Logf("Detected cluster version: %s", actual)
+
+	if !strings.HasPrefix(actual, "v") {
+		actual = "v" + actual
+	}
+	if !strings.HasPrefix(minVersion, "v") {
+		minVersion = "v" + minVersion
+	}
+
+	canonicalActual := fmt.Sprintf("%s-0", semver.Canonical(actual))
+	canonicalMin := fmt.Sprintf("%s-0", semver.Canonical(minVersion))
+
+	if semver.Canonical(actual) == "" || semver.Canonical(minVersion) == "" {
+		t.Fatalf("Unable to parse version (actual=%q, min=%q)", actual, minVersion)
+		return
+	}
+
+	if semver.Compare(canonicalActual, canonicalMin) < 0 {
+		t.Skipf("Skipping: cluster version %s is below minimum required %s", cv.Status.Desired.Version, minVersion)
+	}
+}
+
+// DumpNamespaceDebug logs deployments (with conditions), pods (with container
+// statuses), and events for the given namespace. Useful as a t.Cleanup or
+// on-failure diagnostic helper.
+func (f *Framework) DumpNamespaceDebug(t *testing.T, namespace string) {
+	t.Helper()
+	ctx := context.WithoutCancel(t.Context())
+
+	t.Log("=== BEGIN DEBUG DUMP ===")
+	defer t.Log("=== END DEBUG DUMP ===")
+
+	var deployments appsv1.DeploymentList
+	if err := f.K8sClient.List(ctx, &deployments, client.InNamespace(namespace)); err != nil {
+		t.Logf("Failed to list deployments in %s: %v", namespace, err)
+	} else {
+		t.Logf("Deployments in namespace %s: %d", namespace, len(deployments.Items))
+		for _, d := range deployments.Items {
+			t.Logf("  Deployment: name=%s replicas=%d readyReplicas=%d availableReplicas=%d",
+				d.Name, ptr.Deref(d.Spec.Replicas, 0), d.Status.ReadyReplicas, d.Status.AvailableReplicas)
+			for _, c := range d.Status.Conditions {
+				t.Logf("    condition: type=%s status=%s reason=%s message=%s",
+					c.Type, c.Status, c.Reason, c.Message)
+			}
+		}
+	}
+
+	var pods corev1.PodList
+	if err := f.K8sClient.List(ctx, &pods, client.InNamespace(namespace)); err != nil {
+		t.Logf("Failed to list pods in %s: %v", namespace, err)
+	} else {
+		t.Logf("Pods in namespace %s: %d", namespace, len(pods.Items))
+		for _, p := range pods.Items {
+			t.Logf("  Pod: name=%s phase=%s", p.Name, p.Status.Phase)
+			for _, cs := range p.Status.ContainerStatuses {
+				switch {
+				case cs.State.Running != nil:
+					t.Logf("    container=%s ready=%v restarts=%d state=Running", cs.Name, cs.Ready, cs.RestartCount)
+				case cs.State.Waiting != nil:
+					t.Logf("    container=%s ready=%v restarts=%d state=Waiting reason=%s message=%s",
+						cs.Name, cs.Ready, cs.RestartCount, cs.State.Waiting.Reason, cs.State.Waiting.Message)
+				case cs.State.Terminated != nil:
+					t.Logf("    container=%s ready=%v restarts=%d state=Terminated reason=%s exitCode=%d",
+						cs.Name, cs.Ready, cs.RestartCount, cs.State.Terminated.Reason, cs.State.Terminated.ExitCode)
+				}
+			}
+		}
+	}
+
+	var events corev1.EventList
+	if err := f.K8sClient.List(ctx, &events, client.InNamespace(namespace)); err != nil {
+		t.Logf("Failed to list events in %s: %v", namespace, err)
+	} else {
+		t.Logf("Events in namespace %s: %d", namespace, len(events.Items))
+		for _, e := range events.Items {
+			t.Logf("  Event: involvedObject=%s/%s reason=%s message=%s type=%s count=%d",
+				e.InvolvedObject.Kind, e.InvolvedObject.Name, e.Reason, e.Message, e.Type, e.Count)
+		}
+	}
 }

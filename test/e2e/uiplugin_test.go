@@ -34,6 +34,10 @@ func TestUIPlugin(t *testing.T) {
 			name:     "Create dashboards UIPlugin",
 			scenario: dashboardsUIPlugin,
 		},
+		{
+			name:     "Cluster health analyzer",
+			scenario: clusterHealthAnalyzer,
+		},
 	}
 
 	for _, tc := range ts {
@@ -63,13 +67,13 @@ func newDashboardsUIPlugin(t *testing.T) *uiv1.UIPlugin {
 	}
 	f.CleanUp(t, func() {
 		f.K8sClient.Delete(context.Background(), db)
-		waitForDBUIPluginDeletion(db)
+		waitForUIPluginDeletion(db)
 	})
 
 	return db
 }
 
-func waitForDBUIPluginDeletion(db *uiv1.UIPlugin) error {
+func waitForUIPluginDeletion(db *uiv1.UIPlugin) error {
 	return wait.PollUntilContextTimeout(context.Background(), 5*time.Second, wait.ForeverTestTimeout, true, func(ctx context.Context) (done bool, err error) {
 		err = f.K8sClient.Get(context.Background(),
 			client.ObjectKey{Name: db.Name},
