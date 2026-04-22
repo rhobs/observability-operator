@@ -23,9 +23,9 @@ import (
 	"os"
 	"slices"
 
-	obopo "github.com/rhobs/obo-prometheus-operator/pkg/operator"
 	configv1 "github.com/openshift/api/config/v1"
 	openshifttls "github.com/openshift/controller-runtime-common/pkg/tls"
+	obopo "github.com/rhobs/obo-prometheus-operator/pkg/operator"
 	"go.uber.org/zap/zapcore"
 	k8sflag "k8s.io/component-base/cli/flag"
 	"k8s.io/utils/ptr"

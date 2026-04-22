@@ -57,12 +57,12 @@ func TestIsVersionAheadOrEqual(t *testing.T) {
 
 func TestNewDeploymentTLSArgs(t *testing.T) {
 	testCases := []struct {
-		name           string
-		tlsMinVersion  string
-		tlsCiphers     []string
-		extraArgs      []string
-		expectArgs     []string
-		notExpectArgs  []string
+		name          string
+		tlsMinVersion string
+		tlsCiphers    []string
+		extraArgs     []string
+		expectArgs    []string
+		notExpectArgs []string
 	}{
 		{
 			name:          "TLS profile with min version and ciphers",
