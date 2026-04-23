@@ -3,6 +3,8 @@ package observability
 import (
 	"context"
 	"fmt"
+	"net/url"
+	"strings"
 
 	tempov1alpha1 "github.com/grafana/tempo-operator/api/tempo/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -61,19 +63,26 @@ func tempoStack(instance *obsv1alpha1.ObservabilityInstaller) *tempov1alpha1.Tem
 		},
 	}
 
-	if instance.Spec.Capabilities != nil && instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.TLS != nil {
-		tls := instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.TLS
-		tempo.Spec.Storage.TLS = tempov1alpha1.TLSSpec{
-			Enabled: true,
-		}
-		if tls.CAConfigMap != nil {
-			tempo.Spec.Storage.TLS.CA = tempoStorageCAConfigMapName(instance.Name)
-		}
-		if tls.CertSecret != nil {
-			tempo.Spec.Storage.TLS.Cert = tempoStorageSecretName(instance.Name)
-		}
-		if tls.MinVersion != "" {
-			tempo.Spec.Storage.TLS.MinVersion = tls.MinVersion
+	if instance.Spec.Capabilities != nil {
+		storageSpec := instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec
+		tls := storageSpec.TLS
+		enableTLS := tls != nil || s3hasHTTPSEndpoint(storageSpec)
+
+		if enableTLS {
+			tempo.Spec.Storage.TLS = tempov1alpha1.TLSSpec{
+				Enabled: true,
+			}
+			if tls != nil {
+				if tls.CAConfigMap != nil {
+					tempo.Spec.Storage.TLS.CA = tempoStorageCAConfigMapName(instance.Name)
+				}
+				if tls.CertSecret != nil {
+					tempo.Spec.Storage.TLS.Cert = tempoStorageSecretName(instance.Name)
+				}
+				if tls.MinVersion != "" {
+					tempo.Spec.Storage.TLS.MinVersion = tls.MinVersion
+				}
+			}
 		}
 	}
 
@@ -88,12 +97,26 @@ func tempoStorageCAConfigMapName(name string) string {
 	return fmt.Sprintf("coo-%s-tempo-storage-ca", name)
 }
 
+// tempoStorageSecretName returns the name of the secret that contains the TLS cert and key for the object storage.
 func tempoStorageSecretName(name string) string {
 	return fmt.Sprintf("coo-%s-tempo-storage-cert", name)
 }
 
+// tempoSecretName returns the name of the secret that contains the credentials for the object storage.
 func tempoSecretName(name string) string {
 	return fmt.Sprintf("coo-%s-tempo", name)
+}
+
+func s3hasHTTPSEndpoint(storageSpec obsv1alpha1.TracingObjectStorageSpec) bool {
+	if storageSpec.S3 == nil {
+		return false
+	}
+	endpoint := strings.TrimSpace(storageSpec.S3.Endpoint)
+	parsed, err := url.Parse(endpoint)
+	if err != nil {
+		return false
+	}
+	return strings.EqualFold(parsed.Scheme, "https")
 }
 
 type tempoSecrets struct {
@@ -150,7 +173,7 @@ func tempoStackSecrets(ctx context.Context, k8sClient client.Client, k8sReader c
 					APIVersion: corev1.SchemeGroupVersion.String(),
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      tempoSecretName(instance.Name),
+					Name:      tempoStorageSecretName(instance.Name),
 					Namespace: instance.Namespace,
 				},
 			}
