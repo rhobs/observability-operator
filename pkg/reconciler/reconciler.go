@@ -48,6 +48,7 @@ func (r Updater) Reconcile(ctx context.Context, c client.Client, scheme *runtime
 		}
 	}
 
+	//nolint:staticcheck // Ignore SA1019 this function is marked as deprecated.
 	if err := c.Patch(ctx, r.resource, client.Apply, client.ForceOwnership, client.FieldOwner("observability-operator")); err != nil {
 		return fmt.Errorf("%s/%s (%s): updater failed to patch: %w",
 			r.resource.GetNamespace(), r.resource.GetName(),
