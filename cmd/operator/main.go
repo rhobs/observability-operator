@@ -23,11 +23,14 @@ import (
 	"os"
 	"slices"
 
+	configv1 "github.com/openshift/api/config/v1"
+	openshifttls "github.com/openshift/controller-runtime-common/pkg/tls"
 	obopo "github.com/rhobs/obo-prometheus-operator/pkg/operator"
 	"go.uber.org/zap/zapcore"
 	k8sflag "k8s.io/component-base/cli/flag"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"github.com/rhobs/observability-operator/pkg/operator"
@@ -134,6 +137,23 @@ func main() {
 	ctx, cancel := context.WithCancel(signalCtx)
 	defer cancel()
 
+	var initialTLSProfileSpec configv1.TLSProfileSpec
+	if openShiftEnabled {
+		scheme := operator.NewOpenShiftScheme()
+		directClient, err := client.New(ctrl.GetConfigOrDie(), client.Options{Scheme: scheme})
+		if err != nil {
+			setupLog.Error(err, "failed to create client for TLS profile fetch")
+			os.Exit(1)
+		}
+
+		initialTLSProfileSpec, err = openshifttls.FetchAPIServerTLSProfile(ctx, directClient)
+		if err != nil {
+			setupLog.Error(err, "failed to fetch TLS profile from cluster")
+			os.Exit(1)
+		}
+		setupLog.Info("fetched initial TLS profile", "minVersion", initialTLSProfileSpec.MinTLSVersion, "ciphers_len", len(initialTLSProfileSpec.Ciphers), "ciphers", initialTLSProfileSpec.Ciphers)
+	}
+
 	op, err := operator.New(
 		ctx,
 		operator.NewOperatorConfiguration(
@@ -156,6 +176,13 @@ func main() {
 				},
 			}),
 			operator.WithCancelFunc(cancel),
+
+			func() func(*operator.OperatorConfiguration) {
+				if openShiftEnabled {
+					return operator.WithTLSProfile(initialTLSProfileSpec)
+				}
+				return func(*operator.OperatorConfiguration) {}
+			}(),
 		))
 	if err != nil {
 		setupLog.Error(err, "cannot create a new operator")

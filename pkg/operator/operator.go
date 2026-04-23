@@ -153,6 +153,12 @@ func WithCancelFunc(cancel context.CancelFunc) func(*OperatorConfiguration) {
 	}
 }
 
+func WithTLSProfile(tlsProfile configv1.TLSProfileSpec) func(*OperatorConfiguration) {
+	return func(oc *OperatorConfiguration) {
+		oc.UIPlugins.TLSProfile = tlsProfile
+	}
+}
+
 func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 	restConfig := ctrl.GetConfigOrDie()
 	scheme := NewScheme(cfg)
@@ -318,20 +324,9 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 	if cfg.FeatureGates.OpenShift.Enabled {
 		setupLog := ctrl.Log.WithName("setup")
 
-		// Use a direct (non-cached) client for the initial fetch because the
-		// manager's cache hasn't started yet at this point.
-		directClient, err := client.New(restConfig, client.Options{Scheme: scheme})
-		if err != nil {
-			return nil, fmt.Errorf("failed to create client for TLS profile fetch: %w", err)
-		}
-		initialTLSProfileSpec, err := openshifttls.FetchAPIServerTLSProfile(ctx, directClient)
-		if err != nil {
-			return nil, fmt.Errorf("failed to fetch TLS profile from cluster: %w", err)
-		}
-
 		watcher := &openshifttls.SecurityProfileWatcher{
 			Client:                mgr.GetClient(),
-			InitialTLSProfileSpec: initialTLSProfileSpec,
+			InitialTLSProfileSpec: cfg.UIPlugins.TLSProfile,
 			OnProfileChange: func(_ context.Context, _, _ configv1.TLSProfileSpec) {
 				setupLog.Info("TLS security profile changed, triggering graceful restart")
 				if cfg.CancelFunc != nil {

@@ -47,3 +47,10 @@ func NewScheme(cfg *OperatorConfiguration) *runtime.Scheme {
 
 	return scheme
 }
+
+func NewOpenShiftScheme() *runtime.Scheme {
+	scheme := runtime.NewScheme()
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	utilruntime.Must(configv1.Install(scheme))
+	return scheme
+}

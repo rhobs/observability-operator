@@ -282,6 +282,13 @@ func newDeployment(info UIPluginInfo, namespace string, config *uiv1alpha1.Deplo
 		pluginArgs = append(pluginArgs, info.ExtraArgs...)
 	}
 
+	if info.TLSMinVersion != "" {
+		pluginArgs = append(pluginArgs, fmt.Sprintf("-tls-min-version=%s", info.TLSMinVersion))
+	}
+	if len(info.TLSCiphers) > 0 {
+		pluginArgs = append(pluginArgs, fmt.Sprintf("-tls-cipher-suites=%s", strings.Join(info.TLSCiphers, ",")))
+	}
+
 	volumes := []corev1.Volume{
 		{
 			Name: servingCertVolumeName,
