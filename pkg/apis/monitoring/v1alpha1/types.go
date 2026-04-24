@@ -244,6 +244,16 @@ type PrometheusConfig struct {
 	// The resulting endpoint is /api/v1/otlp/v1/metrics.
 	// +optional
 	EnableOtlpHttpReceiver *bool `json:"enableOtlpHttpReceiver,omitempty"`
+	// Enable access to Prometheus feature flags. By default, no features are enabled.
+	// Enabling features which are disabled by default is entirely outside the
+	// scope of what the maintainers will support and by doing so, you accept
+	// that this behaviour may break at any time without notice.
+	//
+	// For more information see https://prometheus.io/docs/prometheus/latest/feature_flags/
+	//
+	// +optional
+	// +kubebuilder:validation:items:MinLength=1
+	EnableFeatures []string `json:"enableFeatures,omitempty"`
 	// Default interval between scrapes.
 	// +optional
 	ScrapeInterval *monv1.Duration `json:"scrapeInterval,omitempty"`
