@@ -2,6 +2,8 @@ package uiplugin
 
 import (
 	_ "embed"
+	"fmt"
+	"strings"
 
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -109,7 +111,20 @@ func newHealthAnalyzerService(namespace string) *corev1.Service {
 
 func newHealthAnalyzerDeployment(namespace string,
 	serviceAccountName string,
-	image string) *appsv1.Deployment {
+	pluginInfo UIPluginInfo) *appsv1.Deployment {
+
+	args := []string{
+		"serve",
+		"--tls-cert-file=/etc/tls/private/tls.crt",
+		"--tls-private-key-file=/etc/tls/private/tls.key",
+	}
+	if len(pluginInfo.TLSCiphers) > 0 {
+		args = append(args, fmt.Sprintf("--tls-cipher-suites=%s", strings.Join(pluginInfo.TLSCiphers, ",")))
+	}
+
+	if pluginInfo.TLSMinVersion != "" {
+		args = append(args, fmt.Sprintf("--tls-min-version=%s", pluginInfo.TLSMinVersion))
+	}
 
 	deploy := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
@@ -138,13 +153,9 @@ func newHealthAnalyzerDeployment(namespace string,
 					Containers: []corev1.Container{
 						{
 							Name:            name,
-							Image:           image,
+							Image:           pluginInfo.HealthAnalyzerImage,
 							ImagePullPolicy: corev1.PullAlways,
-							Args: []string{
-								"serve",
-								"--tls-cert-file=/etc/tls/private/tls.crt",
-								"--tls-private-key-file=/etc/tls/private/tls.key",
-							},
+							Args:            args,
 							Env: []corev1.EnvVar{
 								{
 									Name:  "PROM_URL",
