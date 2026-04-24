@@ -39,12 +39,14 @@ type Framework struct {
 	RootCA             *x509.CertPool
 	MetricsClientCert  *tls.Certificate
 	OperatorNamespace  string
+	ClusterVersion     *configv1.ClusterVersion
 }
 
 // Setup finalizes the initilization of the Framework object by setting
 // parameters which are specific to OpenShift.
 func (f *Framework) Setup() error {
 	clusterVersion := &configv1.ClusterVersion{}
+
 	if err := f.K8sClient.Get(context.Background(), client.ObjectKey{Name: "version"}, clusterVersion); err != nil {
 		if meta.IsNoMatchError(err) {
 			return nil
@@ -53,6 +55,7 @@ func (f *Framework) Setup() error {
 		return fmt.Errorf("failed to get clusterversion %w", err)
 	}
 
+	f.ClusterVersion = clusterVersion
 	f.IsOpenshiftCluster = true
 
 	// Load the service CA operator's certificate authority.
@@ -265,14 +268,12 @@ func (f *Framework) CleanUp(t *testing.T, cleanupFunc func()) {
 // (e.g. "4.19" or "v4.19").
 func (f *Framework) SkipIfClusterVersionBelow(t *testing.T, minVersion string) {
 	t.Helper()
-	cv := &configv1.ClusterVersion{}
-	err := f.K8sClient.Get(t.Context(), client.ObjectKey{Name: "version"}, cv)
-	if err != nil {
-		t.Fatalf("failed to determine cluster version: %v", err)
+	if f.ClusterVersion == nil {
+		t.Fatal("cluster version not available (non-OpenShift cluster?)")
 		return
 	}
 
-	actual := cv.Status.Desired.Version
+	actual := f.ClusterVersion.Status.Desired.Version
 	if actual == "" {
 		t.Fatal("cluster version is empty")
 		return
@@ -295,7 +296,7 @@ func (f *Framework) SkipIfClusterVersionBelow(t *testing.T, minVersion string) {
 	}
 
 	if semver.Compare(canonicalActual, canonicalMin) < 0 {
-		t.Skipf("Skipping: cluster version %s is below minimum required %s", cv.Status.Desired.Version, minVersion)
+		t.Skipf("Skipping: cluster version %s is below minimum required %s", f.ClusterVersion.Status.Desired.Version, minVersion)
 	}
 }
 
