@@ -150,9 +150,9 @@ func (f *Framework) AssertStatefulsetReady(name, namespace string, fns ...Option
 		t.Helper()
 		key := types.NamespacedName{Name: name, Namespace: namespace}
 		if err := wait.PollUntilContextTimeout(context.Background(), option.PollInterval, option.WaitTimeout, true, func(ctx context.Context) (bool, error) {
-			pod := &appsv1.StatefulSet{}
-			err := f.K8sClient.Get(context.Background(), key, pod)
-			return err == nil && pod.Status.ReadyReplicas == *pod.Spec.Replicas, nil
+			ss := &appsv1.StatefulSet{}
+			err := f.K8sClient.Get(context.Background(), key, ss)
+			return err == nil && ss.Status.ReadyReplicas == *ss.Spec.Replicas, nil
 		}); err != nil {
 			t.Fatal(fmt.Errorf("statefulset %s was never ready with %v", name, err))
 		}
@@ -204,6 +204,16 @@ func (f *Framework) AssertStatefulSetContainerHasArg(t *testing.T, name, namespa
 		}); wait.Interrupted(err) {
 			t.Fatalf("StatefulSet %s failed to contain argument %q in container %q within timeout. Final args: %v",
 				name, expectedArg, containerName, statefulSet.Spec.Template.Spec.Containers[0].Args)
+		}
+	}
+}
+
+// AssertMonitoringStackReady asserts that a monitoring stack is successfully deployed.
+func (f *Framework) AssertMonitoringStackReady(name, namespace string, fns ...OptionFn) func(t *testing.T) {
+	return func(t *testing.T) {
+		t.Helper()
+		if _, err := f.GetMonitoringStackWhenReady(name, namespace); err != nil {
+			t.Fatal(err)
 		}
 	}
 }
@@ -643,7 +653,7 @@ func (f *Framework) AssertNoEventWithReason(t *testing.T, reason string) {
 	}
 }
 
-func (f *Framework) GetStackWhenAvailable(t *testing.T, name, namespace string) v1alpha1.MonitoringStack {
+func (f *Framework) GetMonitoringStackWhenReady(name, namespace string) (*v1alpha1.MonitoringStack, error) {
 	var ms v1alpha1.MonitoringStack
 	key := types.NamespacedName{
 		Name:      name,
@@ -651,24 +661,43 @@ func (f *Framework) GetStackWhenAvailable(t *testing.T, name, namespace string) 
 	}
 	var lastErr error
 
-	err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, DefaultTestTimeout*2, true, func(ctx context.Context) (bool, error) {
-		lastErr = nil
+	if err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, DefaultTestTimeout*2, true, func(_ context.Context) (bool, error) {
 		err := f.K8sClient.Get(context.Background(), key, &ms)
 		if err != nil {
 			lastErr = err
 			return false, nil
 		}
-		availableC := getConditionByType(ms.Status.Conditions, v1alpha1.AvailableCondition)
-		if availableC != nil && availableC.Status == v1alpha1.ConditionTrue {
-			return true, nil
-		}
-		return false, nil
-	})
 
-	if wait.Interrupted(err) {
-		t.Fatal(fmt.Errorf("MonitoringStack %s/%s was not available - err: %w |  %v", namespace, name, lastErr, ms.Status.Conditions))
+		var foundAvailable bool
+		for _, cond := range ms.Status.Conditions {
+			if cond.Type == v1alpha1.ResourceDiscoveryCondition {
+				continue
+			}
+
+			if ms.Generation != cond.ObservedGeneration {
+				lastErr = fmt.Errorf("%s condition observed generation %d != generation %d", cond.Type, cond.ObservedGeneration, ms.Generation)
+				return false, nil
+			}
+
+			foundAvailable = foundAvailable || cond.Type == v1alpha1.AvailableCondition
+			if cond.Status != v1alpha1.ConditionTrue {
+				lastErr = fmt.Errorf("expected %s condition to be True, got %s", cond.Type, cond.Status)
+				return false, nil
+			}
+		}
+
+		if !foundAvailable {
+			lastErr = fmt.Errorf("%s condition not found", v1alpha1.AvailableCondition)
+			return false, nil
+		}
+
+		return true, nil
+
+	}); err != nil {
+		return nil, fmt.Errorf("MonitoringStack %s/%s: %w: %w", namespace, name, err, lastErr)
 	}
-	return ms
+
+	return &ms, nil
 }
 
 func (f *Framework) AssertAlertmanagerAbsent(t *testing.T, name, namespace string) {
@@ -687,15 +716,6 @@ func (f *Framework) AssertAlertmanagerAbsent(t *testing.T, name, namespace strin
 	if wait.Interrupted(err) {
 		t.Fatal(fmt.Errorf("alertmanager %s/%s is present when expected to be absent", namespace, name))
 	}
-}
-
-func getConditionByType(conditions []v1alpha1.Condition, ctype v1alpha1.ConditionType) *v1alpha1.Condition {
-	for _, c := range conditions {
-		if c.Type == ctype {
-			return &c
-		}
-	}
-	return nil
 }
 
 // AssertPrometheusReplicaStatus asserts that prometheus is scaled correctly duration a time period of customForeverTestTimeout
