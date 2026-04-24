@@ -45,6 +45,8 @@ func TestObservabilityInstallerController(t *testing.T) {
 }
 
 func testObservabilityInstallerTracing(t *testing.T) {
+	f.DumpOnFailure(t, f.DebugNamespace(f.OperatorNamespace, "tracing-observability"))
+	f.ForceFailure(t) // TODO: remove — temporary, exercises debug dump
 	ctx := context.Background()
 
 	// The ObservabilityInstaller installs operators via subscriptions,

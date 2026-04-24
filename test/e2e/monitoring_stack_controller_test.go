@@ -47,6 +47,8 @@ func assertCRDExists(t *testing.T, crds ...string) {
 }
 
 func TestMonitoringStackController(t *testing.T) {
+	f.DumpOnFailure(t, f.DebugNamespace(e2eTestNamespace))
+	f.ForceFailure(t) // TODO: remove — temporary, exercises debug dump
 	err := stack.AddToScheme(scheme.Scheme)
 	assert.NilError(t, err, "adding stack to scheme failed")
 	assertCRDExists(t,

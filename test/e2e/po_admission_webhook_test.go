@@ -12,6 +12,8 @@ import (
 )
 
 func TestPrometheusRuleWebhook(t *testing.T) {
+	f.DumpOnFailure(t, f.DebugNamespace(e2eTestNamespace))
+	f.ForceFailure(t) // TODO: remove — temporary, exercises debug dump
 	assertCRDExists(t,
 		"prometheusrules.monitoring.rhobs",
 	)
