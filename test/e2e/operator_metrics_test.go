@@ -11,6 +11,8 @@ import (
 )
 
 func TestOperatorMetrics(t *testing.T) {
+	f.DumpOnFailure(t, f.DebugNamespace(f.OperatorNamespace))
+	f.ForceFailure(t) // TODO: remove — temporary, exercises debug dump
 	t.Run("operator exposes metrics", func(t *testing.T) {
 		pod := f.GetOperatorPod(t)
 

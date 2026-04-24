@@ -263,6 +263,47 @@ func (f *Framework) CleanUp(t *testing.T, cleanupFunc func()) {
 	})
 }
 
+// TODO: remove ForceFailure — temporary helper to exercise DumpOnFailure logging.
+func (f *Framework) ForceFailure(t *testing.T) {
+	t.Helper()
+	t.Error("forced failure to test debug dump output")
+}
+
+// DebugFunc is a diagnostic function invoked when a test fails.
+// Implementations should use t.Logf to emit relevant state.
+type DebugFunc func(t *testing.T)
+
+// DumpOnFailure registers a t.Cleanup that runs the given debug functions
+// when the test fails. It can be called multiple times to add more debug
+// functions as resources become available during the test.
+//
+// Cleanups run in LIFO order, so call DumpOnFailure before registering
+// resource deletions via CleanUp to ensure debug info is captured while
+// the resources still exist.
+func (f *Framework) DumpOnFailure(t *testing.T, fns ...DebugFunc) {
+	t.Helper()
+	t.Cleanup(func() {
+		if !t.Failed() {
+			return
+		}
+		for _, fn := range fns {
+			fn(t)
+		}
+	})
+}
+
+// DebugNamespace returns a DebugFunc that dumps deployments, pods, and events
+// for the given namespaces.
+func (f *Framework) DebugNamespace(namespaces ...string) DebugFunc {
+	return func(t *testing.T) {
+		t.Helper()
+		for _, ns := range namespaces {
+			t.Logf("--- Dumping debug info for namespace %s ---", ns)
+			f.DumpNamespaceDebug(t, ns)
+		}
+	}
+}
+
 // SkipIfClusterVersionBelow skips the test if the cluster version is below
 // minVersion. The minVersion string should be a semver-compatible version
 // (e.g. "4.19" or "v4.19").

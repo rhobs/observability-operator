@@ -32,15 +32,14 @@ func clusterHealthAnalyzer(t *testing.T) {
 	err := monv1.AddToScheme(f.K8sClient.Scheme())
 	assert.NilError(t, err, "failed to add monv1 to scheme")
 
+	f.DumpOnFailure(t, f.DebugNamespace(uiPluginInstallNS))
+
 	plugin := resetMonitoringUIPlugin(t)
 	err = f.K8sClient.Create(t.Context(), plugin)
 	assert.NilError(t, err, "failed to create monitoring UIPlugin")
 
-	t.Cleanup(func() {
-		if t.Failed() {
-			dumpClusterHealthAnalyzerDebug(t, plugin.Name)
-		}
-	})
+	f.DumpOnFailure(t, dumpUIPluginDebug(plugin.Name))
+	f.ForceFailure(t) // TODO: remove — temporary, exercises debug dump
 
 	t.Log("Waiting for health-analyzer deployment to become ready...")
 	haDeployment := appsv1.Deployment{}
@@ -180,15 +179,16 @@ func newAlwaysFiringRule(t *testing.T, ruleName, alertName string) *monv1.Promet
 	return rule
 }
 
-func dumpClusterHealthAnalyzerDebug(t *testing.T, pluginName string) {
-	t.Helper()
-	ctx := context.WithoutCancel(t.Context())
+func dumpUIPluginDebug(pluginName string) framework.DebugFunc {
+	return func(t *testing.T) {
+		t.Helper()
+		ctx := context.WithoutCancel(t.Context())
 
-	// UIPlugin-specific diagnostics
-	var plugin uiv1.UIPlugin
-	if err := f.K8sClient.Get(ctx, client.ObjectKey{Name: pluginName}, &plugin); err != nil {
-		t.Logf("Failed to get UIPlugin %q: %v", pluginName, err)
-	} else {
+		var plugin uiv1.UIPlugin
+		if err := f.K8sClient.Get(ctx, client.ObjectKey{Name: pluginName}, &plugin); err != nil {
+			t.Logf("Failed to get UIPlugin %q: %v", pluginName, err)
+			return
+		}
 		t.Logf("UIPlugin %q generation=%d, resourceVersion=%s", pluginName, plugin.Generation, plugin.ResourceVersion)
 		t.Logf("UIPlugin spec.type=%s", plugin.Spec.Type)
 		if plugin.Spec.Monitoring != nil {
@@ -205,18 +205,15 @@ func dumpClusterHealthAnalyzerDebug(t *testing.T, pluginName string) {
 		for _, c := range plugin.Status.Conditions {
 			t.Logf("UIPlugin condition: type=%s status=%s reason=%s message=%s", c.Type, c.Status, c.Reason, c.Message)
 		}
-	}
 
-	var plugins uiv1.UIPluginList
-	if err := f.K8sClient.List(ctx, &plugins); err != nil {
-		t.Logf("Failed to list UIPlugins: %v", err)
-	} else {
-		t.Logf("Total UIPlugins in cluster: %d", len(plugins.Items))
-		for _, p := range plugins.Items {
-			t.Logf("  UIPlugin: name=%s type=%s conditions=%d", p.Name, p.Spec.Type, len(p.Status.Conditions))
+		var plugins uiv1.UIPluginList
+		if err := f.K8sClient.List(ctx, &plugins); err != nil {
+			t.Logf("Failed to list UIPlugins: %v", err)
+		} else {
+			t.Logf("Total UIPlugins in cluster: %d", len(plugins.Items))
+			for _, p := range plugins.Items {
+				t.Logf("  UIPlugin: name=%s type=%s conditions=%d", p.Name, p.Spec.Type, len(p.Status.Conditions))
+			}
 		}
 	}
-
-	// Generic namespace diagnostics (deployments, pods, events)
-	f.DumpNamespaceDebug(t, uiPluginInstallNS)
 }
