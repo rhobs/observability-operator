@@ -16,7 +16,7 @@ import (
 // +k8s:openapi-gen=true
 // +kubebuilder:resource
 // +kubebuilder:subresource:status
-// +kubebuilder:metadata:annotations="observability.openshift.io/api-support=TechPreview"
+// +kubebuilder:metadata:annotations="observability.openshift.io/api-support=GeneralAvailability"
 type MonitoringStack struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
