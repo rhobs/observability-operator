@@ -29,6 +29,8 @@ type testCase struct {
 }
 
 func TestPrometheusOperatorForNonOwnedResources(t *testing.T) {
+	f.DumpOnFailure(t, f.DebugNamespace(e2eTestNamespace))
+	f.ForceFailure(t) // TODO: remove — temporary, exercises debug dump
 	resources := []client.Object{
 		newPrometheus(nil),
 		newAlertmanager(nil),
@@ -74,6 +76,8 @@ func TestPrometheusOperatorForNonOwnedResources(t *testing.T) {
 }
 
 func TestPrometheusOperatorForOwnedResources(t *testing.T) {
+	f.DumpOnFailure(t, f.DebugNamespace(e2eTestNamespace))
+	f.ForceFailure(t) // TODO: remove — temporary, exercises debug dump
 	resources := []client.Object{
 		newPrometheus(ownedResourceLabels),
 		newAlertmanager(ownedResourceLabels),
