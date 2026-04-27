@@ -151,7 +151,7 @@ func main() {
 			setupLog.Error(err, "failed to fetch TLS profile from cluster")
 			os.Exit(1)
 		}
-		setupLog.Info("fetched initial TLS profile", "minVersion", initialTLSProfileSpec.MinTLSVersion, "ciphers_len", len(initialTLSProfileSpec.Ciphers), "ciphers", initialTLSProfileSpec.Ciphers)
+		setupLog.Info("fetched initial TLS profile", "minVersion", initialTLSProfileSpec.MinTLSVersion, "ciphers_len", "ciphers", initialTLSProfileSpec.Ciphers)
 	}
 
 	op, err := operator.New(
