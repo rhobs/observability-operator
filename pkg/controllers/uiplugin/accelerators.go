@@ -12,9 +12,10 @@ import (
 	"github.com/perses/plugins/prometheus/sdk/go/query"
 	labelvalues "github.com/perses/plugins/prometheus/sdk/go/variable/label-values"
 	timeseries "github.com/perses/plugins/timeserieschart/sdk/go"
+	specCommon "github.com/perses/spec/go/common"
+	dsSpec "github.com/perses/spec/go/datasource"
 	persesv1alpha2 "github.com/rhobs/perses-operator/api/v1alpha2"
 	persesv1 "github.com/rhobs/perses/pkg/model/api/v1"
-	persescommon "github.com/rhobs/perses/pkg/model/api/v1/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 )
@@ -34,12 +35,12 @@ func newAcceleratorsDatasource(namespace string) *persesv1alpha2.PersesDatasourc
 		},
 		Spec: persesv1alpha2.DatasourceSpec{
 			Config: persesv1alpha2.Datasource{
-				DatasourceSpec: persesv1.DatasourceSpec{
-					Display: &persescommon.Display{
+				Spec: dsSpec.Spec{
+					Display: &specCommon.Display{
 						Name: "Accelerators Datasource",
 					},
 					Default: true,
-					Plugin: persescommon.Plugin{
+					Plugin: specCommon.Plugin{
 						Kind: "PrometheusDatasource",
 						Spec: map[string]interface{}{
 							"proxy": map[string]interface{}{
@@ -55,7 +56,7 @@ func newAcceleratorsDatasource(namespace string) *persesv1alpha2.PersesDatasourc
 			},
 			Client: &persesv1alpha2.Client{
 				TLS: &persesv1alpha2.TLS{
-					Enable: true,
+					Enable: ptr.To(true),
 					CaCert: &persesv1alpha2.Certificate{
 						SecretSource: persesv1alpha2.SecretSource{
 							Type: persesv1alpha2.SecretSourceTypeFile,
@@ -157,7 +158,7 @@ func newAcceleratorsDashboard(namespace string) (*persesv1alpha2.PersesDashboard
 		},
 		Spec: persesv1alpha2.PersesDashboardSpec{
 			Config: persesv1alpha2.Dashboard{
-				DashboardSpec: rhobsDashboard.Spec,
+				Spec: rhobsDashboard.Spec,
 			},
 		},
 	}, nil

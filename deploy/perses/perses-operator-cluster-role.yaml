@@ -154,3 +154,11 @@ rules:
       - get
       - patch
       - update
+  - apiGroups:
+      - config.openshift.io
+    resources:
+      - apiservers
+    verbs:
+      - get
+      - list
+      - watch

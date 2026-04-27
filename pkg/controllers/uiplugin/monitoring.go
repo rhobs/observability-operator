@@ -331,8 +331,8 @@ func newPerses(namespace string, persesImage string) *persesv1alpha2.Perses {
 					},
 				},
 			},
-			Image:         persesImage,
-			ContainerPort: 8080,
+			Image:         ptr.To(persesImage),
+			ContainerPort: ptr.To(int32(8080)),
 			// Set PodSecurityContext to run as non-root user (nobody/65534) for OpenShift SCC compatibility
 			PodSecurityContext: &corev1.PodSecurityContext{
 				FSGroup:      ptr.To(int64(PersesUserFSGroupID)),
@@ -340,39 +340,39 @@ func newPerses(namespace string, persesImage string) *persesv1alpha2.Perses {
 				RunAsUser:    ptr.To(int64(PersesUserFSGroupID)),
 			},
 			TLS: &persesv1alpha2.TLS{
-				Enable: true,
+				Enable: ptr.To(true),
 				UserCert: &persesv1alpha2.Certificate{
 					SecretSource: persesv1alpha2.SecretSource{
 						Type:      persesv1alpha2.SecretSourceTypeSecret,
-						Name:      name,
-						Namespace: namespace,
+						Name:      ptr.To(name),
+						Namespace: ptr.To(namespace),
 					},
 					CertPath:       "tls.crt",
-					PrivateKeyPath: "tls.key",
+					PrivateKeyPath: ptr.To("tls.key"),
 				},
 				CaCert: &persesv1alpha2.Certificate{
 					SecretSource: persesv1alpha2.SecretSource{
 						Type:      persesv1alpha2.SecretSourceTypeConfigMap,
-						Name:      "openshift-service-ca.crt",
-						Namespace: namespace,
+						Name:      ptr.To("openshift-service-ca.crt"),
+						Namespace: ptr.To(namespace),
 					},
 					CertPath: "service-ca.crt",
 				},
 			},
 			Client: &persesv1alpha2.Client{
 				TLS: &persesv1alpha2.TLS{
-					Enable: true,
+					Enable: ptr.To(true),
 					CaCert: &persesv1alpha2.Certificate{
 						SecretSource: persesv1alpha2.SecretSource{
 							Type:      persesv1alpha2.SecretSourceTypeConfigMap,
-							Name:      "openshift-service-ca.crt",
-							Namespace: namespace,
+							Name:      ptr.To("openshift-service-ca.crt"),
+							Namespace: ptr.To(namespace),
 						},
 						CertPath: "service-ca.crt",
 					},
 				},
 				KubernetesAuth: &persesv1alpha2.KubernetesAuth{
-					Enable: true,
+					Enable: ptr.To(true),
 				},
 			},
 			Service: &persesv1alpha2.PersesService{
@@ -380,7 +380,7 @@ func newPerses(namespace string, persesImage string) *persesv1alpha2.Perses {
 					"service.beta.openshift.io/serving-cert-secret-name": name,
 				},
 			},
-			ServiceAccountName: "perses" + serviceAccountSuffix,
+			ServiceAccountName: ptr.To("perses" + serviceAccountSuffix),
 		},
 	}
 }
