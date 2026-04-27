@@ -56,7 +56,7 @@ generate-prom-operator-crds: $(CONTROLLER_GEN)
 
 .PHONY: generate-perses-op-crds
 generate-perses-op-crds: $(CONTROLLER_GEN)
-	$(CONTROLLER_GEN) crd \
+	$(CONTROLLER_GEN) crd:ignoreUnexportedFields=true \
 		paths=github.com/rhobs/perses-operator/api/... \
 		output:dir=. \
 		output:crd:dir=./deploy/perses/crds

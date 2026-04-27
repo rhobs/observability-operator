@@ -1,6 +1,6 @@
 module github.com/rhobs/observability-operator
 
-go 1.25.7
+go 1.25.9
 
 require (
 	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
@@ -10,21 +10,15 @@ require (
 	github.com/grafana/tempo-operator v0.20.0
 	github.com/open-telemetry/opentelemetry-operator v0.148.0
 	github.com/openshift/api v3.9.0+incompatible // PINNED: newer versions remove console/v1alpha1 API needed for OpenShift <4.17 compatibility
-	github.com/openshift/controller-runtime-common v0.0.0-20260210092218-8eef974290cd
+	github.com/openshift/controller-runtime-common v0.0.0-20260318085703-1812aed6dbd2
 	github.com/openshift/library-go v0.0.0-20260213153706-03f1709971c5
 	github.com/operator-framework/api v0.38.0
-	github.com/perses/perses v0.53.1
-	github.com/perses/plugins/prometheus v0.57.0
-	github.com/perses/plugins/table v0.11.2
-	github.com/perses/plugins/timeserieschart v0.12.1
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.89.0
 	github.com/prometheus/common v0.67.5
 	github.com/rhobs/obo-prometheus-operator v0.89.0-rhobs1
 	github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.89.0-rhobs1
 	github.com/rhobs/observability-operator/pkg/apis v0.0.0-20251009091129-76135c924ed6
-	github.com/rhobs/perses v0.0.0-20260224164420-06294bc78873
-	github.com/rhobs/perses-operator v0.1.10-0.20260224213330-755ff584dc8b
 	github.com/stretchr/testify v1.11.1
 	go.uber.org/zap v1.27.1
 	golang.org/x/exp v0.0.0-20260218203240-3dfff04db8fa
@@ -32,9 +26,9 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	gotest.tools/v3 v3.5.2
 	k8s.io/api v0.35.4
-	k8s.io/apiextensions-apiserver v0.35.2
+	k8s.io/apiextensions-apiserver v0.35.4
 	k8s.io/apimachinery v0.35.4
-	k8s.io/apiserver v0.35.2
+	k8s.io/apiserver v0.35.4
 	k8s.io/client-go v0.35.4
 	k8s.io/component-base v0.35.4
 	k8s.io/utils v0.0.0-20260210185600-b8788abfbbc2
@@ -43,7 +37,18 @@ require (
 
 replace (
 	github.com/openshift/api => github.com/openshift/api v0.0.0-20240404200104-96ed2d49b255
+	github.com/openshift/controller-runtime-common => github.com/openshift/controller-runtime-common v0.0.0-20260210092218-8eef974290cd
 	github.com/rhobs/observability-operator/pkg/apis => ./pkg/apis
+)
+
+require (
+	github.com/perses/perses v0.53.1
+	github.com/perses/plugins/prometheus v0.57.0
+	github.com/perses/plugins/table v0.11.2
+	github.com/perses/plugins/timeserieschart v0.12.1
+	github.com/perses/spec v0.1.2
+	github.com/rhobs/perses v0.0.0-20260422074433-2c06d5cd1312
+	github.com/rhobs/perses-operator v0.1.10-0.20260422102948-9bec730aa616
 )
 
 require (
@@ -95,7 +100,7 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
 	github.com/google/btree v1.1.3 // indirect
-	github.com/google/cel-go v0.27.0 // indirect
+	github.com/google/cel-go v0.28.0 // indirect
 	github.com/google/gnostic-models v0.7.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674 // indirect
@@ -140,7 +145,7 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
-	github.com/zitadel/oidc/v3 v3.45.4 // indirect
+	github.com/zitadel/oidc/v3 v3.47.4 // indirect
 	github.com/zitadel/schema v1.3.2 // indirect
 	go.mongodb.org/mongo-driver v1.17.6 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
@@ -166,15 +171,15 @@ require (
 	go.opentelemetry.io/proto/otlp v1.10.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	go.yaml.in/yaml/v2 v2.4.3 // indirect
+	go.yaml.in/yaml/v2 v2.4.4 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/crypto v0.49.0 // indirect
+	golang.org/x/crypto v0.50.0 // indirect
 	golang.org/x/net v0.52.0 // indirect
-	golang.org/x/oauth2 v0.35.0 // indirect
+	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
-	golang.org/x/sys v0.42.0 // indirect
-	golang.org/x/term v0.41.0 // indirect
-	golang.org/x/text v0.35.0 // indirect
+	golang.org/x/sys v0.43.0 // indirect
+	golang.org/x/term v0.42.0 // indirect
+	golang.org/x/text v0.36.0 // indirect
 	golang.org/x/time v0.14.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.5.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260401024825-9d38bb4040a9 // indirect
@@ -184,9 +189,9 @@ require (
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
-	k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912 // indirect
+	k8s.io/kube-openapi v0.0.0-20260127142750-a19766b6e2d4 // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
-	sigs.k8s.io/structured-merge-diff/v6 v6.3.2-0.20260122202528-d9cc6641c482 // indirect
+	sigs.k8s.io/structured-merge-diff/v6 v6.3.2 // indirect
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )

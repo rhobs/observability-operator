@@ -221,7 +221,7 @@ func newAPMDashboard(namespace string) (*persesv1alpha2.PersesDashboard, error) 
 		},
 		Spec: persesv1alpha2.PersesDashboardSpec{
 			Config: persesv1alpha2.Dashboard{
-				DashboardSpec: rhobsDashboard.Spec,
+				Spec: rhobsDashboard.Spec,
 			},
 		},
 	}, nil
