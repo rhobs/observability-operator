@@ -142,7 +142,7 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 			reconciler.NewOptionalUpdater(newHealthAnalyzerPrometheusRole(namespace), plugin, deployHealthAnalyzer),
 			reconciler.NewOptionalUpdater(newHealthAnalyzerPrometheusRoleBinding(namespace), plugin, deployHealthAnalyzer),
 			reconciler.NewOptionalUpdater(newHealthAnalyzerService(namespace), plugin, deployHealthAnalyzer),
-			reconciler.NewOptionalUpdater(newHealthAnalyzerDeployment(namespace, serviceAccountName, pluginInfo.HealthAnalyzerImage),
+			reconciler.NewOptionalUpdater(newHealthAnalyzerDeployment(namespace, serviceAccountName, pluginInfo),
 				plugin, deployHealthAnalyzer),
 			reconciler.NewOptionalUpdater(newHealthAnalyzerServiceMonitor(namespace), plugin, deployHealthAnalyzer),
 		)
