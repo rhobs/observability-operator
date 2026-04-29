@@ -63,12 +63,12 @@ func stackComponentReconcilers(
 		reconciler.NewUpdater(newPrometheusClusterRole(prometheusName, rbacVerbs), ms),
 		// create clusterrolebinding if nsSelector's present otherwise a rolebinding
 		reconciler.NewOptionalUpdater(newClusterRoleBinding(ms, prometheusName), ms, createCRB),
-		reconciler.NewOptionalUpdater(newRoleBindingForClusterRole(ms, prometheusName), ms, !hasNsSelector),
+		reconciler.NewOptionalUpdater(newRoleBindingForClusterRole(ms, prometheusName), ms, !createCRB),
 
 		reconciler.NewOptionalUpdater(newAlertManagerClusterRole(alertmanagerName, rbacVerbs), ms, deployAlertmanager),
 		// create clusterrolebinding if alertmanager is enabled and namespace selector is also present in MonitoringStack
 		reconciler.NewOptionalUpdater(newClusterRoleBinding(ms, alertmanagerName), ms, deployAlertmanager && createCRB),
-		reconciler.NewOptionalUpdater(newRoleBindingForClusterRole(ms, alertmanagerName), ms, deployAlertmanager && !hasNsSelector),
+		reconciler.NewOptionalUpdater(newRoleBindingForClusterRole(ms, alertmanagerName), ms, deployAlertmanager && !createCRB),
 
 		// Prometheus Deployment
 		reconciler.NewUpdater(newPrometheus(ms, prometheusName,
