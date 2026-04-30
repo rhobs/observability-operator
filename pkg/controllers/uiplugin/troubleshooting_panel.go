@@ -239,6 +239,11 @@ func korrel8rClusterRole(name string) *rbacv1.ClusterRole {
 				Resources: []string{"application", "audit", "infrastructure", "network"},
 				Verbs:     []string{"get"},
 			},
+			{
+				APIGroups: []string{"authentication.k8s.io"},
+				Resources: []string{"tokenreviews"},
+				Verbs:     []string{"create"},
+			},
 		},
 	}
 }
