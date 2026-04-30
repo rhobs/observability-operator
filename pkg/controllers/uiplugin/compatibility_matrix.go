@@ -38,12 +38,13 @@ type ListFunction func(ctx context.Context, list client.ObjectList, opts ...clie
 
 var compatibilityMatrix = []CompatibilityEntry{
 	{
-		PluginType:        uiv1alpha1.TypeDashboards,
-		MinClusterVersion: "v4.11",
-		MaxClusterVersion: "",
-		ImageKey:          "ui-dashboards",
-		Features:          []string{},
-		SupportLevel:      DevPreview,
+		PluginType:         uiv1alpha1.TypeDashboards,
+		MinClusterVersion:  "v4.11",
+		MaxClusterVersion:  "",
+		ImageKey:           "ui-dashboards",
+		Features:           []string{},
+		SupportLevel:       DevPreview,
+		SupportsTLSProfile: true,
 	},
 	{
 		PluginType:        uiv1alpha1.TypeTroubleshootingPanel,
@@ -78,12 +79,13 @@ var compatibilityMatrix = []CompatibilityEntry{
 		Features:          []string{},
 	},
 	{
-		PluginType:        uiv1alpha1.TypeLogging,
-		MinClusterVersion: "v4.11",
-		MaxClusterVersion: "v4.12",
-		ImageKey:          "ui-logging-pf4",
-		SupportLevel:      GeneralAvailability,
-		Features:          []string{},
+		PluginType:         uiv1alpha1.TypeLogging,
+		MinClusterVersion:  "v4.11",
+		MaxClusterVersion:  "v4.12",
+		ImageKey:           "ui-logging-pf4",
+		SupportLevel:       GeneralAvailability,
+		Features:           []string{},
+		SupportsTLSProfile: true,
 	},
 	{
 		PluginType:        uiv1alpha1.TypeLogging,
@@ -94,6 +96,7 @@ var compatibilityMatrix = []CompatibilityEntry{
 		Features: []string{
 			"dev-console",
 		},
+		SupportsTLSProfile: true,
 	},
 	{
 		PluginType:        uiv1alpha1.TypeLogging,
@@ -105,6 +108,7 @@ var compatibilityMatrix = []CompatibilityEntry{
 			"dev-console",
 			"alerts",
 		},
+		SupportsTLSProfile: true,
 	},
 	{
 		PluginType:        uiv1alpha1.TypeLogging,
@@ -117,6 +121,7 @@ var compatibilityMatrix = []CompatibilityEntry{
 			"alerts",
 			"dev-alerts",
 		},
+		SupportsTLSProfile: true,
 	},
 	{
 		PluginType:        uiv1alpha1.TypeLogging,
@@ -129,6 +134,7 @@ var compatibilityMatrix = []CompatibilityEntry{
 			"alerts",
 			"dev-alerts",
 		},
+		SupportsTLSProfile: true,
 	},
 	{
 		PluginType:        uiv1alpha1.TypeLogging,
@@ -141,6 +147,7 @@ var compatibilityMatrix = []CompatibilityEntry{
 			"alerts",
 			"dev-alerts",
 		},
+		SupportsTLSProfile: true,
 	},
 	{
 		PluginType:        uiv1alpha1.TypeMonitoring,
@@ -150,7 +157,8 @@ var compatibilityMatrix = []CompatibilityEntry{
 		SupportLevel:      TechPreview,
 		// feature flags for montioring are dynamically injected
 		// based on the cluster version and and UIPlugin CR configurations
-		Features: []string{},
+		Features:           []string{},
+		SupportsTLSProfile: true,
 	},
 	{
 		PluginType:        uiv1alpha1.TypeMonitoring,
