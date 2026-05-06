@@ -48,6 +48,10 @@ var pluginTypeToConsoleName = map[uiv1alpha1.UIPluginType]string{
 	uiv1alpha1.TypeMonitoring:           "monitoring-console-plugin",
 }
 
+func ConsoleNameForType(pluginType uiv1alpha1.UIPluginType) string {
+	return pluginTypeToConsoleName[pluginType]
+}
+
 func PluginInfoBuilder(ctx context.Context, k client.Client, dk dynamic.Interface, plugin *uiv1alpha1.UIPlugin, pluginConf UIPluginsConfiguration, compatibilityInfo CompatibilityEntry, clusterVersion string, logger logr.Logger) (*UIPluginInfo, error) {
 	image := pluginConf.Images[compatibilityInfo.ImageKey]
 	if image == "" {
