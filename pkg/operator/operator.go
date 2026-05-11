@@ -72,6 +72,7 @@ type OperatorConfiguration struct {
 	UIPlugins              uictrl.UIPluginsConfiguration
 	FeatureGates           FeatureGates
 	ObservabilityInstaller ObservabilityInstallerConfiguration
+	TLSProfile             configv1.TLSProfileSpec
 	// CancelFunc is called to trigger graceful shutdown (e.g., on TLS profile change).
 	CancelFunc context.CancelFunc
 }
@@ -159,6 +160,7 @@ func WithCancelFunc(cancel context.CancelFunc) func(*OperatorConfiguration) {
 
 func WithTLSProfile(tlsProfile configv1.TLSProfileSpec) func(*OperatorConfiguration) {
 	return func(oc *OperatorConfiguration) {
+		oc.TLSProfile = tlsProfile
 		oc.UIPlugins.TLSProfile = tlsProfile
 	}
 }
@@ -166,6 +168,7 @@ func WithTLSProfile(tlsProfile configv1.TLSProfileSpec) func(*OperatorConfigurat
 func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 	restConfig := ctrl.GetConfigOrDie()
 	scheme := NewScheme(cfg)
+	setupLog := ctrl.Log.WithName("setup")
 
 	metricsOpts := metricsserver.Options{
 		BindAddress: cfg.MetricsAddr,
@@ -230,10 +233,16 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 			ctrl.Log.WithName("events").Info(fmt.Sprintf(format, args...))
 		})
 
+		var tlsConfig tls.Config
+		tlsConfigFn, unsupportedCiphers := openshifttls.NewTLSConfigFromProfile(cfg.TLSProfile)
+		if len(unsupportedCiphers) > 0 {
+			setupLog.Info("Some ciphers from TLS profile are not supported", "ciphers", unsupportedCiphers)
+		}
+		tlsConfigFn(&tlsConfig)
+		tlsConfig.ClientAuth = tls.RequireAndVerifyClientCert
+
 		servingCertController = dynamiccertificates.NewDynamicServingCertificateController(
-			&tls.Config{
-				ClientAuth: tls.RequireAndVerifyClientCert,
-			},
+			&tlsConfig,
 			clientCAController,
 			certKeyProvider,
 			nil,
@@ -326,11 +335,10 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 	}
 
 	if cfg.FeatureGates.OpenShift.Enabled {
-		setupLog := ctrl.Log.WithName("setup")
 
 		watcher := &openshifttls.SecurityProfileWatcher{
 			Client:                mgr.GetClient(),
-			InitialTLSProfileSpec: cfg.UIPlugins.TLSProfile,
+			InitialTLSProfileSpec: cfg.TLSProfile,
 			OnProfileChange: func(_ context.Context, _, _ configv1.TLSProfileSpec) {
 				setupLog.Info("TLS security profile changed, triggering graceful restart")
 				if cfg.CancelFunc != nil {
@@ -346,7 +354,6 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 			return nil, fmt.Errorf("unable to register observability-ui-plugin controller: %w", err)
 		}
 	} else {
-		setupLog := ctrl.Log.WithName("setup")
 		setupLog.Info("OpenShift feature gate is disabled, UIPlugins are not enabled")
 	}
 
@@ -355,7 +362,6 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 			return nil, fmt.Errorf("unable to register operator controller: %w", err)
 		}
 	} else {
-		setupLog := ctrl.Log.WithName("setup")
 		setupLog.Info("OpenShift feature gate is disabled, Operator controller is not enabled")
 	}
 
@@ -378,7 +384,6 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 			return nil, fmt.Errorf("unable to register cluster observability controller: %w", err)
 		}
 	} else {
-		setupLog := ctrl.Log.WithName("setup")
 		setupLog.Info("OpenShift feature gate is disabled, cluster observability controller is not enabled")
 	}
 
