@@ -20,6 +20,9 @@ CATALOG_TEMP := $(shell mktemp -d)
 
 ## Development
 
+.PHONY: all
+all: lint test-unit operator-image bundle-image
+
 .PHONY: test-unit
 test-unit:
 	go test -cover ./cmd/... ./pkg/...
