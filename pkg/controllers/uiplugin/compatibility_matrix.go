@@ -53,7 +53,7 @@ var compatibilityMatrix = []CompatibilityEntry{
 		ImageKey:           "ui-troubleshooting-panel-pf6",
 		SupportLevel:       GeneralAvailability,
 		Features:           []string{},
-		SupportsTLSProfile: false,
+		SupportsTLSProfile: true,
 	},
 	{
 		PluginType:         uiv1alpha1.TypeTroubleshootingPanel,
@@ -62,7 +62,7 @@ var compatibilityMatrix = []CompatibilityEntry{
 		ImageKey:           "ui-troubleshooting-panel",
 		SupportLevel:       GeneralAvailability,
 		Features:           []string{},
-		SupportsTLSProfile: false,
+		SupportsTLSProfile: true,
 	},
 	{
 		PluginType:         uiv1alpha1.TypeDistributedTracing,

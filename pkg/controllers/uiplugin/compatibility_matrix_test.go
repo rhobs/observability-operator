@@ -488,13 +488,13 @@ func TestSupportsTLSProfile(t *testing.T) {
 		{
 			pluginType:         uiv1alpha1.TypeTroubleshootingPanel,
 			clusterVersion:     "4.19",
-			expectedTLSSupport: false,
+			expectedTLSSupport: true,
 			description:        "TroubleshootingPanel plugin should support TLS profile",
 		},
 		{
 			pluginType:         uiv1alpha1.TypeTroubleshootingPanel,
 			clusterVersion:     "4.22",
-			expectedTLSSupport: false,
+			expectedTLSSupport: true,
 			description:        "TroubleshootingPanel plugin v4.22 should support TLS profile",
 		},
 	} {
