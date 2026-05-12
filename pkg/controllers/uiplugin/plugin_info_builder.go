@@ -114,15 +114,8 @@ func PluginInfoBuilder(ctx context.Context, k client.Client, dk dynamic.Interfac
 		return nil, fmt.Errorf("plugin type not supported: %s", plugin.Spec.Type)
 	}
 
-	if compatibilityInfo.SupportsTLSProfile {
-		pluginInfo.TLSMinVersion = string(pluginConf.TLSProfile.MinTLSVersion)
-		pluginInfo.TLSCiphers = libgocrypto.OpenSSLToIANACipherSuites(pluginConf.TLSProfile.Ciphers)
-	} else {
-		logger.Info("TLS profile not applied: plugin image does not support TLS profile flags",
-			"plugin", plugin.Name,
-			"pluginType", plugin.Spec.Type,
-			"imageKey", compatibilityInfo.ImageKey)
-	}
+	pluginInfo.TLSMinVersion = string(pluginConf.TLSProfile.MinTLSVersion)
+	pluginInfo.TLSCiphers = libgocrypto.OpenSSLToIANACipherSuites(pluginConf.TLSProfile.Ciphers)
 
 	return pluginInfo, err
 }

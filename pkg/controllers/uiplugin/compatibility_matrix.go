@@ -29,85 +29,74 @@ type CompatibilityEntry struct {
 	ImageKey          string
 	SupportLevel      SupportLevel
 	Features          []string
-	// SupportsTLSProfile indicates whether this plugin image supports
-	// -tls-min-version and -tls-cipher-suites command flags.
-	SupportsTLSProfile bool
 }
 
 type ListFunction func(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error
 
 var compatibilityMatrix = []CompatibilityEntry{
 	{
-		PluginType:         uiv1alpha1.TypeDashboards,
-		MinClusterVersion:  "v4.11",
-		MaxClusterVersion:  "",
-		ImageKey:           "ui-dashboards",
-		Features:           []string{},
-		SupportLevel:       DevPreview,
-		SupportsTLSProfile: true,
+		PluginType:        uiv1alpha1.TypeDashboards,
+		MinClusterVersion: "v4.11",
+		MaxClusterVersion: "",
+		ImageKey:          "ui-dashboards",
+		Features:          []string{},
+		SupportLevel:      DevPreview,
 	},
 	{
-		PluginType:         uiv1alpha1.TypeTroubleshootingPanel,
-		MinClusterVersion:  "v4.19",
-		MaxClusterVersion:  "v4.22",
-		ImageKey:           "ui-troubleshooting-panel-pf6",
-		SupportLevel:       GeneralAvailability,
-		Features:           []string{},
-		SupportsTLSProfile: false,
+		PluginType:        uiv1alpha1.TypeTroubleshootingPanel,
+		MinClusterVersion: "v4.19",
+		MaxClusterVersion: "v4.22",
+		ImageKey:          "ui-troubleshooting-panel-pf6",
+		SupportLevel:      GeneralAvailability,
+		Features:          []string{},
 	},
 	{
-		PluginType:         uiv1alpha1.TypeTroubleshootingPanel,
-		MinClusterVersion:  "v4.22",
-		MaxClusterVersion:  "",
-		ImageKey:           "ui-troubleshooting-panel",
-		SupportLevel:       GeneralAvailability,
-		Features:           []string{},
-		SupportsTLSProfile: false,
+		PluginType:        uiv1alpha1.TypeTroubleshootingPanel,
+		MinClusterVersion: "v4.22",
+		MaxClusterVersion: "",
+		ImageKey:          "ui-troubleshooting-panel",
+		SupportLevel:      GeneralAvailability,
+		Features:          []string{},
 	},
 	{
-		PluginType:         uiv1alpha1.TypeDistributedTracing,
-		MinClusterVersion:  "v4.11",
-		MaxClusterVersion:  "v4.15",
-		ImageKey:           "ui-distributed-tracing-pf4",
-		SupportLevel:       GeneralAvailability,
-		Features:           []string{},
-		SupportsTLSProfile: true,
+		PluginType:        uiv1alpha1.TypeDistributedTracing,
+		MinClusterVersion: "v4.11",
+		MaxClusterVersion: "v4.15",
+		ImageKey:          "ui-distributed-tracing-pf4",
+		SupportLevel:      GeneralAvailability,
+		Features:          []string{},
 	},
 	{
-		PluginType:         uiv1alpha1.TypeDistributedTracing,
-		MinClusterVersion:  "v4.15",
-		MaxClusterVersion:  "v4.19",
-		ImageKey:           "ui-distributed-tracing-pf5",
-		SupportLevel:       GeneralAvailability,
-		Features:           []string{},
-		SupportsTLSProfile: true,
+		PluginType:        uiv1alpha1.TypeDistributedTracing,
+		MinClusterVersion: "v4.15",
+		MaxClusterVersion: "v4.19",
+		ImageKey:          "ui-distributed-tracing-pf5",
+		SupportLevel:      GeneralAvailability,
+		Features:          []string{},
 	},
 	{
-		PluginType:         uiv1alpha1.TypeDistributedTracing,
-		MinClusterVersion:  "v4.19",
-		MaxClusterVersion:  "v4.22",
-		ImageKey:           "ui-distributed-tracing-pf6",
-		SupportLevel:       GeneralAvailability,
-		Features:           []string{},
-		SupportsTLSProfile: true,
+		PluginType:        uiv1alpha1.TypeDistributedTracing,
+		MinClusterVersion: "v4.19",
+		MaxClusterVersion: "v4.22",
+		ImageKey:          "ui-distributed-tracing-pf6",
+		SupportLevel:      GeneralAvailability,
+		Features:          []string{},
 	},
 	{
-		PluginType:         uiv1alpha1.TypeDistributedTracing,
-		MinClusterVersion:  "v4.22",
-		MaxClusterVersion:  "",
-		ImageKey:           "ui-distributed-tracing",
-		SupportLevel:       GeneralAvailability,
-		Features:           []string{},
-		SupportsTLSProfile: true,
+		PluginType:        uiv1alpha1.TypeDistributedTracing,
+		MinClusterVersion: "v4.22",
+		MaxClusterVersion: "",
+		ImageKey:          "ui-distributed-tracing",
+		SupportLevel:      GeneralAvailability,
+		Features:          []string{},
 	},
 	{
-		PluginType:         uiv1alpha1.TypeLogging,
-		MinClusterVersion:  "v4.11",
-		MaxClusterVersion:  "v4.12",
-		ImageKey:           "ui-logging-pf4",
-		SupportLevel:       GeneralAvailability,
-		Features:           []string{},
-		SupportsTLSProfile: true,
+		PluginType:        uiv1alpha1.TypeLogging,
+		MinClusterVersion: "v4.11",
+		MaxClusterVersion: "v4.12",
+		ImageKey:          "ui-logging-pf4",
+		SupportLevel:      GeneralAvailability,
+		Features:          []string{},
 	},
 	{
 		PluginType:        uiv1alpha1.TypeLogging,
@@ -118,7 +107,6 @@ var compatibilityMatrix = []CompatibilityEntry{
 		Features: []string{
 			"dev-console",
 		},
-		SupportsTLSProfile: true,
 	},
 	{
 		PluginType:        uiv1alpha1.TypeLogging,
@@ -130,7 +118,6 @@ var compatibilityMatrix = []CompatibilityEntry{
 			"dev-console",
 			"alerts",
 		},
-		SupportsTLSProfile: true,
 	},
 	{
 		PluginType:        uiv1alpha1.TypeLogging,
@@ -143,7 +130,6 @@ var compatibilityMatrix = []CompatibilityEntry{
 			"alerts",
 			"dev-alerts",
 		},
-		SupportsTLSProfile: true,
 	},
 	{
 		PluginType:        uiv1alpha1.TypeLogging,
@@ -156,7 +142,6 @@ var compatibilityMatrix = []CompatibilityEntry{
 			"alerts",
 			"dev-alerts",
 		},
-		SupportsTLSProfile: true,
 	},
 	{
 		PluginType:        uiv1alpha1.TypeLogging,
@@ -169,7 +154,6 @@ var compatibilityMatrix = []CompatibilityEntry{
 			"alerts",
 			"dev-alerts",
 		},
-		SupportsTLSProfile: true,
 	},
 	{
 		PluginType:        uiv1alpha1.TypeMonitoring,
@@ -179,8 +163,7 @@ var compatibilityMatrix = []CompatibilityEntry{
 		SupportLevel:      TechPreview,
 		// feature flags for montioring are dynamically injected
 		// based on the cluster version and and UIPlugin CR configurations
-		Features:           []string{},
-		SupportsTLSProfile: true,
+		Features: []string{},
 	},
 	{
 		PluginType:        uiv1alpha1.TypeMonitoring,
@@ -190,8 +173,7 @@ var compatibilityMatrix = []CompatibilityEntry{
 		SupportLevel:      GeneralAvailability,
 		// feature flags for montioring are dynamically injected
 		// based on the cluster version and and UIPlugin CR configurations
-		Features:           []string{},
-		SupportsTLSProfile: true,
+		Features: []string{},
 	},
 	{
 		PluginType:        uiv1alpha1.TypeMonitoring,
@@ -201,8 +183,7 @@ var compatibilityMatrix = []CompatibilityEntry{
 		SupportLevel:      GeneralAvailability,
 		// feature flags for montioring are dynamically injected
 		// based on the cluster version and and UIPlugin CR configurations
-		Features:           []string{},
-		SupportsTLSProfile: true,
+		Features: []string{},
 	},
 }
 
