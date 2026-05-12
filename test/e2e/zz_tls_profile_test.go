@@ -40,7 +40,7 @@ func TestTLSProfileWatcher(t *testing.T) {
 			scenario: assertOperatorRunningWithDefaultTLSProfile,
 		},
 		{
-			name:     "operator restarts when TLS profile changes from default to Old",
+			name:     "operator restarts when TLS profile changes from default to Modern",
 			scenario: assertOperatorRestartsOnTLSProfileChange,
 		},
 		{
@@ -71,7 +71,7 @@ func assertOperatorRunningWithDefaultTLSProfile(t *testing.T) {
 	t.Logf("APIServer TLS profile type: %v", apiServer.Spec.TLSSecurityProfile)
 }
 
-// assertOperatorRestartsOnTLSProfileChange sets the TLS profile to Old,
+// assertOperatorRestartsOnTLSProfileChange sets the TLS profile to Modern,
 // verifies the operator container restarts, then restores the original profile.
 func assertOperatorRestartsOnTLSProfileChange(t *testing.T) {
 	ctx := context.Background()
@@ -90,17 +90,17 @@ func assertOperatorRestartsOnTLSProfileChange(t *testing.T) {
 
 	initialRestarts := waitForStableRestartCount(t)
 
-	t.Log("setting TLS profile to Old")
+	t.Log("setting TLS profile to Modern")
 	setTLSProfile(t, &configv1.TLSSecurityProfile{
-		Type: configv1.TLSProfileOldType,
-		Old:  &configv1.OldTLSProfile{},
+		Type:   configv1.TLSProfileModernType,
+		Modern: &configv1.ModernTLSProfile{},
 	})
 
 	waitForOperatorContainerRestart(t, initialRestarts)
 
 	f.AssertDeploymentReady(operatorDeploymentName, f.OperatorNamespace,
 		framework.WithTimeout(5*time.Minute))(t)
-	t.Log("operator restarted and is ready after TLS profile change to Old")
+	t.Log("operator restarted and is ready after TLS profile change to Modern")
 }
 
 // assertOperatorRestartsOnCustomTLSProfile sets a Custom TLS profile with
