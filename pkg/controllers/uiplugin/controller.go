@@ -226,35 +226,19 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	if !plugin.ObjectMeta.DeletionTimestamp.IsZero() {
 		logger.V(6).Info("deregistering plugin from the console")
 		if err := rm.deregisterPluginFromConsole(ctx, pluginTypeToConsoleName[plugin.Spec.Type]); err != nil {
-			return ctrl.Result{}, err
+			logger.V(3).Info("best-effort console deregistration failed during deletion", "error", err)
 		}
 
-		// Remove finalizer if present
-		if controllerutil.ContainsFinalizer(plugin, finalizerName) {
-			patch := client.MergeFrom(plugin.DeepCopy())
-			controllerutil.RemoveFinalizer(plugin, finalizerName)
-			if err := rm.k8sClient.Patch(ctx, plugin, patch); err != nil {
-				if apierrors.IsNotFound(err) {
-					return ctrl.Result{}, nil
-				}
-				return ctrl.Result{}, err
-			}
+		if err := rm.removeLegacyFinalizer(ctx, plugin); err != nil {
+			return ctrl.Result{}, err
 		}
 
 		logger.V(6).Info("skipping reconcile since object is already scheduled for deletion")
 		return ctrl.Result{}, nil
 	}
 
-	// Add finalizer if not present
-	if !controllerutil.ContainsFinalizer(plugin, finalizerName) {
-		patch := client.MergeFrom(plugin.DeepCopy())
-		controllerutil.AddFinalizer(plugin, finalizerName)
-		if err := rm.k8sClient.Patch(ctx, plugin, patch); err != nil {
-			if apierrors.IsNotFound(err) {
-				return ctrl.Result{}, nil
-			}
-			return ctrl.Result{}, err
-		}
+	if err := rm.removeLegacyFinalizer(ctx, plugin); err != nil {
+		return ctrl.Result{}, err
 	}
 
 	compatibilityInfo, err := lookupImageAndFeatures(plugin.Spec.Type, rm.clusterVersion)
@@ -423,6 +407,21 @@ func (rm resourceManager) deregisterPluginFromConsole(ctx context.Context, plugi
 		return err
 	}
 
+	return nil
+}
+
+func (rm resourceManager) removeLegacyFinalizer(ctx context.Context, plugin *uiv1alpha1.UIPlugin) error {
+	if !controllerutil.ContainsFinalizer(plugin, finalizerName) {
+		return nil
+	}
+	patch := client.MergeFrom(plugin.DeepCopy())
+	controllerutil.RemoveFinalizer(plugin, finalizerName)
+	if err := rm.k8sClient.Patch(ctx, plugin, patch); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
 	return nil
 }
 

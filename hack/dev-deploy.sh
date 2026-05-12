@@ -46,10 +46,7 @@ CAT_NAME=$(oc get catalogsource | grep 'observability-operator' | awk '{print $1
 SUB_NAME=$(oc get subscriptions | grep 'observability-operator' | awk '{print $1}') && oc delete subscriptions "${SUB_NAME}"
 CSV_NAME=$(oc get clusterserviceversion | grep 'observability-operator' | awk '{print $1}') && oc delete clusterserviceversion "${CSV_NAME}"
 
-# delete uiplugin if hanging by unblock finalizer
-kubectl patch uiplugin monitoring --type='merge' -p='{"metadata":{"finalizers":null}}'
-
-# OR Delete the whole operator 
+# OR Delete the whole operator
 operator-sdk cleanup observability-operator -n openshift-operators
 
 # Run the bundle using the fully qualified image tag.
