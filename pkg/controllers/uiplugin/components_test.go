@@ -168,4 +168,3 @@ func indexOfArg(args []string, target string) int {
 	}
 	return -1
 }
-
