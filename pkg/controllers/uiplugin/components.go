@@ -12,7 +12,7 @@ import (
 
 	"github.com/go-logr/logr"
 	osv1 "github.com/openshift/api/console/v1"
-	osv1alpha1 "github.com/openshift/api/console/v1alpha1"
+	osv1alpha1 "github.com/rhobs/openshift-api/console/v1alpha1"
 	"golang.org/x/mod/semver"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -265,8 +265,9 @@ func newConsolePlugin(info UIPluginInfo, namespace string) *osv1.ConsolePlugin {
 					BasePath:  "/",
 				},
 			},
-			Proxy: info.Proxies,
-			I18n:  osv1.ConsolePluginI18n{LoadType: osv1.Preload},
+			Proxy:                 info.Proxies,
+			I18n:                  osv1.ConsolePluginI18n{LoadType: osv1.Preload},
+			ContentSecurityPolicy: []osv1.ConsolePluginCSP{},
 		},
 	}
 }

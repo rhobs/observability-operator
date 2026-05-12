@@ -9,16 +9,24 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/grafana/tempo-operator v0.20.0
 	github.com/open-telemetry/opentelemetry-operator v0.148.0
-	github.com/openshift/api v3.9.0+incompatible // PINNED: newer versions remove console/v1alpha1 API needed for OpenShift <4.17 compatibility
+	github.com/openshift/api v0.0.0-20260511191110-9b69e5fa27e9
 	github.com/openshift/controller-runtime-common v0.0.0-20260318085703-1812aed6dbd2
-	github.com/openshift/library-go v0.0.0-20260213153706-03f1709971c5
+	github.com/openshift/library-go v0.0.0-20260512121938-431f18311e77
 	github.com/operator-framework/api v0.42.0
+	github.com/perses/perses v0.53.1
+	github.com/perses/plugins/prometheus v0.57.0
+	github.com/perses/plugins/table v0.11.2
+	github.com/perses/plugins/timeserieschart v0.12.1
+	github.com/perses/spec v0.1.2
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.90.1
 	github.com/prometheus/common v0.67.5
 	github.com/rhobs/obo-prometheus-operator v0.90.1-rhobs1
 	github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.90.1-rhobs1
 	github.com/rhobs/observability-operator/pkg/apis v0.0.0-20251009091129-76135c924ed6
+	github.com/rhobs/openshift-api v0.0.0-20260512142436-2e89e902a420
+	github.com/rhobs/perses v0.0.0-20260422074433-2c06d5cd1312
+	github.com/rhobs/perses-operator v0.1.10-0.20260422102948-9bec730aa616
 	github.com/stretchr/testify v1.11.1
 	go.uber.org/zap v1.27.1
 	golang.org/x/exp v0.0.0-20260312153236-7ab1446f8b90
@@ -33,22 +41,6 @@ require (
 	k8s.io/component-base v0.35.4
 	k8s.io/utils v0.0.0-20260210185600-b8788abfbbc2
 	sigs.k8s.io/controller-runtime v0.23.3
-)
-
-replace (
-	github.com/openshift/api => github.com/openshift/api v0.0.0-20240404200104-96ed2d49b255
-	github.com/openshift/controller-runtime-common => github.com/openshift/controller-runtime-common v0.0.0-20260210092218-8eef974290cd
-	github.com/rhobs/observability-operator/pkg/apis => ./pkg/apis
-)
-
-require (
-	github.com/perses/perses v0.53.1
-	github.com/perses/plugins/prometheus v0.57.0
-	github.com/perses/plugins/table v0.11.2
-	github.com/perses/plugins/timeserieschart v0.12.1
-	github.com/perses/spec v0.1.2
-	github.com/rhobs/perses v0.0.0-20260422074433-2c06d5cd1312
-	github.com/rhobs/perses-operator v0.1.10-0.20260422102948-9bec730aa616
 )
 
 require (
@@ -194,3 +186,5 @@ require (
 	sigs.k8s.io/structured-merge-diff/v6 v6.3.2 // indirect
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
+
+replace github.com/rhobs/observability-operator/pkg/apis => ./pkg/apis
