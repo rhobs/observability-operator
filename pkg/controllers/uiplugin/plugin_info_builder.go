@@ -6,8 +6,8 @@ import (
 
 	"github.com/go-logr/logr"
 	osv1 "github.com/openshift/api/console/v1"
-	osv1alpha1 "github.com/openshift/api/console/v1alpha1"
 	libgocrypto "github.com/openshift/library-go/pkg/crypto"
+	osv1alpha1 "github.com/rhobs/openshift-api/console/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/client-go/dynamic"

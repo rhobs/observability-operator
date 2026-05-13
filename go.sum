@@ -290,12 +290,12 @@ github.com/open-telemetry/opentelemetry-operator v0.148.0 h1:kzVgjGDejYi/tS6U9Pn
 github.com/open-telemetry/opentelemetry-operator v0.148.0/go.mod h1:FyHoJIYYJj9aSkwdUjpJekEhqtTsBz/LgjxiRp94k5k=
 github.com/opencontainers/go-digest v1.0.0 h1:apOUWs51W5PlhuyGyz9FCeeBIOUDA/6nW8Oi/yOhh5U=
 github.com/opencontainers/go-digest v1.0.0/go.mod h1:0JzlMkj0TRzQZfJkVvzbP0HBR3IKzErnv2BNG4W4MAM=
-github.com/openshift/api v0.0.0-20240404200104-96ed2d49b255 h1:OPEl/rl/Bt8soLkMUex9PZu9PJB59VPFnaPh/n1Pb3I=
-github.com/openshift/api v0.0.0-20240404200104-96ed2d49b255/go.mod h1:CxgbWAlvu2iQB0UmKTtRu1YfepRg1/vJ64n2DlIEVz4=
-github.com/openshift/controller-runtime-common v0.0.0-20260210092218-8eef974290cd h1:pwYZz6/NjHBCrxp/oalDmVl2KP/10Pimzr+BhfKCF9Q=
-github.com/openshift/controller-runtime-common v0.0.0-20260210092218-8eef974290cd/go.mod h1:v50YKO19Utu2nn7jsWwMFZXmO+HSHdkeDdEdNvOSy88=
-github.com/openshift/library-go v0.0.0-20260213153706-03f1709971c5 h1:9Pe6iVOMjt9CdA/vaKBNUSoEIjIe1po5Ha3ABRYXLJI=
-github.com/openshift/library-go v0.0.0-20260213153706-03f1709971c5/go.mod h1:K3FoNLgNBFYbFuG+Kr8usAnQxj1w84XogyUp2M8rK8k=
+github.com/openshift/api v0.0.0-20260511191110-9b69e5fa27e9 h1:yb8ul1HPFYhO04yp0D8T/qSySZnKv210f4nE//i/Bdg=
+github.com/openshift/api v0.0.0-20260511191110-9b69e5fa27e9/go.mod h1:pyVjK0nZ4sRs4fuQVQ4rubsJdahI1PB94LnQ8sGdvxo=
+github.com/openshift/controller-runtime-common v0.0.0-20260318085703-1812aed6dbd2 h1:GrZlVichOCE/lz8fg1+eNrAtkM0VSlqa9buuzN0vnb0=
+github.com/openshift/controller-runtime-common v0.0.0-20260318085703-1812aed6dbd2/go.mod h1:XGabTMnNbz0M5Oa7IbscZp/jmcc7aHobvOCUWwkzKvM=
+github.com/openshift/library-go v0.0.0-20260512121938-431f18311e77 h1:aj6OEadsB7mJkUoukka+7y0x0Q3o7n/BIAmkPFB4160=
+github.com/openshift/library-go v0.0.0-20260512121938-431f18311e77/go.mod h1:gKG9lctU0yEftSoT3DUyeIWz1oAgF0EHUpwI4pnCo4o=
 github.com/operator-framework/api v0.42.0 h1:rkc5V3zW8RxZMjePAe12jdL7Co/hwsYo1pLnkkhuR7s=
 github.com/operator-framework/api v0.42.0/go.mod h1:bMEj+wl/8tGqcGNtxt38cLUYagu9chNsbYzb/5HQaUQ=
 github.com/pborman/getopt v0.0.0-20170112200414-7148bc3a4c30/go.mod h1:85jBQOZwpVEaDAr341tbn15RS4fCAsIst0qp7i8ex1o=
@@ -359,6 +359,8 @@ github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.90.1-rhobs1 h1:y
 github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.90.1-rhobs1/go.mod h1:smEIMH0TANmMFkksWwrwxSP/pNdjVa66WNO06Nf7ylc=
 github.com/rhobs/obo-prometheus-operator/pkg/client v0.90.1-rhobs1 h1:Ut5Cirj3CBXMNy0UQnce8XwDEH/Nwv7dgEs1rUyhUrk=
 github.com/rhobs/obo-prometheus-operator/pkg/client v0.90.1-rhobs1/go.mod h1:gy2Ky11XeW8qbt7iyeOd7lhQa9wk+aIQfARs1tAffw4=
+github.com/rhobs/openshift-api v0.0.0-20260512142436-2e89e902a420 h1:7e9fFgSnTQH6mOUK9ne8eueLoDe0qFdxPZn0yYD3T4Y=
+github.com/rhobs/openshift-api v0.0.0-20260512142436-2e89e902a420/go.mod h1:W0V3SoeXIKmaTN3pqMKDiLZ23rc9viuqYenk9+89N+o=
 github.com/rhobs/perses v0.0.0-20260422074433-2c06d5cd1312 h1:FIHpZaFw4s8KwL1MbBbehbhnaIoWqK9w6BQHp8qtk50=
 github.com/rhobs/perses v0.0.0-20260422074433-2c06d5cd1312/go.mod h1:1eTdHfUEzWvkpxzblN5MeXnvcTLoMFSXcAl1rbdEkJo=
 github.com/rhobs/perses-operator v0.1.10-0.20260422102948-9bec730aa616 h1:pBAB0AH1JT21OkD8wpoxeTuPot9mWQWo2KYRKaCzPMo=

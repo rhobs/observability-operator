@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	osv1 "github.com/openshift/api/console/v1"
-	osv1alpha1 "github.com/openshift/api/console/v1alpha1"
+	osv1alpha1 "github.com/rhobs/openshift-api/console/v1alpha1"
 	persesv1alpha2 "github.com/rhobs/perses-operator/api/v1alpha2"
 	persesconfig "github.com/rhobs/perses/pkg/model/api/config"
 	"golang.org/x/mod/semver"
