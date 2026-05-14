@@ -53,10 +53,10 @@ func TestGetReconcilers(t *testing.T) {
 				},
 				Spec: obsv1alpha1.ObservabilityInstallerSpec{
 					Capabilities: &obsv1alpha1.CapabilitiesSpec{
-						Tracing: obsv1alpha1.TracingSpec{
+						Tracing: &obsv1alpha1.TracingSpec{
 							CommonCapabilitiesSpec: obsv1alpha1.CommonCapabilitiesSpec{
 								Enabled:   true,
-								Operators: obsv1alpha1.OperatorsSpec{},
+								Operators: &obsv1alpha1.OperatorsSpec{},
 							},
 						},
 					},
@@ -87,13 +87,13 @@ func TestGetReconcilers(t *testing.T) {
 				},
 				Spec: obsv1alpha1.ObservabilityInstallerSpec{
 					Capabilities: &obsv1alpha1.CapabilitiesSpec{
-						Tracing: obsv1alpha1.TracingSpec{
+						Tracing: &obsv1alpha1.TracingSpec{
 							CommonCapabilitiesSpec: obsv1alpha1.CommonCapabilitiesSpec{
 								Enabled:   true,
-								Operators: obsv1alpha1.OperatorsSpec{},
+								Operators: &obsv1alpha1.OperatorsSpec{},
 							},
-							Storage: obsv1alpha1.TracingStorageSpec{
-								ObjectStorageSpec: obsv1alpha1.TracingObjectStorageSpec{
+							Storage: &obsv1alpha1.TracingStorageSpec{
+								ObjectStorageSpec: &obsv1alpha1.TracingObjectStorageSpec{
 									S3: &obsv1alpha1.S3Spec{
 										Bucket:      "tempo",
 										Endpoint:    "tmepo:111",
@@ -137,10 +137,10 @@ func TestGetReconcilers(t *testing.T) {
 				},
 				Spec: obsv1alpha1.ObservabilityInstallerSpec{
 					Capabilities: &obsv1alpha1.CapabilitiesSpec{
-						Tracing: obsv1alpha1.TracingSpec{
+						Tracing: &obsv1alpha1.TracingSpec{
 							CommonCapabilitiesSpec: obsv1alpha1.CommonCapabilitiesSpec{
 								Enabled: false,
-								Operators: obsv1alpha1.OperatorsSpec{
+								Operators: &obsv1alpha1.OperatorsSpec{
 									Install: &trueVal,
 								},
 							},
@@ -171,7 +171,7 @@ func TestGetReconcilers(t *testing.T) {
 				},
 				Spec: obsv1alpha1.ObservabilityInstallerSpec{
 					Capabilities: &obsv1alpha1.CapabilitiesSpec{
-						Tracing: obsv1alpha1.TracingSpec{
+						Tracing: &obsv1alpha1.TracingSpec{
 							CommonCapabilitiesSpec: obsv1alpha1.CommonCapabilitiesSpec{
 								Enabled: false,
 							},
@@ -200,7 +200,7 @@ func TestGetReconcilers(t *testing.T) {
 				},
 				Spec: obsv1alpha1.ObservabilityInstallerSpec{
 					Capabilities: &obsv1alpha1.CapabilitiesSpec{
-						Tracing: obsv1alpha1.TracingSpec{
+						Tracing: &obsv1alpha1.TracingSpec{
 							CommonCapabilitiesSpec: obsv1alpha1.CommonCapabilitiesSpec{
 								Enabled: true,
 							},

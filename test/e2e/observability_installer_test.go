@@ -98,12 +98,12 @@ func testObservabilityInstallerTracing(t *testing.T) {
 		},
 		Spec: obsv1alpha1.ObservabilityInstallerSpec{
 			Capabilities: &obsv1alpha1.CapabilitiesSpec{
-				Tracing: obsv1alpha1.TracingSpec{
+				Tracing: &obsv1alpha1.TracingSpec{
 					CommonCapabilitiesSpec: obsv1alpha1.CommonCapabilitiesSpec{
 						Enabled: true,
 					},
-					Storage: obsv1alpha1.TracingStorageSpec{
-						ObjectStorageSpec: obsv1alpha1.TracingObjectStorageSpec{
+					Storage: &obsv1alpha1.TracingStorageSpec{
+						ObjectStorageSpec: &obsv1alpha1.TracingObjectStorageSpec{
 							S3: &obsv1alpha1.S3Spec{
 								Bucket:      "tempo",
 								Endpoint:    "http://minio.minio.svc:9000",

@@ -117,7 +117,7 @@ func getReconcilers(ctx context.Context, k8sClient client.Client, k8sReader clie
 	}
 
 	// Install operators and instances
-	if instance.Spec.Capabilities != nil && instance.Spec.Capabilities.Tracing.CommonCapabilitiesSpec.Enabled {
+	if tracing := instance.Spec.GetCapabilities().GetTracing(); tracing != nil && tracing.Enabled {
 		// install operators and instances
 		if operatorsStatus.ShouldInstall("opentelemetry") {
 			reconcilers = append(reconcilers, reconciler.NewCreateUpdateReconciler(otelSubs, instance))
@@ -133,8 +133,9 @@ func getReconcilers(ctx context.Context, k8sClient client.Client, k8sReader clie
 		}
 	}
 	// install operators only
-	if instance.Spec.Capabilities != nil &&
-		(instance.Spec.Capabilities.Tracing.CommonCapabilitiesSpec.Operators.Install != nil && *instance.Spec.Capabilities.Tracing.CommonCapabilitiesSpec.Operators.Install) {
+	if tracing := instance.Spec.GetCapabilities().GetTracing(); tracing != nil &&
+		tracing.GetOperators() != nil &&
+		(tracing.GetOperators().Install != nil && *tracing.GetOperators().Install) {
 		// install operators only
 		if operatorsStatus.ShouldInstall("opentelemetry") {
 			reconcilers = append(reconcilers, reconciler.NewCreateUpdateReconciler(otelSubs, instance))

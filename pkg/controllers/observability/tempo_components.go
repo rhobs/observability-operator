@@ -22,13 +22,10 @@ const (
 
 func tempoStack(instance *obsv1alpha1.ObservabilityInstaller) *tempov1alpha1.TempoStack {
 	var storageType tempov1alpha1.ObjectStorageSecretType
-	if instance.Spec.Capabilities != nil {
-		storageType = toTempoStorageType(instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec)
+	if oss := instance.Spec.GetCapabilities().GetTracing().GetStorage().GetObjectStorageSpec(); oss != nil {
+		storageType = toTempoStorageType(oss)
 	}
-	var credentialMode tempov1alpha1.CredentialMode
-	if instance.Spec.Capabilities != nil {
-		credentialMode = toTempoCredentialMode(instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec)
-	}
+	credentialMode := toTempoCredentialMode(instance.Spec.GetCapabilities().GetTracing().GetStorage().GetObjectStorageSpec())
 	tempo := &tempov1alpha1.TempoStack{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "TempoStack",
@@ -63,10 +60,9 @@ func tempoStack(instance *obsv1alpha1.ObservabilityInstaller) *tempov1alpha1.Tem
 		},
 	}
 
-	if instance.Spec.Capabilities != nil {
-		storageSpec := instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec
-		tls := storageSpec.TLS
-		enableTLS := tls != nil || s3hasHTTPSEndpoint(storageSpec)
+	if storageSpec := instance.Spec.GetCapabilities().GetTracing().GetStorage().GetObjectStorageSpec(); storageSpec != nil {
+		tls := storageSpec.GetTLS()
+		enableTLS := tls != nil || s3hasHTTPSEndpoint(*storageSpec)
 
 		if enableTLS {
 			tempo.Spec.Storage.TLS = tempov1alpha1.TLSSpec{
@@ -130,8 +126,7 @@ func tempoStackSecrets(ctx context.Context, k8sClient client.Client, k8sReader c
 	var objectStorageCAConfMap *corev1.ConfigMap
 	var objectStorageTLSSecret *corev1.Secret
 
-	if instance.Spec.Capabilities != nil && instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.TLS != nil {
-		tlsSpec := instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.TLS
+	if tlsSpec := instance.Spec.GetCapabilities().GetTracing().GetStorage().GetObjectStorageSpec().GetTLS(); tlsSpec != nil {
 		if tlsSpec.CAConfigMap != nil {
 			caConfigMap := &corev1.ConfigMap{}
 			err := k8sReader.Get(ctx, client.ObjectKey{
@@ -139,7 +134,7 @@ func tempoStackSecrets(ctx context.Context, k8sClient client.Client, k8sReader c
 				Name:      tlsSpec.CAConfigMap.Name,
 			}, caConfigMap)
 			if err != nil {
-				return nil, fmt.Errorf("failed to get object storage CA configmap %s: %w", instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec.TLS.CAConfigMap.Name, err)
+				return nil, fmt.Errorf("failed to get object storage CA configmap %s: %w", tlsSpec.CAConfigMap.Name, err)
 			}
 
 			objectStorageCAConfMap = &corev1.ConfigMap{
@@ -207,8 +202,7 @@ func tempoStackSecrets(ctx context.Context, k8sClient client.Client, k8sReader c
 			Namespace: instance.Namespace,
 		},
 	}
-	if instance.Spec.Capabilities != nil {
-		objectStorageSpec := instance.Spec.Capabilities.Tracing.Storage.ObjectStorageSpec
+	if objectStorageSpec := instance.Spec.GetCapabilities().GetTracing().GetStorage().GetObjectStorageSpec(); objectStorageSpec != nil {
 		if objectStorageSpec.S3 != nil {
 			accessKeySecret := &corev1.Secret{}
 			err := k8sClient.Get(ctx, client.ObjectKey{
@@ -279,22 +273,22 @@ func tempoStackSecrets(ctx context.Context, k8sClient client.Client, k8sReader c
 				"bucketname": []byte(objectStorageSpec.GCS.Bucket),
 				"key.json":   keyJSONSecret.Data[objectStorageSpec.GCS.KeyJSONSecret.Key],
 			}
-		} else if objectStorageSpec.GCSSTSSpec != nil {
+		} else if objectStorageSpec.GCSWIF != nil {
 			keyJSONSecret := &corev1.Secret{}
 			err := k8sClient.Get(ctx, client.ObjectKey{
 				Namespace: instance.Namespace,
-				Name:      objectStorageSpec.GCSSTSSpec.KeyJSONSecret.Name,
+				Name:      objectStorageSpec.GCSWIF.KeyJSONSecret.Name,
 			}, keyJSONSecret)
 			if err != nil {
-				return nil, fmt.Errorf("failed to get GCSSTS keyJSON secret %s: %w", objectStorageSpec.GCSSTSSpec.KeyJSONSecret.Name, err)
+				return nil, fmt.Errorf("failed to get GCSWIF keyJSON secret %s: %w", objectStorageSpec.GCSWIF.KeyJSONSecret.Name, err)
 			}
 
 			tempoSecret.Data = map[string][]byte{
-				"bucketname": []byte(objectStorageSpec.GCSSTSSpec.Bucket),
-				"key.json":   keyJSONSecret.Data[objectStorageSpec.GCSSTSSpec.KeyJSONSecret.Key],
+				"bucketname": []byte(objectStorageSpec.GCSWIF.Bucket),
+				"key.json":   keyJSONSecret.Data[objectStorageSpec.GCSWIF.KeyJSONSecret.Key],
 			}
-			if objectStorageSpec.GCSSTSSpec.Audience != "" {
-				tempoSecret.Data["audience"] = []byte(objectStorageSpec.GCSSTSSpec.Audience)
+			if objectStorageSpec.GCSWIF.Audience != "" {
+				tempoSecret.Data["audience"] = []byte(objectStorageSpec.GCSWIF.Audience)
 			}
 		}
 	}
@@ -321,21 +315,27 @@ func uiPlugin() *uiv1alpha1.UIPlugin {
 	}
 }
 
-func toTempoStorageType(objStorage obsv1alpha1.TracingObjectStorageSpec) tempov1alpha1.ObjectStorageSecretType {
+func toTempoStorageType(objStorage *obsv1alpha1.TracingObjectStorageSpec) tempov1alpha1.ObjectStorageSecretType {
+	if objStorage == nil {
+		return ""
+	}
 	if objStorage.S3 != nil || objStorage.S3STS != nil || objStorage.S3CCO != nil {
 		return tempov1alpha1.ObjectStorageSecretS3
 	} else if objStorage.Azure != nil || objStorage.AzureWIF != nil {
 		return tempov1alpha1.ObjectStorageSecretAzure
-	} else if objStorage.GCS != nil || objStorage.GCSSTSSpec != nil {
+	} else if objStorage.GCS != nil || objStorage.GCSWIF != nil {
 		return tempov1alpha1.ObjectStorageSecretGCS
 	}
 	return ""
 }
 
-func toTempoCredentialMode(objStorage obsv1alpha1.TracingObjectStorageSpec) tempov1alpha1.CredentialMode {
+func toTempoCredentialMode(objStorage *obsv1alpha1.TracingObjectStorageSpec) tempov1alpha1.CredentialMode {
+	if objStorage == nil {
+		return ""
+	}
 	if objStorage.S3 != nil || objStorage.Azure != nil || objStorage.GCS != nil {
 		return tempov1alpha1.CredentialModeStatic
-	} else if objStorage.S3STS != nil || objStorage.AzureWIF != nil || objStorage.GCSSTSSpec != nil {
+	} else if objStorage.S3STS != nil || objStorage.AzureWIF != nil || objStorage.GCSWIF != nil {
 		return tempov1alpha1.CredentialModeToken
 	} else if objStorage.S3CCO != nil {
 		return tempov1alpha1.CredentialModeTokenCCO
