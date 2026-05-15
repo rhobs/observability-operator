@@ -23,6 +23,7 @@ declare LOGS_DIR="tmp/e2e"
 declare OPERATORS_NS="operators"
 declare TEST_TIMEOUT="15m"
 declare RUN_REGEX=""
+declare POSTPONE_RESTORATION=""
 
 cleanup() {
 	info "Cleaning up ..."
@@ -45,7 +46,11 @@ delete_olm_subscription() {
 		-l operators.coreos.com/observability-operator.operators= || true
 	kubectl delete -n "$OPERATORS_NS" installplan,subscriptions,catalogsource \
 		-l operators.coreos.com/observability-operator.openshift-operators= || true
+	kubectl delete -n "$OPERATORS_NS" installplan,subscriptions,catalogsource \
+		-l "operators.coreos.com/observability-operator.${OPERATORS_NS}=" || true
 	kubectl delete -n "$OPERATORS_NS" catalogsource observability-operator-catalog || true
+	kubectl delete -n "$OPERATORS_NS" subscriptions -l "operators.coreos.com/observability-operator.${OPERATORS_NS}" || true
+	kubectl delete -n "$OPERATORS_NS" subscription observability-operator-v0-0-0-e2e-sub 2>/dev/null || true
 }
 
 build_bundle() {
@@ -156,7 +161,9 @@ run_e2e() {
 	watch_obo_errors "$obo_error_log" &
 
 	local ret=0
-	go test -v -timeout $TEST_TIMEOUT ./test/e2e/... -run "$RUN_REGEX" -count 1 -args -operatorInstallNS="$OPERATORS_NS" | tee "$LOGS_DIR/e2e.log" || ret=1
+	local -a extra_args=()
+	[[ -n "$POSTPONE_RESTORATION" ]] && extra_args+=("-postpone-restoration=$POSTPONE_RESTORATION")
+	go test -v -timeout "$TEST_TIMEOUT" ./test/e2e/... -run "$RUN_REGEX" -count 1 -args -operatorInstallNS="$OPERATORS_NS" "${extra_args[@]}" | tee "$LOGS_DIR/e2e.log" || ret=1
 
 	# terminte both log_events
 	{ jobs -p | xargs -I {} -- pkill -TERM -P {}; } || true
@@ -210,6 +217,11 @@ parse_args() {
 			RUN_REGEX=$1
 			shift
 			;;
+		--postpone-restoration)
+			shift
+			POSTPONE_RESTORATION=$1
+			shift
+			;;
 		*) return 1 ;; # show usage on everything else
 		esac
 	done
@@ -237,6 +249,9 @@ print_usage() {
 		                   for running against openshift use --ns openshift-operators
                   --run REGEX      regex to limit which tests are run. See go help testflag -run entry
                                    for details
+                  --postpone-restoration DURATION
+                                   delay operator Subscription restoration after uninstall tests
+                                   (e.g. 10m) to allow manual cluster inspection
 
 	EOF_HELP
 
@@ -285,6 +300,7 @@ deploy_obo() {
 	delete_olm_subscription || true
 	ensure_obo_imgpullpolicy_always_in_yaml
 	update_cluster_mon_crds
+
 	build_bundle
 	push_bundle
 	run_bundle
@@ -343,6 +359,7 @@ print_config() {
 		  CI Mode:     $CI_MODE
 		  Skip Builds: $NO_BUILDS
 		  Skip Deploy: $NO_DEPLOY
+		  Postpone restoration: ${POSTPONE_RESTORATION:-disabled}
 		  Operator namespace: $OPERATORS_NS
 		  Logs directory: $LOGS_DIR
                   Run regex: $RUN_REGEX
