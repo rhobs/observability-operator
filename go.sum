@@ -363,8 +363,8 @@ github.com/rhobs/openshift-api v0.0.0-20260512142436-2e89e902a420 h1:7e9fFgSnTQH
 github.com/rhobs/openshift-api v0.0.0-20260512142436-2e89e902a420/go.mod h1:W0V3SoeXIKmaTN3pqMKDiLZ23rc9viuqYenk9+89N+o=
 github.com/rhobs/perses v0.0.0-20260422074433-2c06d5cd1312 h1:FIHpZaFw4s8KwL1MbBbehbhnaIoWqK9w6BQHp8qtk50=
 github.com/rhobs/perses v0.0.0-20260422074433-2c06d5cd1312/go.mod h1:1eTdHfUEzWvkpxzblN5MeXnvcTLoMFSXcAl1rbdEkJo=
-github.com/rhobs/perses-operator v0.1.10-0.20260422102948-9bec730aa616 h1:pBAB0AH1JT21OkD8wpoxeTuPot9mWQWo2KYRKaCzPMo=
-github.com/rhobs/perses-operator v0.1.10-0.20260422102948-9bec730aa616/go.mod h1:REkyhfFzgup4/wvVoTPDFtKFz/1xWG24P0I1+1eRbMU=
+github.com/rhobs/perses-operator v0.1.10-0.20260518165420-4a0e166ccfca h1:2C6DuqBYT8MkHBEXIc2kF9xrXvQh2Ifp7l+Xcy1HtwU=
+github.com/rhobs/perses-operator v0.1.10-0.20260518165420-4a0e166ccfca/go.mod h1:ZduotU/1fKgK0r1LGMRIKftKE0LWofh1j97p+XCsplA=
 github.com/rogpeppe/go-internal v1.14.1 h1:UQB4HGPB6osV0SQTLymcB4TgvyWu6ZyliaW0tI/otEQ=
 github.com/rogpeppe/go-internal v1.14.1/go.mod h1:MaRKkUm5W0goXpeCfT7UZI6fk/L7L7so1lCWt35ZSgc=
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
