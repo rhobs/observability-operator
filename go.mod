@@ -26,7 +26,7 @@ require (
 	github.com/rhobs/observability-operator/pkg/apis v0.0.0-20251009091129-76135c924ed6
 	github.com/rhobs/openshift-api v0.0.0-20260512142436-2e89e902a420
 	github.com/rhobs/perses v0.0.0-20260422074433-2c06d5cd1312
-	github.com/rhobs/perses-operator v0.1.10-0.20260422102948-9bec730aa616
+	github.com/rhobs/perses-operator v0.1.10-0.20260518165420-4a0e166ccfca
 	github.com/stretchr/testify v1.11.1
 	go.uber.org/zap v1.27.1
 	golang.org/x/exp v0.0.0-20260312153236-7ab1446f8b90
