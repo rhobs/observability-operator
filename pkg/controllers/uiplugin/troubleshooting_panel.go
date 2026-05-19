@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	osv1 "github.com/openshift/api/console/v1"
-	osv1alpha1 "github.com/openshift/api/console/v1alpha1"
+	osv1alpha1 "github.com/rhobs/openshift-api/console/v1alpha1"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -238,6 +238,11 @@ func korrel8rClusterRole(name string) *rbacv1.ClusterRole {
 				APIGroups: []string{"loki.grafana.com"},
 				Resources: []string{"application", "audit", "infrastructure", "network"},
 				Verbs:     []string{"get"},
+			},
+			{
+				APIGroups: []string{"authentication.k8s.io"},
+				Resources: []string{"tokenreviews"},
+				Verbs:     []string{"create"},
 			},
 		},
 	}

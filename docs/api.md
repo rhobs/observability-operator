@@ -4336,7 +4336,7 @@ ObjectStorageSpec defines the object storage configuration for tracing.
         <td><b><a href="#observabilityinstallerspeccapabilitiestracingstorageobjectstoragegcswif">gcsWIF</a></b></td>
         <td>object</td>
         <td>
-          GCSSToken defines the Google Cloud Storage configuration using short-lived tokens.<br/>
+          GCSWIF defines the Google Cloud Storage configuration using Workload Identity Federation.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -4574,7 +4574,7 @@ KeyJSON is the key.json file encoded in a secret.
 
 
 
-GCSSToken defines the Google Cloud Storage configuration using short-lived tokens.
+GCSWIF defines the Google Cloud Storage configuration using Workload Identity Federation.
 
 <table>
     <thead>

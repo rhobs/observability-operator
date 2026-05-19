@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"time"
 
 	configv1 "github.com/openshift/api/config/v1"
+	operatorv1 "github.com/openshift/api/operator/v1"
 	openshifttls "github.com/openshift/controller-runtime-common/pkg/tls"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,6 +18,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apiserver/pkg/server/dynamiccertificates"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -45,6 +48,7 @@ const (
 // OpenShift installations).
 type Operator struct {
 	manager               manager.Manager
+	restConfig            *rest.Config
 	servingCertController *dynamiccertificates.DynamicServingCertificateController
 	clientCAController    *dynamiccertificates.ConfigMapCAController
 }
@@ -382,11 +386,20 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 		return nil, fmt.Errorf("unable to add health probe: %w", err)
 	}
 
-	return &Operator{
+	op := &Operator{
 		manager:               mgr,
+		restConfig:            restConfig,
 		servingCertController: servingCertController,
 		clientCAController:    clientCAController,
-	}, nil
+	}
+
+	if cfg.FeatureGates.OpenShift.Enabled {
+		if err := mgr.Add(op.newShutdownCleanupRunnable()); err != nil {
+			return nil, fmt.Errorf("unable to add shutdown cleanup runnable: %w", err)
+		}
+	}
+
+	return op, nil
 }
 
 func (o *Operator) Start(ctx context.Context) error {
@@ -403,6 +416,75 @@ func (o *Operator) Start(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (o *Operator) newShutdownCleanupRunnable() manager.Runnable {
+	return manager.RunnableFunc(func(ctx context.Context) error {
+		// Block until the manager's context is cancelled (shutdown signal).
+		<-ctx.Done()
+		o.cleanupUIPluginsFromConsole()
+		return nil
+	})
+}
+
+func (o *Operator) cleanupUIPluginsFromConsole() {
+	logger := ctrl.Log.WithName("shutdown-cleanup")
+	logger.Info("attempting best-effort UIPlugin console deregistration")
+
+	cleanupCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	directClient, err := client.New(o.restConfig, client.Options{
+		Scheme: o.manager.GetScheme(),
+	})
+	if err != nil {
+		logger.Error(err, "failed to create client for shutdown cleanup")
+		return
+	}
+
+	pluginList := &uiv1alpha1.UIPluginList{}
+	if err := directClient.List(cleanupCtx, pluginList); err != nil {
+		logger.Error(err, "failed to list UIPlugins during shutdown cleanup")
+		return
+	}
+
+	if len(pluginList.Items) == 0 {
+		return
+	}
+
+	toRemove := make(map[string]struct{}, len(pluginList.Items))
+	for _, plugin := range pluginList.Items {
+		if name := uictrl.ConsoleNameForType(plugin.Spec.Type); name != "" {
+			toRemove[name] = struct{}{}
+		}
+	}
+
+	if len(toRemove) == 0 {
+		return
+	}
+
+	cluster := &operatorv1.Console{}
+	if err := directClient.Get(cleanupCtx, client.ObjectKey{Name: "cluster"}, cluster); err != nil {
+		logger.Error(err, "failed to get Console CR during shutdown cleanup")
+		return
+	}
+
+	original := cluster.DeepCopy()
+	cluster.Spec.Plugins = slices.DeleteFunc(cluster.Spec.Plugins, func(name string) bool {
+		_, ok := toRemove[name]
+		return ok
+	})
+
+	if slices.Equal(cluster.Spec.Plugins, original.Spec.Plugins) {
+		return
+	}
+
+	patch := client.MergeFrom(original)
+	if err := directClient.Patch(cleanupCtx, cluster, patch); err != nil {
+		logger.Error(err, "failed to patch Console CR during shutdown cleanup")
+		return
+	}
+	logger.Info("successfully cleaned up Console CR during shutdown")
 }
 
 func (o *Operator) GetClient() client.Client {

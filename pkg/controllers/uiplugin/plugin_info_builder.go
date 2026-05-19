@@ -6,8 +6,8 @@ import (
 
 	"github.com/go-logr/logr"
 	osv1 "github.com/openshift/api/console/v1"
-	osv1alpha1 "github.com/openshift/api/console/v1alpha1"
 	libgocrypto "github.com/openshift/library-go/pkg/crypto"
+	osv1alpha1 "github.com/rhobs/openshift-api/console/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/client-go/dynamic"
@@ -46,6 +46,10 @@ var pluginTypeToConsoleName = map[uiv1alpha1.UIPluginType]string{
 	uiv1alpha1.TypeDistributedTracing:   "distributed-tracing-console-plugin",
 	uiv1alpha1.TypeLogging:              "logging-view-plugin",
 	uiv1alpha1.TypeMonitoring:           "monitoring-console-plugin",
+}
+
+func ConsoleNameForType(pluginType uiv1alpha1.UIPluginType) string {
+	return pluginTypeToConsoleName[pluginType]
 }
 
 func PluginInfoBuilder(ctx context.Context, k client.Client, dk dynamic.Interface, plugin *uiv1alpha1.UIPlugin, pluginConf UIPluginsConfiguration, compatibilityInfo CompatibilityEntry, clusterVersion string, logger logr.Logger) (*UIPluginInfo, error) {
@@ -110,15 +114,8 @@ func PluginInfoBuilder(ctx context.Context, k client.Client, dk dynamic.Interfac
 		return nil, fmt.Errorf("plugin type not supported: %s", plugin.Spec.Type)
 	}
 
-	if compatibilityInfo.SupportsTLSProfile {
-		pluginInfo.TLSMinVersion = string(pluginConf.TLSProfile.MinTLSVersion)
-		pluginInfo.TLSCiphers = libgocrypto.OpenSSLToIANACipherSuites(pluginConf.TLSProfile.Ciphers)
-	} else {
-		logger.Info("TLS profile not applied: plugin image does not support TLS profile flags",
-			"plugin", plugin.Name,
-			"pluginType", plugin.Spec.Type,
-			"imageKey", compatibilityInfo.ImageKey)
-	}
+	pluginInfo.TLSMinVersion = string(pluginConf.TLSProfile.MinTLSVersion)
+	pluginInfo.TLSCiphers = libgocrypto.OpenSSLToIANACipherSuites(pluginConf.TLSProfile.Ciphers)
 
 	return pluginInfo, err
 }

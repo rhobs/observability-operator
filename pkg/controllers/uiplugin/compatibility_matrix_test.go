@@ -253,7 +253,7 @@ func TestLookupImageAndFeatures(t *testing.T) {
 		{
 			pluginType:     uiv1alpha1.TypeTroubleshootingPanel,
 			clusterVersion: "4.19",
-			expectedKey:    "ui-troubleshooting-panel",
+			expectedKey:    "ui-troubleshooting-panel-pf6",
 			expectedErr:    nil,
 			supportLevel:   GeneralAvailability,
 		},
@@ -316,7 +316,7 @@ func TestLookupImageAndFeatures(t *testing.T) {
 		{
 			pluginType:     uiv1alpha1.TypeDistributedTracing,
 			clusterVersion: "4.19",
-			expectedKey:    "ui-distributed-tracing",
+			expectedKey:    "ui-distributed-tracing-pf6",
 			expectedErr:    nil,
 			supportLevel:   GeneralAvailability,
 		},
@@ -344,7 +344,7 @@ func TestLookupImageAndFeatures(t *testing.T) {
 		{
 			pluginType:     uiv1alpha1.TypeTroubleshootingPanel,
 			clusterVersion: "v4.19.0-0.nightly-2024-06-06-064349",
-			expectedKey:    "ui-troubleshooting-panel",
+			expectedKey:    "ui-troubleshooting-panel-pf6",
 			expectedErr:    nil,
 			supportLevel:   GeneralAvailability,
 		},
@@ -374,7 +374,7 @@ func TestLookupImageAndFeatures(t *testing.T) {
 		{
 			pluginType:       uiv1alpha1.TypeMonitoring,
 			clusterVersion:   "v4.19",
-			expectedKey:      "ui-monitoring",
+			expectedKey:      "ui-monitoring-pf6",
 			expectedFeatures: []string{},
 			expectedErr:      nil,
 			supportLevel:     GeneralAvailability,
@@ -382,6 +382,14 @@ func TestLookupImageAndFeatures(t *testing.T) {
 		{
 			pluginType:       uiv1alpha1.TypeMonitoring,
 			clusterVersion:   "v4.19.0-0.nightly-2024-06-06-064349",
+			expectedKey:      "ui-monitoring-pf6",
+			expectedFeatures: []string{},
+			expectedErr:      nil,
+			supportLevel:     GeneralAvailability,
+		},
+		{
+			pluginType:       uiv1alpha1.TypeMonitoring,
+			clusterVersion:   "4.24.0-0.nightly-2024-03-11-200348",
 			expectedKey:      "ui-monitoring",
 			expectedFeatures: []string{},
 			expectedErr:      nil,

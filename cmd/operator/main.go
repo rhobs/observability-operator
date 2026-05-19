@@ -40,22 +40,25 @@ import (
 // prometheus-operator. For thanos we use the default version from
 // prometheus-operator.
 var defaultImages = map[string]string{
-	"prometheus":                 "",
-	"alertmanager":               "",
-	"thanos":                     obopo.DefaultThanosImage,
-	"ui-dashboards":              "quay.io/openshift-observability-ui/console-dashboards-plugin:v0.4.2",
-	"ui-troubleshooting-panel":   "quay.io/openshift-observability-ui/troubleshooting-panel-console-plugin:v0.4.4",
-	"ui-distributed-tracing-pf4": "quay.io/openshift-observability-ui/distributed-tracing-console-plugin:v0.3.2",
-	"ui-distributed-tracing-pf5": "quay.io/openshift-observability-ui/distributed-tracing-console-plugin:v0.4.2",
-	"ui-distributed-tracing":     "quay.io/openshift-observability-ui/distributed-tracing-console-plugin:v1.0.2",
-	"ui-logging-pf4":             "quay.io/openshift-observability-ui/logging-view-plugin:v6.0.4",
-	"ui-logging-pf5":             "quay.io/openshift-observability-ui/logging-view-plugin:v6.1.5",
-	"ui-logging":                 "quay.io/openshift-observability-ui/logging-view-plugin:v6.2.0",
-	"korrel8r":                   "quay.io/korrel8r/korrel8r:0.9.1",
-	"health-analyzer":            "quay.io/openshiftanalytics/cluster-health-analyzer:v1.1.1-rc.0",
-	"ui-monitoring-pf5":          "quay.io/openshift-observability-ui/monitoring-console-plugin:v0.4.4",
-	"ui-monitoring":              "quay.io/openshift-observability-ui/monitoring-console-plugin:v0.5.3",
-	"perses":                     "quay.io/openshift-observability-ui/perses:v0.53.0-go-1.25",
+	"prometheus":                   "",
+	"alertmanager":                 "",
+	"thanos":                       obopo.DefaultThanosImage,
+	"ui-dashboards":                "quay.io/openshift-observability-ui/console-dashboards-plugin:v0.4.3",
+	"ui-troubleshooting-panel-pf6": "quay.io/openshift-observability-ui/troubleshooting-panel-console-plugin:v0.4.5",
+	"ui-troubleshooting-panel":     "quay.io/openshift-observability-ui/troubleshooting-panel-console-plugin:v1.0.0",
+	"ui-distributed-tracing-pf4":   "quay.io/openshift-observability-ui/distributed-tracing-console-plugin:v0.3.3",
+	"ui-distributed-tracing-pf5":   "quay.io/openshift-observability-ui/distributed-tracing-console-plugin:v0.4.3",
+	"ui-distributed-tracing-pf6":   "quay.io/openshift-observability-ui/distributed-tracing-console-plugin:v1.0.3",
+	"ui-distributed-tracing":       "quay.io/openshift-observability-ui/distributed-tracing-console-plugin:v1.1.0",
+	"ui-logging-pf4":               "quay.io/openshift-observability-ui/logging-view-plugin:v6.0.5",
+	"ui-logging-pf5":               "quay.io/openshift-observability-ui/logging-view-plugin:v6.1.6",
+	"ui-logging":                   "quay.io/openshift-observability-ui/logging-view-plugin:v6.2.1",
+	"korrel8r":                     "quay.io/korrel8r/korrel8r:0.9.1",
+	"health-analyzer":              "quay.io/openshiftanalytics/cluster-health-analyzer:v1.1.1-rc.0",
+	"ui-monitoring-pf5":            "quay.io/openshift-observability-ui/monitoring-console-plugin:v0.4.5",
+	"ui-monitoring-pf6":            "quay.io/openshift-observability-ui/monitoring-console-plugin:v0.5.4",
+	"ui-monitoring":                "quay.io/openshift-observability-ui/monitoring-console-plugin:v1.0.0",
+	"perses":                       "quay.io/openshift-observability-ui/perses:v0.54.0",
 }
 
 func imagesUsed() []string {
@@ -151,7 +154,7 @@ func main() {
 			setupLog.Error(err, "failed to fetch TLS profile from cluster")
 			os.Exit(1)
 		}
-		setupLog.Info("fetched initial TLS profile", "minVersion", initialTLSProfileSpec.MinTLSVersion, "ciphers_len", len(initialTLSProfileSpec.Ciphers), "ciphers", initialTLSProfileSpec.Ciphers)
+		setupLog.Info("fetched initial TLS profile", "minVersion", initialTLSProfileSpec.MinTLSVersion, "ciphers", initialTLSProfileSpec.Ciphers)
 	}
 
 	op, err := operator.New(

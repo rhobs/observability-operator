@@ -90,7 +90,7 @@ spec:
                     - message: name is required when type is secret or configmap
                       rule: self.type != 'secret' && self.type != 'configmap' || has(self.name)
                     - message: namespace is required when type is secret or configmap
-                      rule: self.type != 'secret' && self.type != 'configmap' || has(self.namespace)
+                      rule: self.type != 'secret' && self.type != 'configmap' || has(self.__namespace__)
                   kubernetesAuth:
                     description: kubernetesAuth enables Kubernetes native authentication
                       for the Perses client
@@ -169,7 +169,7 @@ spec:
                     - message: name is required when type is secret or configmap
                       rule: self.type != 'secret' && self.type != 'configmap' || has(self.name)
                     - message: namespace is required when type is secret or configmap
-                      rule: self.type != 'secret' && self.type != 'configmap' || has(self.namespace)
+                      rule: self.type != 'secret' && self.type != 'configmap' || has(self.__namespace__)
                   tls:
                     description: tls provides TLS/SSL configuration for secure connections
                       to Perses
@@ -220,7 +220,7 @@ spec:
                             || has(self.name)
                         - message: namespace is required when type is secret or configmap
                           rule: self.type != 'secret' && self.type != 'configmap'
-                            || has(self.namespace)
+                            || has(self.__namespace__)
                       enable:
                         description: enable determines whether TLS is enabled for
                           connections to Perses
@@ -276,7 +276,7 @@ spec:
                             || has(self.name)
                         - message: namespace is required when type is secret or configmap
                           rule: self.type != 'secret' && self.type != 'configmap'
-                            || has(self.namespace)
+                            || has(self.__namespace__)
                     type: object
                 type: object
               config:
