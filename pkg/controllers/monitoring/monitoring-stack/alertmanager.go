@@ -38,8 +38,11 @@ func newAlertmanager(
 			Replicas:                   ms.Spec.AlertmanagerConfig.Replicas,
 			ServiceAccountName:         rbacResourceName,
 			AlertmanagerConfigSelector: resourceSelector,
-			NodeSelector:               ms.Spec.NodeSelector,
-			Tolerations:                ms.Spec.Tolerations,
+			AlertmanagerConfigMatcherStrategy: monv1.AlertmanagerConfigMatcherStrategy{
+				Type: monv1.AlertmanagerConfigMatcherStrategyType(ms.Spec.AlertmanagerConfig.MatcherStrategy),
+			},
+			NodeSelector: ms.Spec.NodeSelector,
+			Tolerations:  ms.Spec.Tolerations,
 			Affinity: &corev1.Affinity{
 				PodAntiAffinity: &corev1.PodAntiAffinity{
 					RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{

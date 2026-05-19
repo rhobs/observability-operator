@@ -55,6 +55,9 @@ const (
 // +kubebuilder:validation:Enum=CreateClusterRoleBindings;NoClusterRoleBindings
 type ClusterRoleBindingPolicy string
 
+// +kubebuilder:validation:Enum=OnNamespace;OnNamespaceExceptForAlertmanagerNamespace;None
+type AlertmanagerConfigMatcherStrategyType string
+
 const (
 	// CreateClusterRoleBindings instructs the MonitoringStack to create the
 	// default ClusterRoleBindings if a NamespaceSelector is present. Note that
@@ -67,6 +70,22 @@ const (
 	// a NamespaceSelector, admin users will have to create the appropriate
 	// RoleBindings to allow access to the desired namespaces.
 	NoClusterRoleBindings ClusterRoleBindingPolicy = "NoClusterRoleBindings"
+)
+
+const (
+	// OnNamespaceMatcherStrategy configures AlertmanagerConfig routes to only
+	// match alerts with a namespace label equal to the namespace of the
+	// AlertmanagerConfig resource.
+	OnNamespaceMatcherStrategy AlertmanagerConfigMatcherStrategyType = "OnNamespace"
+
+	// OnNamespaceExceptForAlertmanagerNamespaceMatcherStrategy behaves like
+	// OnNamespace, but AlertmanagerConfig resources in the same namespace as
+	// the Alertmanager instance match all alerts regardless of namespace.
+	OnNamespaceExceptForAlertmanagerNamespaceMatcherStrategy AlertmanagerConfigMatcherStrategyType = "OnNamespaceExceptForAlertmanagerNamespace"
+
+	// NoneMatcherStrategy configures AlertmanagerConfig routes to match all
+	// incoming alerts regardless of namespace.
+	NoneMatcherStrategy AlertmanagerConfigMatcherStrategyType = "None"
 )
 
 // MonitoringStackSpec is the specification for desired Monitoring Stack
@@ -263,6 +282,17 @@ type AlertmanagerConfig struct {
 	// +kubebuilder:default=2
 	// +kubebuilder:validation:Minimum=0
 	Replicas *int32 `json:"replicas,omitempty"`
+
+	// Define how AlertmanagerConfig objects process incoming alerts.
+	// With OnNamespace, routes only match alerts with a namespace label
+	// equal to the namespace of the AlertmanagerConfig.
+	// With OnNamespaceExceptForAlertmanagerNamespace, routes behave like
+	// OnNamespace but AlertmanagerConfig resources in the Alertmanager's
+	// own namespace match all alerts.
+	// With None, routes match all incoming alerts regardless of namespace.
+	// +optional
+	// +kubebuilder:default="None"
+	MatcherStrategy AlertmanagerConfigMatcherStrategyType `json:"matcherStrategy,omitempty"`
 
 	// Configure TLS options for the Alertmanager web server.
 	// +optional

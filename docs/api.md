@@ -231,6 +231,22 @@ Define Alertmanager config
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>matcherStrategy</b></td>
+        <td>enum</td>
+        <td>
+          Define how AlertmanagerConfig objects process incoming alerts.
+With OnNamespace, routes only match alerts with a namespace label
+equal to the namespace of the AlertmanagerConfig.
+With OnNamespaceExceptForAlertmanagerNamespace, routes behave like
+OnNamespace but AlertmanagerConfig resources in the Alertmanager's
+own namespace match all alerts.
+With None, routes match all incoming alerts regardless of namespace.<br/>
+          <br/>
+            <i>Enum</i>: OnNamespace, OnNamespaceExceptForAlertmanagerNamespace, None<br/>
+            <i>Default</i>: None<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>replicas</b></td>
         <td>integer</td>
         <td>
