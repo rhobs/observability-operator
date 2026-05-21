@@ -19,10 +19,10 @@ require (
 	github.com/perses/plugins/timeserieschart v0.12.1
 	github.com/perses/spec v0.1.2
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.90.1
+	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.91.0
 	github.com/prometheus/common v0.67.5
-	github.com/rhobs/obo-prometheus-operator v0.90.1-rhobs1
-	github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.90.1-rhobs1
+	github.com/rhobs/obo-prometheus-operator v0.91.0-rhobs1
+	github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.91.0-rhobs1
 	github.com/rhobs/observability-operator/pkg/apis v0.0.0-20251009091129-76135c924ed6
 	github.com/rhobs/openshift-api v0.0.0-20260512142436-2e89e902a420
 	github.com/rhobs/perses v0.0.0-20260422074433-2c06d5cd1312
@@ -89,7 +89,6 @@ require (
 	github.com/go-openapi/swag/yamlutils v0.25.5 // indirect
 	github.com/go-openapi/validate v0.25.2 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
-	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/cel-go v0.28.0 // indirect
@@ -121,14 +120,14 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/perses/common v0.30.2 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	github.com/prometheus-community/prom-label-proxy v0.12.1 // indirect
-	github.com/prometheus/alertmanager v0.31.1 // indirect
+	github.com/prometheus-community/prom-label-proxy v0.13.0 // indirect
+	github.com/prometheus/alertmanager v0.32.1 // indirect
 	github.com/prometheus/client_golang v1.23.2 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/otlptranslator v1.0.0 // indirect
 	github.com/prometheus/procfs v0.20.1 // indirect
-	github.com/prometheus/prometheus v0.310.0 // indirect
-	github.com/rhobs/obo-prometheus-operator/pkg/client v0.90.1-rhobs1 // indirect
+	github.com/prometheus/prometheus v0.311.3 // indirect
+	github.com/rhobs/obo-prometheus-operator/pkg/client v0.91.0-rhobs1 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/sirupsen/logrus v1.9.4 // indirect
 	github.com/spf13/cobra v1.10.2 // indirect
@@ -165,7 +164,7 @@ require (
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.50.0 // indirect
-	golang.org/x/net v0.52.0 // indirect
+	golang.org/x/net v0.53.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.43.0 // indirect
