@@ -40,7 +40,9 @@ func TestNewAlertmanagerMatcherStrategy(t *testing.T) {
 				},
 				Spec: stack.MonitoringStackSpec{
 					AlertmanagerConfig: stack.AlertmanagerConfig{
-						MatcherStrategy: tc.strategy,
+						MatcherStrategy: stack.AlertmanagerConfigMatcherStrategy{
+							Type: tc.strategy,
+						},
 					},
 				},
 			}

@@ -231,19 +231,12 @@ Define Alertmanager config
         </td>
         <td>false</td>
       </tr><tr>
-        <td><b>matcherStrategy</b></td>
-        <td>enum</td>
+        <td><b><a href="#monitoringstackspecalertmanagerconfigmatcherstrategy">matcherStrategy</a></b></td>
+        <td>object</td>
         <td>
-          Define how AlertmanagerConfig objects process incoming alerts.
-With OnNamespace, routes only match alerts with a namespace label
-equal to the namespace of the AlertmanagerConfig.
-With OnNamespaceExceptForAlertmanagerNamespace, routes behave like
-OnNamespace but AlertmanagerConfig resources in the Alertmanager's
-own namespace match all alerts.
-With None, routes match all incoming alerts regardless of namespace.<br/>
+          Define how AlertmanagerConfig objects process incoming alerts.<br/>
           <br/>
-            <i>Enum</i>: OnNamespace, OnNamespaceExceptForAlertmanagerNamespace, None<br/>
-            <i>Default</i>: None<br/>
+            <i>Default</i>: map[type:None]<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -262,6 +255,43 @@ With None, routes match all incoming alerts regardless of namespace.<br/>
         <td>object</td>
         <td>
           Configure TLS options for the Alertmanager web server.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.alertmanagerConfig.matcherStrategy
+<sup><sup>[↩ Parent](#monitoringstackspecalertmanagerconfig)</sup></sup>
+
+
+
+Define how AlertmanagerConfig objects process incoming alerts.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>type</b></td>
+        <td>enum</td>
+        <td>
+          Type defines the strategy used by AlertmanagerConfig objects to match
+alerts in the routes and inhibition rules.
+With OnNamespace, routes only match alerts with a namespace label
+equal to the namespace of the AlertmanagerConfig.
+With OnNamespaceExceptForAlertmanagerNamespace, routes behave like
+OnNamespace but AlertmanagerConfig resources in the Alertmanager's
+own namespace match all alerts.
+With None, routes match all incoming alerts regardless of namespace.<br/>
+          <br/>
+            <i>Enum</i>: OnNamespace, OnNamespaceExceptForAlertmanagerNamespace, None<br/>
+            <i>Default</i>: None<br/>
         </td>
         <td>false</td>
       </tr></tbody>

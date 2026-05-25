@@ -39,7 +39,7 @@ func newAlertmanager(
 			ServiceAccountName:         rbacResourceName,
 			AlertmanagerConfigSelector: resourceSelector,
 			AlertmanagerConfigMatcherStrategy: monv1.AlertmanagerConfigMatcherStrategy{
-				Type: monv1.AlertmanagerConfigMatcherStrategyType(ms.Spec.AlertmanagerConfig.MatcherStrategy),
+				Type: monv1.AlertmanagerConfigMatcherStrategyType(ms.Spec.AlertmanagerConfig.MatcherStrategy.Type),
 			},
 			NodeSelector: ms.Spec.NodeSelector,
 			Tolerations:  ms.Spec.Tolerations,

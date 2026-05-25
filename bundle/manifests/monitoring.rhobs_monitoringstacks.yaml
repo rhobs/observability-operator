@@ -51,20 +51,28 @@ spec:
                     description: Disables the deployment of Alertmanager.
                     type: boolean
                   matcherStrategy:
-                    default: None
-                    description: |-
-                      Define how AlertmanagerConfig objects process incoming alerts.
-                      With OnNamespace, routes only match alerts with a namespace label
-                      equal to the namespace of the AlertmanagerConfig.
-                      With OnNamespaceExceptForAlertmanagerNamespace, routes behave like
-                      OnNamespace but AlertmanagerConfig resources in the Alertmanager's
-                      own namespace match all alerts.
-                      With None, routes match all incoming alerts regardless of namespace.
-                    enum:
-                    - OnNamespace
-                    - OnNamespaceExceptForAlertmanagerNamespace
-                    - None
-                    type: string
+                    default:
+                      type: None
+                    description: Define how AlertmanagerConfig objects process incoming
+                      alerts.
+                    properties:
+                      type:
+                        default: None
+                        description: |-
+                          Type defines the strategy used by AlertmanagerConfig objects to match
+                          alerts in the routes and inhibition rules.
+                          With OnNamespace, routes only match alerts with a namespace label
+                          equal to the namespace of the AlertmanagerConfig.
+                          With OnNamespaceExceptForAlertmanagerNamespace, routes behave like
+                          OnNamespace but AlertmanagerConfig resources in the Alertmanager's
+                          own namespace match all alerts.
+                          With None, routes match all incoming alerts regardless of namespace.
+                        enum:
+                        - OnNamespace
+                        - OnNamespaceExceptForAlertmanagerNamespace
+                        - None
+                        type: string
+                    type: object
                   replicas:
                     default: 2
                     description: Number of replicas/pods to deploy for Alertmanager.

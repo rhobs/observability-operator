@@ -88,6 +88,20 @@ const (
 	NoneMatcherStrategy AlertmanagerConfigMatcherStrategyType = "None"
 )
 
+type AlertmanagerConfigMatcherStrategy struct {
+	// Type defines the strategy used by AlertmanagerConfig objects to match
+	// alerts in the routes and inhibition rules.
+	// With OnNamespace, routes only match alerts with a namespace label
+	// equal to the namespace of the AlertmanagerConfig.
+	// With OnNamespaceExceptForAlertmanagerNamespace, routes behave like
+	// OnNamespace but AlertmanagerConfig resources in the Alertmanager's
+	// own namespace match all alerts.
+	// With None, routes match all incoming alerts regardless of namespace.
+	// +optional
+	// +kubebuilder:default="None"
+	Type AlertmanagerConfigMatcherStrategyType `json:"type,omitempty"`
+}
+
 // MonitoringStackSpec is the specification for desired Monitoring Stack
 type MonitoringStackSpec struct {
 	// +optional
@@ -284,15 +298,9 @@ type AlertmanagerConfig struct {
 	Replicas *int32 `json:"replicas,omitempty"`
 
 	// Define how AlertmanagerConfig objects process incoming alerts.
-	// With OnNamespace, routes only match alerts with a namespace label
-	// equal to the namespace of the AlertmanagerConfig.
-	// With OnNamespaceExceptForAlertmanagerNamespace, routes behave like
-	// OnNamespace but AlertmanagerConfig resources in the Alertmanager's
-	// own namespace match all alerts.
-	// With None, routes match all incoming alerts regardless of namespace.
 	// +optional
-	// +kubebuilder:default="None"
-	MatcherStrategy AlertmanagerConfigMatcherStrategyType `json:"matcherStrategy,omitempty"`
+	// +kubebuilder:default={type: "None"}
+	MatcherStrategy AlertmanagerConfigMatcherStrategy `json:"matcherStrategy,omitempty"`
 
 	// Configure TLS options for the Alertmanager web server.
 	// +optional
