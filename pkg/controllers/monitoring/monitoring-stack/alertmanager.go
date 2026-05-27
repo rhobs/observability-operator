@@ -36,6 +36,7 @@ func newAlertmanager(
 				Labels: podLabels("alertmanager", ms.Name),
 			},
 			Replicas:                   ms.Spec.AlertmanagerConfig.Replicas,
+			Resources:                  ms.Spec.AlertmanagerConfig.Resources,
 			ServiceAccountName:         rbacResourceName,
 			AlertmanagerConfigSelector: resourceSelector,
 			AlertmanagerConfigMatcherStrategy: monv1.AlertmanagerConfigMatcherStrategy{

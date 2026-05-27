@@ -35,6 +35,7 @@ func (in *AlertmanagerConfig) DeepCopyInto(out *AlertmanagerConfig) {
 		*out = new(int32)
 		**out = **in
 	}
+	in.Resources.DeepCopyInto(&out.Resources)
 	out.MatcherStrategy = in.MatcherStrategy
 	if in.WebTLSConfig != nil {
 		in, out := &in.WebTLSConfig, &out.WebTLSConfig
@@ -268,6 +269,7 @@ func (in *PrometheusConfig) DeepCopyInto(out *PrometheusConfig) {
 		*out = new(monitoringv1.Duration)
 		**out = **in
 	}
+	in.ThanosResources.DeepCopyInto(&out.ThanosResources)
 	if in.WebTLSConfig != nil {
 		in, out := &in.WebTLSConfig, &out.WebTLSConfig
 		*out = new(WebTLSConfig)
