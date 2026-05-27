@@ -155,7 +155,7 @@ type MonitoringStackSpec struct {
 	// +optional
 	RetentionSize monv1.ByteSize `json:"retentionSize,omitempty"`
 
-	// Define resources requests and limits for Monitoring Stack Pods.
+	// Define resources requests and limits for the Prometheus container.
 	// +optional
 	// +kubebuilder:default={requests:{cpu: "100m", memory: "256Mi"}, limits:{memory: "512Mi", cpu: "500m"}}
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
@@ -280,6 +280,11 @@ type PrometheusConfig struct {
 	// Default interval between scrapes.
 	// +optional
 	ScrapeInterval *monv1.Duration `json:"scrapeInterval,omitempty"`
+	// Define resources requests and limits for the Thanos sidecar container.
+	// +optional
+	// +kubebuilder:default={requests:{cpu: "50m", memory: "128Mi"}, limits:{memory: "256Mi", cpu: "250m"}}
+	ThanosResources corev1.ResourceRequirements `json:"thanosResources,omitempty"`
+
 	// Configure TLS options for the Prometheus web server.
 	// +optional
 	WebTLSConfig *WebTLSConfig `json:"webTLSConfig,omitempty"`
@@ -296,6 +301,11 @@ type AlertmanagerConfig struct {
 	// +kubebuilder:default=2
 	// +kubebuilder:validation:Minimum=0
 	Replicas *int32 `json:"replicas,omitempty"`
+
+	// Define resources requests and limits for the Alertmanager container.
+	// +optional
+	// +kubebuilder:default={requests:{cpu: "50m", memory: "128Mi"}, limits:{memory: "256Mi", cpu: "250m"}}
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
 	// Define how AlertmanagerConfig objects process incoming alerts.
 	// +optional

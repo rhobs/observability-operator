@@ -164,7 +164,7 @@ To disable service discovery, set to null. E.g. resourceSelector:.<br/>
         <td><b><a href="#monitoringstackspecresources">resources</a></b></td>
         <td>object</td>
         <td>
-          Define resources requests and limits for Monitoring Stack Pods.<br/>
+          Define resources requests and limits for the Prometheus container.<br/>
           <br/>
             <i>Default</i>: map[limits:map[cpu:500m memory:512Mi] requests:map[cpu:100m memory:256Mi]]<br/>
         </td>
@@ -251,6 +251,15 @@ Define Alertmanager config
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#monitoringstackspecalertmanagerconfigresources">resources</a></b></td>
+        <td>object</td>
+        <td>
+          Define resources requests and limits for the Alertmanager container.<br/>
+          <br/>
+            <i>Default</i>: map[limits:map[cpu:250m memory:256Mi] requests:map[cpu:50m memory:128Mi]]<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#monitoringstackspecalertmanagerconfigwebtlsconfig">webTLSConfig</a></b></td>
         <td>object</td>
         <td>
@@ -292,6 +301,95 @@ With None, routes match all incoming alerts regardless of namespace.<br/>
           <br/>
             <i>Enum</i>: OnNamespace, OnNamespaceExceptForAlertmanagerNamespace, None<br/>
             <i>Default</i>: None<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.alertmanagerConfig.resources
+<sup><sup>[↩ Parent](#monitoringstackspecalertmanagerconfig)</sup></sup>
+
+
+
+Define resources requests and limits for the Alertmanager container.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#monitoringstackspecalertmanagerconfigresourcesclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims,
+that are used by this container.
+
+This is an alpha field and requires enabling the
+DynamicResourceAllocation feature gate.
+
+This field is immutable. It can only be set for containers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required.
+If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+otherwise to an implementation-defined value. Requests cannot exceed Limits.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.alertmanagerConfig.resources.claims[index]
+<sup><sup>[↩ Parent](#monitoringstackspecalertmanagerconfigresources)</sup></sup>
+
+
+
+ResourceClaim references one entry in PodSpec.ResourceClaims.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of
+the Pod where this field is used. It makes that resource available
+inside a container.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>request</b></td>
+        <td>string</td>
+        <td>
+          Request is the name chosen for a request in the referenced claim.
+If empty, everything from the claim is made available, otherwise
+only the result of this request.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -594,6 +692,15 @@ The resulting endpoint is /api/v1/otlp/v1/metrics.<br/>
         <td>string</td>
         <td>
           Default interval between scrapes.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigthanosresources">thanosResources</a></b></td>
+        <td>object</td>
+        <td>
+          Define resources requests and limits for the Thanos sidecar container.<br/>
+          <br/>
+            <i>Default</i>: map[limits:map[cpu:250m memory:256Mi] requests:map[cpu:50m memory:128Mi]]<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -3246,6 +3353,95 @@ Regex capture groups are available.<br/>
 </table>
 
 
+### MonitoringStack.spec.prometheusConfig.thanosResources
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfig)</sup></sup>
+
+
+
+Define resources requests and limits for the Thanos sidecar container.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#monitoringstackspecprometheusconfigthanosresourcesclaimsindex">claims</a></b></td>
+        <td>[]object</td>
+        <td>
+          Claims lists the names of resources, defined in spec.resourceClaims,
+that are used by this container.
+
+This is an alpha field and requires enabling the
+DynamicResourceAllocation feature gate.
+
+This field is immutable. It can only be set for containers.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>limits</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Limits describes the maximum amount of compute resources allowed.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>requests</b></td>
+        <td>map[string]int or string</td>
+        <td>
+          Requests describes the minimum amount of compute resources required.
+If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+otherwise to an implementation-defined value. Requests cannot exceed Limits.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.prometheusConfig.thanosResources.claims[index]
+<sup><sup>[↩ Parent](#monitoringstackspecprometheusconfigthanosresources)</sup></sup>
+
+
+
+ResourceClaim references one entry in PodSpec.ResourceClaims.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name must match the name of one entry in pod.spec.resourceClaims of
+the Pod where this field is used. It makes that resource available
+inside a container.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>request</b></td>
+        <td>string</td>
+        <td>
+          Request is the name chosen for a request in the referenced claim.
+If empty, everything from the claim is made available, otherwise
+only the result of this request.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
 ### MonitoringStack.spec.prometheusConfig.webTLSConfig
 <sup><sup>[↩ Parent](#monitoringstackspecprometheusconfig)</sup></sup>
 
@@ -3478,7 +3674,7 @@ merge patch.<br/>
 
 
 
-Define resources requests and limits for Monitoring Stack Pods.
+Define resources requests and limits for the Prometheus container.
 
 <table>
     <thead>

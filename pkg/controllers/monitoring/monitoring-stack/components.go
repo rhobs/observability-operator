@@ -214,7 +214,8 @@ func newPrometheus(
 			RuleSelector:          prometheusSelector,
 			RuleNamespaceSelector: ms.Spec.NamespaceSelector,
 			Thanos: &monv1.ThanosSpec{
-				Image: ptr.To(thanosCfg.Image),
+				Image:     ptr.To(thanosCfg.Image),
+				Resources: ms.Spec.PrometheusConfig.ThanosResources,
 			},
 		},
 	}
