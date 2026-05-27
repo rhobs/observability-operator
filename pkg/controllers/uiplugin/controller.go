@@ -213,7 +213,7 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	plugin, err := rm.getUIPlugin(ctx, req)
 	if err != nil {
-		// retry since some error has occured
+		// retry since some error has occurred
 		return ctrl.Result{}, err
 	}
 

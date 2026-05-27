@@ -335,9 +335,9 @@ func newPerses(namespace string, persesImage string) *persesv1alpha2.Perses {
 			ContainerPort: ptr.To(int32(8080)),
 			// Set PodSecurityContext to run as non-root user (nobody/65534) for OpenShift SCC compatibility
 			PodSecurityContext: &corev1.PodSecurityContext{
-				FSGroup:      ptr.To(int64(PersesUserFSGroupID)),
+				FSGroup:      ptr.To(PersesUserFSGroupID),
 				RunAsNonRoot: ptr.To(true),
-				RunAsUser:    ptr.To(int64(PersesUserFSGroupID)),
+				RunAsUser:    ptr.To(PersesUserFSGroupID),
 			},
 			TLS: &persesv1alpha2.TLS{
 				Enable: ptr.To(true),

@@ -50,7 +50,6 @@ type resourceManager struct {
 
 // RegisterWithManager registers the controller with Manager
 func RegisterWithManager(mgr ctrl.Manager, namespace string) error {
-
 	rm := &resourceManager{
 		k8sClient: mgr.GetClient(),
 		scheme:    mgr.GetScheme(),
