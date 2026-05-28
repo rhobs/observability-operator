@@ -54,7 +54,8 @@ type Operator struct {
 }
 
 type OpenShiftFeatureGates struct {
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled bool   `json:"enabled,omitempty"`
+	Version string `json:"version,omitempty"`
 }
 
 type FeatureGates struct {

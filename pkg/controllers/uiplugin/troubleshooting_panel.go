@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	osv1 "github.com/openshift/api/console/v1"
-	osv1alpha1 "github.com/rhobs/openshift-api/console/v1alpha1"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -49,30 +47,13 @@ func createTroubleshootingPanelPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace
 		LokiServiceNames:  make(map[string]string),
 		TempoServiceNames: make(map[string]string),
 		ExtraArgs:         extraArgs,
-		LegacyProxies: []osv1alpha1.ConsolePluginProxy{
+		Proxies: []PluginProxy{
 			{
-				Type:      osv1alpha1.ProxyTypeService,
-				Alias:     "korrel8r",
-				Authorize: true,
-				Service: osv1alpha1.ConsolePluginProxyServiceConfig{
-					Name:      korrel8rSvcName,
-					Namespace: namespace,
-					Port:      port,
-				},
-			},
-		},
-		Proxies: []osv1.ConsolePluginProxy{
-			{
-				Alias:         "korrel8r",
-				Authorization: "UserToken",
-				Endpoint: osv1.ConsolePluginProxyEndpoint{
-					Type: osv1.ProxyTypeService,
-					Service: &osv1.ConsolePluginProxyServiceConfig{
-						Name:      korrel8rSvcName,
-						Namespace: namespace,
-						Port:      port,
-					},
-				},
+				Alias:            "korrel8r",
+				ServiceName:      korrel8rSvcName,
+				ServiceNamespace: namespace,
+				ServicePort:      port,
+				Authorize:        true,
 			},
 		},
 		ConfigMap: &corev1.ConfigMap{

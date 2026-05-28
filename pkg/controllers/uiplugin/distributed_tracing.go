@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	osv1 "github.com/openshift/api/console/v1"
-	osv1alpha1 "github.com/rhobs/openshift-api/console/v1alpha1"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -38,30 +36,13 @@ func createDistributedTracingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, 
 		DisplayName:       "Distributed Tracing Console Plugin",
 		ResourceNamespace: namespace,
 		ExtraArgs:         extraArgs,
-		LegacyProxies: []osv1alpha1.ConsolePluginProxy{
+		Proxies: []PluginProxy{
 			{
-				Type:      osv1alpha1.ProxyTypeService,
-				Alias:     "backend",
-				Authorize: true,
-				Service: osv1alpha1.ConsolePluginProxyServiceConfig{
-					Name:      name,
-					Namespace: namespace,
-					Port:      port,
-				},
-			},
-		},
-		Proxies: []osv1.ConsolePluginProxy{
-			{
-				Alias:         "backend",
-				Authorization: "UserToken",
-				Endpoint: osv1.ConsolePluginProxyEndpoint{
-					Type: osv1.ProxyTypeService,
-					Service: &osv1.ConsolePluginProxyServiceConfig{
-						Name:      name,
-						Namespace: namespace,
-						Port:      port,
-					},
-				},
+				Alias:            "backend",
+				ServiceName:      name,
+				ServiceNamespace: namespace,
+				ServicePort:      port,
+				Authorize:        true,
 			},
 		},
 		ConfigMap: &corev1.ConfigMap{

@@ -1,8 +1,6 @@
 package uiplugin
 
 import (
-	osv1 "github.com/openshift/api/console/v1"
-	osv1alpha1 "github.com/rhobs/openshift-api/console/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,30 +19,13 @@ func createDashboardsPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, im
 		ConsoleName:       pluginTypeToConsoleName[plugin.Spec.Type],
 		DisplayName:       "Console Enhanced Dashboards",
 		ResourceNamespace: namespace,
-		LegacyProxies: []osv1alpha1.ConsolePluginProxy{
+		Proxies: []PluginProxy{
 			{
-				Type:      osv1alpha1.ProxyTypeService,
-				Alias:     "backend",
-				Authorize: true,
-				Service: osv1alpha1.ConsolePluginProxyServiceConfig{
-					Name:      pluginName,
-					Namespace: namespace,
-					Port:      port,
-				},
-			},
-		},
-		Proxies: []osv1.ConsolePluginProxy{
-			{
-				Alias:         "backend",
-				Authorization: "UserToken",
-				Endpoint: osv1.ConsolePluginProxyEndpoint{
-					Type: osv1.ProxyTypeService,
-					Service: &osv1.ConsolePluginProxyServiceConfig{
-						Name:      pluginName,
-						Namespace: namespace,
-						Port:      port,
-					},
-				},
+				Alias:            "backend",
+				ServiceName:      pluginName,
+				ServiceNamespace: namespace,
+				ServicePort:      port,
+				Authorize:        true,
 			},
 		},
 		Role: &rbacv1.Role{

@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-logr/logr"
 	osv1 "github.com/openshift/api/console/v1"
+	osRhobsv1 "github.com/rhobs/openshift-api/console/v1"
 	osv1alpha1 "github.com/rhobs/openshift-api/console/v1alpha1"
 	"golang.org/x/mod/semver"
 	appsv1 "k8s.io/api/apps/v1"
@@ -51,7 +52,7 @@ var (
 	korrel8rConfigYAMLTmplFile embed.FS
 )
 
-func isVersionAheadOrEqual(currentVersion, version string) bool {
+func IsVersionAheadOrEqual(currentVersion, version string) bool {
 	if !strings.HasPrefix(currentVersion, "v") {
 		currentVersion = "v" + currentVersion
 	}
@@ -73,8 +74,10 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 		reconciler.NewUpdater(newService(pluginInfo, namespace), plugin),
 	}
 
-	if isVersionAheadOrEqual(clusterVersion, "v4.17") {
+	if IsVersionAheadOrEqual(clusterVersion, "v4.19") {
 		components = append(components, reconciler.NewUpdater(newConsolePlugin(pluginInfo, namespace), plugin))
+	} else if IsVersionAheadOrEqual(clusterVersion, "v4.17") {
+		components = append(components, reconciler.NewUpdater(newRhobsConsolePlugin(pluginInfo, namespace), plugin))
 	} else {
 		components = append(components, reconciler.NewUpdater(newLegacyConsolePlugin(pluginInfo, namespace), plugin))
 	}
@@ -224,6 +227,11 @@ func newRoleBinding(info UIPluginInfo) *rbacv1.RoleBinding {
 }
 
 func newLegacyConsolePlugin(info UIPluginInfo, namespace string) *osv1alpha1.ConsolePlugin {
+	proxies := make([]osv1alpha1.ConsolePluginProxy, len(info.Proxies))
+	for i, p := range info.Proxies {
+		proxies[i] = p.ToV1Alpha1()
+	}
+
 	return &osv1alpha1.ConsolePlugin{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: osv1alpha1.SchemeGroupVersion.String(),
@@ -240,12 +248,48 @@ func newLegacyConsolePlugin(info UIPluginInfo, namespace string) *osv1alpha1.Con
 				Port:      port,
 				BasePath:  "/",
 			},
-			Proxy: info.LegacyProxies,
+			Proxy: proxies,
+		},
+	}
+}
+
+func newRhobsConsolePlugin(info UIPluginInfo, namespace string) *osRhobsv1.ConsolePlugin {
+	proxies := make([]osRhobsv1.ConsolePluginProxy, len(info.Proxies))
+	for i, p := range info.Proxies {
+		proxies[i] = p.ToRhobsV1()
+	}
+
+	return &osRhobsv1.ConsolePlugin{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: osRhobsv1.SchemeGroupVersion.String(),
+			Kind:       "ConsolePlugin",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: info.ConsoleName,
+		},
+		Spec: osRhobsv1.ConsolePluginSpec{
+			DisplayName: info.DisplayName,
+			Backend: osRhobsv1.ConsolePluginBackend{
+				Type: osRhobsv1.Service,
+				Service: &osRhobsv1.ConsolePluginService{
+					Name:      info.Name,
+					Namespace: namespace,
+					Port:      port,
+					BasePath:  "/",
+				},
+			},
+			Proxy: proxies,
+			I18n:  osRhobsv1.ConsolePluginI18n{LoadType: osRhobsv1.Preload},
 		},
 	}
 }
 
 func newConsolePlugin(info UIPluginInfo, namespace string) *osv1.ConsolePlugin {
+	proxies := make([]osv1.ConsolePluginProxy, len(info.Proxies))
+	for i, p := range info.Proxies {
+		proxies[i] = p.ToUpstreamV1()
+	}
+
 	return &osv1.ConsolePlugin{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: osv1.SchemeGroupVersion.String(),
@@ -265,7 +309,7 @@ func newConsolePlugin(info UIPluginInfo, namespace string) *osv1.ConsolePlugin {
 					BasePath:  "/",
 				},
 			},
-			Proxy:                 info.Proxies,
+			Proxy:                 proxies,
 			I18n:                  osv1.ConsolePluginI18n{LoadType: osv1.Preload},
 			ContentSecurityPolicy: []osv1.ConsolePluginCSP{},
 		},
