@@ -51,7 +51,8 @@ type UIPluginsConfiguration struct {
 }
 
 type Options struct {
-	PluginsConf UIPluginsConfiguration
+	PluginsConf    UIPluginsConfiguration
+	ClusterVersion string
 }
 
 const (
@@ -126,13 +127,6 @@ const finalizerName = "uiplugin.observability.openshift.io/finalizer"
 func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 	logger := ctrl.Log.WithName("observability-ui")
 
-	clusterVersion, err := getClusterVersion(mgr.GetAPIReader())
-
-	if err != nil {
-		logger.Error(err, "failed to get cluster version")
-		return err
-	}
-
 	dynamicClient, err := dynamic.NewForConfig(mgr.GetConfig())
 	if err != nil {
 		logger.Error(err, "failed to create dynamic client")
@@ -145,7 +139,7 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 		scheme:           mgr.GetScheme(),
 		logger:           logger,
 		pluginConf:       opts.PluginsConf,
-		clusterVersion:   clusterVersion.Status.Desired.Version,
+		clusterVersion:   opts.ClusterVersion,
 		apiReader:        mgr.GetAPIReader(),
 	}
 
@@ -179,15 +173,6 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 	rm.controller = ctrl
 
 	return nil
-}
-
-func getClusterVersion(k8client client.Reader) (*configv1.ClusterVersion, error) {
-	clusterVersion := &configv1.ClusterVersion{}
-	key := client.ObjectKey{Name: "version"}
-	if err := k8client.Get(context.TODO(), key, clusterVersion); err != nil {
-		return nil, err
-	}
-	return clusterVersion, nil
 }
 
 func (rm resourceManager) consolePluginCapabilityEnabled(ctx context.Context, name types.NamespacedName, clusterVersion string) bool {

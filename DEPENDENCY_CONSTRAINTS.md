@@ -30,8 +30,11 @@ Dependabot takes care of dependency updates, the configuration is located at `.g
 
 ## Future Considerations
 
-When OpenShift &lt; 4.18 support is no longer needed, we can:
+When OpenShift &lt; 4.17 support is no longer needed, we can:
 1. Remove `console/v1alpha1` API usage.
-2. Remove dual API support code.
-3. Remove dependency on `github.com/rhobs/openshift-api` 
 4. Update this document
+
+When OpenShift &lt; 4.19 support is no longer needed, we can:
+1. Remove dual API support code.
+2. Remove dependency on `github.com/rhobs/openshift-api` 
+3. Update this document

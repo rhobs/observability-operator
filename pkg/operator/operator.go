@@ -351,7 +351,10 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 			return nil, fmt.Errorf("unable to setup TLS profile watcher: %w", err)
 		}
 
-		if err := uictrl.RegisterWithManager(mgr, uictrl.Options{PluginsConf: cfg.UIPlugins}); err != nil {
+		if err := uictrl.RegisterWithManager(mgr, uictrl.Options{
+			PluginsConf:    cfg.UIPlugins,
+			ClusterVersion: cfg.FeatureGates.OpenShift.Version,
+		}); err != nil {
 			return nil, fmt.Errorf("unable to register observability-ui-plugin controller: %w", err)
 		}
 	} else {
