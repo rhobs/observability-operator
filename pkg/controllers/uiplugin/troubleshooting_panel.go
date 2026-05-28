@@ -128,14 +128,16 @@ func marshalTroubleshootingPanelPluginConfig(cfg *uiv1alpha1.TroubleshootingPane
 		return "", nil
 	}
 
-	if cfg.Timeout == "" {
+	if cfg.Timeout == "" && !cfg.EnableAgentNavigation {
 		return "", nil
 	}
 
 	pluginCfg := struct {
-		Timeout string `yaml:"timeout"`
+		Timeout               string `yaml:"timeout,omitempty"`
+		EnableAgentNavigation bool   `yaml:"enableAgentNavigation,omitempty"`
 	}{
-		Timeout: cfg.Timeout,
+		Timeout:               cfg.Timeout,
+		EnableAgentNavigation: cfg.EnableAgentNavigation,
 	}
 
 	buf := &bytes.Buffer{}

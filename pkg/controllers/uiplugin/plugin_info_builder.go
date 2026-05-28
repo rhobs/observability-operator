@@ -71,7 +71,11 @@ func PluginInfoBuilder(ctx context.Context, k client.Client, dk dynamic.Interfac
 		}
 
 	case uiv1alpha1.TypeTroubleshootingPanel:
-		pluginInfo, err = createTroubleshootingPanelPluginInfo(plugin, namespace, plugin.Name, image, []string{})
+		var tpFeatures []string
+		if plugin.Spec.TroubleshootingPanel != nil && plugin.Spec.TroubleshootingPanel.EnableAgentNavigation {
+			tpFeatures = append(tpFeatures, "agent-navigation")
+		}
+		pluginInfo, err = createTroubleshootingPanelPluginInfo(plugin, namespace, plugin.Name, image, tpFeatures)
 		if err != nil {
 			return nil, err
 		}
