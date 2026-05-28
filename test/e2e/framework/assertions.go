@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -419,7 +420,7 @@ func (f *Framework) GetPodMetrics(pod *v1.Pod, opts ...func(*HTTPOptions)) ([]by
 }
 
 // AssertPromQLResult evaluates the PromQL expression against the in-cluster
-// Prometheus stack.
+// Prometheus stack and passes the result to the callback function.
 // It returns an error if the request fails. Otherwise the result is passed to
 // the callback function for additional checks.
 func (f *Framework) AssertPromQLResult(t *testing.T, expr string, callback func(model.Value) error) error {
@@ -439,19 +440,17 @@ func (f *Framework) AssertPromQLResultWithOptions(t *testing.T, expr string, cal
 	for _, fn := range fns {
 		fn(&option)
 	}
-	var (
-		pollErr error
-		v       model.Value
-	)
+
+	var pollErr error
 	if err := wait.PollUntilContextTimeout(context.Background(), option.PollInterval, option.WaitTimeout, true, func(context.Context) (bool, error) {
-		v, pollErr = f.getPromQLResult(context.Background(), expr)
-		if pollErr != nil {
-			t.Logf("error from getPromQLResult(): %s", pollErr)
+		v, err := f.QueryInClusterPrometheusService(context.Background(), expr)
+		if err != nil {
+			pollErr = fmt.Errorf("error from getPromQLResult(): %w", err)
 			return false, nil
 		}
 
-		pollErr = callback(v)
-		if pollErr != nil {
+		if err = callback(v); err != nil {
+			pollErr = fmt.Errorf("error from callback: %w", err)
 			return false, nil
 		}
 
@@ -513,14 +512,29 @@ func (qr *queryResult) UnmarshalJSON(b []byte) error {
 	return err
 }
 
-func (f *Framework) getPromQLResult(ctx context.Context, expr string) (model.Value, error) {
-	pods, err := f.getPodsForService("prometheus-k8s", "openshift-monitoring")
+type NamespacedName struct {
+	Namespace string
+	Name      string
+}
+
+func (n NamespacedName) String() string {
+	return fmt.Sprintf("%s/%s", n.Namespace, n.Name)
+}
+
+// QueryInClusterPrometheusService executes a PromQL query against the in-cluster Prometheus stack using port-forwarding.
+func (f *Framework) QueryInClusterPrometheusService(ctx context.Context, expr string) (model.Value, error) {
+	return f.QueryPrometheusService(ctx, NamespacedName{Namespace: "openshift-monitoring", Name: "prometheus-k8s"}, 9090, expr)
+}
+
+// QueryPrometheusService executes a PromQL query against a Prometheus or Thanos pod using port-forwarding.
+func (f *Framework) QueryPrometheusService(ctx context.Context, service NamespacedName, port int, expr string) (model.Value, error) {
+	pods, err := f.getPodsForService(service.Name, service.Namespace)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get prometheus pod: %w", err)
+		return nil, fmt.Errorf("failed to get pods for service %s: %w", service, err)
 	}
 
 	if len(pods) == 0 {
-		return nil, fmt.Errorf("no Prometheus pods found")
+		return nil, fmt.Errorf("service %s: no  pods found", service)
 	}
 
 	data := url.Values{}
@@ -528,22 +542,22 @@ func (f *Framework) getPromQLResult(ctx context.Context, expr string) (model.Val
 	b, err := f.getRequest(
 		ctx,
 		&pods[0],
-		WithPort("9090"),
+		WithPort(strconv.Itoa(port)),
 		WithMethod("POST"),
 		WithPath("/api/v1/query"),
 		WithBody(data.Encode()),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query prometheus: %w", err)
+		return nil, fmt.Errorf("service %s: failed to query pod: %w", service, err)
 	}
 
 	var r apiResponse
 	if err := json.Unmarshal(b, &r); err != nil {
-		return nil, fmt.Errorf("failed to parse prometheus response: %w", err)
+		return nil, fmt.Errorf("service %s: failed to parse response: %w", service, err)
 	}
 
 	if r.Status != "success" {
-		return nil, fmt.Errorf("%q: %s (%s)", expr, r.ErrorType, r.Error)
+		return nil, fmt.Errorf("service %s: %q: %s (%s)", service, expr, r.ErrorType, r.Error)
 	}
 
 	return r.Result.v, nil

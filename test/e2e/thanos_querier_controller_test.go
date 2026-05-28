@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prometheus/common/model"
 	"gotest.tools/v3/assert"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -77,48 +78,29 @@ func singleStackWithSidecar(t *testing.T) {
 	f.GetResourceWithRetry(t, name, tq.Namespace, &thanosService)
 
 	f.AssertDeploymentReady(name, tq.Namespace, framework.WithTimeout(5*time.Minute))(t)
-	// Assert prometheus instance can be queried
-	stopChan := make(chan struct{})
-	defer close(stopChan)
-	if err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, 2*time.Minute, true, func(ctx context.Context) (bool, error) {
-		err = f.StartServicePortForward(name, e2eTestNamespace, "10902", stopChan)
-		return err == nil, nil
-	}); wait.Interrupted(err) {
-		t.Fatal("timeout waiting for port-forward")
-	}
 
-	promClient := framework.NewPrometheusClient("http://localhost:10902")
-	expectedResults := map[string]int{
-		"prometheus_build_info": 2, // must return from both prometheus pods
-	}
 	var lastErr error
 	if err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
-		correct := 0
-		for query, value := range expectedResults {
-			result, err := promClient.Query(query)
-			if err != nil {
-				return false, nil
-			}
-
-			if len(result.Data.Result) == 0 {
-				return false, nil
-			}
-
-			if len(result.Data.Result) > value {
-				lastErr = fmt.Errorf("invalid result for query %s, got %d, want %d", query, len(result.Data.Result), value)
-				return true, lastErr
-			}
-
-			if len(result.Data.Result) != value {
-				return false, nil
-			}
-
-			correct++
+		result, err := f.QueryPrometheusService(ctx, framework.NamespacedName{Name: name, Namespace: e2eTestNamespace}, 10902, "prometheus_build_info")
+		if err != nil {
+			lastErr = err
+			return false, nil
 		}
 
-		return correct == len(expectedResults), nil
+		vector, ok := result.(model.Vector)
+		if !ok {
+			lastErr = fmt.Errorf("unexpected result type %T", result)
+			return false, nil
+		}
+
+		if len(vector) != 2 {
+			lastErr = fmt.Errorf("expected 2 results for prometheus_build_info, got %d", len(vector))
+			return false, nil
+		}
+
+		return true, nil
 	}); wait.Interrupted(err) {
-		t.Fatal(fmt.Errorf("querying thanos did not yield expected results: %w", lastErr))
+		t.Fatalf("querying thanos did not yield expected results: %s", lastErr)
 	}
 }
 
