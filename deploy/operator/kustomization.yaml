@@ -12,13 +12,3 @@ images:
   newName: observability-operator
   newTag: 0.0.29
 namespace: operators
-
-patches:
-- patch: |-
-    - op: add
-      path: /spec/template/spec/containers/0/args/-
-      value: --images=perses=quay.io/openshift-observability-ui/perses:v0.53.0-go-1.25
-  target:
-    group: apps
-    kind: Deployment
-    version: v1

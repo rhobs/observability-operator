@@ -1095,7 +1095,6 @@ spec:
               containers:
               - args:
                 - --namespace=$(NAMESPACE)
-                - --images=perses=quay.io/openshift-observability-ui/perses:v0.53.0-go-1.25
                 env:
                 - name: NAMESPACE
                   valueFrom:
