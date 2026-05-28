@@ -335,7 +335,6 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 	}
 
 	if cfg.FeatureGates.OpenShift.Enabled {
-
 		watcher := &openshifttls.SecurityProfileWatcher{
 			Client:                mgr.GetClient(),
 			InitialTLSProfileSpec: cfg.TLSProfile,

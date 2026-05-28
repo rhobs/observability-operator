@@ -20,7 +20,7 @@ OPM=$(TOOLS_DIR)/opm
 OPM_VERSION = v1.57.0
 
 GOLANGCI_LINT=$(TOOLS_DIR)/golangci-lint
-GOLANGCI_LINT_VERSION = v1.63.4
+GOLANGCI_LINT_VERSION = v2.12.2
 
 ## NOTE: promq does not have any releases, so we use a fake version starting with v0.0.1
 # thus to upgrade/invalidate the github cache, increment the value
@@ -50,7 +50,7 @@ $(CONTROLLER_GEN) controller-gen: $(TOOLS_DIR)
 $(GOLANGCI_LINT) golangci-lint: $(TOOLS_DIR)
 	@{ \
 		set -ex ;\
-		GOBIN=$(TOOLS_DIR) go install github.com/golangci/golangci-lint/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION) ;\
+		GOBIN=$(TOOLS_DIR) go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION) ;\
 	}
 
 # NOTE: kustomize does not support `go install` hence this workaround to install

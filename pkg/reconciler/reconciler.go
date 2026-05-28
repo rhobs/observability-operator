@@ -18,7 +18,7 @@ const (
 	OpenshiftMonitoringNamespace = "openshift-monitoring"
 )
 
-// This interface is used by the resourceManagers to reconicle the resources they
+// This interface is used by the resourceManagers to reconcile the resources they
 // watch. If any component needs special treatment in the reconcile loop, create
 // a new type that implements this interface.
 type Reconciler interface {

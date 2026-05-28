@@ -174,7 +174,6 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 	}
 
 	return components
-
 }
 
 func newClusterRoleBinding(namespace string, serviceAccountName string, roleName string, name string) *rbacv1.ClusterRoleBinding {
@@ -626,7 +625,6 @@ func newKorrel8rService(name string, namespace string) *corev1.Service {
 }
 
 func newKorrel8rConfigMap(name string, namespace string, info UIPluginInfo) (*corev1.ConfigMap, error) {
-
 	korrel8rData := map[string]string{
 		"Metric":      "thanos-querier",
 		"MetricAlert": "alertmanager-main",

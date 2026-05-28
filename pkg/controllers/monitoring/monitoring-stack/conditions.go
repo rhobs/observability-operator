@@ -65,7 +65,6 @@ func updateResourceDiscovery(ms *v1alpha1.MonitoringStack) v1alpha1.Condition {
 			ObservedGeneration: ms.Generation,
 		}
 	}
-
 }
 
 // updateAvailable gets existing "Available" condition and updates its parameters

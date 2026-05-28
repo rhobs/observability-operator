@@ -88,7 +88,6 @@ const finalizerName = "monitoring.observability.openshift.io/finalizer"
 
 // RegisterWithManager registers the controller with Manager
 func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
-
 	rm := &resourceManager{
 		k8sClient:    mgr.GetClient(),
 		scheme:       mgr.GetScheme(),
@@ -128,7 +127,7 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	logger.Info("Reconciling monitoring stack")
 	ms, err := rm.getStack(ctx, req)
 	if err != nil {
-		// retry since some error has occured
+		// retry since some error has occurred
 		return ctrl.Result{}, err
 	}
 

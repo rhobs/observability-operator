@@ -147,7 +147,6 @@ func marshalTroubleshootingPanelPluginConfig(cfg *uiv1alpha1.TroubleshootingPane
 }
 
 func getLokiServiceName(ctx context.Context, k client.Client, ns string) (string, error) {
-
 	serviceList := &corev1.ServiceList{}
 	if err := k.List(ctx, serviceList, client.InNamespace(ns)); err != nil {
 		return "", err
@@ -163,7 +162,6 @@ func getLokiServiceName(ctx context.Context, k client.Client, ns string) (string
 }
 
 func getTempoServiceName(ctx context.Context, k client.Client, ns string) (string, error) {
-
 	serviceList := &corev1.ServiceList{}
 	if err := k.List(ctx, serviceList, client.InNamespace(ns)); err != nil {
 		return "", err

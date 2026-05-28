@@ -86,7 +86,7 @@ func acceleratorPanel(panelName, targetMetric string) panelgroup.Option {
 			}),
 			timeseries.WithYAxis(timeseries.YAxis{
 				Format: &common.Format{
-					Unit: ptr.To(string(common.DecimalUnit)),
+					Unit: ptr.To(common.DecimalUnit),
 				},
 				Min: 0,
 			}),
