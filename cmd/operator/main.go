@@ -141,6 +141,7 @@ func main() {
 	defer cancel()
 
 	var initialTLSProfileSpec configv1.TLSProfileSpec
+	var openshiftVersion string
 	if openShiftEnabled {
 		scheme := operator.NewOpenShiftScheme()
 		directClient, err := client.New(ctrl.GetConfigOrDie(), client.Options{Scheme: scheme})
@@ -155,6 +156,14 @@ func main() {
 			os.Exit(1)
 		}
 		setupLog.Info("fetched initial TLS profile", "minVersion", initialTLSProfileSpec.MinTLSVersion, "ciphers", initialTLSProfileSpec.Ciphers)
+
+		clusterVersion := &configv1.ClusterVersion{}
+		key := client.ObjectKey{Name: "version"}
+		if err := directClient.Get(ctx, key, clusterVersion); err != nil {
+			setupLog.Error(err, "failed to fetch cluster version")
+			os.Exit(1)
+		}
+		openshiftVersion = clusterVersion.Status.Desired.Version
 	}
 
 	op, err := operator.New(
@@ -176,6 +185,7 @@ func main() {
 			operator.WithFeatureGates(operator.FeatureGates{
 				OpenShift: operator.OpenShiftFeatureGates{
 					Enabled: openShiftEnabled,
+					Version: openshiftVersion,
 				},
 			}),
 			operator.WithCancelFunc(cancel),

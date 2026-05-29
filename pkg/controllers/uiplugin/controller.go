@@ -9,6 +9,7 @@ import (
 	configv1 "github.com/openshift/api/config/v1"
 	osv1 "github.com/openshift/api/console/v1"
 	operatorv1 "github.com/openshift/api/operator/v1"
+	osRhobsv1 "github.com/rhobs/openshift-api/console/v1"
 	osv1alpha1 "github.com/rhobs/openshift-api/console/v1alpha1"
 	persesv1alpha2 "github.com/rhobs/perses-operator/api/v1alpha2"
 	appsv1 "k8s.io/api/apps/v1"
@@ -50,7 +51,8 @@ type UIPluginsConfiguration struct {
 }
 
 type Options struct {
-	PluginsConf UIPluginsConfiguration
+	PluginsConf    UIPluginsConfiguration
+	ClusterVersion string
 }
 
 const (
@@ -125,13 +127,6 @@ const finalizerName = "uiplugin.observability.openshift.io/finalizer"
 func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 	logger := ctrl.Log.WithName("observability-ui")
 
-	clusterVersion, err := getClusterVersion(mgr.GetAPIReader())
-
-	if err != nil {
-		logger.Error(err, "failed to get cluster version")
-		return err
-	}
-
 	dynamicClient, err := dynamic.NewForConfig(mgr.GetConfig())
 	if err != nil {
 		logger.Error(err, "failed to create dynamic client")
@@ -144,7 +139,7 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 		scheme:           mgr.GetScheme(),
 		logger:           logger,
 		pluginConf:       opts.PluginsConf,
-		clusterVersion:   clusterVersion.Status.Desired.Version,
+		clusterVersion:   opts.ClusterVersion,
 		apiReader:        mgr.GetAPIReader(),
 	}
 
@@ -162,8 +157,10 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 		Owns(&persesv1alpha2.PersesDatasource{}, generationChanged).
 		Owns(&persesv1alpha2.PersesGlobalDatasource{}, generationChanged)
 
-	if isVersionAheadOrEqual(rm.clusterVersion, "v4.17") {
+	if IsVersionAheadOrEqual(rm.clusterVersion, "v4.19") {
 		ctrlBuilder.Owns(&osv1.ConsolePlugin{}, generationChanged)
+	} else if IsVersionAheadOrEqual(rm.clusterVersion, "v4.17") {
+		ctrlBuilder.Owns(&osRhobsv1.ConsolePlugin{}, generationChanged)
 	} else {
 		ctrlBuilder.Owns(&osv1alpha1.ConsolePlugin{}, generationChanged)
 	}
@@ -178,19 +175,10 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 	return nil
 }
 
-func getClusterVersion(k8client client.Reader) (*configv1.ClusterVersion, error) {
-	clusterVersion := &configv1.ClusterVersion{}
-	key := client.ObjectKey{Name: "version"}
-	if err := k8client.Get(context.TODO(), key, clusterVersion); err != nil {
-		return nil, err
-	}
-	return clusterVersion, nil
-}
-
 func (rm resourceManager) consolePluginCapabilityEnabled(ctx context.Context, name types.NamespacedName, clusterVersion string) bool {
 	var err error
 
-	if isVersionAheadOrEqual(clusterVersion, "v4.17") {
+	if IsVersionAheadOrEqual(clusterVersion, "v4.17") {
 		consolePlugin := &osv1.ConsolePlugin{}
 		err = rm.k8sClient.Get(ctx, name, consolePlugin)
 	} else {

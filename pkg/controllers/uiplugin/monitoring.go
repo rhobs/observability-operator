@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	osv1 "github.com/openshift/api/console/v1"
-	osv1alpha1 "github.com/rhobs/openshift-api/console/v1alpha1"
 	persesv1alpha2 "github.com/rhobs/perses-operator/api/v1alpha2"
 	persesconfig "github.com/rhobs/perses/pkg/model/api/config"
 	"golang.org/x/mod/semver"
@@ -88,57 +86,25 @@ func getBasePluginInfo(namespace, name, image string) *UIPluginInfo {
 			"-static-path=/opt/app-root/web/dist",
 		},
 		ResourceNamespace: namespace,
-		Proxies: []osv1.ConsolePluginProxy{
+		Proxies: []PluginProxy{
 			{
-				Alias:         "backend",
-				Authorization: "UserToken",
-				Endpoint: osv1.ConsolePluginProxyEndpoint{
-					Type: osv1.ProxyTypeService,
-					Service: &osv1.ConsolePluginProxyServiceConfig{
-						Name:      name,
-						Namespace: namespace,
-						Port:      port,
-					},
-				},
-			},
-		},
-		LegacyProxies: []osv1alpha1.ConsolePluginProxy{
-			{
-				Type:      "Service",
-				Alias:     "backend",
-				Authorize: true,
-				Service: osv1alpha1.ConsolePluginProxyServiceConfig{
-					Name:      name,
-					Namespace: namespace,
-					Port:      9443,
-				},
+				Alias:            "backend",
+				ServiceName:      name,
+				ServiceNamespace: namespace,
+				ServicePort:      port,
+				Authorize:        true,
 			},
 		},
 	}
 }
 
 func addPersesProxy(pluginInfo *UIPluginInfo, namespace string) {
-	pluginInfo.Proxies = append(pluginInfo.Proxies, osv1.ConsolePluginProxy{
-		Alias:         "perses",
-		Authorization: "UserToken",
-		Endpoint: osv1.ConsolePluginProxyEndpoint{
-			Type: osv1.ProxyTypeService,
-			Service: &osv1.ConsolePluginProxyServiceConfig{
-				Name:      persesServiceName,
-				Namespace: namespace,
-				Port:      8080,
-			},
-		},
-	})
-	pluginInfo.LegacyProxies = append(pluginInfo.LegacyProxies, osv1alpha1.ConsolePluginProxy{
-		Type:      "Service",
-		Alias:     "perses",
-		Authorize: true,
-		Service: osv1alpha1.ConsolePluginProxyServiceConfig{
-			Name:      persesServiceName,
-			Namespace: namespace,
-			Port:      8080,
-		},
+	pluginInfo.Proxies = append(pluginInfo.Proxies, PluginProxy{
+		Alias:            "perses",
+		ServiceName:      persesServiceName,
+		ServiceNamespace: namespace,
+		ServicePort:      8080,
+		Authorize:        true,
 	})
 }
 
@@ -148,51 +114,19 @@ func addAcmAlertingProxy(pluginInfo *UIPluginInfo, name string, namespace string
 		fmt.Sprintf("-thanos-querier=%s", config.ACM.ThanosQuerier.Url),
 	)
 	pluginInfo.Proxies = append(pluginInfo.Proxies,
-		osv1.ConsolePluginProxy{
-			Alias:         "alertmanager-proxy",
-			Authorization: "UserToken",
-			Endpoint: osv1.ConsolePluginProxyEndpoint{
-				Type: osv1.ProxyTypeService,
-				Service: &osv1.ConsolePluginProxyServiceConfig{
-					Name:      name,
-					Namespace: namespace,
-					Port:      9444,
-				},
-			},
+		PluginProxy{
+			Alias:            "alertmanager-proxy",
+			ServiceName:      name,
+			ServiceNamespace: namespace,
+			ServicePort:      9444,
+			Authorize:        true,
 		},
-		osv1.ConsolePluginProxy{
-			Alias:         "thanos-proxy",
-			Authorization: "UserToken",
-			Endpoint: osv1.ConsolePluginProxyEndpoint{
-				Type: osv1.ProxyTypeService,
-				Service: &osv1.ConsolePluginProxyServiceConfig{
-					Name:      name,
-					Namespace: namespace,
-					Port:      9445,
-				},
-			},
-		},
-	)
-	pluginInfo.LegacyProxies = append(pluginInfo.LegacyProxies,
-		osv1alpha1.ConsolePluginProxy{
-			Type:      "Service",
-			Alias:     "alertmanager-proxy",
-			Authorize: true,
-			Service: osv1alpha1.ConsolePluginProxyServiceConfig{
-				Name:      name,
-				Namespace: namespace,
-				Port:      9444,
-			},
-		},
-		osv1alpha1.ConsolePluginProxy{
-			Type:      "Service",
-			Alias:     "thanos-proxy",
-			Authorize: true,
-			Service: osv1alpha1.ConsolePluginProxyServiceConfig{
-				Name:      name,
-				Namespace: namespace,
-				Port:      9445,
-			},
+		PluginProxy{
+			Alias:            "thanos-proxy",
+			ServiceName:      name,
+			ServiceNamespace: namespace,
+			ServicePort:      9445,
+			Authorize:        true,
 		},
 	)
 }
