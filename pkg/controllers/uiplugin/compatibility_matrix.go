@@ -160,7 +160,7 @@ var compatibilityMatrix = []CompatibilityEntry{
 		MinClusterVersion: "v4.15",
 		MaxClusterVersion: "v4.19",
 		ImageKey:          "ui-monitoring-pf5",
-		SupportLevel:      TechPreview,
+		SupportLevel:      GeneralAvailability,
 		// feature flags for monitoring are dynamically injected
 		// based on the cluster version and and UIPlugin CR configurations
 		Features: []string{},
