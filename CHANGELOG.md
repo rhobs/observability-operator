@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.4.0](https://github.com/rhobs/monitoring-stack-operator/commit/) (2026-03-05)
+
+
+### Features
+
+* add annotation to select cluster monitoring by default ([#975](https://github.com/rhobs/monitoring-stack-operator/issues/975)) ([e81840b](https://github.com/rhobs/monitoring-stack-operator/commit/e81840ba98e1aea6243c215bff9407fef0f1ca00))
+* add logging plugin show timezone selector option ([#991](https://github.com/rhobs/monitoring-stack-operator/issues/991)) ([50c6a42](https://github.com/rhobs/monitoring-stack-operator/commit/50c6a42f25d95c2b6738ca9f54de0cd217ef5cc0))
+* allow to set replicas number for Alertmanager ([#941](https://github.com/rhobs/monitoring-stack-operator/issues/941)) ([e7a45ee](https://github.com/rhobs/monitoring-stack-operator/commit/e7a45ee644d40b9deccffc52d4779b41f5bb8894))
+* cluster/component healh backend & resources update ([#976](https://github.com/rhobs/monitoring-stack-operator/issues/976)) ([5321e5e](https://github.com/rhobs/monitoring-stack-operator/commit/5321e5e45b491243915a7e9eb2080e1844b6f2cb))
+* enable watch-referenced-objects-in-all-namespaces in Prometheus operator ([#945](https://github.com/rhobs/monitoring-stack-operator/issues/945)) ([340137c](https://github.com/rhobs/monitoring-stack-operator/commit/340137c0e892d33205bd095e02ded20ba7a9c40c))
+* show degraded condition when reconciling fails ([#985](https://github.com/rhobs/monitoring-stack-operator/issues/985)) ([cd13c3d](https://github.com/rhobs/monitoring-stack-operator/commit/cd13c3df220e4118b7b11ee3b55573c4d661e6f7))
+* support size-based retention for MonitoringStack ([#946](https://github.com/rhobs/monitoring-stack-operator/issues/946)) ([b13d7b2](https://github.com/rhobs/monitoring-stack-operator/commit/b13d7b2af662707766a3a87d8c6941b4d0360678)), closes [#890](https://github.com/rhobs/monitoring-stack-operator/issues/890)
+* uiplugin API - new flag for the cluster-health-analyzer ([#971](https://github.com/rhobs/monitoring-stack-operator/issues/971)) ([7502b2b](https://github.com/rhobs/monitoring-stack-operator/commit/7502b2bb40522641edbef3107f6a12e5b478a363))
+* update perses and perses operator versions ([#977](https://github.com/rhobs/monitoring-stack-operator/issues/977)) ([529d684](https://github.com/rhobs/monitoring-stack-operator/commit/529d6840896f9763f16063e8846ea40f6b03a3f9))
+* update perses and perses operator versions ([#979](https://github.com/rhobs/monitoring-stack-operator/issues/979)) ([b3ab345](https://github.com/rhobs/monitoring-stack-operator/commit/b3ab3459b66e2743ee1431762157cc2596f9b476))
+* update perses resources ([#1002](https://github.com/rhobs/monitoring-stack-operator/issues/1002)) ([72d153d](https://github.com/rhobs/monitoring-stack-operator/commit/72d153d870c28bb24f89ff3b7e1e86033fd7559f))
+
+
+### Bug Fixes
+
+* [COO-1304] Fix misspelled labels of accelerator metrics ([#925](https://github.com/rhobs/monitoring-stack-operator/issues/925)) ([3358246](https://github.com/rhobs/monitoring-stack-operator/commit/33582461e25a4db06504c410d7c2adbd95b7844b))
+* [COO-1305] Fix misspelled metric name in accelerators ([#926](https://github.com/rhobs/monitoring-stack-operator/issues/926)) ([e38a3f6](https://github.com/rhobs/monitoring-stack-operator/commit/e38a3f63edaafeec57d575fe9cfe85892994ea2e))
+* [COO-1313] Add missing description for ObservabilityInstaller in OpenShift console ([#928](https://github.com/rhobs/monitoring-stack-operator/issues/928)) ([d2b4b9d](https://github.com/rhobs/monitoring-stack-operator/commit/d2b4b9d790021f900d3e03d8168b41b13ff17f9b))
+* [COO-1325] fix logging model field documentation ([#938](https://github.com/rhobs/monitoring-stack-operator/issues/938)) ([d638618](https://github.com/rhobs/monitoring-stack-operator/commit/d63861810de686fba5f26dbec830f71c308133f4))
+* disable unmanaged Prometheus configuration ([#944](https://github.com/rhobs/monitoring-stack-operator/issues/944)) ([5ef4238](https://github.com/rhobs/monitoring-stack-operator/commit/5ef42381f8516cd24169b06861f19f003af0016e)), closes [#932](https://github.com/rhobs/monitoring-stack-operator/issues/932)
+* fix & rename health-analyzer and korrel8r clusterrolebindings ([#937](https://github.com/rhobs/monitoring-stack-operator/issues/937)) ([42301f7](https://github.com/rhobs/monitoring-stack-operator/commit/42301f7b4051fb025eaa32c106238cf6c529f230))
+* github action olm publish ([#984](https://github.com/rhobs/monitoring-stack-operator/issues/984)) ([625b2d8](https://github.com/rhobs/monitoring-stack-operator/commit/625b2d820fdd776ae6fc1d92671decda3e186198))
+* github action workflow release failure ([#957](https://github.com/rhobs/monitoring-stack-operator/issues/957)) ([3878301](https://github.com/rhobs/monitoring-stack-operator/commit/387830146b8714a88cc986bdda5518e16d12dcd6))
+* reorder resource updates to cause fewer errors ([#998](https://github.com/rhobs/monitoring-stack-operator/issues/998)) ([d79ea06](https://github.com/rhobs/monitoring-stack-operator/commit/d79ea068f759cdf4ed126949495d682da665946a))
+* set correct references for perses CR for correct cleanup ([#942](https://github.com/rhobs/monitoring-stack-operator/issues/942)) ([8627d46](https://github.com/rhobs/monitoring-stack-operator/commit/8627d46e67bf24ae7f86159f6ee4a174a05c895e))
+* set logger warning and image ref ([#924](https://github.com/rhobs/monitoring-stack-operator/issues/924)) ([fd5645c](https://github.com/rhobs/monitoring-stack-operator/commit/fd5645c2d23e049a5f7e414a56eec1563b934e80))
+* uiplugin - the clusterHealthAnalyzer atr should be pointer ([#974](https://github.com/rhobs/monitoring-stack-operator/issues/974)) ([7527133](https://github.com/rhobs/monitoring-stack-operator/commit/7527133cfea47cf846dcbe3774ab80a4a01ab2af))
+
 ## [1.3.0](https://github.com/rhobs/monitoring-stack-operator/commit/) (2025-11-03)
 
 

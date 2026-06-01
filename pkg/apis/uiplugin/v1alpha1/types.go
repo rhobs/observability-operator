@@ -82,6 +82,15 @@ type TroubleshootingPanelConfig struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OCP Console Query Timeout",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:ocpConsoleTimeout"}
 	// +kubebuilder:validation:Pattern:="^([0-9]+)([sm]{1})$"
 	Timeout string `json:"timeout,omitempty"`
+
+	// EnableAgentNavigation if true allows an AI agent to read and navigate the main view and troubleshooting panel on your behalf.
+	//
+	// Defaults to false if not specified.
+	//
+	// +optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OCP Console Agent Navigation",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
+	// +kubebuilder:validation:Optional
+	EnableAgentNavigation bool `json:"enableAgentNavigation,omitempty"`
 }
 
 // DistributedTracingConfig contains options for configuring the Distributed Tracing plugin

@@ -29,8 +29,9 @@ var (
 const e2eTestNamespace = "e2e-tests"
 
 var (
-	retain            = flag.Bool("retain", false, "When set, the namespace in which tests are run will not be cleaned up")
-	operatorInstallNS = flag.String("operatorInstallNS", "openshift-operator", "The namespace where the operator is installed")
+	retain              = flag.Bool("retain", false, "When set, the namespace in which tests are run will not be cleaned up")
+	operatorInstallNS   = flag.String("operatorInstallNS", "openshift-operator", "The namespace where the operator is installed")
+	postponeRestoration = flag.Duration("postpone-restoration", 0, "Wait this duration before restoring the operator Subscription after uninstall tests (e.g. 10m for manual inspection)")
 )
 
 func TestMain(m *testing.M) {

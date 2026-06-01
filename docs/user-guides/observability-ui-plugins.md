@@ -114,7 +114,17 @@ When a __TroubleshootingPanel__ `UIPlugin` is deployed the plugin will connect t
 
 #### Plugin Creation
 
-To enable to logging view plugin, create a `UIPlugin` CR. This CR has three parameters located under `spec.logging`, used to control the behavior of the logging-view-plugin. The `spec.logging.lokiStack` required parameter locates the LokiStack instance in the `openshift-logging` namespace to connect to. The `spec.logging.logLimit` and the `spec.logging.timeout` determine the number of logs returned from a query and the time before the query timeouts respectively.
+To enable to logging view plugin, create a `UIPlugin` CR. 
+This CR has five parameters located under `spec.logging`, used to control the behavior of the logging-view-plugin. 
+The `spec.logging.lokiStack` required parameter locates the LokiStack instance in the `openshift-logging` namespace to connect to. 
+The `spec.logging.logsLimit` and the `spec.logging.timeout` determine the number of logs returned from a query and the time before the query timeouts respectively.
+The `spec.logging.schema` accepts 3 options:
+- Defaults to `viaq` if not specified. 
+- Use `otel` for OpenTelemetry schema
+- or `select` to allow users to choose the schema from the UI.
+The `spec.logging.showTimezoneSelector`:
+- Defaults to `false` if not specified.
+- Use `true` shows the timezone selector in the UI.
 
 The following example shows how to create a CR to enable the logging view plugin:
 
@@ -130,7 +140,8 @@ spec:
       name: logging-loki
     logsLimit: 50
     timeout: 30s
-    schema: otel
+    schema: <otel or viaq or select>
+
 ```
 
 ### Monitoring
