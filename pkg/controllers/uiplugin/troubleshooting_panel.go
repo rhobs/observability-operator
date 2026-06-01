@@ -4,10 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 
-	osv1 "github.com/openshift/api/console/v1"
-	osv1alpha1 "github.com/rhobs/openshift-api/console/v1alpha1"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -34,7 +33,11 @@ func createTroubleshootingPanelPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace
 	extraArgs := []string{
 		"-plugin-config-path=/etc/plugin/config/config.yaml",
 	}
-
+	if plugin.Spec.TroubleshootingPanel != nil && plugin.Spec.TroubleshootingPanel.EnableAgentNavigation {
+		if !slices.Contains(features, "agent-navigation") {
+			features = append(features, "agent-navigation")
+		}
+	}
 	if len(features) > 0 {
 		extraArgs = append(extraArgs, fmt.Sprintf("-features=%s", strings.Join(features, ",")))
 	}
@@ -49,30 +52,13 @@ func createTroubleshootingPanelPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace
 		LokiServiceNames:  make(map[string]string),
 		TempoServiceNames: make(map[string]string),
 		ExtraArgs:         extraArgs,
-		LegacyProxies: []osv1alpha1.ConsolePluginProxy{
+		Proxies: []PluginProxy{
 			{
-				Type:      osv1alpha1.ProxyTypeService,
-				Alias:     "korrel8r",
-				Authorize: true,
-				Service: osv1alpha1.ConsolePluginProxyServiceConfig{
-					Name:      korrel8rSvcName,
-					Namespace: namespace,
-					Port:      port,
-				},
-			},
-		},
-		Proxies: []osv1.ConsolePluginProxy{
-			{
-				Alias:         "korrel8r",
-				Authorization: "UserToken",
-				Endpoint: osv1.ConsolePluginProxyEndpoint{
-					Type: osv1.ProxyTypeService,
-					Service: &osv1.ConsolePluginProxyServiceConfig{
-						Name:      korrel8rSvcName,
-						Namespace: namespace,
-						Port:      port,
-					},
-				},
+				Alias:            "korrel8r",
+				ServiceName:      korrel8rSvcName,
+				ServiceNamespace: namespace,
+				ServicePort:      port,
+				Authorize:        true,
 			},
 		},
 		ConfigMap: &corev1.ConfigMap{
@@ -147,7 +133,6 @@ func marshalTroubleshootingPanelPluginConfig(cfg *uiv1alpha1.TroubleshootingPane
 }
 
 func getLokiServiceName(ctx context.Context, k client.Client, ns string) (string, error) {
-
 	serviceList := &corev1.ServiceList{}
 	if err := k.List(ctx, serviceList, client.InNamespace(ns)); err != nil {
 		return "", err
@@ -163,7 +148,6 @@ func getLokiServiceName(ctx context.Context, k client.Client, ns string) (string
 }
 
 func getTempoServiceName(ctx context.Context, k client.Client, ns string) (string, error) {
-
 	serviceList := &corev1.ServiceList{}
 	if err := k.List(ctx, serviceList, client.InNamespace(ns)); err != nil {
 		return "", err

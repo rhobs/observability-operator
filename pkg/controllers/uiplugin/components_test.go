@@ -50,7 +50,7 @@ func TestIsVersionAheadOrEqual(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		actual := isVersionAheadOrEqual(tc.clusterVersion, tc.nextClusterVersion)
+		actual := IsVersionAheadOrEqual(tc.clusterVersion, tc.nextClusterVersion)
 		assert.Equal(t, tc.expected, actual)
 	}
 }

@@ -9,6 +9,7 @@ import (
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	monitoringv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
+	osRhobsv1 "github.com/rhobs/openshift-api/console/v1"
 	osv1alpha1 "github.com/rhobs/openshift-api/console/v1alpha1"
 	persesv1alpha2 "github.com/rhobs/perses-operator/api/v1alpha2"
 	corev1 "k8s.io/api/core/v1"
@@ -20,6 +21,7 @@ import (
 	rhobsv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 	obsv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/observability/v1alpha1"
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
+	"github.com/rhobs/observability-operator/pkg/controllers/uiplugin"
 )
 
 func NewScheme(cfg *OperatorConfiguration) *runtime.Scheme {
@@ -36,13 +38,18 @@ func NewScheme(cfg *OperatorConfiguration) *runtime.Scheme {
 
 	if cfg.FeatureGates.OpenShift.Enabled {
 		utilruntime.Must(configv1.Install(scheme))
-		utilruntime.Must(osv1.Install(scheme))
 		utilruntime.Must(osv1alpha1.Install(scheme))
 		utilruntime.Must(operatorv1.Install(scheme))
 		utilruntime.Must(corev1.AddToScheme(scheme))
 		utilruntime.Must(monv1.AddToScheme(scheme))
 		utilruntime.Must(persesv1alpha2.AddToScheme(scheme))
 		utilruntime.Must(olmv1alpha1.AddToScheme(scheme))
+
+		if uiplugin.IsVersionAheadOrEqual(cfg.FeatureGates.OpenShift.Version, "v4.19") {
+			utilruntime.Must(osv1.Install(scheme))
+		} else {
+			utilruntime.Must(osRhobsv1.Install(scheme))
+		}
 	}
 
 	return scheme

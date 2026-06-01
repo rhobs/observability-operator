@@ -9,8 +9,6 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	osv1 "github.com/openshift/api/console/v1"
-	osv1alpha1 "github.com/rhobs/openshift-api/console/v1alpha1"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -53,59 +51,23 @@ func createLoggingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image
 		extraArgs = append(extraArgs, fmt.Sprintf("-features=%s", strings.Join(features, ",")))
 	}
 
-	legacyProxies := []osv1alpha1.ConsolePluginProxy{
+	proxies := []PluginProxy{
 		{
-			Type:      "Service",
-			Alias:     "backend",
-			Authorize: true,
-			Service: osv1alpha1.ConsolePluginProxyServiceConfig{
-				Name:      fmt.Sprintf("%s-gateway-http", lokiStackName),
-				Namespace: lokiStackNamespace,
-				Port:      8080,
-			},
+			Alias:            "backend",
+			ServiceName:      fmt.Sprintf("%s-gateway-http", lokiStackName),
+			ServiceNamespace: lokiStackNamespace,
+			ServicePort:      8080,
+			Authorize:        true,
 		},
 	}
 
 	if korrel8rImage != "" {
-		legacyProxies = append(legacyProxies, osv1alpha1.ConsolePluginProxy{
-			Type:      "Service",
-			Alias:     "korrel8r",
-			Authorize: true,
-			Service: osv1alpha1.ConsolePluginProxyServiceConfig{
-				Name:      korrel8rName,
-				Namespace: namespace,
-				Port:      port,
-			},
-		})
-	}
-
-	proxies := []osv1.ConsolePluginProxy{
-		{
-			Alias:         "backend",
-			Authorization: "UserToken",
-			Endpoint: osv1.ConsolePluginProxyEndpoint{
-				Type: osv1.ProxyTypeService,
-				Service: &osv1.ConsolePluginProxyServiceConfig{
-					Name:      fmt.Sprintf("%s-gateway-http", lokiStackName),
-					Namespace: lokiStackNamespace,
-					Port:      8080,
-				},
-			},
-		},
-	}
-
-	if korrel8rImage != "" {
-		proxies = append(proxies, osv1.ConsolePluginProxy{
-			Alias:         "korrel8r",
-			Authorization: "UserToken",
-			Endpoint: osv1.ConsolePluginProxyEndpoint{
-				Type: osv1.ProxyTypeService,
-				Service: &osv1.ConsolePluginProxyServiceConfig{
-					Name:      korrel8rName,
-					Namespace: namespace,
-					Port:      port,
-				},
-			},
+		proxies = append(proxies, PluginProxy{
+			Alias:            "korrel8r",
+			ServiceName:      korrel8rName,
+			ServiceNamespace: namespace,
+			ServicePort:      port,
+			Authorize:        true,
 		})
 	}
 
@@ -116,7 +78,6 @@ func createLoggingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image
 		DisplayName:       "Logging View",
 		ExtraArgs:         extraArgs,
 		ResourceNamespace: namespace,
-		LegacyProxies:     legacyProxies,
 		Proxies:           proxies,
 		Korrel8rImage:     korrel8rImage,
 		ConfigMap: &corev1.ConfigMap{

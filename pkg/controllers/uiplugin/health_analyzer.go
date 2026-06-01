@@ -112,7 +112,6 @@ func newHealthAnalyzerService(namespace string) *corev1.Service {
 func newHealthAnalyzerDeployment(namespace string,
 	serviceAccountName string,
 	pluginInfo UIPluginInfo) *appsv1.Deployment {
-
 	args := []string{
 		"serve",
 		"--tls-cert-file=/etc/tls/private/tls.crt",

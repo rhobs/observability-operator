@@ -55,6 +55,9 @@ const (
 // +kubebuilder:validation:Enum=CreateClusterRoleBindings;NoClusterRoleBindings
 type ClusterRoleBindingPolicy string
 
+// +kubebuilder:validation:Enum=OnNamespace;OnNamespaceExceptForAlertmanagerNamespace;None
+type AlertmanagerConfigMatcherStrategyType string
+
 const (
 	// CreateClusterRoleBindings instructs the MonitoringStack to create the
 	// default ClusterRoleBindings if a NamespaceSelector is present. Note that
@@ -68,6 +71,36 @@ const (
 	// RoleBindings to allow access to the desired namespaces.
 	NoClusterRoleBindings ClusterRoleBindingPolicy = "NoClusterRoleBindings"
 )
+
+const (
+	// OnNamespaceMatcherStrategy configures AlertmanagerConfig routes to only
+	// match alerts with a namespace label equal to the namespace of the
+	// AlertmanagerConfig resource.
+	OnNamespaceMatcherStrategy AlertmanagerConfigMatcherStrategyType = "OnNamespace"
+
+	// OnNamespaceExceptForAlertmanagerNamespaceMatcherStrategy behaves like
+	// OnNamespace, but AlertmanagerConfig resources in the same namespace as
+	// the Alertmanager instance match all alerts regardless of namespace.
+	OnNamespaceExceptForAlertmanagerNamespaceMatcherStrategy AlertmanagerConfigMatcherStrategyType = "OnNamespaceExceptForAlertmanagerNamespace"
+
+	// NoneMatcherStrategy configures AlertmanagerConfig routes to match all
+	// incoming alerts regardless of namespace.
+	NoneMatcherStrategy AlertmanagerConfigMatcherStrategyType = "None"
+)
+
+type AlertmanagerConfigMatcherStrategy struct {
+	// Type defines the strategy used by AlertmanagerConfig objects to match
+	// alerts in the routes and inhibition rules.
+	// With OnNamespace, routes only match alerts with a namespace label
+	// equal to the namespace of the AlertmanagerConfig.
+	// With OnNamespaceExceptForAlertmanagerNamespace, routes behave like
+	// OnNamespace but AlertmanagerConfig resources in the Alertmanager's
+	// own namespace match all alerts.
+	// With None, routes match all incoming alerts regardless of namespace.
+	// +optional
+	// +kubebuilder:default="None"
+	Type AlertmanagerConfigMatcherStrategyType `json:"type,omitempty"`
+}
 
 // MonitoringStackSpec is the specification for desired Monitoring Stack
 type MonitoringStackSpec struct {
@@ -122,7 +155,7 @@ type MonitoringStackSpec struct {
 	// +optional
 	RetentionSize monv1.ByteSize `json:"retentionSize,omitempty"`
 
-	// Define resources requests and limits for Monitoring Stack Pods.
+	// Define resources requests and limits for the Prometheus container.
 	// +optional
 	// +kubebuilder:default={requests:{cpu: "100m", memory: "256Mi"}, limits:{memory: "512Mi", cpu: "500m"}}
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
@@ -247,6 +280,11 @@ type PrometheusConfig struct {
 	// Default interval between scrapes.
 	// +optional
 	ScrapeInterval *monv1.Duration `json:"scrapeInterval,omitempty"`
+	// Define resources requests and limits for the Thanos sidecar container.
+	// +optional
+	// +kubebuilder:default={requests:{cpu: "50m", memory: "128Mi"}, limits:{memory: "256Mi", cpu: "250m"}}
+	ThanosResources corev1.ResourceRequirements `json:"thanosResources,omitempty"`
+
 	// Configure TLS options for the Prometheus web server.
 	// +optional
 	WebTLSConfig *WebTLSConfig `json:"webTLSConfig,omitempty"`
@@ -263,6 +301,16 @@ type AlertmanagerConfig struct {
 	// +kubebuilder:default=2
 	// +kubebuilder:validation:Minimum=0
 	Replicas *int32 `json:"replicas,omitempty"`
+
+	// Define resources requests and limits for the Alertmanager container.
+	// +optional
+	// +kubebuilder:default={requests:{cpu: "50m", memory: "128Mi"}, limits:{memory: "256Mi", cpu: "250m"}}
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// Define how AlertmanagerConfig objects process incoming alerts.
+	// +optional
+	// +kubebuilder:default={type: "None"}
+	MatcherStrategy AlertmanagerConfigMatcherStrategy `json:"matcherStrategy,omitempty"`
 
 	// Configure TLS options for the Alertmanager web server.
 	// +optional

@@ -54,7 +54,7 @@ var defaultImages = map[string]string{
 	"ui-logging-pf5":               "quay.io/openshift-observability-ui/logging-view-plugin:v6.1.6",
 	"ui-logging":                   "quay.io/openshift-observability-ui/logging-view-plugin:v6.2.1",
 	"korrel8r":                     "quay.io/korrel8r/korrel8r:0.9.1",
-	"health-analyzer":              "quay.io/openshiftanalytics/cluster-health-analyzer:v1.1.1",
+	"health-analyzer":              "quay.io/openshiftanalytics/cluster-health-analyzer:v1.1.1-rc.0",
 	"ui-monitoring-pf5":            "quay.io/openshift-observability-ui/monitoring-console-plugin:v0.4.5",
 	"ui-monitoring-pf6":            "quay.io/openshift-observability-ui/monitoring-console-plugin:v0.5.4",
 	"ui-monitoring":                "quay.io/openshift-observability-ui/monitoring-console-plugin:v1.0.0",
@@ -141,6 +141,7 @@ func main() {
 	defer cancel()
 
 	var initialTLSProfileSpec configv1.TLSProfileSpec
+	var openshiftVersion string
 	if openShiftEnabled {
 		scheme := operator.NewOpenShiftScheme()
 		directClient, err := client.New(ctrl.GetConfigOrDie(), client.Options{Scheme: scheme})
@@ -155,6 +156,14 @@ func main() {
 			os.Exit(1)
 		}
 		setupLog.Info("fetched initial TLS profile", "minVersion", initialTLSProfileSpec.MinTLSVersion, "ciphers", initialTLSProfileSpec.Ciphers)
+
+		clusterVersion := &configv1.ClusterVersion{}
+		key := client.ObjectKey{Name: "version"}
+		if err := directClient.Get(ctx, key, clusterVersion); err != nil {
+			setupLog.Error(err, "failed to fetch cluster version")
+			os.Exit(1)
+		}
+		openshiftVersion = clusterVersion.Status.Desired.Version
 	}
 
 	op, err := operator.New(
@@ -176,6 +185,7 @@ func main() {
 			operator.WithFeatureGates(operator.FeatureGates{
 				OpenShift: operator.OpenShiftFeatureGates{
 					Enabled: openShiftEnabled,
+					Version: openshiftVersion,
 				},
 			}),
 			operator.WithCancelFunc(cancel),

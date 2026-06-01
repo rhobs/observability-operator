@@ -353,7 +353,7 @@ func TestLookupImageAndFeatures(t *testing.T) {
 			clusterVersion: "v4.14",
 			expectedKey:    "ui-monitoring",
 			expectedErr:    fmt.Errorf("plugin %q: no compatible image found for cluster version %q", uiv1alpha1.TypeMonitoring, "v4.14"),
-			supportLevel:   TechPreview,
+			supportLevel:   GeneralAvailability,
 		},
 		{
 			pluginType:       uiv1alpha1.TypeMonitoring,
@@ -361,7 +361,7 @@ func TestLookupImageAndFeatures(t *testing.T) {
 			expectedKey:      "ui-monitoring-pf5",
 			expectedFeatures: []string{},
 			expectedErr:      nil,
-			supportLevel:     TechPreview,
+			supportLevel:     GeneralAvailability,
 		},
 		{
 			pluginType:       uiv1alpha1.TypeMonitoring,
@@ -369,7 +369,7 @@ func TestLookupImageAndFeatures(t *testing.T) {
 			expectedKey:      "ui-monitoring-pf5",
 			expectedFeatures: []string{},
 			expectedErr:      nil,
-			supportLevel:     TechPreview,
+			supportLevel:     GeneralAvailability,
 		},
 		{
 			pluginType:       uiv1alpha1.TypeMonitoring,

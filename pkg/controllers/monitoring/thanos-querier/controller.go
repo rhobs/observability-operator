@@ -231,7 +231,7 @@ func (rm resourceManager) hashOfTLSSecret(selector msoapi.SecretKeySelector, nam
 		Namespace: namespace,
 	}, &secret)
 	if err != nil {
-		return "", fmt.Errorf("Couldn't get TLS secret %s: %s", selector.Name, err)
+		return "", fmt.Errorf("Couldn't get TLS secret %s: %w", selector.Name, err)
 	}
 
 	hash := sha256.Sum256(secret.Data[selector.Key])

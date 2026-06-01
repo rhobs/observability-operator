@@ -46,6 +46,76 @@ func TestStorageSpec(t *testing.T) {
 	}
 }
 
+func TestNewAlertmanagerSetsResources(t *testing.T) {
+	amResources := corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("250m"),
+			corev1.ResourceMemory: resource.MustParse("256Mi"),
+		},
+	}
+	ms := &stack.MonitoringStack{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "ns",
+		},
+		Spec: stack.MonitoringStackSpec{
+			AlertmanagerConfig: stack.AlertmanagerConfig{
+				Resources: amResources,
+			},
+		},
+	}
+
+	am := newAlertmanager(ms, "test-alertmanager", AlertmanagerConfiguration{})
+	assert.DeepEqual(t, amResources, am.Spec.Resources)
+}
+
+func TestNewPrometheusSetsThanosSidecarResources(t *testing.T) {
+	promResources := corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("100m"),
+			corev1.ResourceMemory: resource.MustParse("256Mi"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("500m"),
+			corev1.ResourceMemory: resource.MustParse("512Mi"),
+		},
+	}
+	thanosResources := corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("250m"),
+			corev1.ResourceMemory: resource.MustParse("256Mi"),
+		},
+	}
+	ms := &stack.MonitoringStack{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "ns",
+		},
+		Spec: stack.MonitoringStackSpec{
+			Resources: promResources,
+			PrometheusConfig: &stack.PrometheusConfig{
+				ThanosResources: thanosResources,
+			},
+			AlertmanagerConfig: stack.AlertmanagerConfig{Disabled: true},
+		},
+	}
+
+	prom := newPrometheus(ms, "test-prometheus", "test-scrape",
+		ThanosConfiguration{Image: "thanos:latest"},
+		PrometheusConfiguration{})
+
+	assert.DeepEqual(t, thanosResources, prom.Spec.Thanos.Resources)
+	assert.DeepEqual(t, promResources, prom.Spec.Resources)
+}
+
 func TestNewAdditionalScrapeConfigsSecret(t *testing.T) {
 	for _, tc := range []struct {
 		name       string

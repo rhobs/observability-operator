@@ -160,8 +160,8 @@ var compatibilityMatrix = []CompatibilityEntry{
 		MinClusterVersion: "v4.15",
 		MaxClusterVersion: "v4.19",
 		ImageKey:          "ui-monitoring-pf5",
-		SupportLevel:      TechPreview,
-		// feature flags for montioring are dynamically injected
+		SupportLevel:      GeneralAvailability,
+		// feature flags for monitoring are dynamically injected
 		// based on the cluster version and and UIPlugin CR configurations
 		Features: []string{},
 	},
@@ -171,7 +171,7 @@ var compatibilityMatrix = []CompatibilityEntry{
 		MaxClusterVersion: "v4.22",
 		ImageKey:          "ui-monitoring-pf6",
 		SupportLevel:      GeneralAvailability,
-		// feature flags for montioring are dynamically injected
+		// feature flags for monitoring are dynamically injected
 		// based on the cluster version and and UIPlugin CR configurations
 		Features: []string{},
 	},
@@ -181,7 +181,7 @@ var compatibilityMatrix = []CompatibilityEntry{
 		MaxClusterVersion: "",
 		ImageKey:          "ui-monitoring",
 		SupportLevel:      GeneralAvailability,
-		// feature flags for montioring are dynamically injected
+		// feature flags for monitoring are dynamically injected
 		// based on the cluster version and and UIPlugin CR configurations
 		Features: []string{},
 	},

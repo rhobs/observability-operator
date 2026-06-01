@@ -19,6 +19,7 @@ declare -r OPERATORS_NS="openshift-operators"
 declare NO_INSTALL=false
 declare NO_UNINSTALL=false
 declare SHOW_USAGE=false
+declare POSTPONE_RESTORATION=""
 
 cleanup() {
 	# skip cleanup if user requested help
@@ -129,6 +130,11 @@ parse_args() {
 			NO_UNINSTALL=true
 			shift
 			;;
+		--postpone-restoration)
+			shift
+			POSTPONE_RESTORATION=$1
+			shift
+			;;
 		*) return 1 ;; # show usage on everything else
 		esac
 	done
@@ -150,6 +156,9 @@ print_usage() {
 		  -h|--help          show this help
 		  --no-install       do not install OBO, useful for rerunning tests
 		  --no-uninstall     do not uninstall OBO after test
+		  --postpone-restoration DURATION
+		                     delay operator Subscription restoration after uninstall
+		                     tests (e.g. 10m) to allow manual cluster inspection
 	EOF_HELP
 
 	echo -e "$help"
@@ -167,7 +176,9 @@ main() {
 	install_obo
 
 	local -i ret=0
-	./test/run-e2e.sh --no-deploy --ns "$OPERATORS_NS" --ci || ret=$?
+	local -a extra_args=()
+	[[ -n "$POSTPONE_RESTORATION" ]] && extra_args+=(--postpone-restoration "$POSTPONE_RESTORATION")
+	./test/run-e2e.sh --no-deploy --ns "$OPERATORS_NS" --ci "${extra_args[@]}" || ret=$?
 
 	# NOTE: delete_obo will be automatically called when script exits
 	return $ret
