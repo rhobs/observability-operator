@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -32,7 +33,11 @@ func createTroubleshootingPanelPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace
 	extraArgs := []string{
 		"-plugin-config-path=/etc/plugin/config/config.yaml",
 	}
-
+	if plugin.Spec.TroubleshootingPanel != nil && plugin.Spec.TroubleshootingPanel.EnableAgentNavigation {
+		if !slices.Contains(features, "agent-navigation") {
+			features = append(features, "agent-navigation")
+		}
+	}
 	if len(features) > 0 {
 		extraArgs = append(extraArgs, fmt.Sprintf("-features=%s", strings.Join(features, ",")))
 	}

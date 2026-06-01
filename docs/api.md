@@ -5923,6 +5923,15 @@ TroubleshootingPanel contains configuration for the troubleshooting console plug
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>enableAgentNavigation</b></td>
+        <td>boolean</td>
+        <td>
+          EnableAgentNavigation if true allows an AI agent to read and navigate the main view and troubleshooting panel on your behalf.
+
+Defaults to false if not specified.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>timeout</b></td>
         <td>string</td>
         <td>

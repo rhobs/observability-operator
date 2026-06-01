@@ -231,6 +231,12 @@ spec:
                 description: TroubleshootingPanel contains configuration for the troubleshooting
                   console plugin.
                 properties:
+                  enableAgentNavigation:
+                    description: |-
+                      EnableAgentNavigation if true allows an AI agent to read and navigate the main view and troubleshooting panel on your behalf.
+
+                      Defaults to false if not specified.
+                    type: boolean
                   timeout:
                     description: |-
                       Timeout is the maximum duration before a query timeout.
