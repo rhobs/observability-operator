@@ -241,7 +241,7 @@ stable channel.
 A release version can be forced like this:
 
 ```sh
-RELEASE_VERSION=1.4.0
+RELEASE_VERSION=1.5.0
 make initiate-release-as RELEASE_VERSION=$RELEASE_VERSION
 ```
 
