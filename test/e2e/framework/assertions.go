@@ -134,7 +134,7 @@ func (f *Framework) AssertResourceEventuallyExists(name, namespace string, resou
 			}
 			return false, nil
 		}); wait.Interrupted(err) {
-			t.Fatal(fmt.Errorf("resource %s/%s was never created", namespace, name))
+			t.Fatalf("resource %s/%s was never created", namespace, name)
 		}
 	}
 }
@@ -156,7 +156,7 @@ func (f *Framework) AssertStatefulsetReady(name, namespace string, fns ...Option
 			err := f.K8sClient.Get(context.Background(), key, pod)
 			return err == nil && pod.Status.ReadyReplicas == *pod.Spec.Replicas, nil
 		}); err != nil {
-			t.Fatal(fmt.Errorf("statefulset %s was never ready with %v", name, err))
+			t.Fatalf("statefulset %s was never ready with %v", name, err)
 		}
 	}
 }
@@ -174,12 +174,12 @@ func (f *Framework) AssertStatefulSetContainerHasArg(t *testing.T, name, namespa
 
 	return func(t *testing.T) {
 		t.Helper()
-		statefulSet := &appsv1.StatefulSet{}
+		var lastErr error
 		key := types.NamespacedName{Name: name, Namespace: namespace}
-
 		if err := wait.PollUntilContextTimeout(context.Background(), option.PollInterval, option.WaitTimeout, true, func(ctx context.Context) (bool, error) {
-
-			if err := f.K8sClient.Get(ctx, key, statefulSet); apierrors.IsNotFound(err) {
+			statefulSet := &appsv1.StatefulSet{}
+			if err := f.K8sClient.Get(context.Background(), key, statefulSet); err != nil {
+				lastErr = err
 				return false, nil
 			}
 
@@ -192,7 +192,8 @@ func (f *Framework) AssertStatefulSetContainerHasArg(t *testing.T, name, namespa
 			}
 
 			if container == nil {
-				return false, fmt.Errorf("container %q not found in StatefulSet template", containerName)
+				lastErr = fmt.Errorf("container %q not found in StatefulSet template", containerName)
+				return false, nil
 			}
 
 			for _, arg := range container.Args {
@@ -201,11 +202,10 @@ func (f *Framework) AssertStatefulSetContainerHasArg(t *testing.T, name, namespa
 				}
 			}
 
-			t.Logf("StatefulSet %s container %q args are missing %q. Retrying...", name, containerName, expectedArg)
+			lastErr = fmt.Errorf("statefulSet %s: container %q: arg %q is missing from args %v", key, containerName, expectedArg, container.Args)
 			return false, nil
 		}); wait.Interrupted(err) {
-			t.Fatalf("StatefulSet %s failed to contain argument %q in container %q within timeout. Final args: %v",
-				name, expectedArg, containerName, statefulSet.Spec.Template.Spec.Containers[0].Args)
+			t.Fatalf("%v: %v", err, lastErr)
 		}
 	}
 }
@@ -221,18 +221,29 @@ func (f *Framework) AssertDeploymentReady(name, namespace string, fns ...OptionF
 	}
 	return func(t *testing.T) {
 		t.Helper()
+		var lastErr error
 		key := types.NamespacedName{Name: name, Namespace: namespace}
 		if err := wait.PollUntilContextTimeout(context.Background(), option.PollInterval, option.WaitTimeout, true, func(ctx context.Context) (bool, error) {
 			deployment := &appsv1.Deployment{}
 			err := f.K8sClient.Get(context.Background(), key, deployment)
-			return err == nil && deployment.Status.ReadyReplicas == *deployment.Spec.Replicas, nil
+			if err != nil {
+				lastErr = err
+				return false, nil
+			}
+
+			if deployment.Status.ReadyReplicas != *deployment.Spec.Replicas {
+				lastErr = fmt.Errorf("expecting %d ready replicas, got %d (conditions: %v)", *deployment.Spec.Replicas, deployment.Status.ReadyReplicas, deployment.Status.Conditions)
+				return false, nil
+			}
+
+			return true, nil
 		}); err != nil {
-			t.Fatal(err)
+			t.Fatalf("%v: %v", err, lastErr)
 		}
 	}
 }
 
-// AssertDeploymentReadyAndStable asserts that a deployment has the desired number of pods running for 2 consecutive polls 5 seconds appart
+// AssertDeploymentReadyAndStable asserts that a deployment has the desired number of pods running for 2 consecutive polls 5 seconds apart.
 func (f *Framework) AssertDeploymentReadyAndStable(name, namespace string, fns ...OptionFn) func(t *testing.T) {
 	option := AssertOption{
 		PollInterval: 5 * time.Second,
@@ -241,20 +252,38 @@ func (f *Framework) AssertDeploymentReadyAndStable(name, namespace string, fns .
 	for _, fn := range fns {
 		fn(&option)
 	}
+
 	return func(t *testing.T) {
+		t.Helper()
+		var (
+			lastErr error
+			ready   bool
+		)
 		key := types.NamespacedName{Name: name, Namespace: namespace}
 		if err := wait.PollUntilContextTimeout(context.Background(), option.PollInterval, option.WaitTimeout, true, func(ctx context.Context) (bool, error) {
 			deployment := &appsv1.Deployment{}
 			err := f.K8sClient.Get(context.Background(), key, deployment)
-			if err == nil && deployment.Status.ReadyReplicas == *deployment.Spec.Replicas {
-				time.Sleep(5 * time.Second)
-				err := f.K8sClient.Get(context.Background(), key, deployment)
-				return err == nil && deployment.Status.ReadyReplicas == *deployment.Spec.Replicas, nil
-			} else {
+			if err != nil {
+				ready = false
+				lastErr = err
 				return false, nil
 			}
+
+			if deployment.Status.ReadyReplicas != *deployment.Spec.Replicas {
+				ready = false
+				lastErr = fmt.Errorf("expecting %d ready replicas, got %d (conditions: %v)", *deployment.Spec.Replicas, deployment.Status.ReadyReplicas, deployment.Status.Conditions)
+				return false, nil
+			}
+
+			if !ready {
+				ready = true
+				lastErr = errors.New("deployment now ready but hasn't stabilized yet")
+				return false, nil
+			}
+
+			return true, nil
 		}); err != nil {
-			t.Fatal(err)
+			t.Fatalf("%v: %v", err, lastErr)
 		}
 	}
 }
@@ -264,11 +293,12 @@ func (f *Framework) GetResourceWithRetry(t *testing.T, name, namespace string, o
 		PollInterval: 5 * time.Second,
 		WaitTimeout:  DefaultTestTimeout,
 	}
+	var lastErr error
 	err := wait.PollUntilContextTimeout(context.Background(), option.PollInterval, option.WaitTimeout, true, func(ctx context.Context) (bool, error) {
 		key := types.NamespacedName{Name: name, Namespace: namespace}
 
-		if err := f.K8sClient.Get(context.Background(), key, obj); apierrors.IsNotFound(err) {
-			// retry
+		if err := f.K8sClient.Get(context.Background(), key, obj); err != nil {
+			lastErr = err
 			return false, nil
 		}
 
@@ -276,7 +306,7 @@ func (f *Framework) GetResourceWithRetry(t *testing.T, name, namespace string, o
 	})
 
 	if wait.Interrupted(err) {
-		t.Fatal(fmt.Errorf("resource %s/%s was never created", namespace, name))
+		t.Fatalf("resource %s/%s was never created: %v", namespace, name, lastErr)
 	}
 }
 
@@ -674,6 +704,7 @@ func (f *Framework) AssertNoEventWithReason(t *testing.T, reason string) {
 }
 
 func (f *Framework) GetStackWhenAvailable(t *testing.T, name, namespace string) v1alpha1.MonitoringStack {
+	t.Helper()
 	var ms v1alpha1.MonitoringStack
 	key := types.NamespacedName{
 		Name:      name,
@@ -681,23 +712,29 @@ func (f *Framework) GetStackWhenAvailable(t *testing.T, name, namespace string) 
 	}
 	var lastErr error
 
-	err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, DefaultTestTimeout*2, true, func(ctx context.Context) (bool, error) {
-		lastErr = nil
+	if err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, DefaultTestTimeout*2, true, func(ctx context.Context) (bool, error) {
 		err := f.K8sClient.Get(context.Background(), key, &ms)
 		if err != nil {
 			lastErr = err
 			return false, nil
 		}
-		availableC := getConditionByType(ms.Status.Conditions, v1alpha1.AvailableCondition)
-		if availableC != nil && availableC.Status == v1alpha1.ConditionTrue {
-			return true, nil
-		}
-		return false, nil
-	})
 
-	if wait.Interrupted(err) {
-		t.Fatal(fmt.Errorf("MonitoringStack %s/%s was not available - err: %w |  %v", namespace, name, lastErr, ms.Status.Conditions))
+		availableC := getConditionByType(ms.Status.Conditions, v1alpha1.AvailableCondition)
+		if availableC == nil {
+			lastErr = errors.New("available condition not found")
+			return false, nil
+		}
+
+		if availableC.Status != v1alpha1.ConditionTrue {
+			lastErr = fmt.Errorf("available condition not true: %v", availableC)
+			return false, nil
+		}
+
+		return true, nil
+	}); wait.Interrupted(err) {
+		t.Fatalf("MonitoringStack %s was not available: %v", key, lastErr)
 	}
+
 	return ms
 }
 
@@ -707,15 +744,18 @@ func (f *Framework) AssertAlertmanagerAbsent(t *testing.T, name, namespace strin
 		Name:      name,
 		Namespace: namespace,
 	}
+	var lastErr error
 	err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, DefaultTestTimeout, true, func(ctx context.Context) (bool, error) {
 		err := f.K8sClient.Get(context.Background(), key, &am)
 		if apierrors.IsNotFound(err) {
 			return true, nil
 		}
+
+		lastErr = err
 		return false, nil
 	})
 	if wait.Interrupted(err) {
-		t.Fatal(fmt.Errorf("alertmanager %s/%s is present when expected to be absent", namespace, name))
+		t.Fatalf("alertmanager %s/%s is present when expected to be absent: %v", namespace, name, lastErr)
 	}
 }
 
@@ -738,22 +778,24 @@ func (f *Framework) AssertPrometheusReplicaStatus(name, namespace string, expect
 		fn(&option)
 	}
 	prom := monv1.Prometheus{}
+	key := types.NamespacedName{Name: name, Namespace: namespace}
+	var lastErr error
 	return func(t *testing.T) {
 		if err := wait.PollUntilContextTimeout(context.Background(), option.PollInterval, option.WaitTimeout, false, func(ctx context.Context) (bool, error) {
-			key := types.NamespacedName{
-				Name:      name,
-				Namespace: namespace,
-			}
-			if err := f.K8sClient.Get(context.Background(), key, &prom); apierrors.IsNotFound(err) {
+			if err := f.K8sClient.Get(context.Background(), key, &prom); err != nil {
+				lastErr = err
 				return false, nil
 			}
+
 			if prom.Status.Replicas != expectedReplicas {
+				lastErr = fmt.Errorf("expected %d replicas, got %d", expectedReplicas, prom.Status.Replicas)
 				return false, nil
 			}
+
 			return true, nil
 
 		}); wait.Interrupted(err) {
-			t.Fatal(fmt.Errorf("Prometheus %s/%s has unexpected number of replicas, got %d, expected %d", namespace, name, prom.Status.Replicas, expectedReplicas))
+			t.Fatalf("Prometheus %s: %v", key, lastErr)
 		}
 	}
 }
