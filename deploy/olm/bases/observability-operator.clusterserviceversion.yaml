@@ -47,7 +47,8 @@ metadata:
         "alertmanagers.monitoring.rhobs",
         "thanosrulers.monitoring.rhobs",
         "prometheusagents.monitoring.rhobs",
-        "perses.perses.dev"
+        "perses.perses.dev",
+        "uiplugins.observability.openshift.io"
       ]
     repository: "https://github.com/rhobs/observability-operator"
     operatorframework.io/cluster-monitoring: "true"

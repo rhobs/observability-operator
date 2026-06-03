@@ -32,8 +32,13 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"github.com/go-logr/logr"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/rhobs/observability-operator/pkg/operator"
+	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
+	persesv1alpha2 "github.com/rhobs/perses-operator/api/v1alpha2"
 )
 
 // The default values we use. Prometheus and Alertmanager are handled by
@@ -90,6 +95,80 @@ func validateImages(images *k8sflag.MapStringString) (map[string]string, error) 
 	return res, nil
 }
 
+// performUIPluginCleanup removes finalizers from Perses resources and deletes UIPlugins
+func performUIPluginCleanup(ctx context.Context, logger logr.Logger) error {
+	// Create a scheme with the necessary types
+	scheme := operator.NewOpenShiftScheme()
+	if err := uiv1alpha1.AddToScheme(scheme); err != nil {
+		return fmt.Errorf("failed to add UIPlugin types to scheme: %w", err)
+	}
+	if err := persesv1alpha2.AddToScheme(scheme); err != nil {
+		return fmt.Errorf("failed to add Perses types to scheme: %w", err)
+	}
+
+	// Create a client
+	config := ctrl.GetConfigOrDie()
+	k8sClient, err := client.New(config, client.Options{Scheme: scheme})
+	if err != nil {
+		return fmt.Errorf("failed to create Kubernetes client: %w", err)
+	}
+
+	// List all UIPlugins
+	uiPlugins := &uiv1alpha1.UIPluginList{}
+	if err := k8sClient.List(ctx, uiPlugins); err != nil {
+		return fmt.Errorf("failed to list UIPlugins: %w", err)
+	}
+
+	logger.Info("found UIPlugins for cleanup", "count", len(uiPlugins.Items))
+
+	// For each UIPlugin, clean up its owned Perses resources
+	for _, plugin := range uiPlugins.Items {
+		logger.Info("processing UIPlugin", "name", plugin.Name)
+
+		// Find Perses resources owned by this UIPlugin
+		persesList := &persesv1alpha2.PersesList{}
+		if err := k8sClient.List(ctx, persesList, client.InNamespace(metav1.NamespaceAll)); err != nil {
+			logger.Error(err, "failed to list Perses resources", "uiplugin", plugin.Name)
+			continue
+		}
+
+		// Remove finalizers from owned Perses resources
+		for _, perses := range persesList.Items {
+			if isOwnedByUIPlugin(perses.OwnerReferences, plugin.UID) {
+				if len(perses.Finalizers) > 0 {
+					logger.Info("removing finalizers from Perses", "perses", perses.Name, "uiplugin", plugin.Name)
+					patch := client.MergeFrom(perses.DeepCopy())
+					perses.Finalizers = nil
+					if err := k8sClient.Patch(ctx, &perses, patch); err != nil {
+						logger.Error(err, "failed to remove finalizers from Perses", "perses", perses.Name)
+						continue
+					}
+				}
+			}
+		}
+
+		// Delete the UIPlugin
+		logger.Info("deleting UIPlugin", "name", plugin.Name)
+		if err := k8sClient.Delete(ctx, &plugin); err != nil {
+			logger.Error(err, "failed to delete UIPlugin", "name", plugin.Name)
+			continue
+		}
+	}
+
+	logger.Info("UIPlugin cleanup completed")
+	return nil
+}
+
+// isOwnedByUIPlugin checks if a resource is owned by the specified UIPlugin
+func isOwnedByUIPlugin(ownerRefs []metav1.OwnerReference, uiPluginUID types.UID) bool {
+	for _, ref := range ownerRefs {
+		if ref.UID == uiPluginUID && ref.Kind == "UIPlugin" {
+			return true
+		}
+	}
+	return false
+}
+
 func main() {
 	var (
 		namespace        string
@@ -98,6 +177,7 @@ func main() {
 		openShiftEnabled bool
 		otelCSVName      string
 		tempoCSVName     string
+		cleanupUIPlugins bool
 
 		setupLog = ctrl.Log.WithName("setup")
 	)
@@ -107,9 +187,10 @@ func main() {
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&healthProbeAddr, "health-probe-bind-address", ":8081", "The address the health probe endpoint binds to.")
 	flag.Var(images, "images", fmt.Sprintf("Full images refs to use for containers managed by the operator. E.g thanos=quay.io/thanos/thanos:v0.33.0. Images used are %v", imagesUsed()))
-	flag.BoolVar(&openShiftEnabled, "openshift.enabled", false, "Enable OpenShift specific features such as Console Plugins.")
+	flag.BoolVar(&openShiftEnabled, "openshift.enabled", true, "Enable OpenShift specific features such as Console Plugins.")
 	flag.StringVar(&otelCSVName, "opentelemetry-csv", "", "OpenTelemetry Operator starting CSV name. This can be used to install a specific OpenTelemetry Operator version. Empty string means the latest version will be installed.")
 	flag.StringVar(&tempoCSVName, "tempo-csv", "", "Tempo Operator starting CSV name. This can be used to install a specific Tempo Operator version. Empty string means the latest version will be installed.")
+	flag.BoolVar(&cleanupUIPlugins, "cleanup-uiplugins", false, "Clean up UIPlugins and exit (used by preStop hook)")
 
 	opts := zap.Options{
 		Development: true,
@@ -119,6 +200,17 @@ func main() {
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+
+	// Handle cleanup mode for preStop hook
+	if cleanupUIPlugins {
+		setupLog.Info("cleanup mode: cleaning up UIPlugins before shutdown")
+		if err := performUIPluginCleanup(context.Background(), setupLog); err != nil {
+			setupLog.Error(err, "failed to cleanup UIPlugins")
+			os.Exit(1)
+		}
+		setupLog.Info("UIPlugin cleanup completed successfully")
+		os.Exit(0)
+	}
 
 	setupLog.Info("running with arguments",
 		"namespace", namespace,
