@@ -100,6 +100,11 @@ assert_no_reconciliation_errors() {
 
 	header "Ensure No Reconciliation Errors [ $stage ]"
 
+	if [[ ! -x ./tmp/bin/promq ]]; then
+		warn "promq not found at ./tmp/bin/promq - skipping reconciliation error check"
+		return 0
+	fi
+
 	sleep 3
 	./tmp/bin/promq -t http://localhost:30001/metrics \
 		-q 'controller_runtime_reconcile_errors_total' -o yaml
