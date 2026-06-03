@@ -28,11 +28,16 @@ spec:
           imagePullPolicy: Always
           args:
             - --namespace=$(NAMESPACE)
+            - --openshift.enabled=true
           env:
           - name: NAMESPACE
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/manager", "--cleanup-uiplugins"]
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
