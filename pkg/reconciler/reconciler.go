@@ -58,21 +58,25 @@ func (r Updater) Reconcile(ctx context.Context, c client.Client, scheme *runtime
 	return nil
 }
 
-func NewUpdater(resource client.Object, owner metav1.Object) Updater {
+func NewUpdater(resource client.Object, owner metav1.Object) (Updater, error) {
 	return newUpdater(resource, owner, false)
 }
 
 // NewUnmanagedUpdater creates an Updater that does not set a controller reference.
-func NewUnmanagedUpdater(resource client.Object, owner metav1.Object) Updater {
+func NewUnmanagedUpdater(resource client.Object, owner metav1.Object) (Updater, error) {
 	return newUpdater(resource, owner, true)
 }
 
-func newUpdater(resource client.Object, owner metav1.Object, bypassOwnerRef bool) Updater {
+func newUpdater(resource client.Object, owner metav1.Object, bypassOwnerRef bool) (Updater, error) {
+	labeled, err := util.AddCommonLabels(resource, owner.GetName())
+	if err != nil {
+		return Updater{}, err
+	}
 	return Updater{
 		resourceOwner:          owner,
-		resource:               util.AddCommonLabels(resource, owner.GetName()),
+		resource:               labeled,
 		shouldBypassSetCtrlRef: bypassOwnerRef,
-	}
+	}, nil
 }
 
 // Deleter deletes a resource and ignores NotFound errors.
@@ -94,16 +98,42 @@ func NewDeleter(r client.Object) Deleter {
 }
 
 // NewOptionalUpdater ensures that a resource is present or absent depending on the `cond` value (true: present).
-func NewOptionalUpdater(r client.Object, c metav1.Object, cond bool) Reconciler {
+func NewOptionalUpdater(r client.Object, c metav1.Object, cond bool) (Reconciler, error) {
 	if cond {
 		return NewUpdater(r, c)
 	}
-	return NewDeleter(r)
+	return NewDeleter(r), nil
 }
 
-func NewOptionalUnmanagedUpdater(r client.Object, c metav1.Object, cond bool) Reconciler {
+func NewOptionalUnmanagedUpdater(r client.Object, c metav1.Object, cond bool) (Reconciler, error) {
 	if cond {
 		return NewUnmanagedUpdater(r, c)
 	}
-	return NewDeleter(r)
+	return NewDeleter(r), nil
+}
+
+// ReconcilerBuilder accumulates Reconciler instances and the first error encountered.
+// It allows constructing a list of reconcilers without verbose per-call error handling.
+type ReconcilerBuilder struct {
+	recs []Reconciler
+	err  error
+}
+
+// Add appends r to the builder if no prior error was recorded. If err is non-nil it is
+// stored and subsequent Add calls are no-ops.
+func (b *ReconcilerBuilder) Add(r Reconciler, err error) *ReconcilerBuilder {
+	if b.err != nil {
+		return b
+	}
+	if err != nil {
+		b.err = err
+		return b
+	}
+	b.recs = append(b.recs, r)
+	return b
+}
+
+// Build returns the accumulated reconcilers and the first error encountered, if any.
+func (b *ReconcilerBuilder) Build() ([]Reconciler, error) {
+	return b.recs, b.err
 }
