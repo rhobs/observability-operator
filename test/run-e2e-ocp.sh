@@ -3,7 +3,7 @@ set -e -u -o pipefail
 
 trap cleanup EXIT
 
-# NOTE: install ObO and run e2e against the installation
+# NOTE: install Observability Operator and run e2e against the installation
 
 PROJECT_ROOT="$(git rev-parse --show-toplevel)"
 declare -r PROJECT_ROOT
@@ -30,10 +30,10 @@ cleanup() {
 }
 
 install_obo() {
-	header "Install ObO"
+	header "Install Observability Operator"
 
 	$NO_INSTALL && {
-		skip "installation of obo "
+		skip "installation of Observability Operator"
 		return 0
 	}
 
@@ -46,14 +46,14 @@ install_obo() {
 	oc -n "$OPERATORS_NS" wait --for=condition=CatalogSourcesUnhealthy=False \
 		subscription.operators.coreos.com observability-operator --timeout=60s
 
-	ok "ObO subscription is ready"
+	ok "Observability Operator subscription is ready"
 	wait_for_operators_ready "$OPERATORS_NS"
 
 	enable_ocp
 }
 
 enable_ocp() {
-  # Get ObO CSV json file
+  # Get Observability Operator CSV json file
   CSV_NAME=$(oc -n "$OPERATORS_NS" get sub observability-operator -o jsonpath='{.status.installedCSV}')
   CSV_JSON_FILE=$(mktemp /tmp/"$CSV_NAME"XXXXXX.json)
   if [ -e "$CSV_JSON_FILE" ]; then
@@ -65,9 +65,9 @@ enable_ocp() {
   retry_count=0
   while [ "$retry_count" -lt "$max_retries" ]; do
     oc -n "$OPERATORS_NS" get csv "${CSV_NAME}" -o json > "$CSV_JSON_FILE"
-	# Update CSV json file to enable OCP mode
-	ARGS_JSON=$(printf '%s\n' "--openshift.enabled=true" | jq -R . | jq -s .)
-	jq --arg container_name operator --argjson args "$ARGS_JSON" '
+    # Update the CSV manifest to enable the OpenShift features.
+    ARGS_JSON=$(printf '%s\n' "--openshift.enabled=true" | jq -R . | jq -s .)
+    jq --arg container_name operator --argjson args "$ARGS_JSON" '
       (.spec.install.spec.deployments[].spec.template.spec.containers[] | select(.name == $container_name) | .args) += $args
     ' "$CSV_JSON_FILE" > /tmp/tmp.$$.json && mv /tmp/tmp.$$.json "$CSV_JSON_FILE"
     ok "Added arguments to container operator in '$CSV_JSON_FILE'."
@@ -85,38 +85,38 @@ enable_ocp() {
     fi
   done
 
-	rm -f "$CSV_JSON_FILE"
+  rm -f "$CSV_JSON_FILE"
 
-	# enable platform monitoring
-	oc label ns "$OPERATORS_NS" openshift.io/cluster-monitoring=true
+  # Enable platform monitoring.
+  oc label ns "$OPERATORS_NS" openshift.io/cluster-monitoring=true
 
-	oc wait --for=condition=Established crd/uiplugins.observability.openshift.io --timeout=60s
-	ok "Enable OCP mode successfully"
+  oc wait --for=condition=Established crd/uiplugins.observability.openshift.io --timeout=60s
+  ok "Enable OCP mode successfully"
 }
 
 delete_obo() {
-	header "Deleting ObO subscription"
+  header "Deleting Observability Operator subscription"
 
-	$NO_UNINSTALL && {
-		skip "uninstallation of obo"
-		return 0
-	}
+  $NO_UNINSTALL && {
+   skip "uninstallation of Observability Operator"
+   return 0
+  }
 
-	oc delete -n "$OPERATORS_NS" csv \
-		-l operators.coreos.com/observability-operator."$OPERATORS_NS"= || true
+  oc delete -n "$OPERATORS_NS" csv \
+   -l operators.coreos.com/observability-operator."$OPERATORS_NS"= || true
 
-	oc delete -n "$OPERATORS_NS" installplan,subscriptions \
-		-l operators.coreos.com/observability-operator."$OPERATORS_NS"= || true
+  oc delete -n "$OPERATORS_NS" installplan,subscriptions \
+   -l operators.coreos.com/observability-operator."$OPERATORS_NS"= || true
 
-	oc delete -f hack/olm/subscription.yaml || true
-	oc delete -f hack/olm/catalog-src.yaml || true
-	oc delete crds "$(oc api-resources --api-group=monitoring.rhobs -o name)"
-	ok "uninstalled ObO"
+  oc delete -f hack/olm/subscription.yaml || true
+  oc delete -f hack/olm/catalog-src.yaml || true
+  oc delete crds "$(oc api-resources --api-group=monitoring.rhobs -o name)"
+  ok "Observability operator uninstalled"
 }
 
 parse_args() {
-	### while there are args parse them
-	while [[ -n "${1+xxx}" ]]; do
+  ### while there are args parse them
+  while [[ -n "${1+xxx}" ]]; do
 		case $1 in
 		-h | --help)
 			SHOW_USAGE=true
@@ -154,8 +154,8 @@ print_usage() {
 
 		Options:
 		  -h|--help          show this help
-		  --no-install       do not install OBO, useful for rerunning tests
-		  --no-uninstall     do not uninstall OBO after test
+		  --no-install       do not install Observability Operator, useful for rerunning tests
+		  --no-uninstall     do not uninstall Observability Operator after test
 		  --postpone-restoration DURATION
 		                     delay operator Subscription restoration after uninstall
 		                     tests (e.g. 10m) to allow manual cluster inspection
