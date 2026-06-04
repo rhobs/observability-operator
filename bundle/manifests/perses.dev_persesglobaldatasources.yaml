@@ -3,7 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.19.0
-    observability.openshift.io/api-support: DevPreview
+    observability.openshift.io/api-support: GeneralAvailability
   creationTimestamp: null
   name: persesglobaldatasources.perses.dev
 spec:
