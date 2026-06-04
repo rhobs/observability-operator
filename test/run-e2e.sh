@@ -134,7 +134,7 @@ assert_no_reconciliation_errors() {
 }
 
 run_bundle() {
-	header "Running ObO Bundle"
+	header "Running Observability Operator Bundle"
 
 	./tmp/bin/operator-sdk run bundle "$BUNDLE_IMG" \
 		--install-mode AllNamespaces --namespace "$OPERATORS_NS" --skip-tls \
@@ -177,7 +177,7 @@ run_e2e() {
 		# logging of errors may not be immediate, so it is better to read logs again
 		# than dumping the $obo_error_log file
 		sleep 2
-		info "ObO Error Logs"
+		info "Observability Operator Error Logs"
 		line 50
 		kubectl logs -n "$OPERATORS_NS" deploy/observability-operator | grep error | tee "$obo_error_log"
 		line 50
@@ -271,19 +271,19 @@ init_logs_dir() {
 }
 
 restart_obo() {
-	header "Restart ObO deployment"
+	header "Restart Observability Operator deployment"
 
 	ensure_obo_deploy_img_is_always_pulled || return 1
 
-	info "scale down ObO"
+	info "scale down Observability Operator"
 	kubectl scale -n "$OPERATORS_NS" --replicas=0 deploy/observability-operator
 	kubectl wait -n "$OPERATORS_NS" --for=delete pods -l app.kubernetes.io/component=operator --timeout=60s
 
-	info "scale up ObO"
+	info "scale up Observability Operator"
 	kubectl scale -n "$OPERATORS_NS" --replicas=1 deploy/observability-operator
 	wait_for_operators_ready "$OPERATORS_NS"
 
-	ok "ObO deployment restarted"
+	ok "Observability Operator deployment restarted"
 
 }
 
@@ -329,12 +329,12 @@ ensure_obo_imgpullpolicy_always_in_yaml() {
 		return 1
 	}
 
-	ok "ObO deployment yaml imagePullPolicy is Always"
+	ok "Observability Operator deployment yaml imagePullPolicy is Always"
 }
 
 ensure_obo_deploy_img_is_always_pulled() {
 	$CI_MODE && {
-		ok "skipping check of imagePullPolicy of ObO deployment"
+		ok "skipping check of imagePullPolicy of Observability Operator deployment"
 		return 0
 	}
 
@@ -349,7 +349,7 @@ ensure_obo_deploy_img_is_always_pulled() {
 		warn "Deployment's imagePullPolicy must be Always instead of $pull_policy"
 		return 1
 	fi
-	ok "ObO deployment imagePullPolicy is Always"
+	ok "Observability Operator deployment imagePullPolicy is Always"
 }
 
 reset_env() {
@@ -390,14 +390,14 @@ main() {
 	if ! $NO_DEPLOY; then
 		deploy_obo
 	else
-		restart_obo || die "restarting ObO failed 🤕"
+		restart_obo || die "restarting Observability Operator failed 🤕"
 	fi
 
 	# wait for the deletion to complete before running tests
 	wait
 
 	assert_no_reconciliation_errors pre-e2e ||
-		die "ObO has reconciliation errors before running test"
+		die "Observability Operator has reconciliation errors before running test"
 
 	local -i ret=0
 	run_e2e || ret=$?

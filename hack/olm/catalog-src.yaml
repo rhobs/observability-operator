@@ -12,7 +12,7 @@ spec:
     base64data: ""
     mediatype: ""
   image: quay.io/rhobs/observability-operator-catalog:latest
-  publisher: Sunil Thaha
+  publisher: Red Hat Observability Group
   sourceType: grpc
   grpcPodConfig:
     securityContextConfig: restricted
