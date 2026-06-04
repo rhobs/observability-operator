@@ -7,7 +7,7 @@ resources:
 - perses.dev_persesglobaldatasources.yaml
 
 commonAnnotations:
-  observability.openshift.io/api-support: DevPreview
+  observability.openshift.io/api-support: GeneralAvailability
 
 patchesStrategicMerge:
 - patches/webhook_in_perses.yaml
