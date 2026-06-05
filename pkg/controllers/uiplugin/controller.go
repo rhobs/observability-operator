@@ -256,7 +256,10 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	pluginInfo, pluginInfoErr := PluginInfoBuilder(ctx, rm.k8sClient, rm.k8sDynamicClient, plugin, rm.pluginConf, compatibilityInfo, rm.clusterVersion, rm.logger)
 
 	if pluginInfo != nil {
-		reconcilers := pluginComponentReconcilers(plugin, *pluginInfo, rm.clusterVersion, rm.logger)
+		reconcilers, err := pluginComponentReconcilers(plugin, *pluginInfo, rm.clusterVersion, rm.logger)
+		if err != nil {
+			return rm.updateStatus(ctx, req, plugin, err), err
+		}
 		for _, reconciler := range reconcilers {
 			err := reconciler.Reconcile(ctx, rm.k8sClient, rm.scheme)
 			// handle creation / updation errors that can happen due to a stale cache by
@@ -367,7 +370,11 @@ func (rm resourceManager) registerPluginWithConsole(ctx context.Context, pluginI
 	// Register the plugin with the console
 	cluster.Spec.Plugins = clusterPlugins
 
-	if err := reconciler.NewMerger(cluster, pluginInfo.ConsoleName).Reconcile(ctx, rm.k8sClient, rm.scheme); err != nil {
+	merger, err := reconciler.NewMerger(cluster, pluginInfo.ConsoleName)
+	if err != nil {
+		return err
+	}
+	if err := merger.Reconcile(ctx, rm.k8sClient, rm.scheme); err != nil {
 		return err
 	}
 
@@ -391,7 +398,11 @@ func (rm resourceManager) deregisterPluginFromConsole(ctx context.Context, plugi
 	// Deregister the plugin from the console
 	cluster.Spec.Plugins = clusterPlugins
 
-	if err := reconciler.NewMerger(cluster, pluginConsoleName).Reconcile(ctx, rm.k8sClient, rm.scheme); err != nil {
+	merger, err := reconciler.NewMerger(cluster, pluginConsoleName)
+	if err != nil {
+		return err
+	}
+	if err := merger.Reconcile(ctx, rm.k8sClient, rm.scheme); err != nil {
 		return err
 	}
 
