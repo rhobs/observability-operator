@@ -7,6 +7,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/go-logr/logr"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -22,7 +23,7 @@ const (
 	alertmanagerRoleName = "monitoring-alertmanager-view"
 )
 
-func createTroubleshootingPanelPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string) (*UIPluginInfo, error) {
+func createTroubleshootingPanelPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string, clusterVersion string, logger logr.Logger) (*UIPluginInfo, error) {
 	troubleshootingPanelConfig := plugin.Spec.TroubleshootingPanel
 
 	configYaml, err := marshalTroubleshootingPanelPluginConfig(troubleshootingPanelConfig)
@@ -34,8 +35,12 @@ func createTroubleshootingPanelPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace
 		"-plugin-config-path=/etc/plugin/config/config.yaml",
 	}
 	if plugin.Spec.TroubleshootingPanel != nil && plugin.Spec.TroubleshootingPanel.EnableAgentNavigation {
-		if !slices.Contains(features, "agent-navigation") {
-			features = append(features, "agent-navigation")
+		if IsVersionAheadOrEqual(clusterVersion, "v4.22") {
+			if !slices.Contains(features, "agent-navigation") {
+				features = append(features, "agent-navigation")
+			}
+		} else {
+			logger.Info("Agent Navigation only available as a Dev Preview in OpenShift 4.22+")
 		}
 	}
 	if len(features) > 0 {
