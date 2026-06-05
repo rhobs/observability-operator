@@ -68,7 +68,7 @@ func PluginInfoBuilder(ctx context.Context, k client.Client, dk dynamic.Interfac
 		}
 
 	case uiv1alpha1.TypeTroubleshootingPanel:
-		pluginInfo, err = createTroubleshootingPanelPluginInfo(plugin, namespace, plugin.Name, image, []string{})
+		pluginInfo, err = createTroubleshootingPanelPluginInfo(plugin, namespace, plugin.Name, image, []string{}, clusterVersion, logger)
 		if err != nil {
 			return nil, err
 		}
