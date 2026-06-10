@@ -176,11 +176,14 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		}
 	}
 
-	reconcilers := stackComponentReconcilers(ms,
+	reconcilers, err := stackComponentReconcilers(ms,
 		rm.thanos,
 		rm.prometheus,
 		rm.alertmanager,
 	)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 	for _, reconciler := range reconcilers {
 		err := reconciler.Reconcile(ctx, rm.k8sClient, rm.scheme)
 		// handle create / update errors that can happen due to a stale cache by

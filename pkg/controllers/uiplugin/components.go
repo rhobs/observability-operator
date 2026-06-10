@@ -65,53 +65,52 @@ func IsVersionAheadOrEqual(currentVersion, version string) bool {
 	return semver.Compare(currentVersion, canonicalMinVersion) >= 0
 }
 
-func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPluginInfo, clusterVersion string, logger logr.Logger) []reconciler.Reconciler {
+func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPluginInfo, clusterVersion string, logger logr.Logger) ([]reconciler.Reconciler, error) {
 	namespace := pluginInfo.ResourceNamespace
+	b := &reconciler.ReconcilerBuilder{}
 
-	components := []reconciler.Reconciler{
-		reconciler.NewUpdater(newServiceAccount(pluginInfo.Name, namespace), plugin),
-		reconciler.NewUpdater(newDeployment(pluginInfo, namespace, plugin.Spec.Deployment), plugin),
-		reconciler.NewUpdater(newService(pluginInfo, namespace), plugin),
-	}
+	b.Add(reconciler.NewUpdater(newServiceAccount(pluginInfo.Name, namespace), plugin))
+	b.Add(reconciler.NewUpdater(newDeployment(pluginInfo, namespace, plugin.Spec.Deployment), plugin))
+	b.Add(reconciler.NewUpdater(newService(pluginInfo, namespace), plugin))
 
 	if IsVersionAheadOrEqual(clusterVersion, "v4.19") {
-		components = append(components, reconciler.NewUpdater(newConsolePlugin(pluginInfo, namespace), plugin))
+		b.Add(reconciler.NewUpdater(newConsolePlugin(pluginInfo, namespace), plugin))
 	} else if IsVersionAheadOrEqual(clusterVersion, "v4.17") {
-		components = append(components, reconciler.NewUpdater(newRhobsConsolePlugin(pluginInfo, namespace), plugin))
+		b.Add(reconciler.NewUpdater(newRhobsConsolePlugin(pluginInfo, namespace), plugin))
 	} else {
-		components = append(components, reconciler.NewUpdater(newLegacyConsolePlugin(pluginInfo, namespace), plugin))
+		b.Add(reconciler.NewUpdater(newLegacyConsolePlugin(pluginInfo, namespace), plugin))
 	}
 
 	if pluginInfo.Role != nil {
-		components = append(components, reconciler.NewUpdater(newRole(pluginInfo), plugin))
+		b.Add(reconciler.NewUpdater(newRole(pluginInfo), plugin))
 	}
 
 	if pluginInfo.RoleBinding != nil {
-		components = append(components, reconciler.NewUpdater(newRoleBinding(pluginInfo), plugin))
+		b.Add(reconciler.NewUpdater(newRoleBinding(pluginInfo), plugin))
 	}
 
 	if pluginInfo.ConfigMap != nil {
-		components = append(components, reconciler.NewUpdater(pluginInfo.ConfigMap, plugin))
+		b.Add(reconciler.NewUpdater(pluginInfo.ConfigMap, plugin))
 	}
 
 	for _, role := range pluginInfo.ClusterRoles {
 		if role != nil {
-			components = append(components, reconciler.NewUpdater(role, plugin))
+			b.Add(reconciler.NewUpdater(role, plugin))
 		}
 	}
 
 	for _, roleBinding := range pluginInfo.ClusterRoleBindings {
 		if roleBinding != nil {
-			components = append(components, reconciler.NewUpdater(roleBinding, plugin))
+			b.Add(reconciler.NewUpdater(roleBinding, plugin))
 		}
 	}
 
 	if plugin.Spec.Type == uiv1alpha1.TypeTroubleshootingPanel && pluginInfo.Korrel8rImage != "" {
-		components = append(components, reconciler.NewUpdater(newKorrel8rService(korrel8rName, namespace), plugin))
+		b.Add(reconciler.NewUpdater(newKorrel8rService(korrel8rName, namespace), plugin))
 		korrel8rCm, err := newKorrel8rConfigMap(korrel8rName, namespace, pluginInfo)
 		if err == nil && korrel8rCm != nil {
-			components = append(components, reconciler.NewUpdater(korrel8rCm, plugin))
-			components = append(components, reconciler.NewUpdater(newKorrel8rDeployment(korrel8rName, namespace, pluginInfo), plugin))
+			b.Add(reconciler.NewUpdater(korrel8rCm, plugin))
+			b.Add(reconciler.NewUpdater(newKorrel8rDeployment(korrel8rName, namespace, pluginInfo), plugin))
 		}
 	}
 
@@ -132,51 +131,44 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 
 		deployHealthAnalyzer := incidentsEnabled || healthAnalyzerEnabled
 
-		components = append(components,
-			reconciler.NewOptionalUpdater(componentsHealthClusterRole("components-health-view"), plugin, deployHealthAnalyzer),
-			reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, serviceAccountName, "components-health-view", plugin.Name+"-"+"components-health-view"), plugin, deployHealthAnalyzer),
-			reconciler.NewOptionalUpdater(newComponentHealthConfig(namespace), plugin, deployHealthAnalyzer),
-		)
+		b.Add(reconciler.NewOptionalUpdater(componentsHealthClusterRole("components-health-view"), plugin, deployHealthAnalyzer))
+		b.Add(reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, serviceAccountName, "components-health-view", plugin.Name+"-"+"components-health-view"), plugin, deployHealthAnalyzer))
+		b.Add(reconciler.NewOptionalUpdater(newComponentHealthConfig(namespace), plugin, deployHealthAnalyzer))
 
-		components = append(components,
-			reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, serviceAccountName, "cluster-monitoring-view", plugin.Name+"cluster-monitoring-view"), plugin, deployHealthAnalyzer),
-			reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, serviceAccountName, "system:auth-delegator", serviceAccountName+"-system-auth-delegator"), plugin, deployHealthAnalyzer),
-			reconciler.NewOptionalUpdater(newAlertManagerViewRoleBinding(serviceAccountName, namespace), plugin, deployHealthAnalyzer),
-			reconciler.NewOptionalUpdater(newHealthAnalyzerPrometheusRole(namespace), plugin, deployHealthAnalyzer),
-			reconciler.NewOptionalUpdater(newHealthAnalyzerPrometheusRoleBinding(namespace), plugin, deployHealthAnalyzer),
-			reconciler.NewOptionalUpdater(newHealthAnalyzerService(namespace), plugin, deployHealthAnalyzer),
-			reconciler.NewOptionalUpdater(newHealthAnalyzerDeployment(namespace, serviceAccountName, pluginInfo),
-				plugin, deployHealthAnalyzer),
-			reconciler.NewOptionalUpdater(newHealthAnalyzerServiceMonitor(namespace), plugin, deployHealthAnalyzer),
-		)
+		b.Add(reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, serviceAccountName, "cluster-monitoring-view", plugin.Name+"-cluster-monitoring-view"), plugin, deployHealthAnalyzer))
+		b.Add(reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, serviceAccountName, "system:auth-delegator", serviceAccountName+"-system-auth-delegator"), plugin, deployHealthAnalyzer))
+		b.Add(reconciler.NewOptionalUpdater(newAlertManagerViewRoleBinding(serviceAccountName, namespace), plugin, deployHealthAnalyzer))
+		b.Add(reconciler.NewOptionalUpdater(newHealthAnalyzerPrometheusRole(namespace), plugin, deployHealthAnalyzer))
+		b.Add(reconciler.NewOptionalUpdater(newHealthAnalyzerPrometheusRoleBinding(namespace), plugin, deployHealthAnalyzer))
+		b.Add(reconciler.NewOptionalUpdater(newHealthAnalyzerService(namespace), plugin, deployHealthAnalyzer))
+		b.Add(reconciler.NewOptionalUpdater(newHealthAnalyzerDeployment(namespace, serviceAccountName, pluginInfo), plugin, deployHealthAnalyzer))
+		b.Add(reconciler.NewOptionalUpdater(newHealthAnalyzerServiceMonitor(namespace), plugin, deployHealthAnalyzer))
 
 		persesServiceAccountName := "perses" + serviceAccountSuffix
 		persesEnabled := monitoringConfig != nil && monitoringConfig.Perses != nil && monitoringConfig.Perses.Enabled
-		components = append(components,
-			reconciler.NewOptionalUpdater(newServiceAccount("perses", namespace), plugin, persesEnabled),
-			reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, persesServiceAccountName, "system:auth-delegator", persesServiceAccountName+"-system-auth-delegator"), plugin, persesEnabled),
-			reconciler.NewOptionalUpdater(newPersesClusterRole(), plugin, persesEnabled),
-			reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, persesServiceAccountName, "perses-cr", persesServiceAccountName+"-perses-cr"), plugin, persesEnabled),
-			reconciler.NewOptionalUpdater(newPerses(namespace, pluginInfo.PersesImage), plugin, persesEnabled),
-			reconciler.NewOptionalUpdater(newAcceleratorsDatasource(namespace), plugin, persesEnabled),
-		)
+		b.Add(reconciler.NewOptionalUpdater(newServiceAccount("perses", namespace), plugin, persesEnabled))
+		b.Add(reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, persesServiceAccountName, "system:auth-delegator", persesServiceAccountName+"-system-auth-delegator"), plugin, persesEnabled))
+		b.Add(reconciler.NewOptionalUpdater(newPersesClusterRole(), plugin, persesEnabled))
+		b.Add(reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, persesServiceAccountName, "perses-cr", persesServiceAccountName+"-perses-cr"), plugin, persesEnabled))
+		b.Add(reconciler.NewOptionalUpdater(newPerses(namespace, pluginInfo.PersesImage), plugin, persesEnabled))
+		b.Add(reconciler.NewOptionalUpdater(newAcceleratorsDatasource(namespace), plugin, persesEnabled))
 
 		acceleratorsDashboard, err := newAcceleratorsDashboard(namespace)
 		if err != nil {
 			logger.Error(err, "Cannot build Accelerators dashboard")
 		} else {
-			components = append(components, reconciler.NewOptionalUpdater(acceleratorsDashboard, plugin, persesEnabled))
+			b.Add(reconciler.NewOptionalUpdater(acceleratorsDashboard, plugin, persesEnabled))
 		}
 
 		apmDashboard, err := newAPMDashboard(namespace)
 		if err != nil {
 			logger.Error(err, "Cannot build APM dashboard")
 		} else {
-			components = append(components, reconciler.NewOptionalUpdater(apmDashboard, plugin, persesEnabled))
+			b.Add(reconciler.NewOptionalUpdater(apmDashboard, plugin, persesEnabled))
 		}
 	}
 
-	return components
+	return b.Build()
 }
 
 func newClusterRoleBinding(namespace string, serviceAccountName string, roleName string, name string) *rbacv1.ClusterRoleBinding {

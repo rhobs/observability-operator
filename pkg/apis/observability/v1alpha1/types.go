@@ -18,6 +18,8 @@ import (
 // +operator-sdk:csv:customresourcedefinitions:displayName="Observability Installer"
 // +operator-sdk:csv:customresourcedefinitions:description="Provides end-to-end observability capabilities with minimal configuration. Simplifies deployment and management of observability components such as tracing."
 // +kubebuilder:metadata:annotations="observability.openshift.io/api-support=TechPreview"
+// +kubebuilder:validation:XValidation:rule="size(self.metadata.name) <= 63",message="ObservabilityInstaller name must be no more than 63 characters"
+// +kubebuilder:validation:XValidation:rule="self.metadata.name.matches('^[a-z0-9]([-a-z0-9]*[a-z0-9])?$')",message="ObservabilityInstaller name must consist of lowercase alphanumeric characters or '-', and must start and end with an alphanumeric character"
 type ObservabilityInstaller struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
