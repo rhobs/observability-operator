@@ -42,6 +42,7 @@ func TestObservabilityInstallerController(t *testing.T) {
 	assertCRDExists(t, "observabilityinstallers.observability.openshift.io")
 
 	t.Run("ObservabilityInstallerTracing", testObservabilityInstallerTracing)
+	t.Run("ObservabilityInstallerEmptySpec", testObservabilityInstallerEmptySpec)
 }
 
 func testObservabilityInstallerTracing(t *testing.T) {
@@ -222,6 +223,88 @@ func testObservabilityInstallerTracing(t *testing.T) {
 		return false, nil
 	})
 	require.NoError(t, err)
+}
+
+// testObservabilityInstallerEmptySpec verifies that the controller handles an
+// ObservabilityInstaller with spec: {} gracefully — no panic, no operands deployed.
+//
+// Regression test for: nil pointer dereference when Capabilities is nil.
+func testObservabilityInstallerEmptySpec(t *testing.T) {
+	ctx := context.Background()
+
+	ns := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{GenerateName: "obs-empty-spec-test-"},
+	}
+	err := f.K8sClient.Create(ctx, ns)
+	require.NoError(t, err)
+	f.CleanUp(t, func() { f.K8sClient.Delete(ctx, ns) })
+
+	obsInstaller := &obsv1alpha1.ObservabilityInstaller{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "empty-spec",
+			Namespace: ns.Name,
+		},
+		Spec: obsv1alpha1.ObservabilityInstallerSpec{},
+	}
+	f.CleanUp(t, func() { f.K8sClient.Delete(ctx, obsInstaller) })
+
+	err = f.K8sClient.Create(ctx, obsInstaller)
+	require.NoError(t, err, "creating ObservabilityInstaller with empty spec should succeed")
+
+	// Give the controller time to reconcile. A panic would restart the pod;
+	// a nil-pointer dereference in updateStatus would show up as a crash loop.
+	time.Sleep(30 * time.Second)
+
+	// Operator deployment must still be available — if the controller panicked
+	// it would be crash-looping and AvailableReplicas would drop to zero.
+	var operatorDeploy appsv1.Deployment
+	err = f.K8sClient.Get(ctx, types.NamespacedName{
+		Name:      "observability-operator",
+		Namespace: f.OperatorNamespace,
+	}, &operatorDeploy)
+	require.NoError(t, err, "observability-operator deployment must exist")
+	require.Greater(t, operatorDeploy.Status.AvailableReplicas, int32(0),
+		"observability-operator must have available replicas (controller must not be crash-looping)")
+
+	// No TempoStack should exist in the test namespace — tracing is not enabled.
+	var stsList appsv1.StatefulSetList
+	err = f.K8sClient.List(ctx, &stsList, client.InNamespace(ns.Name))
+	require.NoError(t, err)
+	for _, sts := range stsList.Items {
+		t.Errorf("unexpected StatefulSet %q in namespace %q — no operands should be deployed for empty spec", sts.Name, ns.Name)
+	}
+
+	// No OpenTelemetryCollector Deployment should exist in the test namespace.
+	var deployList appsv1.DeploymentList
+	err = f.K8sClient.List(ctx, &deployList, client.InNamespace(ns.Name))
+	require.NoError(t, err)
+	for _, d := range deployList.Items {
+		t.Errorf("unexpected Deployment %q in namespace %q — no operands should be deployed for empty spec", d.Name, ns.Name)
+	}
+
+	// Status fields must remain empty — tracing.enabled is false.
+	var current obsv1alpha1.ObservabilityInstaller
+	err = f.K8sClient.Get(ctx, types.NamespacedName{Name: obsInstaller.Name, Namespace: ns.Name}, &current)
+	require.NoError(t, err)
+	assert.Equal(t, "", current.Status.Tempo, "Status.Tempo must be empty when tracing is not enabled")
+	assert.Equal(t, "", current.Status.OpenTelemetry, "Status.OpenTelemetry must be empty when tracing is not enabled")
+
+	// Clean deletion must work without errors.
+	err = f.K8sClient.Delete(ctx, obsInstaller)
+	require.NoError(t, err, "deleting ObservabilityInstaller with empty spec should succeed")
+
+	err = wait.PollUntilContextTimeout(ctx, 1*time.Second, 30*time.Second, true, func(ctx context.Context) (bool, error) {
+		var deleted obsv1alpha1.ObservabilityInstaller
+		err := f.K8sClient.Get(ctx, types.NamespacedName{Name: obsInstaller.Name, Namespace: ns.Name}, &deleted)
+		if err == nil {
+			return false, nil
+		}
+		if apierrors.IsNotFound(err) {
+			return true, nil
+		}
+		return false, err
+	})
+	require.NoError(t, err, "ObservabilityInstaller with empty spec should be fully deleted")
 }
 
 func deployManifest(t *testing.T, manifest string) client.Object {
