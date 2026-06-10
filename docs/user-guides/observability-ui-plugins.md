@@ -43,9 +43,7 @@ spec:
 
 ### Troubleshooting Panel
 
-The plugin adds a UI panel meant to assist in the troubleshooting journey, through exploring related pages. Creating this `UIPlugin` will deploy a [Korrel8r](https://github.com/korrel8r/korrel8r) service named `korrel8r` in the same namespace which is able to locate related observability signals and kubernetes resources from its correlation engine.
-
-To use the Troubleshooting Panel, in the admin perspective navigate to `Observe > Alerts` and then select an alert. If the alert has correlated items then a "Troubleshooting Panel" will appear above the chart on the alert detail page. This button opens a panel consisting of query details and a topology graph of the query results. The alert page you are on is converted into a Korrel8r query string and sent to the `korrel8r` service. The results are displayed as a graph network connecting the returned signals and resources. The nodes on the graph will take you to the corresponding OpenShift wab console pages when clicked.
+The plugin adds a UI panel meant to assist in the troubleshooting journey, through exploring related pages. See the [Troublehshooting Panel User Guide]( https://github.com/openshift/troubleshooting-panel-console-plugin/blob/main/doc/user-guide.md) for more details.
 
 #### Plugin Creation
 
