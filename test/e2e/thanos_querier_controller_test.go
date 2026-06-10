@@ -64,12 +64,16 @@ func stackWithSidecarGetsDeleted(t *testing.T) {
 
 func singleStackWithSidecar(t *testing.T) {
 	tq, ms := newThanosStackCombo(t, "tq-ms-combo")
-	err := f.K8sClient.Create(context.Background(), tq)
-	assert.NilError(t, err, "failed to create a thanos querier")
-	err = f.K8sClient.Create(context.Background(), ms)
-	assert.NilError(t, err, "failed to create a monitoring stack")
 
-	// Creating a basic combo must create a thanos deployment and a service
+	// Create the MonitoringStack first to ensure that the DNS entries will be
+	// populated when the Thanos Querier starts.
+	err := f.K8sClient.Create(context.Background(), ms)
+	assert.NilError(t, err, "failed to create a monitoring stack")
+	_ = f.GetStackWhenAvailable(t, ms.Name, ms.Namespace)
+
+	err = f.K8sClient.Create(context.Background(), tq)
+	assert.NilError(t, err, "failed to create a thanos querier")
+
 	name := "thanos-querier-" + tq.Name
 	thanosDeployment := appsv1.Deployment{}
 	f.GetResourceWithRetry(t, name, tq.Namespace, &thanosDeployment)
@@ -135,6 +139,13 @@ func singleStackWithSidecarTLS(t *testing.T) {
 	assert.NilError(t, err)
 
 	tq, ms := newThanosStackCombo(t, comboName)
+
+	// Create the MonitoringStack first to ensure that the DNS entries will be
+	// populated when the Thanos Querier starts.
+	err = f.K8sClient.Create(context.Background(), ms)
+	assert.NilError(t, err, "failed to create a monitoring stack")
+	_ = f.GetStackWhenAvailable(t, ms.Name, ms.Namespace)
+
 	tq.Spec.WebTLSConfig = &msov1.WebTLSConfig{
 		PrivateKey: msov1.SecretKeySelector{
 			Name: tlsSecretName,
@@ -151,10 +162,7 @@ func singleStackWithSidecarTLS(t *testing.T) {
 	}
 	err = f.K8sClient.Create(context.Background(), tq)
 	assert.NilError(t, err, "failed to create a thanos querier")
-	err = f.K8sClient.Create(context.Background(), ms)
-	assert.NilError(t, err, "failed to create a monitoring stack")
 
-	// Creating a basic combo must create a thanos deployment and a service
 	thanosDeployment := appsv1.Deployment{}
 	f.GetResourceWithRetry(t, querierName, tq.Namespace, &thanosDeployment)
 
