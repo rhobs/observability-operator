@@ -142,6 +142,85 @@ func TestNewDeploymentTLSArgs(t *testing.T) {
 	}
 }
 
+func TestNewKorrel8rDeploymentTLSArgs(t *testing.T) {
+	testCases := []struct {
+		name          string
+		tlsMinVersion string
+		tlsCiphers    []string
+		expectArgs    []string
+		notExpectArgs []string
+	}{
+		{
+			name:          "TLS profile with min version and ciphers",
+			tlsMinVersion: "VersionTLS12",
+			tlsCiphers:    []string{"TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384"},
+			expectArgs: []string{
+				"--tls-min-version=VersionTLS12",
+				"--tls-cipher-suites=TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384",
+			},
+		},
+		{
+			name:          "no TLS profile",
+			tlsMinVersion: "",
+			tlsCiphers:    nil,
+			notExpectArgs: []string{
+				"--tls-min-version=",
+				"--tls-cipher-suites=",
+			},
+		},
+		{
+			name:          "TLS min version only",
+			tlsMinVersion: "VersionTLS13",
+			tlsCiphers:    nil,
+			expectArgs: []string{
+				"--tls-min-version=VersionTLS13",
+			},
+			notExpectArgs: []string{
+				"--tls-cipher-suites=",
+			},
+		},
+		{
+			name:       "TLS ciphers only",
+			tlsCiphers: []string{"TLS_AES_128_GCM_SHA256"},
+			expectArgs: []string{
+				"--tls-cipher-suites=TLS_AES_128_GCM_SHA256",
+			},
+			notExpectArgs: []string{
+				"--tls-min-version=",
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			info := UIPluginInfo{
+				Name:          "test-plugin",
+				Korrel8rImage: "korrel8r:latest",
+				TLSMinVersion: tc.tlsMinVersion,
+				TLSCiphers:    tc.tlsCiphers,
+			}
+
+			deploy := newKorrel8rDeployment("korrel8r", "test-ns", info)
+			cmd := deploy.Spec.Template.Spec.Containers[0].Command
+
+			assert.Assert(t, containsArg(cmd, "korrel8r"))
+			assert.Assert(t, containsArg(cmd, "web"))
+			assert.Assert(t, containsArg(cmd, "--https=:9443"))
+			assert.Assert(t, containsArg(cmd, "--cert=/secrets/tls.crt"))
+			assert.Assert(t, containsArg(cmd, "--key=/secrets/tls.key"))
+			assert.Assert(t, containsArg(cmd, "--config=/config/korrel8r.yaml"))
+
+			for _, expected := range tc.expectArgs {
+				assert.Assert(t, containsArg(cmd, expected), "expected arg %q not found in %v", expected, cmd)
+			}
+
+			for _, notExpected := range tc.notExpectArgs {
+				assert.Assert(t, !containsArgPrefix(cmd, notExpected), "unexpected arg prefix %q found in %v", notExpected, cmd)
+			}
+		})
+	}
+}
+
 func containsArg(args []string, target string) bool {
 	for _, arg := range args {
 		if arg == target {
