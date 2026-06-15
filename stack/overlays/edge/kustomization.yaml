@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+transformers:
+  - namespace-transformer.yaml
+
+components:
+  # Collectors only — forward signals to a hub cluster
+  - ../../components/collectors/tracing/operator
+  - ../../components/collectors/tracing/resources
+  - ../../components/collectors/logging/operator
+  - ../../components/collectors/logging/resources
+  - ../../components/collectors/network/operator
+  - ../../components/collectors/network/resources
+
+patches:
+  - path: patches/forward-to-hub.yaml

@@ -1,0 +1,4 @@
+apiVersion: project.openshift.io/v1
+kind: Namespace
+metadata:
+  name: openshift-tempo-operator

@@ -59,7 +59,7 @@ func getReconcilers(ctx context.Context, k8sClient client.Client, k8sReader clie
 	otelSubs := subscription(opts.OpenTelemetryOperator)
 	tempoSubs := subscription(opts.TempoOperator)
 
-	// instance objects
+	// OTEL collector and its RBAC (not yet converted to overlay)
 	otelCol, err := otelCollector(instance)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create OpenTelemetryCollector: %w", err)
@@ -68,26 +68,25 @@ func getReconcilers(ctx context.Context, k8sClient client.Client, k8sReader clie
 	otelcolRBAC, otelcolRBACBinding := otelCollectorComponentsRBAC(instance)
 	instanceObjects = append(instanceObjects, otelcolRBAC)
 	instanceObjects = append(instanceObjects, otelcolRBACBinding)
-	instanceObjects = append(instanceObjects, tempoStack(instance))
-
-	secrets, err := tempoStackSecrets(ctx, k8sClient, k8sReader, *instance)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create TempoStack secret: %w", err)
-	}
-	if secrets.objectStorage != nil {
-		instanceObjects = append(instanceObjects, secrets.objectStorage)
-	}
-	if secrets.objectStorageTLSSecret != nil {
-		instanceObjects = append(instanceObjects, secrets.objectStorageTLSSecret)
-	}
-	if secrets.objectStorageCAConfigMap != nil {
-		instanceObjects = append(instanceObjects, secrets.objectStorageCAConfigMap)
-	}
-
 	otelcolTempoRBAC, otelcolTempoRBACBinding := otelCollectorTempoRBAC(instance)
 	instanceObjects = append(instanceObjects, otelcolTempoRBAC)
 	instanceObjects = append(instanceObjects, otelcolTempoRBACBinding)
-	instanceObjects = append(instanceObjects, uiPlugin())
+
+	// TempoStack, secrets, and UIPlugin via kustomize overlay
+	overlay := NewOverlay(instance.Namespace)
+	if err := addTempoStack(overlay, instance); err != nil {
+		return nil, fmt.Errorf("failed to build TempoStack overlay: %w", err)
+	}
+	if err := addTempoSecrets(ctx, overlay, k8sClient, k8sReader, instance); err != nil {
+		return nil, fmt.Errorf("failed to build TempoStack secrets: %w", err)
+	}
+	addUIPlugin(overlay)
+
+	overlayObjects, err := overlay.Build()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build kustomize overlay: %w", err)
+	}
+	instanceObjects = append(instanceObjects, overlayObjects...)
 
 	if instance.ObjectMeta.DeletionTimestamp != nil {
 		for _, obj := range instanceObjects {

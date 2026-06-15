@@ -1,0 +1,17 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: cluster-collector
+spec:
+  config:
+    exporters:
+      otlp:
+        # Override to point at the hub cluster's ingress
+        endpoint: hub-cluster-otel-ingress.example.com:443
+        tls:
+          insecure: false
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [otlp]

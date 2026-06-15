@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: korrel8r-config
+data:
+  korrel8r.yaml: |
+    rules:
+      - name: LogToTrace
+    stores:
+      - domain: log
+        config:
+          lokistack: https://lokistack-gateway-http.openshift-cluster-observability-operator.svc:8080
+      - domain: trace
+        config:
+          tempostack: https://tempo-tempostack-gateway.openshift-cluster-observability-operator.svc:8080
+      - domain: netflow
+        config:
+          lokistack: https://lokistack-gateway-http.openshift-cluster-observability-operator.svc:8080

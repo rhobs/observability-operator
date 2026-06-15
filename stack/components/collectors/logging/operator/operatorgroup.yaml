@@ -1,0 +1,9 @@
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  annotations:
+    olm.providedAPIs: ClusterLogForwarder.v1.observability.openshift.io
+  name: openshift-logging
+  namespace: openshift-logging
+spec:
+  upgradeStrategy: Default

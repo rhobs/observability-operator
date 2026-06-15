@@ -1,0 +1,9 @@
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  annotations:
+    olm.providedAPIs: "FlowCollector.v1alpha1.flows.netobserv.io,FlowCollector.v1beta1.flows.netobserv.io,FlowCollector.v1beta2.flows.netobserv.io,FlowMetric.v1alpha1.flows.netobserv.io"
+  name: openshift-netobserv-operator
+  namespace: openshift-netobserv-operator
+spec:
+  upgradeStrategy: Default

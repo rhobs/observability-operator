@@ -1,0 +1,7 @@
+apiVersion: builtin
+kind: NamespaceTransformer
+metadata:
+  name: namespace-transformer
+namespace: openshift-cluster-observability-operator
+unsetOnly: true
+setRoleBindingSubjects: allServiceAccounts

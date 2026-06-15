@@ -1,0 +1,23 @@
+apiVersion: loki.grafana.com/v1
+kind: LokiStack
+metadata:
+  name: lokistack
+spec:
+  size: 1x.demo
+  storage:
+    schemas:
+      - version: v13
+        effectiveDate: "2024-10-01"
+    secret:
+      name: lokistack-s3
+      type: s3
+  tenants:
+    mode: openshift-logging
+  rules:
+    enabled: true
+    selector:
+      matchLabels:
+        openshift.io/log-alerting: "true"
+    namespaceSelector:
+      matchLabels:
+        openshift.io/log-alerting: "true"

@@ -1,0 +1,67 @@
+apiVersion: flows.netobserv.io/v1beta2
+kind: FlowCollector
+metadata:
+  name: cluster
+spec:
+  namespace: netobserv
+  deploymentModel: Direct
+  agent:
+    type: eBPF
+    ebpf:
+      cacheActiveTimeout: 5s
+      cacheMaxFlows: 100000
+      excludeInterfaces:
+        - lo
+      kafkaBatchSize: 1048576
+      logLevel: info
+      sampling: 50
+  consolePlugin:
+    autoscaler:
+      maxReplicas: 3
+      status: Disabled
+    enable: true
+    imagePullPolicy: IfNotPresent
+    logLevel: info
+    portNaming:
+      enable: true
+    quickFilters:
+      - default: true
+        filter:
+          flow_layer: app
+        name: Applications
+      - filter:
+          flow_layer: infra
+        name: Infrastructure
+      - default: true
+        filter:
+          dst_kind: Pod
+          src_kind: Pod
+        name: Pods network
+      - filter:
+          dst_kind: Service
+        name: Services network
+    replicas: 1
+  loki:
+    enable: true
+    mode: LokiStack
+    lokiStack:
+      name: lokistack
+    readTimeout: 30s
+    writeBatchSize: 102400
+    writeBatchWait: 1s
+    writeTimeout: 10s
+  processor:
+    imagePullPolicy: IfNotPresent
+    kafkaConsumerAutoscaler:
+      maxReplicas: 3
+      status: Disabled
+    kafkaConsumerBatchSize: 10485760
+    kafkaConsumerQueueCapacity: 1000
+    kafkaConsumerReplicas: 3
+    logLevel: info
+    logTypes: Flows
+    metrics:
+      server:
+        port: 9102
+        tls:
+          type: Disabled

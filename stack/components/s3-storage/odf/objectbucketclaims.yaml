@@ -1,0 +1,15 @@
+apiVersion: objectbucket.io/v1alpha1
+kind: ObjectBucketClaim
+metadata:
+  name: lokistack-s3
+spec:
+  generateBucketName: loki
+  storageClassName: openshift-storage.noobaa.io
+---
+apiVersion: objectbucket.io/v1alpha1
+kind: ObjectBucketClaim
+metadata:
+  name: tempostack-s3
+spec:
+  generateBucketName: tempo
+  storageClassName: openshift-storage.noobaa.io

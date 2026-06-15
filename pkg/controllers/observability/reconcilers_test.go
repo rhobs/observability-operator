@@ -13,6 +13,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -37,13 +38,12 @@ func TestGetReconcilers(t *testing.T) {
 			mockClient: func() *MockClient {
 				mockClient := &MockClient{}
 				mockClient.On("Get", context.Background(), mock.Anything, mock.IsType(&olmv1alpha1.Subscription{}), mock.Anything).Return(nil)
-				mockClient.On("Patch", context.Background(), mock.IsType(&corev1.Namespace{}), mock.Anything, mock.Anything).Return(nil)
+				// OTEL resources (still typed)
 				mockClient.On("Patch", context.Background(), mock.IsType(&otelv1beta1.OpenTelemetryCollector{}), mock.Anything, mock.Anything).Return(nil)
 				mockClient.On("Patch", context.Background(), mock.IsType(&rbacv1.ClusterRole{}), mock.Anything, mock.Anything).Return(nil)
 				mockClient.On("Patch", context.Background(), mock.IsType(&rbacv1.ClusterRoleBinding{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Patch", context.Background(), mock.IsType(&tempov1alpha1.TempoStack{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Patch", context.Background(), mock.IsType(&corev1.Secret{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Patch", context.Background(), mock.IsType(&uiv1alpha1.UIPlugin{}), mock.Anything, mock.Anything).Return(nil)
+				// Overlay resources (TempoStack, UIPlugin, RBAC, Secret)
+				mockClient.On("Patch", context.Background(), mock.IsType(&unstructured.Unstructured{}), mock.Anything, mock.Anything).Return(nil)
 				return mockClient
 			},
 			instance: &obsv1alpha1.ObservabilityInstaller{
@@ -70,14 +70,12 @@ func TestGetReconcilers(t *testing.T) {
 				mockClient.On("Get", context.Background(), mock.Anything, mock.IsType(&olmv1alpha1.Subscription{}), mock.Anything).Return(nil)
 				mockClient.On("Get", context.Background(), mock.Anything, mock.IsType(&corev1.Secret{}), mock.Anything).Return(nil)
 				mockClient.On("Get", context.Background(), mock.Anything, mock.IsType(&corev1.ConfigMap{}), mock.Anything).Return(nil)
-				mockClient.On("Patch", context.Background(), mock.IsType(&corev1.Namespace{}), mock.Anything, mock.Anything).Return(nil)
+				// OTEL resources (still typed)
 				mockClient.On("Patch", context.Background(), mock.IsType(&otelv1beta1.OpenTelemetryCollector{}), mock.Anything, mock.Anything).Return(nil)
 				mockClient.On("Patch", context.Background(), mock.IsType(&rbacv1.ClusterRole{}), mock.Anything, mock.Anything).Return(nil)
 				mockClient.On("Patch", context.Background(), mock.IsType(&rbacv1.ClusterRoleBinding{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Patch", context.Background(), mock.IsType(&tempov1alpha1.TempoStack{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Patch", context.Background(), mock.IsType(&corev1.Secret{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Patch", context.Background(), mock.IsType(&corev1.ConfigMap{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Patch", context.Background(), mock.IsType(&uiv1alpha1.UIPlugin{}), mock.Anything, mock.Anything).Return(nil)
+				// Overlay resources (TempoStack, UIPlugin, RBAC, Secrets, ConfigMaps)
+				mockClient.On("Patch", context.Background(), mock.IsType(&unstructured.Unstructured{}), mock.Anything, mock.Anything).Return(nil)
 				return mockClient
 			},
 			instance: &obsv1alpha1.ObservabilityInstaller{
@@ -121,13 +119,12 @@ func TestGetReconcilers(t *testing.T) {
 			mockClient: func() *MockClient {
 				mockClient := &MockClient{}
 				mockClient.On("Get", context.Background(), mock.Anything, mock.IsType(&olmv1alpha1.Subscription{}), mock.Anything).Return(nil)
-				mockClient.On("Delete", context.Background(), mock.IsType(&corev1.Namespace{}), mock.Anything).Return(nil)
+				// OTEL resources (still typed)
 				mockClient.On("Delete", context.Background(), mock.IsType(&otelv1beta1.OpenTelemetryCollector{}), mock.Anything, mock.Anything).Return(nil)
 				mockClient.On("Delete", context.Background(), mock.IsType(&rbacv1.ClusterRole{}), mock.Anything, mock.Anything).Return(nil)
 				mockClient.On("Delete", context.Background(), mock.IsType(&rbacv1.ClusterRoleBinding{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Delete", context.Background(), mock.IsType(&tempov1alpha1.TempoStack{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Delete", context.Background(), mock.IsType(&corev1.Secret{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Delete", context.Background(), mock.IsType(&uiv1alpha1.UIPlugin{}), mock.Anything, mock.Anything).Return(nil)
+				// Overlay resources
+				mockClient.On("Delete", context.Background(), mock.IsType(&unstructured.Unstructured{}), mock.Anything, mock.Anything).Return(nil)
 				return mockClient
 			},
 			instance: &obsv1alpha1.ObservabilityInstaller{
@@ -155,13 +152,12 @@ func TestGetReconcilers(t *testing.T) {
 				mockClient := &MockClient{}
 				mockClient.On("Delete", context.Background(), mock.IsType(&olmv1alpha1.Subscription{}), mock.Anything).Return(nil)
 				mockClient.On("Delete", context.Background(), mock.IsType(&olmv1alpha1.ClusterServiceVersion{}), mock.Anything).Return(nil)
-				mockClient.On("Delete", context.Background(), mock.IsType(&corev1.Namespace{}), mock.Anything).Return(nil)
+				// OTEL resources (still typed)
 				mockClient.On("Delete", context.Background(), mock.IsType(&otelv1beta1.OpenTelemetryCollector{}), mock.Anything, mock.Anything).Return(nil)
 				mockClient.On("Delete", context.Background(), mock.IsType(&rbacv1.ClusterRole{}), mock.Anything, mock.Anything).Return(nil)
 				mockClient.On("Delete", context.Background(), mock.IsType(&rbacv1.ClusterRoleBinding{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Delete", context.Background(), mock.IsType(&tempov1alpha1.TempoStack{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Delete", context.Background(), mock.IsType(&corev1.Secret{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Delete", context.Background(), mock.IsType(&uiv1alpha1.UIPlugin{}), mock.Anything, mock.Anything).Return(nil)
+				// Overlay resources
+				mockClient.On("Delete", context.Background(), mock.IsType(&unstructured.Unstructured{}), mock.Anything, mock.Anything).Return(nil)
 				return mockClient
 			},
 			instance: &obsv1alpha1.ObservabilityInstaller{
@@ -184,13 +180,12 @@ func TestGetReconcilers(t *testing.T) {
 			name: "tracing capability enabled, subscription already installed",
 			mockClient: func() *MockClient {
 				mockClient := &MockClient{}
-				mockClient.On("Patch", context.Background(), mock.IsType(&corev1.Namespace{}), mock.Anything, mock.Anything).Return(nil)
+				// OTEL resources (still typed)
 				mockClient.On("Patch", context.Background(), mock.IsType(&otelv1beta1.OpenTelemetryCollector{}), mock.Anything, mock.Anything).Return(nil)
 				mockClient.On("Patch", context.Background(), mock.IsType(&rbacv1.ClusterRole{}), mock.Anything, mock.Anything).Return(nil)
 				mockClient.On("Patch", context.Background(), mock.IsType(&rbacv1.ClusterRoleBinding{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Patch", context.Background(), mock.IsType(&tempov1alpha1.TempoStack{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Patch", context.Background(), mock.IsType(&corev1.Secret{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Patch", context.Background(), mock.IsType(&uiv1alpha1.UIPlugin{}), mock.Anything, mock.Anything).Return(nil)
+				// Overlay resources
+				mockClient.On("Patch", context.Background(), mock.IsType(&unstructured.Unstructured{}), mock.Anything, mock.Anything).Return(nil)
 				return mockClient
 			},
 			instance: &obsv1alpha1.ObservabilityInstaller{
@@ -229,13 +224,12 @@ func TestGetReconcilers(t *testing.T) {
 				mockClient := &MockClient{}
 				mockClient.On("Delete", context.Background(), mock.IsType(&olmv1alpha1.Subscription{}), mock.Anything).Return(nil)
 				mockClient.On("Delete", context.Background(), mock.IsType(&olmv1alpha1.ClusterServiceVersion{}), mock.Anything).Return(nil)
-				mockClient.On("Delete", context.Background(), mock.IsType(&corev1.Namespace{}), mock.Anything).Return(nil)
+				// OTEL resources (still typed)
 				mockClient.On("Delete", context.Background(), mock.IsType(&otelv1beta1.OpenTelemetryCollector{}), mock.Anything, mock.Anything).Return(nil)
 				mockClient.On("Delete", context.Background(), mock.IsType(&rbacv1.ClusterRole{}), mock.Anything, mock.Anything).Return(nil)
 				mockClient.On("Delete", context.Background(), mock.IsType(&rbacv1.ClusterRoleBinding{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Delete", context.Background(), mock.IsType(&tempov1alpha1.TempoStack{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Delete", context.Background(), mock.IsType(&corev1.Secret{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Delete", context.Background(), mock.IsType(&uiv1alpha1.UIPlugin{}), mock.Anything, mock.Anything).Return(nil)
+				// Overlay resources
+				mockClient.On("Delete", context.Background(), mock.IsType(&unstructured.Unstructured{}), mock.Anything, mock.Anything).Return(nil)
 				return mockClient
 			},
 			instance: &obsv1alpha1.ObservabilityInstaller{
