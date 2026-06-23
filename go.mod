@@ -14,7 +14,7 @@ require (
 	github.com/openshift/library-go v0.0.0-20260512121938-431f18311e77
 	github.com/operator-framework/api v0.42.0
 	github.com/perses/perses v0.53.1
-	github.com/perses/plugins/prometheus v0.57.0
+	github.com/perses/plugins/prometheus v0.57.1
 	github.com/perses/plugins/table v0.11.2
 	github.com/perses/plugins/timeserieschart v0.12.1
 	github.com/perses/spec v0.1.2
