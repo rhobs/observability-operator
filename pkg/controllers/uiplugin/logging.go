@@ -221,3 +221,25 @@ func getLokiStack(plugin *uiv1alpha1.UIPlugin, ctx context.Context, client dynam
 		Namespace: searchNamespace,
 	}, nil
 }
+
+// discoverLokiStack lists LokiStack CRs in openshift-logging and returns the
+// one found. Returns an error for API/RBAC failures so callers can distinguish
+// "no LokiStack present" (nil, nil) from "unable to check" (nil, err).
+func discoverLokiStack(ctx context.Context, dk dynamic.Interface, logger logr.Logger) (*types.NamespacedName, error) {
+	lokiStacks, err := dk.Resource(lokiStackResource).Namespace(OpenshiftLoggingNs).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("listing LokiStacks in %s: %w", OpenshiftLoggingNs, err)
+	}
+	if lokiStacks == nil || len(lokiStacks.Items) == 0 {
+		return nil, nil
+	}
+	if len(lokiStacks.Items) > 1 {
+		logger.Info("Multiple LokiStacks found, using the first one",
+			"namespace", OpenshiftLoggingNs, "count", len(lokiStacks.Items),
+			"selected", lokiStacks.Items[0].GetName())
+	}
+	return &types.NamespacedName{
+		Name:      lokiStacks.Items[0].GetName(),
+		Namespace: OpenshiftLoggingNs,
+	}, nil
+}

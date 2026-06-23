@@ -44,6 +44,13 @@ require (
 )
 
 require (
+	github.com/perses/plugins/logstable v0.2.1
+	github.com/perses/plugins/loki v0.5.1
+	github.com/perses/plugins/markdown v0.11.1
+	github.com/perses/plugins/staticlistvariable v0.8.1
+)
+
+require (
 	cel.dev/expr v0.25.1 // indirect
 	dario.cat/mergo v1.0.2 // indirect
 	github.com/PaesslerAG/gval v1.2.4 // indirect

@@ -174,6 +174,20 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 		} else {
 			components = append(components, reconciler.NewOptionalUpdater(apmDashboard, plugin, persesEnabled))
 		}
+
+		auditEnabled := persesEnabled && pluginInfo.AuditLokiStack != nil
+		components = append(components,
+			reconciler.NewOptionalUpdater(newAuditDatasource(namespace, pluginInfo.AuditLokiStack), plugin, auditEnabled),
+		)
+
+		auditDashboard, err := newAuditDashboardOTLP(namespace)
+		if err != nil {
+			logger.Error(err, "Cannot build audit dashboard")
+		} else {
+			components = append(components,
+				reconciler.NewOptionalUpdater(auditDashboard, plugin, auditEnabled),
+			)
+		}
 	}
 
 	return components

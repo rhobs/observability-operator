@@ -8,6 +8,7 @@ import (
 	libgocrypto "github.com/openshift/library-go/pkg/crypto"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -20,6 +21,7 @@ type UIPluginInfo struct {
 	HealthAnalyzerImage        string
 	LokiServiceNames           map[string]string
 	TempoServiceNames          map[string]string
+	AuditLokiStack             *types.NamespacedName
 	Name                       string
 	ConsoleName                string
 	DisplayName                string
@@ -106,6 +108,11 @@ func PluginInfoBuilder(ctx context.Context, k client.Client, dk dynamic.Interfac
 		if err != nil {
 			return nil, err
 		}
+		auditLoki, err := discoverLokiStack(ctx, dk, logger)
+		if err != nil {
+			logger.Error(err, "Failed to discover LokiStack for audit dashboard")
+		}
+		pluginInfo.AuditLokiStack = auditLoki
 
 	default:
 		return nil, fmt.Errorf("plugin type not supported: %s", plugin.Spec.Type)
