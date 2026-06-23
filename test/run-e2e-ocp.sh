@@ -53,29 +53,26 @@ install_obo() {
 }
 
 enable_ocp() {
-  # Get Observability Operator CSV json file
   CSV_NAME=$(oc -n "$OPERATORS_NS" get sub observability-operator -o jsonpath='{.status.installedCSV}')
-  CSV_JSON_FILE=$(mktemp /tmp/"$CSV_NAME"XXXXXX.json)
-  if [ -e "$CSV_JSON_FILE" ]; then
-    rm -f "$CSV_JSON_FILE"
+
+  local deployment_index
+  deployment_index=$(oc -n "$OPERATORS_NS" get csv "${CSV_NAME}" -o json | \
+    jq '[.spec.install.spec.deployments[].name] | index("observability-operator")')
+  if [[ -z "$deployment_index" || "$deployment_index" == "null" ]]; then
+    err "Could not find observability-operator deployment in CSV ${CSV_NAME}"
+    exit 1
   fi
 
   # Retry logic
   max_retries=3
   retry_count=0
   while [ "$retry_count" -lt "$max_retries" ]; do
-    oc -n "$OPERATORS_NS" get csv "${CSV_NAME}" -o json > "$CSV_JSON_FILE"
-    # Update the CSV manifest to enable the OpenShift features.
-    ARGS_JSON=$(printf '%s\n' "--openshift.enabled=true" | jq -R . | jq -s .)
-    jq --arg container_name operator --argjson args "$ARGS_JSON" '
-      (.spec.install.spec.deployments[].spec.template.spec.containers[] | select(.name == $container_name) | .args) += $args
-    ' "$CSV_JSON_FILE" > /tmp/tmp.$$.json && mv /tmp/tmp.$$.json "$CSV_JSON_FILE"
-    ok "Added arguments to container operator in '$CSV_JSON_FILE'."
-    if oc -n "$OPERATORS_NS" apply -f "$CSV_JSON_FILE"; then
+    if oc -n "$OPERATORS_NS" patch csv "${CSV_NAME}" --type=json \
+      -p "[{\"op\": \"add\", \"path\": \"/spec/install/spec/deployments/${deployment_index}/spec/template/spec/containers/0/args/-\", \"value\": \"--openshift.enabled=true\"}]"; then
       ok "Successfully updated CSV ${CSV_NAME}"
       break
     else
-      echo "oc apply failed (attempt $((retry_count+1))/$max_retries), retrying..."
+      echo "oc patch failed (attempt $((retry_count+1))/$max_retries), retrying..."
     fi
     sleep 10
     ((retry_count++))
@@ -84,8 +81,6 @@ enable_ocp() {
       exit 1
     fi
   done
-
-  rm -f "$CSV_JSON_FILE"
 
   # Enable platform monitoring.
   oc label ns "$OPERATORS_NS" openshift.io/cluster-monitoring=true
