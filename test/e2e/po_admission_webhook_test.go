@@ -12,6 +12,7 @@ import (
 )
 
 func TestPrometheusRuleWebhook(t *testing.T) {
+	f.DumpOnFailure(t, f.DebugNamespace(e2eTestNamespace))
 	assertCRDExists(t,
 		"prometheusrules.monitoring.rhobs",
 	)
