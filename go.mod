@@ -28,7 +28,7 @@ require (
 	github.com/rhobs/perses v0.0.0-20260422074433-2c06d5cd1312
 	github.com/rhobs/perses-operator v0.1.10-0.20260518165420-4a0e166ccfca
 	github.com/stretchr/testify v1.11.1
-	go.uber.org/zap v1.27.1
+	go.uber.org/zap v1.28.0
 	golang.org/x/exp v0.0.0-20260312153236-7ab1446f8b90
 	golang.org/x/mod v0.36.0
 	gopkg.in/yaml.v3 v3.0.1
