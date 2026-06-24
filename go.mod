@@ -1,6 +1,6 @@
 module github.com/rhobs/observability-operator
 
-go 1.26.0
+go 1.26.3
 
 require (
 	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
@@ -12,7 +12,7 @@ require (
 	github.com/openshift/api v0.0.0-20260511191110-9b69e5fa27e9
 	github.com/openshift/controller-runtime-common v0.0.0-20260318085703-1812aed6dbd2
 	github.com/openshift/library-go v0.0.0-20260512121938-431f18311e77
-	github.com/operator-framework/api v0.42.0
+	github.com/operator-framework/api v0.44.0
 	github.com/perses/perses v0.53.1
 	github.com/perses/plugins/prometheus v0.57.1
 	github.com/perses/plugins/table v0.11.2
@@ -90,7 +90,7 @@ require (
 	github.com/go-openapi/validate v0.25.2 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
-	github.com/google/cel-go v0.28.0 // indirect
+	github.com/google/cel-go v0.28.1 // indirect
 	github.com/google/gnostic-models v0.7.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674 // indirect
