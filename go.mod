@@ -20,7 +20,7 @@ require (
 	github.com/perses/spec v0.1.2
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.92.0
-	github.com/prometheus/common v0.67.5
+	github.com/prometheus/common v0.69.0
 	github.com/rhobs/obo-prometheus-operator v0.91.0-rhobs1
 	github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.91.0-rhobs1
 	github.com/rhobs/observability-operator/pkg/apis v0.0.0-20251009091129-76135c924ed6
