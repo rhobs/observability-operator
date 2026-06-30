@@ -46,7 +46,7 @@ func TestUIPlugin(t *testing.T) {
 }
 
 func dashboardsUIPlugin(t *testing.T) {
-	f.DumpOnFailure(t, f.DebugNamespace(uiPluginInstallNS))
+	f.DumpOnFailure(t, f.DebugNamespaces(uiPluginInstallNS))
 	db := newDashboardsUIPlugin(t)
 	err := f.K8sClient.Create(context.Background(), db)
 	assert.NilError(t, err, "failed to create a dashboards UIPlugin")
