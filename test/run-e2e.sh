@@ -21,7 +21,7 @@ declare NO_BUILDS=false
 declare SHOW_USAGE=false
 declare LOGS_DIR="tmp/e2e"
 declare OPERATORS_NS="operators"
-declare TEST_TIMEOUT="15m"
+declare TEST_TIMEOUT="${TEST_TIMEOUT:-15m}"
 declare RUN_REGEX=""
 declare POSTPONE_RESTORATION=""
 
@@ -359,17 +359,16 @@ reset_env() {
 print_config() {
 	header "Test Configuration"
 	cat <<-EOF
-		  image repo:  $OBO_IMG_REPO
-		  bundle:      $BUNDLE_IMG
-		  CI Mode:     $CI_MODE
-		  Skip Builds: $NO_BUILDS
-		  Skip Deploy: $NO_DEPLOY
-		  Postpone restoration: ${POSTPONE_RESTORATION:-disabled}
-		  Operator namespace: $OPERATORS_NS
-		  Logs directory: $LOGS_DIR
-                  Run regex: $RUN_REGEX
-
-	EOF
+		image repo:  $OBO_IMG_REPO
+		bundle:      $BUNDLE_IMG
+		CI Mode:     $CI_MODE
+		Skip Builds: $NO_BUILDS
+		Skip Deploy: $NO_DEPLOY
+		Postpone restoration: ${POSTPONE_RESTORATION:-disabled}
+		Operator namespace: $OPERATORS_NS
+		Logs directory: $LOGS_DIR
+		Run regex: $RUN_REGEX
+EOF
 	line 50
 }
 

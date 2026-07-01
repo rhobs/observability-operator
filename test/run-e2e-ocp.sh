@@ -173,6 +173,9 @@ main() {
 	local -i ret=0
 	local -a extra_args=()
 	[[ -n "$POSTPONE_RESTORATION" ]] && extra_args+=(--postpone-restoration "$POSTPONE_RESTORATION")
+	# Increase test timeout when running on OpenShift because more tests are
+	# executed.
+	export TEST_TIMEOUT="${TEST_TIMEOUT:-30m}"
 	./test/run-e2e.sh --no-deploy --ns "$OPERATORS_NS" --ci "${extra_args[@]}" || ret=$?
 
 	# NOTE: delete_obo will be automatically called when script exits
