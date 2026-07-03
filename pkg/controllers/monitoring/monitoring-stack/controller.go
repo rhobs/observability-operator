@@ -30,7 +30,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
@@ -41,7 +40,6 @@ type resourceManager struct {
 	k8sClient    client.Client
 	scheme       *runtime.Scheme
 	logger       logr.Logger
-	controller   controller.Controller
 	prometheus   PrometheusConfiguration
 	alertmanager AlertmanagerConfiguration
 	thanos       ThanosConfiguration
@@ -103,7 +101,7 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 	// be notified about changes in their status.
 	generationChanged := builder.WithPredicates(predicate.GenerationChangedPredicate{})
 
-	ctrl, err := ctrl.NewControllerManagedBy(mgr).
+	return ctrl.NewControllerManagedBy(mgr).
 		For(&stack.MonitoringStack{}).
 		Owns(&monv1.Prometheus{}, builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})).
 		Owns(&monv1.Alertmanager{}, generationChanged).
@@ -113,13 +111,7 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 		Owns(&rbacv1.RoleBinding{}, generationChanged).
 		Owns(&monv1.ServiceMonitor{}, generationChanged).
 		Owns(&policyv1.PodDisruptionBudget{}, generationChanged).
-		Build(rm)
-
-	if err != nil {
-		return err
-	}
-	rm.controller = ctrl
-	return nil
+		Complete(rm)
 }
 
 func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {

@@ -287,7 +287,7 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 		cache:           mgr.GetCache(),
 	}
 
-	ctrlBuilder := ctrl.NewControllerManagedBy(mgr).
+	ctrl, err := ctrl.NewControllerManagedBy(mgr).
 		For(&obsv1alpha1.ObservabilityInstaller{}).
 		Owns(&olmv1alpha1.Subscription{}).
 		Owns(&corev1.Secret{}).
@@ -295,11 +295,12 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 		Owns(&uiv1alpha1.UIPlugin{}).
 		Owns(&rbacv1.ClusterRole{}).
 		Owns(&rbacv1.ClusterRoleBinding{}).
-		Named("cluster-observability")
-
-	controller.controller, err = ctrlBuilder.Build(controller)
+		Named("cluster-observability").
+		Build(controller)
 	if err != nil {
 		return err
 	}
+
+	controller.controller = ctrl
 	return nil
 }

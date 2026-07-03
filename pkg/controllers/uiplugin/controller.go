@@ -25,7 +25,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
@@ -38,7 +37,6 @@ type resourceManager struct {
 	k8sDynamicClient dynamic.Interface
 	scheme           *runtime.Scheme
 	logger           logr.Logger
-	controller       controller.Controller
 	pluginConf       UIPluginsConfiguration
 	clusterVersion   string
 	apiReader        client.Reader
@@ -166,14 +164,7 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 		ctrlBuilder.Owns(&osv1alpha1.ConsolePlugin{}, generationChanged)
 	}
 
-	ctrl, err := ctrlBuilder.Build(rm)
-
-	if err != nil {
-		return err
-	}
-	rm.controller = ctrl
-
-	return nil
+	return ctrlBuilder.Complete(rm)
 }
 
 func (rm resourceManager) consolePluginCapabilityEnabled(ctx context.Context, name types.NamespacedName, clusterVersion string) bool {
