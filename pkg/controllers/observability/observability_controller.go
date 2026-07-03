@@ -102,7 +102,6 @@ func (o observabilityInstallerController) Reconcile(ctx context.Context, request
 	// List all subscriptions to figure out if the operators are already installed
 	err = o.apiReader.List(ctx, subs, &client.ListOptions{})
 	if err != nil {
-		o.logger.Error(err, "Failed to list subscriptions")
 		return ctrl.Result{}, err
 	}
 	reconcilers, err := getReconcilers(ctx, o.client, o.apiReader, instance, o.Options, operatorsStatus{
@@ -110,7 +109,6 @@ func (o observabilityInstallerController) Reconcile(ctx context.Context, request
 		subs:         subs.Items,
 	})
 	if err != nil {
-		o.logger.Error(err, "Failed to get reconcilers")
 		return ctrl.Result{}, err
 	}
 	for _, reconciler := range reconcilers {
@@ -129,7 +127,6 @@ func (o observabilityInstallerController) Reconcile(ctx context.Context, request
 
 	groups, err := o.discoveryClient.ServerGroups()
 	if err != nil {
-		o.logger.Error(err, "Failed to get server groups / CDRs")
 		return ctrl.Result{}, fmt.Errorf("failed to get server groups: %w", err)
 	}
 	for _, group := range groups.Groups {
@@ -196,7 +193,6 @@ func (o observabilityInstallerController) getInstance(ctx context.Context, req c
 			o.logger.V(3).Info("instance could not be found; may be marked for deletion")
 			return nil, nil
 		}
-		o.logger.Error(err, "failed to get cluster observability instance")
 		return nil, err
 	}
 
