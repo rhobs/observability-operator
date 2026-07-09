@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- crds
+- thanos-operator-deployment.yaml
+- thanos-operator-cluster-role.yaml
+- thanos-operator-service-account.yaml
+- thanos-operator-cluster-role-binding.yaml
+- thanosquery_editor_role.yaml
+- thanosquery_viewer_role.yaml
+- thanosreceive_editor_role.yaml
+- thanosreceive_viewer_role.yaml
+- thanoscompact_editor_role.yaml
+- thanoscompact_viewer_role.yaml
+- thanosstore_editor_role.yaml
+- thanosstore_viewer_role.yaml
+- thanosruler_editor_role.yaml
+- thanosruler_viewer_role.yaml
