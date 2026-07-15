@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: clusterrole
     app.kubernetes.io/part-of: observability-operator
-  name: thanosquery-viewer-role
+  name: thanos-operator-thanosquery-viewer-role
 rules:
 - apiGroups:
   - monitoring.thanos.io

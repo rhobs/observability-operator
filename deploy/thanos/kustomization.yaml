@@ -5,8 +5,10 @@ resources:
 - crds
 - thanos-operator-deployment.yaml
 - thanos-operator-cluster-role.yaml
+- thanos-operator-role.yaml
 - thanos-operator-service-account.yaml
 - thanos-operator-cluster-role-binding.yaml
+- thanos-operator-role-binding.yaml
 - thanosquery_editor_role.yaml
 - thanosquery_viewer_role.yaml
 - thanosreceive_editor_role.yaml

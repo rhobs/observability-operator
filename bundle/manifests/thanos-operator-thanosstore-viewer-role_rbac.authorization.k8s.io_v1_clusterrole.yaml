@@ -5,16 +5,16 @@ metadata:
   labels:
     app.kubernetes.io/component: rbac
     app.kubernetes.io/created-by: thanos-operator
-    app.kubernetes.io/instance: thanosquery-viewer-role
+    app.kubernetes.io/instance: thanosstore-viewer-role
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: clusterrole
     app.kubernetes.io/part-of: observability-operator
-  name: thanosquery-viewer-role
+  name: thanos-operator-thanosstore-viewer-role
 rules:
 - apiGroups:
   - monitoring.thanos.io
   resources:
-  - thanosqueries
+  - thanosstores
   verbs:
   - get
   - list
@@ -22,6 +22,6 @@ rules:
 - apiGroups:
   - monitoring.thanos.io
   resources:
-  - thanosqueries/status
+  - thanosstores/status
   verbs:
   - get

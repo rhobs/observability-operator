@@ -5,16 +5,16 @@ metadata:
   labels:
     app.kubernetes.io/component: rbac
     app.kubernetes.io/created-by: thanos-operator
-    app.kubernetes.io/instance: thanosquery-editor-role
+    app.kubernetes.io/instance: thanoscompact-editor-role
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: clusterrole
     app.kubernetes.io/part-of: observability-operator
-  name: thanosquery-editor-role
+  name: thanos-operator-thanoscompact-editor-role
 rules:
 - apiGroups:
   - monitoring.thanos.io
   resources:
-  - thanosqueries
+  - thanoscompacts
   verbs:
   - create
   - delete
@@ -26,6 +26,6 @@ rules:
 - apiGroups:
   - monitoring.thanos.io
   resources:
-  - thanosqueries/status
+  - thanoscompacts/status
   verbs:
   - get
