@@ -220,7 +220,6 @@ func (rm resourceManager) getStack(ctx context.Context, req ctrl.Request) (*stac
 			logger.V(3).Info("stack could not be found; may be marked for deletion")
 			return nil, nil
 		}
-		logger.Error(err, "failed to get monitoring stack")
 		return nil, err
 	}
 

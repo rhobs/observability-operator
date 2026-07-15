@@ -128,7 +128,6 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 
 	dynamicClient, err := dynamic.NewForConfig(mgr.GetConfig())
 	if err != nil {
-		logger.Error(err, "failed to create dynamic client")
 		return err
 	}
 
@@ -415,7 +414,6 @@ func (rm resourceManager) getUIPlugin(ctx context.Context, req ctrl.Request) (*u
 			logger.V(3).Info("stack could not be found; may be marked for deletion")
 			return nil, nil
 		}
-		logger.Error(err, "failed to get UIPlugin")
 		return nil, err
 	}
 
