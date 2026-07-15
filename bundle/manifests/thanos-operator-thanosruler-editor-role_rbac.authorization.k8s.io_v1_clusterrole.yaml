@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: clusterrole
     app.kubernetes.io/part-of: observability-operator
-  name: thanosruler-editor-role
+  name: thanos-operator-thanosruler-editor-role
 rules:
 - apiGroups:
   - monitoring.thanos.io
