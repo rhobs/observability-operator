@@ -259,8 +259,9 @@ func newPerses(namespace string, persesImage string) *persesv1alpha2.Perses {
 					},
 					Database: persesconfig.Database{
 						File: &persesconfig.File{
-							Folder:    "/perses",
-							Extension: persesconfig.YAMLExtension,
+							Folder:        "/perses",
+							Extension:     persesconfig.YAMLExtension,
+							CaseSensitive: true,
 						},
 					},
 				},
