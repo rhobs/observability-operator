@@ -15,7 +15,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	uiv1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 	"github.com/rhobs/observability-operator/test/e2e/framework"
@@ -32,13 +31,13 @@ func clusterHealthAnalyzer(t *testing.T) {
 	err := monv1.AddToScheme(f.K8sClient.Scheme())
 	assert.NilError(t, err, "failed to add monv1 to scheme")
 
-	f.DumpOnFailure(t, f.DebugNamespace(uiPluginInstallNS))
+	f.DumpOnFailure(t, f.DebugNamespaces(uiPluginInstallNS))
 
 	plugin := resetMonitoringUIPlugin(t)
 	err = f.K8sClient.Create(t.Context(), plugin)
 	assert.NilError(t, err, "failed to create monitoring UIPlugin")
 
-	f.DumpOnFailure(t, dumpUIPluginDebug(plugin.Name))
+	f.DumpOnFailure(t, f.DebugUIPlugin(plugin.Name))
 	t.Log("Waiting for health-analyzer deployment to become ready...")
 	haDeployment := appsv1.Deployment{}
 	f.GetResourceWithRetry(t, healthAnalyzerDeploymentName, uiPluginInstallNS, &haDeployment)
@@ -89,7 +88,7 @@ func clusterHealthAnalyzer(t *testing.T) {
 func resetMonitoringUIPlugin(t *testing.T) *uiv1.UIPlugin {
 	plugin := &uiv1.UIPlugin{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "monitoring",
+			Name: uiv1.MonitoringPluginName,
 		},
 		Spec: uiv1.UIPluginSpec{
 			Type: uiv1.TypeMonitoring,
@@ -142,6 +141,7 @@ func createRuleNamespace(t *testing.T, name string) {
 	if err := f.K8sClient.Create(t.Context(), ns); err != nil && !errors.IsAlreadyExists(err) {
 		t.Fatalf("failed to create rule namespace %s: %v", name, err)
 	}
+	f.DumpOnFailure(t, f.DebugNamespaces(name))
 	f.CleanUp(t, func() {
 		ctx := context.WithoutCancel(t.Context())
 		f.K8sClient.Delete(ctx, ns)
@@ -175,43 +175,4 @@ func newAlwaysFiringRule(t *testing.T, ruleName, alertName string) *monv1.Promet
 		}
 	})
 	return rule
-}
-
-func dumpUIPluginDebug(pluginName string) framework.DebugFunc {
-	return func(t *testing.T) {
-		t.Helper()
-		ctx := context.WithoutCancel(t.Context())
-
-		var plugin uiv1.UIPlugin
-		if err := f.K8sClient.Get(ctx, client.ObjectKey{Name: pluginName}, &plugin); err != nil {
-			t.Logf("Failed to get UIPlugin %q: %v", pluginName, err)
-			return
-		}
-		t.Logf("UIPlugin %q generation=%d, resourceVersion=%s", pluginName, plugin.Generation, plugin.ResourceVersion)
-		t.Logf("UIPlugin spec.type=%s", plugin.Spec.Type)
-		if plugin.Spec.Monitoring != nil {
-			if plugin.Spec.Monitoring.ClusterHealthAnalyzer != nil {
-				t.Logf("UIPlugin spec.monitoring.clusterHealthAnalyzer.enabled=%v", plugin.Spec.Monitoring.ClusterHealthAnalyzer.Enabled)
-			}
-			if plugin.Spec.Monitoring.Incidents != nil {
-				t.Logf("UIPlugin spec.monitoring.incidents.enabled=%v", plugin.Spec.Monitoring.Incidents.Enabled)
-			}
-		}
-		if len(plugin.Status.Conditions) == 0 {
-			t.Log("UIPlugin has no status conditions")
-		}
-		for _, c := range plugin.Status.Conditions {
-			t.Logf("UIPlugin condition: type=%s status=%s reason=%s message=%s", c.Type, c.Status, c.Reason, c.Message)
-		}
-
-		var plugins uiv1.UIPluginList
-		if err := f.K8sClient.List(ctx, &plugins); err != nil {
-			t.Logf("Failed to list UIPlugins: %v", err)
-		} else {
-			t.Logf("Total UIPlugins in cluster: %d", len(plugins.Items))
-			for _, p := range plugins.Items {
-				t.Logf("  UIPlugin: name=%s type=%s conditions=%d", p.Name, p.Spec.Type, len(p.Status.Conditions))
-			}
-		}
-	}
 }
