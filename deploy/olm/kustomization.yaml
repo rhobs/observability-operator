@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
 - ../crds/common
 - ../perses
+- ../thanos
 - ../dependencies
 - ../monitoring
 - ../operator

@@ -43,7 +43,7 @@ metadata:
     certified: "false"
     console.openshift.io/operator-monitoring-default: "true"
     containerImage: observability-operator:1.5.0
-    createdAt: "2026-06-23T14:39:10Z"
+    createdAt: "2026-07-15T13:23:02Z"
     description: A Go based Kubernetes operator to setup and manage highly available
       Monitoring Stack using Prometheus, Alertmanager and Thanos Querier.
     operatorframework.io/cluster-monitoring: "true"
@@ -153,17 +153,42 @@ spec:
       kind: ServiceMonitor
       name: servicemonitors.monitoring.rhobs
       version: v1
+    - description: ThanosCompact deploys a Thanos Compactor
+      displayName: Thanos Compact
+      kind: ThanosCompact
+      name: thanoscompacts.monitoring.thanos.io
+      version: v1alpha1
     - description: ThanosQuerier outlines the Thanos querier components, managed by
         this stack
       displayName: ThanosQuerier
       kind: ThanosQuerier
       name: thanosqueriers.monitoring.rhobs
       version: v1alpha1
+    - description: ThanosQuery deploys a Thanos Querier
+      displayName: Thanos Query
+      kind: ThanosQuery
+      name: thanosqueries.monitoring.thanos.io
+      version: v1alpha1
+    - description: ThanosReceive deploys a Thanos Receive component
+      displayName: Thanos Receive
+      kind: ThanosReceive
+      name: thanosreceives.monitoring.thanos.io
+      version: v1alpha1
     - description: ThanosRuler defines a ThanosRuler deployment
       displayName: ThanosRuler
       kind: ThanosRuler
       name: thanosrulers.monitoring.rhobs
       version: v1
+    - description: ThanosRuler deploys a Thanos Ruler
+      displayName: Thanos Ruler
+      kind: ThanosRuler
+      name: thanosrulers.monitoring.thanos.io
+      version: v1alpha1
+    - description: ThanosStore deploys a Thanos Store Gateway
+      displayName: Thanos Store
+      kind: ThanosStore
+      name: thanosstores.monitoring.thanos.io
+      version: v1alpha1
     - description: UIPlugin defines a console plugin for observability
       displayName: UIPlugin
       kind: UIPlugin
@@ -921,6 +946,128 @@ spec:
           - list
           - watch
         serviceAccountName: perses-operator
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          - persistentvolumeclaims
+          - secrets
+          - serviceaccounts
+          - services
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - statefulsets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - discovery.k8s.io
+          resources:
+          - endpointslices
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - prometheusrules
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - monitoring.thanos.io
+          resources:
+          - thanoscompacts
+          - thanosqueries
+          - thanosreceives
+          - thanosrulers
+          - thanosstores
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - monitoring.thanos.io
+          resources:
+          - thanoscompacts/finalizers
+          - thanosqueries/finalizers
+          - thanosreceives/finalizers
+          - thanosrulers/finalizers
+          - thanosstores/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - monitoring.thanos.io
+          resources:
+          - thanoscompacts/status
+          - thanosqueries/status
+          - thanosreceives/status
+          - thanosrulers/status
+          - thanosstores/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - policy
+          resources:
+          - poddisruptionbudgets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - rolebindings
+          - roles
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        serviceAccountName: thanos-operator
       deployments:
       - label:
           app.kubernetes.io/component: controller
@@ -1216,6 +1363,93 @@ spec:
                   name: openshift-service-ca.crt
                   optional: true
                 name: openshift-service-ca
+      - label:
+          app.kubernetes.io/component: controller
+          app.kubernetes.io/name: thanos-operator
+          app.kubernetes.io/part-of: observability-operator
+        name: thanos-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app.kubernetes.io/component: controller
+              app.kubernetes.io/name: thanos-operator
+              app.kubernetes.io/part-of: observability-operator
+          strategy: {}
+          template:
+            metadata:
+              annotations:
+                kubectl.kubernetes.io/default-container: thanos-operator
+              labels:
+                app.kubernetes.io/component: controller
+                app.kubernetes.io/name: thanos-operator
+                app.kubernetes.io/part-of: observability-operator
+            spec:
+              affinity:
+                nodeAffinity:
+                  preferredDuringSchedulingIgnoredDuringExecution:
+                  - preference:
+                      matchExpressions:
+                      - key: node-role.kubernetes.io/infra
+                        operator: Exists
+                    weight: 1
+              containers:
+              - args:
+                - --leader-elect
+                - --health-probe-bind-address=:8081
+                image: quay.io/thanos/thanos-operator:main-2026-07-02-e6d1790
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: 8081
+                  initialDelaySeconds: 15
+                  periodSeconds: 20
+                name: thanos-operator
+                readinessProbe:
+                  httpGet:
+                    path: /readyz
+                    port: 8081
+                  initialDelaySeconds: 5
+                  periodSeconds: 10
+                resources:
+                  limits:
+                    cpu: 500m
+                    memory: 512Mi
+                  requests:
+                    cpu: 100m
+                    memory: 128Mi
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                    - ALL
+              serviceAccountName: thanos-operator
+              tolerations:
+              - effect: NoSchedule
+                key: node-role.kubernetes.io/infra
+                operator: Exists
+      permissions:
+      - rules:
+        - apiGroups:
+          - coordination.k8s.io
+          resources:
+          - leases
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+        serviceAccountName: thanos-operator
     strategy: deployment
   installModes:
   - supported: false

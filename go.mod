@@ -43,6 +43,8 @@ require (
 	sigs.k8s.io/controller-runtime v0.24.1
 )
 
+require github.com/thanos-community/thanos-operator v0.0.0-20260702133656-54890f01eac9
+
 require (
 	cel.dev/expr v0.25.1 // indirect
 	dario.cat/mergo v1.0.2 // indirect
@@ -60,7 +62,6 @@ require (
 	github.com/edsrzf/mmap-go v1.2.0 // indirect
 	github.com/efficientgo/core v1.0.0-rc.3 // indirect
 	github.com/emicklei/go-restful/v3 v3.13.0 // indirect
-	github.com/evanphx/json-patch v5.9.0+incompatible // indirect
 	github.com/evanphx/json-patch/v5 v5.9.11 // indirect
 	github.com/facette/natsort v0.0.0-20181210072756-2cd4dd1e2dcb // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
