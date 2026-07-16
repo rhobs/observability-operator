@@ -93,23 +93,6 @@ func NewDeleter(r client.Object) Deleter {
 	return Deleter{resource: r}
 }
 
-type Merger struct {
-	resource client.Object
-}
-
-func NewMerger(r client.Object, owner string) Merger {
-	return Merger{resource: util.AddCommonLabels(r, owner)}
-}
-
-func (r Merger) Reconcile(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
-	if err := c.Patch(ctx, r.resource, client.Merge); err != nil {
-		return fmt.Errorf("%s/%s (%s): merger failed to patch: %w",
-			r.resource.GetNamespace(), r.resource.GetName(),
-			r.resource.GetObjectKind().GroupVersionKind().String(), err)
-	}
-	return nil
-}
-
 // NewOptionalUpdater ensures that a resource is present or absent depending on the `cond` value (true: present).
 func NewOptionalUpdater(r client.Object, c metav1.Object, cond bool) Reconciler {
 	if cond {
