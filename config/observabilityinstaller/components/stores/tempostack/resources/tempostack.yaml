@@ -1,0 +1,20 @@
+apiVersion: tempo.grafana.com/v1alpha1
+kind: TempoStack
+metadata:
+  name: placeholder-observability-installer-name
+  namespace: placeholder-observability-installer-namespace
+spec:
+  managementState: Managed
+  storage:
+    secret: {}
+  tenants:
+    mode: openshift
+    authentication:
+      - tenantName: application
+        tenantId: 1610b0c3-c509-4592-a256-a1871353dbfb
+  template:
+    gateway:
+      enabled: true
+    queryFrontend:
+      jaegerQuery:
+        enabled: false

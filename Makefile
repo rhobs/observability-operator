@@ -117,6 +117,7 @@ operator: generate build
 .PHONY: build
 build:
 	go build -o ./tmp/operator ./cmd/operator/...
+	go build -o ./tmp/generator ./cmd/generator/...
 
 .PHONY: operator-image
 operator-image: generate

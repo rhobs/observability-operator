@@ -370,15 +370,16 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 
 	if cfg.FeatureGates.OpenShift.Enabled {
 		if err := obsctrl.RegisterWithManager(mgr, obsctrl.Options{
+			COOName:      "observability-operator",
 			COONamespace: cfg.ObservabilityInstaller.COONamespace,
 			OpenTelemetryOperator: obsctrl.OperatorInstallConfig{
-				Namespace:   cfg.ObservabilityInstaller.COONamespace,
+				Namespace:   "openshift-opentelemetry-operator",
 				PackageName: "opentelemetry-product",
 				StartingCSV: cfg.ObservabilityInstaller.OpenTelemetryCSV,
 				Channel:     "stable",
 			},
 			TempoOperator: obsctrl.OperatorInstallConfig{
-				Namespace:   cfg.ObservabilityInstaller.COONamespace,
+				Namespace:   "openshift-tempo-operator",
 				PackageName: "tempo-product",
 				StartingCSV: cfg.ObservabilityInstaller.TempoCSV,
 				Channel:     "stable",

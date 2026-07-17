@@ -27,15 +27,7 @@ type loggingConfig struct {
 	ShowTimezoneSelector bool          `yaml:"showTimezoneSelector,omitempty"`
 }
 
-func createLoggingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string, ctx context.Context, dk dynamic.Interface, logger logr.Logger, korrel8rImage string) (*UIPluginInfo, error) {
-	lokiStack, err := getLokiStack(plugin, ctx, dk, logger)
-	if err != nil {
-		return nil, err
-	}
-
-	lokiStackName := lokiStack.Name
-	lokiStackNamespace := lokiStack.Namespace
-
+func createLoggingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string, lokiStackName, lokiStackNamespace string) (*UIPluginInfo, error) {
 	config := plugin.Spec.Logging
 
 	configYaml, err := marshalLoggingPluginConfig(config)
@@ -61,16 +53,6 @@ func createLoggingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image
 		},
 	}
 
-	if korrel8rImage != "" {
-		proxies = append(proxies, PluginProxy{
-			Alias:            "korrel8r",
-			ServiceName:      korrel8rName,
-			ServiceNamespace: namespace,
-			ServicePort:      port,
-			Authorize:        true,
-		})
-	}
-
 	pluginInfo := &UIPluginInfo{
 		Image:             image,
 		Name:              name,
@@ -79,7 +61,6 @@ func createLoggingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image
 		ExtraArgs:         extraArgs,
 		ResourceNamespace: namespace,
 		Proxies:           proxies,
-		Korrel8rImage:     korrel8rImage,
 		ConfigMap: &corev1.ConfigMap{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: corev1.SchemeGroupVersion.String(),

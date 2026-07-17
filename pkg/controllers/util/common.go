@@ -1,6 +1,8 @@
 package util
 
 import (
+	"fmt"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -8,6 +10,10 @@ const (
 	ResourceLabel = "app.kubernetes.io/managed-by"
 	OpName        = "observability-operator"
 )
+
+func GVKNameIdentifier(obj client.Object) string {
+	return fmt.Sprintf("%s/%s", obj.GetObjectKind().GroupVersionKind().String(), obj.GetName())
+}
 
 func AddCommonLabels(obj client.Object, name string) client.Object {
 	labels := obj.GetLabels()

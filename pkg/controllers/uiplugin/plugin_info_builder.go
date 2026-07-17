@@ -1,15 +1,8 @@
 package uiplugin
 
 import (
-	"context"
-	"fmt"
-
-	"github.com/go-logr/logr"
-	libgocrypto "github.com/openshift/library-go/pkg/crypto"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/client-go/dynamic"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 )
@@ -47,72 +40,4 @@ var pluginTypeToConsoleName = map[uiv1alpha1.UIPluginType]string{
 
 func ConsoleNameForType(pluginType uiv1alpha1.UIPluginType) string {
 	return pluginTypeToConsoleName[pluginType]
-}
-
-func PluginInfoBuilder(ctx context.Context, k client.Client, dk dynamic.Interface, plugin *uiv1alpha1.UIPlugin, pluginConf UIPluginsConfiguration, compatibilityInfo CompatibilityEntry, clusterVersion string, logger logr.Logger) (*UIPluginInfo, error) {
-	image := pluginConf.Images[compatibilityInfo.ImageKey]
-	if image == "" {
-		return nil, fmt.Errorf("no image provided for plugin type %s with key %s", plugin.Spec.Type, compatibilityInfo.ImageKey)
-	}
-
-	namespace := pluginConf.ResourcesNamespace
-
-	var pluginInfo *UIPluginInfo
-	var err error
-
-	switch plugin.Spec.Type {
-	case uiv1alpha1.TypeDashboards:
-		pluginInfo, err = createDashboardsPluginInfo(plugin, namespace, plugin.Name, image)
-		if err != nil {
-			return nil, err
-		}
-
-	case uiv1alpha1.TypeTroubleshootingPanel:
-		pluginInfo, err = createTroubleshootingPanelPluginInfo(plugin, namespace, plugin.Name, image, []string{}, clusterVersion, logger)
-		if err != nil {
-			return nil, err
-		}
-
-		pluginInfo.Korrel8rImage = pluginConf.Images["korrel8r"]
-		pluginInfo.LokiServiceNames[OpenshiftLoggingNs], err = getLokiServiceName(ctx, k, OpenshiftLoggingNs)
-		if err != nil {
-			return nil, err
-		}
-
-		pluginInfo.LokiServiceNames[OpenshiftNetobservNs], err = getLokiServiceName(ctx, k, OpenshiftNetobservNs)
-		if err != nil {
-			return nil, err
-		}
-
-		pluginInfo.TempoServiceNames[OpenshiftTracingNs], err = getTempoServiceName(ctx, k, OpenshiftTracingNs)
-		if err != nil {
-			return nil, err
-		}
-
-	case uiv1alpha1.TypeDistributedTracing:
-		pluginInfo, err = createDistributedTracingPluginInfo(plugin, namespace, plugin.Name, image, []string{})
-		if err != nil {
-			return nil, err
-		}
-
-	case uiv1alpha1.TypeLogging:
-		pluginInfo, err = createLoggingPluginInfo(plugin, namespace, plugin.Name, image, compatibilityInfo.Features, ctx, dk, logger, pluginConf.Images["korrel8r"])
-		if err != nil {
-			return nil, err
-		}
-
-	case uiv1alpha1.TypeMonitoring:
-		pluginInfo, err = createMonitoringPluginInfo(plugin, namespace, plugin.Name, image, compatibilityInfo.Features, clusterVersion, pluginConf.Images["health-analyzer"], pluginConf.Images["perses"])
-		if err != nil {
-			return nil, err
-		}
-
-	default:
-		return nil, fmt.Errorf("plugin type not supported: %s", plugin.Spec.Type)
-	}
-
-	pluginInfo.TLSMinVersion = string(pluginConf.TLSProfile.MinTLSVersion)
-	pluginInfo.TLSCiphers = libgocrypto.OpenSSLToIANACipherSuites(pluginConf.TLSProfile.Ciphers)
-
-	return pluginInfo, err
 }

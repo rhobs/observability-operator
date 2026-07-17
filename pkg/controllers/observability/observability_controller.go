@@ -37,6 +37,10 @@ const (
 	conditionTypeReconciled = "Reconciled"
 )
 
+func otelCollectorName(instance string) string {
+	return instance
+}
+
 // RBAC for the ObservabilityInstaller CRD
 // +kubebuilder:rbac:groups=observability.openshift.io,resources=observabilityinstallers,verbs=get;list;watch;create;update;delete;patch
 // +kubebuilder:rbac:groups=observability.openshift.io,resources=observabilityinstallers/status;observabilityinstallers/finalizers,verbs=get;update;delete;patch
@@ -104,7 +108,7 @@ func (o observabilityInstallerController) Reconcile(ctx context.Context, request
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	reconcilers, err := getReconcilers(ctx, o.client, o.apiReader, instance, o.Options, operatorsStatus{
+	reconcilers, err := getReconcilers(ctx, o.apiReader, instance, o.Options, operatorsStatus{
 		cooNamespace: o.Options.COONamespace,
 		subs:         subs.Items,
 	})
@@ -251,6 +255,7 @@ func (o observabilityInstallerController) updateStatus(ctx context.Context, inst
 }
 
 type Options struct {
+	COOName               string
 	COONamespace          string
 	OpenTelemetryOperator OperatorInstallConfig
 	TempoOperator         OperatorInstallConfig
