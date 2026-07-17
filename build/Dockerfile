@@ -13,10 +13,11 @@ RUN go mod download
 # Copy the go source
 COPY cmd/operator/main.go cmd/operator/main.go
 COPY pkg/ pkg/
+COPY config/ config/
 COPY must-gather/ must-gather/
 
 # Build
-RUN GOOS=linux GOARCH=amd64 go build -a -tags netgo,osusergo -o manager cmd/operator/main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -tags netgo,osusergo -o manager cmd/operator/main.go
 
 # Use ubi. The gather script requires bash
 FROM registry.access.redhat.com/ubi8/ubi-micro

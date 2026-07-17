@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: placeholder-uiplugin-name
+  labels:
+    app.kubernetes.io/instance: placeholder-uiplugin-name
+    app.kubernetes.io/part-of: UIPlugin
+    app.kubernetes.io/managed-by: observability-operator
+spec:
+  replicas: 1
+  progressDeadlineSeconds: 300
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: placeholder-uiplugin-name
+      app.kubernetes.io/part-of: UIPlugin
+      app.kubernetes.io/managed-by: observability-operator
+  template:
+    metadata:
+      name: placeholder-uiplugin-name
+      labels:
+        app.kubernetes.io/instance: placeholder-uiplugin-name
+        app.kubernetes.io/part-of: UIPlugin
+        app.kubernetes.io/managed-by: observability-operator
+    spec:
+      serviceAccountName: placeholder-uiplugin-name-sa
+      nodeSelector:
+        kubernetes.io/os: linux
+      restartPolicy: Always
+      dnsPolicy: ClusterFirst
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: placeholder-uiplugin-name
+          image: placeholder-uiplugin-name-console-plugin:latest
+          args:
+            - -port=9443
+            - -cert=/var/serving-cert/tls.crt
+            - -key=/var/serving-cert/tls.key
+            - -plugin-config-path=/etc/plugin/config/config.yaml
+          ports:
+            - containerPort: 9443
+              name: web
+          terminationMessagePolicy: FallbackToLogsOnError
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: serving-cert
+              readOnly: true
+              mountPath: /var/serving-cert
+            - name: plugin-config
+              readOnly: true
+              mountPath: /etc/plugin/config
+      volumes:
+        - name: serving-cert
+          secret:
+            secretName: placeholder-uiplugin-name
+            defaultMode: 420
+        - name: plugin-config
+          configMap:
+            name: placeholder-uiplugin-name

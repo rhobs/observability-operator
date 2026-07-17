@@ -12,78 +12,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	obsv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/observability/v1alpha1"
-	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 )
 
 const (
 	tenantName = "application"
-	tenantID   = "1610b0c3-c509-4592-a256-a1871353dbfb"
 )
-
-func tempoStack(instance *obsv1alpha1.ObservabilityInstaller) *tempov1alpha1.TempoStack {
-	var storageType tempov1alpha1.ObjectStorageSecretType
-	if oss := instance.Spec.GetCapabilities().GetTracing().GetStorage().GetObjectStorageSpec(); oss != nil {
-		storageType = toTempoStorageType(oss)
-	}
-	credentialMode := toTempoCredentialMode(instance.Spec.GetCapabilities().GetTracing().GetStorage().GetObjectStorageSpec())
-	tempo := &tempov1alpha1.TempoStack{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "TempoStack",
-			APIVersion: tempov1alpha1.GroupVersion.String(),
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      tempoName(instance.Name),
-			Namespace: instance.Namespace,
-		},
-		Spec: tempov1alpha1.TempoStackSpec{
-			Storage: tempov1alpha1.ObjectStorageSpec{
-				Secret: tempov1alpha1.ObjectStorageSecretSpec{
-					Type:           storageType,
-					CredentialMode: credentialMode,
-					Name:           tempoSecretName(instance.Name),
-				},
-			},
-			Template: tempov1alpha1.TempoTemplateSpec{
-				Gateway: tempov1alpha1.TempoGatewaySpec{
-					Enabled: true,
-				},
-			},
-			Tenants: &tempov1alpha1.TenantsSpec{
-				Mode: tempov1alpha1.ModeOpenShift,
-				Authentication: []tempov1alpha1.AuthenticationSpec{
-					{
-						TenantName: tenantName,
-						TenantID:   tenantID,
-					},
-				},
-			},
-		},
-	}
-
-	if storageSpec := instance.Spec.GetCapabilities().GetTracing().GetStorage().GetObjectStorageSpec(); storageSpec != nil {
-		tls := storageSpec.GetTLS()
-		enableTLS := tls != nil || s3hasHTTPSEndpoint(*storageSpec)
-
-		if enableTLS {
-			tempo.Spec.Storage.TLS = tempov1alpha1.TLSSpec{
-				Enabled: true,
-			}
-			if tls != nil {
-				if tls.CAConfigMap != nil {
-					tempo.Spec.Storage.TLS.CA = tempoStorageCAConfigMapName(instance.Name)
-				}
-				if tls.CertSecret != nil {
-					tempo.Spec.Storage.TLS.Cert = tempoStorageSecretName(instance.Name)
-				}
-				if tls.MinVersion != "" {
-					tempo.Spec.Storage.TLS.MinVersion = tls.MinVersion
-				}
-			}
-		}
-	}
-
-	return tempo
-}
 
 func tempoName(instance string) string {
 	return instance
@@ -122,18 +55,15 @@ type tempoSecrets struct {
 	objectStorageCAConfigMap *corev1.ConfigMap
 }
 
-func tempoStackSecrets(ctx context.Context, k8sClient client.Client, k8sReader client.Reader, instance obsv1alpha1.ObservabilityInstaller) (*tempoSecrets, error) {
+func tempoStackSecrets(ctx context.Context, k8sReader client.Reader, instance obsv1alpha1.ObservabilityInstaller) (*tempoSecrets, error) {
 	var objectStorageCAConfMap *corev1.ConfigMap
 	var objectStorageTLSSecret *corev1.Secret
 
 	if tlsSpec := instance.Spec.GetCapabilities().GetTracing().GetStorage().GetObjectStorageSpec().GetTLS(); tlsSpec != nil {
 		if tlsSpec.CAConfigMap != nil {
 			caConfigMap := &corev1.ConfigMap{}
-			err := k8sReader.Get(ctx, client.ObjectKey{
-				Namespace: instance.Namespace,
-				Name:      tlsSpec.CAConfigMap.Name,
-			}, caConfigMap)
-			if err != nil {
+			key := client.ObjectKey{Namespace: instance.Namespace, Name: tlsSpec.CAConfigMap.Name}
+			if err := k8sReader.Get(ctx, key, caConfigMap); err != nil {
 				return nil, fmt.Errorf("failed to get object storage CA configmap %s: %w", tlsSpec.CAConfigMap.Name, err)
 			}
 
@@ -154,11 +84,8 @@ func tempoStackSecrets(ctx context.Context, k8sClient client.Client, k8sReader c
 
 		if tlsSpec.CertSecret != nil {
 			certSecret := &corev1.Secret{}
-			err := k8sReader.Get(ctx, client.ObjectKey{
-				Namespace: instance.Namespace,
-				Name:      tlsSpec.CertSecret.Name,
-			}, certSecret)
-			if err != nil {
+			key := client.ObjectKey{Namespace: instance.Namespace, Name: tlsSpec.CertSecret.Name}
+			if err := k8sReader.Get(ctx, key, certSecret); err != nil {
 				return nil, fmt.Errorf("failed to get object storage cert secret %s: %w", tlsSpec.CertSecret.Name, err)
 			}
 
@@ -177,12 +104,9 @@ func tempoStackSecrets(ctx context.Context, k8sClient client.Client, k8sReader c
 		}
 		if tlsSpec.KeySecret != nil {
 			certSecret := &corev1.Secret{}
-			err := k8sReader.Get(ctx, client.ObjectKey{
-				Namespace: instance.Namespace,
-				Name:      tlsSpec.KeySecret.Name,
-			}, certSecret)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get object storage cert secret %s: %w", tlsSpec.KeySecret.Name, err)
+			key := client.ObjectKey{Namespace: instance.Namespace, Name: tlsSpec.KeySecret.Name}
+			if err := k8sReader.Get(ctx, key, certSecret); err != nil {
+				return nil, fmt.Errorf("failed to get object storage key secret %s: %w", tlsSpec.KeySecret.Name, err)
 			}
 
 			// Set only if the cert was found, which initialized the secret
@@ -205,11 +129,8 @@ func tempoStackSecrets(ctx context.Context, k8sClient client.Client, k8sReader c
 	if objectStorageSpec := instance.Spec.GetCapabilities().GetTracing().GetStorage().GetObjectStorageSpec(); objectStorageSpec != nil {
 		if objectStorageSpec.S3 != nil {
 			accessKeySecret := &corev1.Secret{}
-			err := k8sClient.Get(ctx, client.ObjectKey{
-				Namespace: instance.Namespace,
-				Name:      objectStorageSpec.S3.AccessKeySecret.Name,
-			}, accessKeySecret)
-			if err != nil {
+			key := client.ObjectKey{Namespace: instance.Namespace, Name: objectStorageSpec.S3.AccessKeySecret.Name}
+			if err := k8sReader.Get(ctx, key, accessKeySecret); err != nil {
 				return nil, fmt.Errorf("failed to get S3 access key secret %s: %w", objectStorageSpec.S3.AccessKeySecret.Name, err)
 			}
 
@@ -236,11 +157,8 @@ func tempoStackSecrets(ctx context.Context, k8sClient client.Client, k8sReader c
 			}
 		} else if objectStorageSpec.Azure != nil {
 			accountKeySecret := &corev1.Secret{}
-			err := k8sClient.Get(ctx, client.ObjectKey{
-				Namespace: instance.Namespace,
-				Name:      objectStorageSpec.Azure.AccountKeySecret.Name,
-			}, accountKeySecret)
-			if err != nil {
+			key := client.ObjectKey{Namespace: instance.Namespace, Name: objectStorageSpec.Azure.AccountKeySecret.Name}
+			if err := k8sReader.Get(ctx, key, accountKeySecret); err != nil {
 				return nil, fmt.Errorf("failed to get Azure account key secret %s: %w", objectStorageSpec.Azure.AccountKeySecret.Name, err)
 			}
 
@@ -261,11 +179,8 @@ func tempoStackSecrets(ctx context.Context, k8sClient client.Client, k8sReader c
 			}
 		} else if objectStorageSpec.GCS != nil {
 			keyJSONSecret := &corev1.Secret{}
-			err := k8sClient.Get(ctx, client.ObjectKey{
-				Namespace: instance.Namespace,
-				Name:      objectStorageSpec.GCS.KeyJSONSecret.Name,
-			}, keyJSONSecret)
-			if err != nil {
+			key := client.ObjectKey{Namespace: instance.Namespace, Name: objectStorageSpec.GCS.KeyJSONSecret.Name}
+			if err := k8sReader.Get(ctx, key, keyJSONSecret); err != nil {
 				return nil, fmt.Errorf("failed to get GCS keyJSON secret %s: %w", objectStorageSpec.GCS.KeyJSONSecret.Name, err)
 			}
 
@@ -275,11 +190,8 @@ func tempoStackSecrets(ctx context.Context, k8sClient client.Client, k8sReader c
 			}
 		} else if objectStorageSpec.GCSWIF != nil {
 			keyJSONSecret := &corev1.Secret{}
-			err := k8sClient.Get(ctx, client.ObjectKey{
-				Namespace: instance.Namespace,
-				Name:      objectStorageSpec.GCSWIF.KeyJSONSecret.Name,
-			}, keyJSONSecret)
-			if err != nil {
+			key := client.ObjectKey{Namespace: instance.Namespace, Name: objectStorageSpec.GCSWIF.KeyJSONSecret.Name}
+			if err := k8sReader.Get(ctx, key, keyJSONSecret); err != nil {
 				return nil, fmt.Errorf("failed to get GCSWIF keyJSON secret %s: %w", objectStorageSpec.GCSWIF.KeyJSONSecret.Name, err)
 			}
 
@@ -300,19 +212,22 @@ func tempoStackSecrets(ctx context.Context, k8sClient client.Client, k8sReader c
 	}, nil
 }
 
-func uiPlugin() *uiv1alpha1.UIPlugin {
-	return &uiv1alpha1.UIPlugin{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "UIPlugin",
-			APIVersion: uiv1alpha1.GroupVersion.String(),
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "distributed-tracing",
-		},
-		Spec: uiv1alpha1.UIPluginSpec{
-			Type: uiv1alpha1.TypeDistributedTracing,
-		},
+func BuildTempoSecrets(ctx context.Context, k8sReader client.Reader, instance obsv1alpha1.ObservabilityInstaller) ([]client.Object, error) {
+	secrets, err := tempoStackSecrets(ctx, k8sReader, instance)
+	if err != nil {
+		return nil, err
 	}
+	var objects []client.Object
+	if secrets.objectStorage != nil {
+		objects = append(objects, secrets.objectStorage)
+	}
+	if secrets.objectStorageTLSSecret != nil {
+		objects = append(objects, secrets.objectStorageTLSSecret)
+	}
+	if secrets.objectStorageCAConfigMap != nil {
+		objects = append(objects, secrets.objectStorageCAConfigMap)
+	}
+	return objects, nil
 }
 
 func toTempoStorageType(objStorage *obsv1alpha1.TracingObjectStorageSpec) tempov1alpha1.ObjectStorageSecretType {

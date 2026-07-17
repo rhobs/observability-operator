@@ -1,16 +1,13 @@
 package uiplugin
 
 import (
-	"bytes"
 	"embed"
 	"fmt"
 	"hash/fnv"
-	"io"
 	"sort"
 	"strings"
 	"text/template"
 
-	"github.com/go-logr/logr"
 	osv1 "github.com/openshift/api/console/v1"
 	osRhobsv1 "github.com/rhobs/openshift-api/console/v1"
 	osv1alpha1 "github.com/rhobs/openshift-api/console/v1alpha1"
@@ -23,16 +20,13 @@ import (
 	"k8s.io/utils/ptr"
 
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
-	"github.com/rhobs/observability-operator/pkg/reconciler"
 )
 
 const (
 	port                   = 9443
 	serviceAccountSuffix   = "-sa"
 	servingCertVolumeName  = "serving-cert"
-	korrel8rName           = "korrel8r"
-	Korrel8rConfigFileName = "korrel8r.yaml"
-	Korrel8rConfigMountDir = "/config/"
+	DefaultLokiStackName   = "logging-loki"
 	OpenshiftLoggingNs     = "openshift-logging"
 	OpenshiftNetobservNs   = "netobserv"
 	OpenshiftTracingNs     = "openshift-tracing"
@@ -50,6 +44,8 @@ var (
 
 	//go:embed config/korrel8r.yaml
 	korrel8rConfigYAMLTmplFile embed.FS
+
+	korrel8rConfigTmpl = template.Must(template.ParseFS(korrel8rConfigYAMLTmplFile, "config/korrel8r.yaml"))
 )
 
 func IsVersionAheadOrEqual(currentVersion, version string) bool {
@@ -63,120 +59,6 @@ func IsVersionAheadOrEqual(currentVersion, version string) bool {
 	canonicalMinVersion := fmt.Sprintf("%s-0", semver.Canonical(version))
 
 	return semver.Compare(currentVersion, canonicalMinVersion) >= 0
-}
-
-func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPluginInfo, clusterVersion string, logger logr.Logger) []reconciler.Reconciler {
-	namespace := pluginInfo.ResourceNamespace
-
-	components := []reconciler.Reconciler{
-		reconciler.NewUpdater(newServiceAccount(pluginInfo.Name, namespace), plugin),
-		reconciler.NewUpdater(newDeployment(pluginInfo, namespace, plugin.Spec.Deployment), plugin),
-		reconciler.NewUpdater(newService(pluginInfo, namespace), plugin),
-	}
-
-	if IsVersionAheadOrEqual(clusterVersion, "v4.19") {
-		components = append(components, reconciler.NewUpdater(newConsolePlugin(pluginInfo, namespace), plugin))
-	} else if IsVersionAheadOrEqual(clusterVersion, "v4.17") {
-		components = append(components, reconciler.NewUpdater(newRhobsConsolePlugin(pluginInfo, namespace), plugin))
-	} else {
-		components = append(components, reconciler.NewUpdater(newLegacyConsolePlugin(pluginInfo, namespace), plugin))
-	}
-
-	if pluginInfo.Role != nil {
-		components = append(components, reconciler.NewUpdater(newRole(pluginInfo), plugin))
-	}
-
-	if pluginInfo.RoleBinding != nil {
-		components = append(components, reconciler.NewUpdater(newRoleBinding(pluginInfo), plugin))
-	}
-
-	if pluginInfo.ConfigMap != nil {
-		components = append(components, reconciler.NewUpdater(pluginInfo.ConfigMap, plugin))
-	}
-
-	for _, role := range pluginInfo.ClusterRoles {
-		if role != nil {
-			components = append(components, reconciler.NewUpdater(role, plugin))
-		}
-	}
-
-	for _, roleBinding := range pluginInfo.ClusterRoleBindings {
-		if roleBinding != nil {
-			components = append(components, reconciler.NewUpdater(roleBinding, plugin))
-		}
-	}
-
-	if plugin.Spec.Type == uiv1alpha1.TypeTroubleshootingPanel && pluginInfo.Korrel8rImage != "" {
-		components = append(components, reconciler.NewUpdater(newKorrel8rService(korrel8rName, namespace), plugin))
-		korrel8rCm, err := newKorrel8rConfigMap(korrel8rName, namespace, pluginInfo)
-		if err == nil && korrel8rCm != nil {
-			components = append(components, reconciler.NewUpdater(korrel8rCm, plugin))
-			components = append(components, reconciler.NewUpdater(newKorrel8rDeployment(korrel8rName, namespace, pluginInfo), plugin))
-		}
-	}
-
-	// Only add monitoring-specific components for monitoring plugins to prevent conflicts
-	// with other plugin types that shouldn't manage these resources
-	if plugin.Spec.Type == uiv1alpha1.TypeMonitoring {
-		monitoringConfig := plugin.Spec.Monitoring
-		serviceAccountName := plugin.Name + serviceAccountSuffix
-		incidentsEnabled := monitoringConfig != nil &&
-			monitoringConfig.Incidents != nil &&
-			monitoringConfig.Incidents.Enabled &&
-			pluginInfo.HealthAnalyzerImage != ""
-
-		healthAnalyzerEnabled := monitoringConfig != nil &&
-			monitoringConfig.ClusterHealthAnalyzer != nil &&
-			monitoringConfig.ClusterHealthAnalyzer.Enabled &&
-			pluginInfo.HealthAnalyzerImage != ""
-
-		deployHealthAnalyzer := incidentsEnabled || healthAnalyzerEnabled
-
-		components = append(components,
-			reconciler.NewOptionalUpdater(componentsHealthClusterRole("components-health-view"), plugin, deployHealthAnalyzer),
-			reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, serviceAccountName, "components-health-view", plugin.Name+"-"+"components-health-view"), plugin, deployHealthAnalyzer),
-			reconciler.NewOptionalUpdater(newComponentHealthConfig(namespace), plugin, deployHealthAnalyzer),
-		)
-
-		components = append(components,
-			reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, serviceAccountName, "cluster-monitoring-view", plugin.Name+"cluster-monitoring-view"), plugin, deployHealthAnalyzer),
-			reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, serviceAccountName, "system:auth-delegator", serviceAccountName+"-system-auth-delegator"), plugin, deployHealthAnalyzer),
-			reconciler.NewOptionalUpdater(newAlertManagerViewRoleBinding(serviceAccountName, namespace), plugin, deployHealthAnalyzer),
-			reconciler.NewOptionalUpdater(newHealthAnalyzerPrometheusRole(namespace), plugin, deployHealthAnalyzer),
-			reconciler.NewOptionalUpdater(newHealthAnalyzerPrometheusRoleBinding(namespace), plugin, deployHealthAnalyzer),
-			reconciler.NewOptionalUpdater(newHealthAnalyzerService(namespace), plugin, deployHealthAnalyzer),
-			reconciler.NewOptionalUpdater(newHealthAnalyzerDeployment(namespace, serviceAccountName, pluginInfo),
-				plugin, deployHealthAnalyzer),
-			reconciler.NewOptionalUpdater(newHealthAnalyzerServiceMonitor(namespace), plugin, deployHealthAnalyzer),
-		)
-
-		persesServiceAccountName := "perses" + serviceAccountSuffix
-		persesEnabled := monitoringConfig != nil && monitoringConfig.Perses != nil && monitoringConfig.Perses.Enabled
-		components = append(components,
-			reconciler.NewOptionalUpdater(newServiceAccount("perses", namespace), plugin, persesEnabled),
-			reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, persesServiceAccountName, "system:auth-delegator", persesServiceAccountName+"-system-auth-delegator"), plugin, persesEnabled),
-			reconciler.NewOptionalUpdater(newPersesClusterRole(), plugin, persesEnabled),
-			reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, persesServiceAccountName, "perses-cr", persesServiceAccountName+"-perses-cr"), plugin, persesEnabled),
-			reconciler.NewOptionalUpdater(newPerses(namespace, pluginInfo.PersesImage), plugin, persesEnabled),
-			reconciler.NewOptionalUpdater(newAcceleratorsDatasource(namespace), plugin, persesEnabled),
-		)
-
-		acceleratorsDashboard, err := newAcceleratorsDashboard(namespace)
-		if err != nil {
-			logger.Error(err, "Cannot build Accelerators dashboard")
-		} else {
-			components = append(components, reconciler.NewOptionalUpdater(acceleratorsDashboard, plugin, persesEnabled))
-		}
-
-		apmDashboard, err := newAPMDashboard(namespace)
-		if err != nil {
-			logger.Error(err, "Cannot build APM dashboard")
-		} else {
-			components = append(components, reconciler.NewOptionalUpdater(apmDashboard, plugin, persesEnabled))
-		}
-	}
-
-	return components
 }
 
 func newClusterRoleBinding(namespace string, serviceAccountName string, roleName string, name string) *rbacv1.ClusterRoleBinding {
@@ -543,176 +425,6 @@ func componentsHealthClusterRole(name string) *rbacv1.ClusterRole {
 			},
 		},
 	}
-}
-
-func newKorrel8rDeployment(name string, namespace string, info UIPluginInfo) *appsv1.Deployment {
-	volumes := []corev1.Volume{
-		{
-			Name: servingCertVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  name,
-					DefaultMode: ptr.To(int32(420)),
-				},
-			},
-		},
-	}
-	volumeMounts := []corev1.VolumeMount{
-		{
-			Name:      servingCertVolumeName,
-			ReadOnly:  true,
-			MountPath: "/secrets/",
-		},
-	}
-
-	volumes = append(volumes, corev1.Volume{
-		Name: "korrel8r-config",
-		VolumeSource: corev1.VolumeSource{
-			ConfigMap: &corev1.ConfigMapVolumeSource{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: name,
-				},
-			},
-		},
-	})
-	volumeMounts = append(volumeMounts, corev1.VolumeMount{
-		Name:      "korrel8r-config",
-		ReadOnly:  true,
-		MountPath: Korrel8rConfigMountDir,
-	})
-
-	deploy := &appsv1.Deployment{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: appsv1.SchemeGroupVersion.String(),
-			Kind:       "Deployment",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-			Labels:    componentLabels(name),
-		},
-		Spec: appsv1.DeploymentSpec{
-			Selector: &metav1.LabelSelector{
-				MatchLabels: componentLabels(name),
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      name,
-					Namespace: namespace,
-					Labels:    componentLabels(name),
-				},
-				Spec: corev1.PodSpec{
-					ServiceAccountName: info.Name + serviceAccountSuffix,
-					Containers: []corev1.Container{
-						{
-							Name:    name,
-							Image:   info.Korrel8rImage,
-							Command: []string{"korrel8r", "web", fmt.Sprintf("--https=:%d", port), "--cert=/secrets/tls.crt", "--key=/secrets/tls.key", "--config=/config/korrel8r.yaml"},
-							Ports: []corev1.ContainerPort{
-								{
-									ContainerPort: port,
-									Protocol:      corev1.ProtocolTCP,
-								},
-							},
-							SecurityContext: &corev1.SecurityContext{
-								RunAsNonRoot:             ptr.To(true),
-								AllowPrivilegeEscalation: ptr.To(false),
-								Capabilities: &corev1.Capabilities{
-									Drop: []corev1.Capability{
-										"ALL",
-									},
-								},
-								SeccompProfile: &corev1.SeccompProfile{
-									Type: corev1.SeccompProfileTypeRuntimeDefault,
-								},
-							},
-							VolumeMounts: volumeMounts,
-						},
-					},
-					Volumes: volumes,
-				},
-			},
-		},
-	}
-	return deploy
-}
-
-func newKorrel8rService(name string, namespace string) *corev1.Service {
-	annotations := map[string]string{
-		"service.beta.openshift.io/serving-cert-secret-name": name,
-	}
-
-	return &corev1.Service{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: corev1.SchemeGroupVersion.String(),
-			Kind:       "Service",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
-			Namespace:   namespace,
-			Labels:      componentLabels(name),
-			Annotations: annotations,
-		},
-		Spec: corev1.ServiceSpec{
-			Ports: []corev1.ServicePort{
-				{
-					Port:       port,
-					Name:       "web",
-					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt32(port),
-				},
-			},
-			Selector: componentLabels(name),
-			Type:     corev1.ServiceTypeClusterIP,
-		},
-	}
-}
-
-func newKorrel8rConfigMap(name string, namespace string, info UIPluginInfo) (*corev1.ConfigMap, error) {
-	korrel8rData := map[string]string{
-		"Metric":      "thanos-querier",
-		"MetricAlert": "alertmanager-main",
-		"Log":         "logging-loki-gateway-http",
-		"Netflow":     "loki-gateway-http", "Trace": "tempo-platform-gateway",
-		"MonitoringNs": reconciler.OpenshiftMonitoringNamespace,
-		"LoggingNs":    OpenshiftLoggingNs,
-		"NetobservNs":  OpenshiftNetobservNs,
-		"TracingNs":    OpenshiftTracingNs,
-	}
-
-	if info.LokiServiceNames[OpenshiftLoggingNs] != "" {
-		korrel8rData["Log"] = info.LokiServiceNames[OpenshiftLoggingNs]
-	}
-	if info.LokiServiceNames[OpenshiftNetobservNs] != "" {
-		korrel8rData["Netflow"] = info.LokiServiceNames[OpenshiftNetobservNs]
-	}
-	if info.TempoServiceNames[OpenshiftTracingNs] != "" {
-		korrel8rData["Trace"] = info.TempoServiceNames[OpenshiftTracingNs]
-	}
-
-	var korrel8rConfigYAMLTmpl = template.Must(template.ParseFS(korrel8rConfigYAMLTmplFile, "config/korrel8r.yaml"))
-	w := bytes.NewBuffer(nil)
-	err := korrel8rConfigYAMLTmpl.Execute(w, korrel8rData)
-	if err != nil {
-		return nil, err
-	}
-
-	cfg, _ := io.ReadAll(w)
-
-	return &corev1.ConfigMap{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "ConfigMap",
-			APIVersion: corev1.SchemeGroupVersion.String(),
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-			Labels:    componentLabels(name),
-		},
-		Data: map[string]string{
-			Korrel8rConfigFileName: string(cfg),
-		},
-	}, nil
 }
 
 func componentLabels(pluginName string) map[string]string {
