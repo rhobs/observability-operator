@@ -30,7 +30,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
-	"github.com/rhobs/observability-operator/pkg/reconciler"
 )
 
 type resourceManager struct {
@@ -362,16 +361,9 @@ func (rm resourceManager) registerPluginWithConsole(ctx context.Context, pluginI
 		return nil
 	}
 
-	clusterPlugins := append(cluster.Spec.Plugins, pluginInfo.ConsoleName)
-
-	// Register the plugin with the console
-	cluster.Spec.Plugins = clusterPlugins
-
-	if err := reconciler.NewMerger(cluster, pluginInfo.ConsoleName).Reconcile(ctx, rm.k8sClient, rm.scheme); err != nil {
-		return err
-	}
-
-	return nil
+	patch := client.MergeFrom(cluster.DeepCopy())
+	cluster.Spec.Plugins = append(cluster.Spec.Plugins, pluginInfo.ConsoleName)
+	return rm.k8sClient.Patch(ctx, cluster, patch)
 }
 
 func (rm resourceManager) deregisterPluginFromConsole(ctx context.Context, pluginConsoleName string) error {
@@ -384,18 +376,11 @@ func (rm resourceManager) deregisterPluginFromConsole(ctx context.Context, plugi
 		return nil
 	}
 
-	clusterPlugins := slices.DeleteFunc(cluster.Spec.Plugins, func(currentPluginName string) bool {
+	patch := client.MergeFrom(cluster.DeepCopy())
+	cluster.Spec.Plugins = slices.DeleteFunc(cluster.Spec.Plugins, func(currentPluginName string) bool {
 		return currentPluginName == pluginConsoleName
 	})
-
-	// Deregister the plugin from the console
-	cluster.Spec.Plugins = clusterPlugins
-
-	if err := reconciler.NewMerger(cluster, pluginConsoleName).Reconcile(ctx, rm.k8sClient, rm.scheme); err != nil {
-		return err
-	}
-
-	return nil
+	return rm.k8sClient.Patch(ctx, cluster, patch)
 }
 
 func (rm resourceManager) removeLegacyFinalizer(ctx context.Context, plugin *uiv1alpha1.UIPlugin) error {
