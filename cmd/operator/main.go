@@ -25,41 +25,17 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 	openshifttls "github.com/openshift/controller-runtime-common/pkg/tls"
-	obopo "github.com/rhobs/obo-prometheus-operator/pkg/operator"
 	"go.uber.org/zap/zapcore"
 	k8sflag "k8s.io/component-base/cli/flag"
-	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	"github.com/rhobs/observability-operator/pkg/images"
 	"github.com/rhobs/observability-operator/pkg/operator"
 )
 
-// The default values we use. Prometheus and Alertmanager are handled by
-// prometheus-operator. For thanos we use the default version from
-// prometheus-operator.
-var defaultImages = map[string]string{
-	"prometheus":                   "",
-	"alertmanager":                 "",
-	"thanos":                       obopo.DefaultThanosImage,
-	"ui-dashboards":                "quay.io/openshift-observability-ui/console-dashboards-plugin:v0.4.3",
-	"ui-troubleshooting-panel-pf6": "quay.io/openshift-observability-ui/troubleshooting-panel-console-plugin:v0.4.5",
-	"ui-troubleshooting-panel":     "quay.io/openshift-observability-ui/troubleshooting-panel-console-plugin:v1.0.0",
-	"ui-distributed-tracing-pf4":   "quay.io/openshift-observability-ui/distributed-tracing-console-plugin:v0.3.3",
-	"ui-distributed-tracing-pf5":   "quay.io/openshift-observability-ui/distributed-tracing-console-plugin:v0.4.3",
-	"ui-distributed-tracing-pf6":   "quay.io/openshift-observability-ui/distributed-tracing-console-plugin:v1.0.3",
-	"ui-distributed-tracing":       "quay.io/openshift-observability-ui/distributed-tracing-console-plugin:v1.1.0",
-	"ui-logging-pf4":               "quay.io/openshift-observability-ui/logging-view-plugin:v6.0.5",
-	"ui-logging-pf5":               "quay.io/openshift-observability-ui/logging-view-plugin:v6.1.6",
-	"ui-logging":                   "quay.io/openshift-observability-ui/logging-view-plugin:v6.2.1",
-	"korrel8r":                     "quay.io/korrel8r/korrel8r:0.11.1",
-	"health-analyzer":              "quay.io/openshiftanalytics/cluster-health-analyzer:v1.1.1",
-	"ui-monitoring-pf5":            "quay.io/openshift-observability-ui/monitoring-console-plugin:v0.4.5",
-	"ui-monitoring-pf6":            "quay.io/openshift-observability-ui/monitoring-console-plugin:v0.5.4",
-	"ui-monitoring":                "quay.io/openshift-observability-ui/monitoring-console-plugin:v1.0.0",
-	"perses":                       "quay.io/openshift-observability-ui/perses:v0.54.0",
-}
+var defaultImages = images.DefaultImages
 
 func imagesUsed() []string {
 	i := 0
@@ -101,7 +77,7 @@ func main() {
 
 		setupLog = ctrl.Log.WithName("setup")
 	)
-	images := k8sflag.NewMapStringString(ptr.To(make(map[string]string)))
+	images := k8sflag.NewMapStringString(new(map[string]string))
 
 	flag.StringVar(&namespace, "namespace", "default", "The namespace in which the operator runs")
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")

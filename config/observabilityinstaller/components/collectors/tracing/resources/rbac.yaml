@@ -1,0 +1,47 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: coo-otelcol-placeholder-observability-installer-name-components
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "namespaces", "nodes"]
+    verbs: ["get", "watch", "list"]
+  - apiGroups: ["apps"]
+    resources: ["replicasets"]
+    verbs: ["get", "watch", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: coo-otelcol-placeholder-observability-installer-name-components
+roleRef:
+  kind: ClusterRole
+  name: coo-otelcol-placeholder-observability-installer-name-components
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+  - kind: ServiceAccount
+    name: placeholder-observability-installer-name-collector
+    namespace: placeholder-observability-installer-namespace
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: coo-otelcol-placeholder-observability-installer-name-tempo
+rules:
+  - apiGroups: [tempo.grafana.com]
+    resources: [application]
+    resourceNames: [traces]
+    verbs: [create]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: coo-otelcol-placeholder-observability-installer-name-tempo
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: coo-otelcol-placeholder-observability-installer-name-tempo
+subjects:
+  - kind: ServiceAccount
+    name: placeholder-observability-installer-name-collector
+    namespace: placeholder-observability-installer-namespace

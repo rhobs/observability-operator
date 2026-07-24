@@ -28,6 +28,7 @@ spec:
           imagePullPolicy: Always
           args:
             - --namespace=$(NAMESPACE)
+            - --openshift.enabled
           env:
           - name: NAMESPACE
             valueFrom:
