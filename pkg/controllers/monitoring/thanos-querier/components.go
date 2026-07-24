@@ -18,15 +18,15 @@ func thanosComponentReconcilers(
 	sidecarUrls []string,
 	thanosCfg ThanosConfiguration,
 	tlsHashes map[string]string,
-) []reconciler.Reconciler {
+) ([]reconciler.Reconciler, error) {
 	name := "thanos-querier-" + thanos.Name
-	return []reconciler.Reconciler{
-		reconciler.NewUpdater(newServiceAccount(name, thanos.Namespace), thanos),
-		reconciler.NewUpdater(newThanosQuerierDeployment(name, thanos, sidecarUrls, thanosCfg, tlsHashes), thanos),
-		reconciler.NewUpdater(newService(name, thanos.Namespace), thanos),
-		reconciler.NewUpdater(newServiceMonitor(name, thanos.Namespace, thanos), thanos),
-		reconciler.NewOptionalUpdater(newHttpConfConfigMap(name, thanos), thanos, thanos.Spec.WebTLSConfig != nil),
-	}
+	b := &reconciler.ReconcilerBuilder{}
+	b.Add(reconciler.NewUpdater(newServiceAccount(name, thanos.Namespace), thanos))
+	b.Add(reconciler.NewUpdater(newThanosQuerierDeployment(name, thanos, sidecarUrls, thanosCfg, tlsHashes), thanos))
+	b.Add(reconciler.NewUpdater(newService(name, thanos.Namespace), thanos))
+	b.Add(reconciler.NewUpdater(newServiceMonitor(name, thanos.Namespace, thanos), thanos))
+	b.Add(reconciler.NewOptionalUpdater(newHttpConfConfigMap(name, thanos), thanos, thanos.Spec.WebTLSConfig != nil))
+	return b.Build()
 }
 
 func newHttpConfConfigMap(name string, thanos *msoapi.ThanosQuerier) *corev1.ConfigMap {
