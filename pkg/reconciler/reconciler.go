@@ -134,8 +134,10 @@ func NewOptionalUnmanagedUpdater(r client.Object, c metav1.Object, cond bool) Re
 // hit the runtime.Object branch and try to look up *clientObjectApplyConfig
 // in the scheme, causing "no kind is registered" errors at runtime.
 //
-// Serialisation is identical to the old applyPatch path: apply.NewRequest
-// calls json.Marshal on this wrapper, which delegates to the underlying object.
+// JSON serialisation and deserialisation both delegate to the underlying
+// object.  Marshalling is used by apply.NewRequest to build the patch body;
+// unmarshalling is used by the typed client to write the API-server response
+// back into the wrapped object (preserving resourceVersion, generation, etc.).
 type clientObjectApplyConfig struct {
 	obj client.Object
 }
@@ -164,4 +166,8 @@ func (a *clientObjectApplyConfig) GetAPIVersion() *string {
 
 func (a *clientObjectApplyConfig) MarshalJSON() ([]byte, error) {
 	return json.Marshal(a.obj)
+}
+
+func (a *clientObjectApplyConfig) UnmarshalJSON(data []byte) error {
+	return json.Unmarshal(data, a.obj)
 }
