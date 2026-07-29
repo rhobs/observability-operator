@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: korrel8r
+  labels:
+    app.kubernetes.io/instance: korrel8r
+    app.kubernetes.io/part-of: UIPlugin
+    app.kubernetes.io/managed-by: observability-operator
+data:
+  korrel8r.yaml: |
+    stores:
+      - domain: k8s
+      - domain: alert
+        metrics: https://thanos-querier.openshift-monitoring.svc:9091
+        alertmanager: https://alertmanager-main.openshift-monitoring.svc:9094
+        certificateAuthority: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+      - domain: log
+        lokiStack: https://logging-loki-gateway-http.openshift-logging.svc:8080
+        certificateAuthority: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+      - domain: metric
+        metric: https://thanos-querier.openshift-monitoring.svc:9091
+        certificateAuthority: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+      - domain: netflow
+        lokiStack: https://loki-gateway-http.netobserv.svc:8080
+        certificateAuthority: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+      - domain: trace
+        tempoStack: https://tempo-platform-gateway.openshift-tracing.svc.cluster.local:8080/api/traces/v1/platform/tempo/api/search
+        certificateAuthority: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+
+    include:
+      - /etc/korrel8r/rules/all.yaml
