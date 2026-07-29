@@ -1,6 +1,8 @@
 package util
 
 import (
+	"fmt"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -8,6 +10,11 @@ const (
 	ResourceLabel = "app.kubernetes.io/managed-by"
 	OpName        = "observability-operator"
 )
+
+// Identifier is a global identifying string of the form GVK/name.namespace
+func Identifier(obj client.Object) string {
+	return fmt.Sprintf("%s/%s.%s", obj.GetObjectKind().GroupVersionKind().String(), obj.GetName(), obj.GetNamespace())
+}
 
 func AddCommonLabels(obj client.Object, name string) client.Object {
 	labels := obj.GetLabels()
