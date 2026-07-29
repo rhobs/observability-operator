@@ -546,6 +546,14 @@ func componentsHealthClusterRole(name string) *rbacv1.ClusterRole {
 }
 
 func newKorrel8rDeployment(name string, namespace string, info UIPluginInfo) *appsv1.Deployment {
+	command := []string{"korrel8r", "web", fmt.Sprintf("--https=:%d", port), "--cert=/secrets/tls.crt", "--key=/secrets/tls.key", "--config=/config/korrel8r.yaml"}
+	if info.TLSMinVersion != "" {
+		command = append(command, fmt.Sprintf("--tls-min-version=%s", info.TLSMinVersion))
+	}
+	if len(info.TLSCiphers) > 0 {
+		command = append(command, fmt.Sprintf("--tls-cipher-suites=%s", strings.Join(info.TLSCiphers, ",")))
+	}
+
 	volumes := []corev1.Volume{
 		{
 			Name: servingCertVolumeName,
@@ -607,7 +615,7 @@ func newKorrel8rDeployment(name string, namespace string, info UIPluginInfo) *ap
 						{
 							Name:    name,
 							Image:   info.Korrel8rImage,
-							Command: []string{"korrel8r", "web", fmt.Sprintf("--https=:%d", port), "--cert=/secrets/tls.crt", "--key=/secrets/tls.key", "--config=/config/korrel8r.yaml"},
+							Command: command,
 							Ports: []corev1.ContainerPort{
 								{
 									ContainerPort: port,
