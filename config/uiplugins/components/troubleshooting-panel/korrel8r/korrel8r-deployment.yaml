@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: korrel8r
+  labels:
+    app.kubernetes.io/instance: korrel8r
+    app.kubernetes.io/part-of: UIPlugin
+    app.kubernetes.io/managed-by: observability-operator
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: korrel8r
+      app.kubernetes.io/part-of: UIPlugin
+      app.kubernetes.io/managed-by: observability-operator
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: korrel8r
+        app.kubernetes.io/part-of: UIPlugin
+        app.kubernetes.io/managed-by: observability-operator
+    spec:
+      serviceAccountName: placeholder-uiplugin-name-sa
+      containers:
+        - name: korrel8r
+          image: korrel8r:latest
+          command:
+            - korrel8r
+            - web
+            - "--https=:9443"
+            - "--cert=/secrets/tls.crt"
+            - "--key=/secrets/tls.key"
+            - "--config=/config/korrel8r.yaml"
+          ports:
+            - containerPort: 9443
+              protocol: TCP
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: serving-cert
+              readOnly: true
+              mountPath: /secrets/
+            - name: korrel8r-config
+              readOnly: true
+              mountPath: /config/
+      volumes:
+        - name: serving-cert
+          secret:
+            secretName: korrel8r
+            defaultMode: 420
+        - name: korrel8r-config
+          configMap:
+            name: korrel8r
