@@ -29,3 +29,16 @@ spec:
             accessKeySecret:
               name: minio-secret
               key: access_key_secret
+    # logging:
+    #   enabled: true
+    #   lokiStack:
+    #     size: 1x.pico
+    #     storageClassName: gp3-csi
+    #     storage:
+    #       s3:
+    #         bucket: loki
+    #         endpoint: http://minio.minio.svc:9000
+    #         accessKeyID: minio
+    #         accessKeySecret:
+    #           name: minio-secret
+    #           key: access_key_secret

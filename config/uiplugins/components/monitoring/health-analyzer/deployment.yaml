@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: health-analyzer
+  labels:
+    app.kubernetes.io/instance: health-analyzer
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/part-of: UIPlugin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: health-analyzer
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: health-analyzer
+        app.kubernetes.io/managed-by: observability-operator
+        app.kubernetes.io/part-of: UIPlugin
+    spec:
+      serviceAccountName: monitoring
+      automountServiceAccountToken: true
+      containers:
+        - name: health-analyzer
+          image: health-analyzer:latest
+          imagePullPolicy: Always
+          args:
+            - serve
+            - --tls-cert-file=/etc/tls/private/tls.crt
+            - --tls-private-key-file=/etc/tls/private/tls.key
+          env:
+            - name: PROM_URL
+              value: "https://thanos-querier.openshift-monitoring.svc.cluster.local:9091/"
+            - name: ALERTMANAGER_URL
+              value: "https://alertmanager-main.openshift-monitoring.svc.cluster.local:9094"
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
+          ports:
+            - containerPort: 8443
+              name: metrics
+          terminationMessagePolicy: FallbackToLogsOnError
+          volumeMounts:
+            - mountPath: /etc/tls/private
+              name: health-analyzer-tls
+              readOnly: true
+            - name: components-health-config
+              mountPath: /etc/config
+              readOnly: true
+      volumes:
+        - name: health-analyzer-tls
+          secret:
+            secretName: health-analyzer-tls
+        - name: components-health-config
+          configMap:
+            name: components-config

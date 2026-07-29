@@ -8,6 +8,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"slices"
@@ -26,6 +28,7 @@ import (
 
 	obsv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/observability/v1alpha1"
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
+	"github.com/rhobs/observability-operator/config"
 	"github.com/rhobs/observability-operator/pkg/controllers/observability"
 	"github.com/rhobs/observability-operator/pkg/controllers/uiplugin"
 	"github.com/rhobs/observability-operator/pkg/controllers/util"
@@ -186,34 +189,25 @@ func objectIdentity(obj client.Object) string {
 	return strings.Join([]string{gvk.Group, gvk.Kind, obj.GetNamespace(), obj.GetName()}, "/")
 }
 
-// mirrorOperatorLabels applies the same label mutation the operator's
-// reconcilers perform (util.AddCommonLabels) to the generator's output objects,
-// so the two sides can be compared on equal footing.
-//
-// Installer-origin objects are labelled with the installer name (the operator
-// uses the ObservabilityInstaller CR as the Updater owner). UIPlugin operands
-// already carry their plugin's labels; AddCommonLabels is idempotent for them.
+// mirrorOperatorLabels applies util.AddCommonLabels to installer-origin objects
+// in the generator's output so the two sides can be compared on equal footing.
+// UIPlugin operands get their labels from config manifests and are skipped.
 func mirrorOperatorLabels(t *testing.T, objects []client.Object, installers []*obsv1alpha1.ObservabilityInstaller, others []client.Object) {
 	t.Helper()
 	reader := NewFallbackReader(nil, others...)
 	ownerByIdentity := map[string]string{}
 	for _, installer := range installers {
-		installerObjects, err := observability.GenerateInstallerObjects(context.Background(), reader, reader, installer, installerOptions(), true, true)
+		cfg := observability.NewOverlayConfig(nil, installerOptions())
+		installerObjects, err := observability.ResolveInstallerObjects(context.Background(), reader, installer, cfg)
 		assert.NilError(t, err)
 		for _, obj := range installerObjects {
 			ownerByIdentity[objectIdentity(obj)] = installer.Name
 		}
 	}
 	for _, obj := range objects {
-		owner, ok := ownerByIdentity[objectIdentity(obj)]
-		if !ok {
-			owner = obj.GetLabels()["app.kubernetes.io/part-of"]
+		if owner, ok := ownerByIdentity[objectIdentity(obj)]; ok {
+			util.AddCommonLabels(obj, owner)
 		}
-		if owner == "" {
-			t.Errorf("cannot attribute owner for %s: object is neither an installer operand nor a labelled UIPlugin operand", objectIdentity(obj))
-			continue
-		}
-		util.AddCommonLabels(obj, owner)
 	}
 }
 
@@ -293,7 +287,8 @@ func TestReconcilerMatchGenerator(t *testing.T) {
 	// go through CreateUpdateReconciler and everything else through Updater.
 	for _, installer := range installers {
 		installer.UID = types.UID("parity-installer")
-		objects, err := observability.GenerateAllInstallerObjects(context.Background(), reader, reader, installer, installerOptions())
+		cfg := observability.NewOverlayConfig(nil, installerOptions())
+		objects, err := observability.ResolveInstallerObjects(context.Background(), reader, installer, cfg)
 		assert.NilError(t, err)
 		for _, obj := range objects {
 			if plugin, ok := obj.(*uiv1alpha1.UIPlugin); ok {
@@ -308,7 +303,7 @@ func TestReconcilerMatchGenerator(t *testing.T) {
 
 		var installerReconcilers []reconciler.Reconciler
 		for _, sub := range subs {
-			installerReconcilers = append(installerReconcilers, reconciler.NewCreateUpdateReconciler(sub, installer))
+			installerReconcilers = append(installerReconcilers, reconciler.NewCreateUpdateReconciler(sub.DeepCopyObject().(client.Object), installer))
 		}
 		for _, obj := range objects {
 			installerReconcilers = append(installerReconcilers, reconciler.NewUpdater(obj, installer))
@@ -328,6 +323,8 @@ func TestReconcilerMatchGenerator(t *testing.T) {
 	resolvedImages, err := images.Validate(nil)
 	assert.NilError(t, err)
 	pluginConf := uiplugin.UIPluginBuildConfig{
+		Scheme:            scheme,
+		ConfigFS:          config.FS,
 		Images:            resolvedImages,
 		Namespace:         testNamespace,
 		ClusterVersion:    testClusterVersion,
@@ -337,7 +334,7 @@ func TestReconcilerMatchGenerator(t *testing.T) {
 		if plugin.UID == "" {
 			plugin.UID = types.UID(fmt.Sprintf("parity-plugin-%s", plugin.Name))
 		}
-		pluginObjects, _, err := uiplugin.GenerateUIPluginObjects(context.Background(), plugin, pluginConf, logr.Discard())
+		pluginObjects, _, err := uiplugin.ResolvePluginObjects(plugin, pluginConf, logr.Discard())
 		assert.NilError(t, err)
 		for _, obj := range pluginObjects {
 			assert.NilError(t, reconciler.NewUpdater(obj, plugin).Reconcile(context.Background(), rec, scheme))
@@ -356,4 +353,56 @@ func TestReconcilerMatchGenerator(t *testing.T) {
 	slices.SortFunc(applied, util.CompareObjects)
 	slices.SortFunc(genObjects, util.CompareObjects)
 	assert.DeepEqual(t, genObjects, applied)
+}
+
+// TestGoldenOutput builds the generator binary, runs it on sample input, and
+// byte-compares the output against the golden expected-output.yaml.
+func TestGoldenOutput(t *testing.T) {
+	_, thisFile, _, _ := runtime.Caller(0)
+	testdataDir := filepath.Join(filepath.Dir(thisFile), "testdata", "sample")
+
+	want, err := os.ReadFile(filepath.Join(testdataDir, "expected-output.yaml"))
+	assert.NilError(t, err)
+
+	binDir := t.TempDir()
+	bin := filepath.Join(binDir, "generator")
+	build := exec.Command("go", "build", "-o", bin, "./cmd/generator")
+	build.Dir = filepath.Join(filepath.Dir(thisFile), "..", "..")
+	out, err := build.CombinedOutput()
+	assert.NilError(t, err, "building generator:\n%s", out)
+
+	cmd := exec.Command(bin, "-f", testdataDir)
+	got, err := cmd.Output()
+	if ee, ok := err.(*exec.ExitError); ok {
+		t.Fatalf("generator failed: %v\nstderr: %s", err, ee.Stderr)
+	}
+	assert.NilError(t, err)
+	assert.Equal(t, string(want), string(got))
+}
+
+// TestGoldenBuild verifies that the in-process build pipeline produces output
+// matching the golden expected-output.yaml, comparing objects semantically.
+func TestGoldenBuild(t *testing.T) {
+	_, thisFile, _, _ := runtime.Caller(0)
+	testdataDir := filepath.Join(filepath.Dir(thisFile), "testdata", "sample")
+
+	wantData, err := os.ReadFile(filepath.Join(testdataDir, "expected-output.yaml"))
+	assert.NilError(t, err)
+	want, err := decodeObjects(wantData)
+	assert.NilError(t, err)
+	slices.SortFunc(want, util.CompareObjects)
+
+	genOutput, warnings, err := Run(RunConfig{
+		Input:          []string{testdataDir},
+		Namespace:      testNamespace,
+		ClusterVersion: testClusterVersion,
+	})
+	assert.NilError(t, err)
+	assert.Equal(t, warnings, "")
+
+	got, err := decodeObjects([]byte(genOutput))
+	assert.NilError(t, err)
+	slices.SortFunc(got, util.CompareObjects)
+
+	assert.DeepEqual(t, want, got)
 }

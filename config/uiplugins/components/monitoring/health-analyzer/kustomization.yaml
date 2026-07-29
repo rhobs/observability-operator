@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - clusterrole.yaml
+  - clusterrolebinding-components-health-view.yaml
+  - clusterrolebinding-cluster-monitoring-view.yaml
+  - clusterrolebinding-system-auth-delegator.yaml
+  - rolebinding-alertmanager-view.yaml
+  - role-prometheus-k8s.yaml
+  - rolebinding-prometheus-k8s.yaml
+  - configmap.yaml
+  - deployment.yaml
+  - service.yaml
+  - servicemonitor.yaml

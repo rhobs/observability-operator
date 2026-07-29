@@ -20,7 +20,9 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"maps"
 	"os"
+	"slices"
 
 	configv1 "github.com/openshift/api/config/v1"
 	openshifttls "github.com/openshift/controller-runtime-common/pkg/tls"
@@ -58,7 +60,7 @@ func main() {
 	flag.StringVar(&namespace, "namespace", "default", "The namespace in which the operator runs")
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&healthProbeAddr, "health-probe-bind-address", ":8081", "The address the health probe endpoint binds to.")
-	flag.Var(imageOverrides, "images", fmt.Sprintf("Full images refs to use for containers managed by the operator. E.g thanos=quay.io/thanos/thanos:v0.33.0. Images used are %v", images.SortedNames()))
+	flag.Var(imageOverrides, "images", fmt.Sprintf("Full images refs to use for containers managed by the operator. E.g thanos=quay.io/thanos/thanos:v0.33.0. Images used are %v", slices.Sorted(maps.Keys(images.DefaultImages))))
 	flag.BoolVar(&openShiftEnabled, "openshift.enabled", false, "Enable OpenShift specific features such as Console Plugins.")
 	flag.StringVar(&otelCSVName, "opentelemetry-csv", "", "OpenTelemetry Operator starting CSV name. This can be used to install a specific OpenTelemetry Operator version. Empty string means the latest version will be installed.")
 	flag.StringVar(&tempoCSVName, "tempo-csv", "", "Tempo Operator starting CSV name. This can be used to install a specific Tempo Operator version. Empty string means the latest version will be installed.")

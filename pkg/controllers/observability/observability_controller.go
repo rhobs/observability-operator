@@ -98,13 +98,28 @@ func (o observabilityInstallerController) Reconcile(ctx context.Context, request
 		}
 	}
 
+	// Handle deletion: remove finalizer and let Kubernetes delete the object.
+	if instance.ObjectMeta.DeletionTimestamp != nil {
+		if controllerutil.ContainsFinalizer(instance, finalizerName) {
+			patch := client.MergeFrom(instance.DeepCopy())
+			controllerutil.RemoveFinalizer(instance, finalizerName)
+			if err := o.client.Patch(ctx, instance, patch); err != nil {
+				if apierrors.IsNotFound(err) {
+					return ctrl.Result{}, nil
+				}
+				return ctrl.Result{}, err
+			}
+		}
+		return ctrl.Result{}, nil
+	}
+
 	subs := &olmv1alpha1.SubscriptionList{}
 	// List all subscriptions to figure out if the operators are already installed
 	err = o.apiReader.List(ctx, subs, &client.ListOptions{})
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	reconcilers, err := getReconcilers(ctx, o.client, o.apiReader, instance, o.Options, operatorsStatus{
+	reconcilers, err := getReconcilers(ctx, o.apiReader, instance, o.scheme, o.Options, operatorsStatus{
 		cooNamespace: o.Options.COONamespace,
 		subs:         subs.Items,
 	})
@@ -144,22 +159,6 @@ func (o observabilityInstallerController) Reconcile(ctx context.Context, request
 					o.logger.Error(err, "Failed to watch TempoStack resources")
 				}
 			})
-		}
-	}
-
-	// We have a deletion, short circuit and let the deletion happen
-	if instance.ObjectMeta.DeletionTimestamp != nil {
-		if controllerutil.ContainsFinalizer(instance, finalizerName) {
-			// Once all finalizers have been
-			// removed, the object will be deleted.
-			patch := client.MergeFrom(instance.DeepCopy())
-			controllerutil.RemoveFinalizer(instance, finalizerName)
-			if err := o.client.Patch(ctx, instance, patch); err != nil {
-				if apierrors.IsNotFound(err) {
-					return ctrl.Result{}, nil
-				}
-				return ctrl.Result{}, err
-			}
 		}
 	}
 

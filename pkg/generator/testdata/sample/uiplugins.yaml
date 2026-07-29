@@ -11,6 +11,23 @@ spec:
 apiVersion: observability.openshift.io/v1alpha1
 kind: UIPlugin
 metadata:
+  name: dashboards
+spec:
+  type: Dashboards
+---
+apiVersion: observability.openshift.io/v1alpha1
+kind: UIPlugin
+metadata:
   name: distributed-tracing
 spec:
   type: DistributedTracing
+# ---
+# apiVersion: observability.openshift.io/v1alpha1
+# kind: UIPlugin
+# metadata:
+#   name: logging
+# spec:
+#   type: Logging
+#   logging:
+#     lokiStack:
+#       name: logging-loki

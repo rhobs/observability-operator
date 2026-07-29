@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: monitoring
+  labels:
+    app.kubernetes.io/instance: monitoring
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/part-of: UIPlugin
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: monitoring
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/instance: monitoring
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/part-of: UIPlugin
+  ports:
+    - name: backend
+      port: 9443
+      protocol: TCP
+      targetPort: 9443
+    - name: alertmanager-proxy
+      port: 9444
+      protocol: TCP
+      targetPort: 9444
+    - name: thanos-proxy
+      port: 9445
+      protocol: TCP
+      targetPort: 9445

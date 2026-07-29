@@ -372,13 +372,13 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 		if err := obsctrl.RegisterWithManager(mgr, obsctrl.Options{
 			COONamespace: cfg.ObservabilityInstaller.COONamespace,
 			OpenTelemetryOperator: obsctrl.OperatorInstallConfig{
-				Namespace:   cfg.ObservabilityInstaller.COONamespace,
+				Namespace:   "openshift-tracing",
 				PackageName: "opentelemetry-product",
 				StartingCSV: cfg.ObservabilityInstaller.OpenTelemetryCSV,
 				Channel:     "stable",
 			},
 			TempoOperator: obsctrl.OperatorInstallConfig{
-				Namespace:   cfg.ObservabilityInstaller.COONamespace,
+				Namespace:   "openshift-tracing",
 				PackageName: "tempo-product",
 				StartingCSV: cfg.ObservabilityInstaller.TempoCSV,
 				Channel:     "stable",

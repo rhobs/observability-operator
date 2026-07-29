@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: distributed-tracing
+  labels:
+    app.kubernetes.io/instance: distributed-tracing
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/part-of: UIPlugin
+spec:
+  replicas: 1
+  progressDeadlineSeconds: 300
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: distributed-tracing
+      app.kubernetes.io/managed-by: observability-operator
+      app.kubernetes.io/part-of: UIPlugin
+  template:
+    metadata:
+      name: distributed-tracing
+      labels:
+        app.kubernetes.io/instance: distributed-tracing
+        app.kubernetes.io/managed-by: observability-operator
+        app.kubernetes.io/part-of: UIPlugin
+    spec:
+      serviceAccountName: distributed-tracing
+      nodeSelector:
+        kubernetes.io/os: linux
+      restartPolicy: Always
+      dnsPolicy: ClusterFirst
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: distributed-tracing
+          image: distributed-tracing-console-plugin:latest
+          args:
+            - -port=9443
+            - -cert=/var/serving-cert/tls.crt
+            - -key=/var/serving-cert/tls.key
+            - -plugin-config-path=/etc/plugin/config/config.yaml
+          ports:
+            - containerPort: 9443
+              name: web
+          terminationMessagePolicy: FallbackToLogsOnError
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: serving-cert
+              readOnly: true
+              mountPath: /var/serving-cert
+            - name: plugin-config
+              readOnly: true
+              mountPath: /etc/plugin/config
+      volumes:
+        - name: serving-cert
+          secret:
+            secretName: distributed-tracing
+            defaultMode: 420
+        - name: plugin-config
+          configMap:
+            name: distributed-tracing

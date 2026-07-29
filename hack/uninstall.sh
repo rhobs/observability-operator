@@ -3,13 +3,9 @@
 # Uninstall observability-operator and all its managed resources from a cluster.
 # Works with both OpenShift (oc) and plain Kubernetes (kubectl).
 #
-# Usage: hack/uninstall.sh [--force]
-#   --force  Skip confirmation prompt
+# Usage: hack/uninstall.sh
 
 set -euo pipefail
-
-FORCE=false
-[[ "${1:-}" == "--force" ]] && FORCE=true
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -61,20 +57,6 @@ remove_finalizers() {
     log "Removing finalizers from $resource $*"
     $CLI patch "$resource" "$@" --type=merge -p '{"metadata":{"finalizers":null}}' 2>/dev/null || true
 }
-
-# -------------------------------------------------------------------
-# Confirmation
-# -------------------------------------------------------------------
-if [[ "$FORCE" != "true" ]]; then
-    warn "This will delete ALL observability-operator resources from the cluster:"
-    echo "  - ObservabilityInstallers, MonitoringStacks, ThanosQueriers, UIPlugins"
-    echo "  - OpenTelemetryCollectors, TempoStacks (installed by ObservabilityInstaller)"
-    echo "  - OLM Subscriptions, CSVs, CatalogSources for the operator and its dependencies"
-    echo "  - Operator deployments, CRDs, RBAC, and namespace"
-    echo ""
-    read -rp "Continue? [y/N] " answer
-    [[ "$answer" =~ ^[Yy]$ ]] || { log "Aborted."; exit 0; }
-fi
 
 # -------------------------------------------------------------------
 # Phase 1: Delete custom resources (operands first, then operator CRs)

@@ -29,6 +29,7 @@ import (
 
 	obsv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/observability/v1alpha1"
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
+	"github.com/rhobs/observability-operator/config"
 	"github.com/rhobs/observability-operator/pkg/controllers/observability"
 	"github.com/rhobs/observability-operator/pkg/controllers/uiplugin"
 	"github.com/rhobs/observability-operator/pkg/controllers/util"
@@ -146,7 +147,7 @@ func Run(cfg RunConfig) (string, string, error) {
 	// accumulate resources in set
 	set := newResourceSet(scheme)
 
-	if err := createOLMResources(cfg.Namespace, installOperators, set); err != nil {
+	if err := generateOLMResources(cfg.Namespace, installOperators, set); err != nil {
 		return "", "", fmt.Errorf("creating pre-requisite resources: %w", err)
 	}
 
@@ -154,11 +155,13 @@ func Run(cfg RunConfig) (string, string, error) {
 	reader := NewFallbackReader(cfg.K8sClient, others...)
 
 	var errs error
-	err = generateInstallerObjects(installers, installerOpts, set, reader, installOperators, installResources)
+	err = generateInstallerObjects(installers, observability.NewOverlayConfig(scheme, installerOpts), set, reader, installOperators, installResources)
 	errs = errors.Join(errs, err)
 
 	if installResources {
 		pluginConf := uiplugin.UIPluginBuildConfig{
+			Scheme:            scheme,
+			ConfigFS:          config.FS,
 			Images:            resolvedImages,
 			Namespace:         cfg.Namespace,
 			ClusterVersion:    clusterVersion,
@@ -291,11 +294,11 @@ and version from a live cluster.
 	}
 }
 
-// createOLMResources creates the Namespace and OperatorGroup.
+// generateOLMResources creates the Namespace and OperatorGroup.
 //
 // These are the only resources that are created by the generator but not by the operator.
 // For the operator they are created by OLM when the operator is installed.
-func createOLMResources(namespace string, operators bool, set *resourceSet) error {
+func generateOLMResources(namespace string, operators bool, set *resourceSet) error {
 	if namespace == "" {
 		return errors.New("COO namespace must be set")
 	}
@@ -325,7 +328,7 @@ func createOLMResources(namespace string, operators bool, set *resourceSet) erro
 }
 
 // generateInstallerObjects generates the operands of each installer and adds to set.
-func generateInstallerObjects(installers []*obsv1alpha1.ObservabilityInstaller, opts observability.Options, set *resourceSet, reader client.Reader, installOperators, installResources bool) error {
+func generateInstallerObjects(installers []*obsv1alpha1.ObservabilityInstaller, opts observability.OverlayConfig, set *resourceSet, reader client.Reader, installOperators, installResources bool) error {
 	var errs error
 
 	for _, installer := range installers {
@@ -333,7 +336,7 @@ func generateInstallerObjects(installers []*obsv1alpha1.ObservabilityInstaller, 
 			errs = errors.Join(errs, fmt.Errorf("skipping ObservabilityInstaller %q: no namespace set (use metadata.namespace or kubectl -n)", installer.Name))
 			continue
 		}
-		installerObjects, err := observability.GenerateInstallerObjects(context.Background(), reader, reader, installer, opts, installOperators, installResources)
+		installerObjects, err := observability.ResolveInstallerObjects(context.Background(), reader, installer, opts)
 		if err != nil {
 			errs = errors.Join(errs, err)
 			continue
@@ -432,9 +435,10 @@ func generateUIPluginObjects(plugins []*uiv1alpha1.UIPlugin, conf uiplugin.UIPlu
 
 	var errs error
 	for _, plugin := range plugins {
-		pluginObjects, _, err := uiplugin.GenerateUIPluginObjects(context.Background(), plugin, conf, logr.Discard())
+		pluginObjects, _, err := uiplugin.ResolvePluginObjects(plugin, conf, logr.Discard())
 		errs = errors.Join(errs, err)
 		for _, obj := range pluginObjects {
+			util.AddCommonLabels(obj, plugin.Name)
 			if err := set.AddResource(obj); err != nil {
 				errs = errors.Join(errs, err)
 			}

@@ -1,0 +1,1046 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openshift-cluster-observability-operator
+spec: {}
+status: {}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/name: coo-otelcol-sample-observability-components
+    app.kubernetes.io/part-of: sample-observability
+  name: coo-otelcol-sample-observability-components
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - namespaces
+  - nodes
+  verbs:
+  - get
+  - watch
+  - list
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
+  - watch
+  - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/name: coo-otelcol-sample-observability-tempo
+    app.kubernetes.io/part-of: sample-observability
+  name: coo-otelcol-sample-observability-tempo
+rules:
+- apiGroups:
+  - tempo.grafana.com
+  resourceNames:
+  - traces
+  resources:
+  - application
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/name: distributed-tracing-cr
+    app.kubernetes.io/part-of: distributed-tracing
+  name: distributed-tracing-cr
+rules:
+- apiGroups:
+  - tempo.grafana.com
+  resources:
+  - tempostacks
+  - tempomonolithics
+  verbs:
+  - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/name: korrel8r-view
+    app.kubernetes.io/part-of: troubleshooting-panel
+  name: korrel8r-view
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - namespaces
+  - nodes
+  - pods
+  - persistentvolumeclaims
+  - persistentvolumes
+  - replicationcontrollers
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - discovery.k8s.io
+  resources:
+  - endpointslices
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - roles
+  - rolebindings
+  - clusterroles
+  - clusterrolebindings
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  - daemonsets
+  - deployments
+  - replicasets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - batch
+  resources:
+  - cronjobs
+  - jobs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - policy
+  resources:
+  - poddisruptionbudgets
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - storageclasses
+  - volumeattachments
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - networkpolicies
+  - ingresses
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - loki.grafana.com
+  resources:
+  - application
+  - audit
+  - infrastructure
+  - network
+  verbs:
+  - get
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/name: coo-otelcol-sample-observability-components
+    app.kubernetes.io/part-of: sample-observability
+  name: coo-otelcol-sample-observability-components
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: coo-otelcol-sample-observability-components
+subjects:
+- kind: ServiceAccount
+  name: sample-observability-collector
+  namespace: sample
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/name: coo-otelcol-sample-observability-tempo
+    app.kubernetes.io/part-of: sample-observability
+  name: coo-otelcol-sample-observability-tempo
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: coo-otelcol-sample-observability-tempo
+subjects:
+- kind: ServiceAccount
+  name: sample-observability-collector
+  namespace: sample
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/name: distributed-tracing-crb
+    app.kubernetes.io/part-of: distributed-tracing
+  name: distributed-tracing-crb
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: distributed-tracing-cr
+subjects:
+- kind: ServiceAccount
+  name: distributed-tracing-sa
+  namespace: openshift-cluster-observability-operator
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/name: troubleshooting-panel-cluster-monitoring-view
+    app.kubernetes.io/part-of: troubleshooting-panel
+  name: troubleshooting-panel-cluster-monitoring-view
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-monitoring-view
+subjects:
+- kind: ServiceAccount
+  name: troubleshooting-panel-sa
+  namespace: openshift-cluster-observability-operator
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/name: troubleshooting-panel-korrel8r
+    app.kubernetes.io/part-of: troubleshooting-panel
+  name: troubleshooting-panel-korrel8r
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: korrel8r-view
+subjects:
+- kind: ServiceAccount
+  name: troubleshooting-panel-sa
+  namespace: openshift-cluster-observability-operator
+---
+apiVersion: v1
+data:
+  config.yaml: ""
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/name: distributed-tracing
+    app.kubernetes.io/part-of: distributed-tracing
+  name: distributed-tracing
+  namespace: openshift-cluster-observability-operator
+---
+apiVersion: v1
+data:
+  korrel8r.yaml: |
+    # Default configuration for deploying Korrel8r as a service in an OpenShift cluster.
+    # Store service URLs assume that stores are installed in their default locations.
+    stores:
+      - domain: k8s
+      - domain: alert
+        metrics: https://thanos-querier.openshift-monitoring.svc:9091
+        alertmanager: https://alertmanager-main.openshift-monitoring.svc:9094
+        certificateAuthority: ./run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+      - domain: log
+        lokiStack: https://logging-loki-gateway-http.openshift-logging.svc:8080
+        certificateAuthority: ./run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+      - domain: metric
+        metric: https://thanos-querier.openshift-monitoring.svc:9091
+        certificateAuthority: ./run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+      - domain: netflow
+        lokiStack: https://loki-gateway-http.netobserv.svc:8080
+        certificateAuthority: ./run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+      - domain: trace
+        tempoStack: https://tempo-sample-observability-gateway.sample.svc:8080/api/traces/v1/platform/tempo/api/search
+        certificateAuthority: ./run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+
+    include:
+      - /etc/korrel8r/rules/all.yaml
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: korrel8r
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/name: korrel8r
+    app.kubernetes.io/part-of: UIPlugin
+  name: korrel8r
+  namespace: openshift-cluster-observability-operator
+---
+apiVersion: v1
+data:
+  config.yaml: ""
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/name: troubleshooting-panel
+    app.kubernetes.io/part-of: troubleshooting-panel
+  name: troubleshooting-panel
+  namespace: openshift-cluster-observability-operator
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.alpha.openshift.io/serving-cert-secret-name: distributed-tracing
+  labels:
+    app.kubernetes.io/instance: distributed-tracing
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/name: distributed-tracing
+    app.kubernetes.io/part-of: UIPlugin
+  name: distributed-tracing
+  namespace: openshift-cluster-observability-operator
+spec:
+  ports:
+  - name: http
+    port: 9443
+    protocol: TCP
+    targetPort: 9443
+  selector:
+    app.kubernetes.io/instance: distributed-tracing
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/part-of: UIPlugin
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: korrel8r
+  labels:
+    app.kubernetes.io/instance: korrel8r
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/name: korrel8r
+    app.kubernetes.io/part-of: UIPlugin
+  name: korrel8r
+  namespace: openshift-cluster-observability-operator
+spec:
+  ports:
+  - name: web
+    port: 9443
+    protocol: TCP
+    targetPort: 9443
+  selector:
+    app.kubernetes.io/instance: korrel8r
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/part-of: UIPlugin
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.alpha.openshift.io/serving-cert-secret-name: observability-ui-dashboards
+  labels:
+    app.kubernetes.io/instance: observability-ui-dashboards
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/name: observability-ui-dashboards
+    app.kubernetes.io/part-of: UIPlugin
+  name: observability-ui-dashboards
+  namespace: openshift-cluster-observability-operator
+spec:
+  ports:
+  - name: http
+    port: 9443
+    protocol: TCP
+    targetPort: 9443
+  selector:
+    app.kubernetes.io/instance: observability-ui-dashboards
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/part-of: UIPlugin
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.alpha.openshift.io/serving-cert-secret-name: troubleshooting-panel
+  labels:
+    app.kubernetes.io/instance: troubleshooting-panel
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/name: troubleshooting-panel
+    app.kubernetes.io/part-of: UIPlugin
+  name: troubleshooting-panel
+  namespace: openshift-cluster-observability-operator
+spec:
+  ports:
+  - name: http
+    port: 9443
+    protocol: TCP
+    targetPort: 9443
+  selector:
+    app.kubernetes.io/instance: troubleshooting-panel
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/part-of: UIPlugin
+  type: ClusterIP
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/name: distributed-tracing-sa
+    app.kubernetes.io/part-of: distributed-tracing
+  name: distributed-tracing-sa
+  namespace: openshift-cluster-observability-operator
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/name: observability-ui-dashboards-sa
+    app.kubernetes.io/part-of: dashboards
+  name: observability-ui-dashboards-sa
+  namespace: openshift-cluster-observability-operator
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/name: troubleshooting-panel-sa
+    app.kubernetes.io/part-of: troubleshooting-panel
+  name: troubleshooting-panel-sa
+  namespace: openshift-cluster-observability-operator
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/instance: distributed-tracing
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/name: distributed-tracing
+    app.kubernetes.io/part-of: UIPlugin
+  name: distributed-tracing
+  namespace: openshift-cluster-observability-operator
+spec:
+  progressDeadlineSeconds: 300
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: distributed-tracing
+      app.kubernetes.io/managed-by: observability-operator
+      app.kubernetes.io/part-of: UIPlugin
+  template:
+    metadata:
+      annotations:
+        observability.openshift.io/ui-plugin-config-hash: 345ab688
+      labels:
+        app.kubernetes.io/instance: distributed-tracing
+        app.kubernetes.io/managed-by: observability-operator
+        app.kubernetes.io/part-of: UIPlugin
+      name: distributed-tracing
+    spec:
+      containers:
+      - args:
+        - -port=9443
+        - -cert=/var/serving-cert/tls.crt
+        - -key=/var/serving-cert/tls.key
+        - -plugin-config-path=/etc/plugin/config/config.yaml
+        image: quay.io/openshift-observability-ui/distributed-tracing-console-plugin:v1.1.0
+        name: distributed-tracing
+        ports:
+        - containerPort: 9443
+          name: web
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: true
+        terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+        - mountPath: /var/serving-cert
+          name: serving-cert
+          readOnly: true
+        - mountPath: /etc/plugin/config
+          name: plugin-config
+          readOnly: true
+      dnsPolicy: ClusterFirst
+      nodeSelector:
+        kubernetes.io/os: linux
+      restartPolicy: Always
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: distributed-tracing-sa
+      volumes:
+      - name: serving-cert
+        secret:
+          defaultMode: 420
+          secretName: distributed-tracing
+      - configMap:
+          name: distributed-tracing
+        name: plugin-config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/instance: korrel8r
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/name: korrel8r
+    app.kubernetes.io/part-of: UIPlugin
+  name: korrel8r
+  namespace: openshift-cluster-observability-operator
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: korrel8r
+      app.kubernetes.io/managed-by: observability-operator
+      app.kubernetes.io/part-of: UIPlugin
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: korrel8r
+        app.kubernetes.io/managed-by: observability-operator
+        app.kubernetes.io/part-of: UIPlugin
+    spec:
+      containers:
+      - command:
+        - korrel8r
+        - web
+        - --https=:9443
+        - --cert=/secrets/tls.crt
+        - --key=/secrets/tls.key
+        - --config=/config/korrel8r.yaml
+        image: quay.io/korrel8r/korrel8r:0.11.1
+        name: korrel8r
+        ports:
+        - containerPort: 9443
+          protocol: TCP
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+        volumeMounts:
+        - mountPath: /secrets/
+          name: serving-cert
+          readOnly: true
+        - mountPath: /config/
+          name: korrel8r-config
+          readOnly: true
+      serviceAccountName: troubleshooting-panel-sa
+      volumes:
+      - name: serving-cert
+        secret:
+          defaultMode: 420
+          secretName: korrel8r
+      - configMap:
+          name: korrel8r
+        name: korrel8r-config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/instance: observability-ui-dashboards
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/name: observability-ui-dashboards
+    app.kubernetes.io/part-of: UIPlugin
+  name: observability-ui-dashboards
+  namespace: openshift-cluster-observability-operator
+spec:
+  progressDeadlineSeconds: 300
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: observability-ui-dashboards
+      app.kubernetes.io/managed-by: observability-operator
+      app.kubernetes.io/part-of: UIPlugin
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: observability-ui-dashboards
+        app.kubernetes.io/managed-by: observability-operator
+        app.kubernetes.io/part-of: UIPlugin
+      name: observability-ui-dashboards
+    spec:
+      containers:
+      - args:
+        - -port=9443
+        - -cert=/var/serving-cert/tls.crt
+        - -key=/var/serving-cert/tls.key
+        image: quay.io/openshift-observability-ui/console-dashboards-plugin:v0.4.3
+        name: observability-ui-dashboards
+        ports:
+        - containerPort: 9443
+          name: web
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: true
+        terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+        - mountPath: /var/serving-cert
+          name: serving-cert
+          readOnly: true
+      dnsPolicy: ClusterFirst
+      nodeSelector:
+        kubernetes.io/os: linux
+      restartPolicy: Always
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: observability-ui-dashboards-sa
+      volumes:
+      - name: serving-cert
+        secret:
+          defaultMode: 420
+          secretName: observability-ui-dashboards
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/instance: troubleshooting-panel
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/name: troubleshooting-panel
+    app.kubernetes.io/part-of: UIPlugin
+  name: troubleshooting-panel
+  namespace: openshift-cluster-observability-operator
+spec:
+  progressDeadlineSeconds: 300
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: troubleshooting-panel
+      app.kubernetes.io/managed-by: observability-operator
+      app.kubernetes.io/part-of: UIPlugin
+  template:
+    metadata:
+      annotations:
+        observability.openshift.io/ui-plugin-config-hash: 345ab688
+      labels:
+        app.kubernetes.io/instance: troubleshooting-panel
+        app.kubernetes.io/managed-by: observability-operator
+        app.kubernetes.io/part-of: UIPlugin
+      name: troubleshooting-panel
+    spec:
+      containers:
+      - args:
+        - -port=9443
+        - -cert=/var/serving-cert/tls.crt
+        - -key=/var/serving-cert/tls.key
+        - -plugin-config-path=/etc/plugin/config/config.yaml
+        - -features=agent-navigation
+        image: quay.io/openshift-observability-ui/troubleshooting-panel-console-plugin:v1.0.0
+        name: troubleshooting-panel
+        ports:
+        - containerPort: 9443
+          name: web
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: true
+        terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+        - mountPath: /var/serving-cert
+          name: serving-cert
+          readOnly: true
+        - mountPath: /etc/plugin/config
+          name: plugin-config
+          readOnly: true
+      dnsPolicy: ClusterFirst
+      nodeSelector:
+        kubernetes.io/os: linux
+      restartPolicy: Always
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: troubleshooting-panel-sa
+      volumes:
+      - name: serving-cert
+        secret:
+          defaultMode: 420
+          secretName: troubleshooting-panel
+      - configMap:
+          name: troubleshooting-panel
+        name: plugin-config
+---
+apiVersion: console.openshift.io/v1
+kind: ConsolePlugin
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/name: console-dashboards-plugin
+    app.kubernetes.io/part-of: dashboards
+  name: console-dashboards-plugin
+  namespace: openshift-cluster-observability-operator
+spec:
+  backend:
+    service:
+      basePath: /
+      name: observability-ui-dashboards
+      namespace: openshift-cluster-observability-operator
+      port: 9443
+    type: Service
+  contentSecurityPolicy: []
+  displayName: Console Enhanced Dashboards
+  i18n:
+    loadType: Preload
+  proxy:
+  - alias: backend
+    authorization: UserToken
+    endpoint:
+      service:
+        name: observability-ui-dashboards
+        namespace: openshift-cluster-observability-operator
+        port: 9443
+      type: Service
+---
+apiVersion: console.openshift.io/v1
+kind: ConsolePlugin
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/name: distributed-tracing-console-plugin
+    app.kubernetes.io/part-of: distributed-tracing
+  name: distributed-tracing-console-plugin
+  namespace: openshift-cluster-observability-operator
+spec:
+  backend:
+    service:
+      basePath: /
+      name: distributed-tracing
+      namespace: openshift-cluster-observability-operator
+      port: 9443
+    type: Service
+  contentSecurityPolicy: []
+  displayName: Distributed Tracing Console Plugin
+  i18n:
+    loadType: Preload
+  proxy:
+  - alias: backend
+    authorization: UserToken
+    endpoint:
+      service:
+        name: tempo-sample-observability-gateway
+        namespace: sample
+        port: 8080
+      type: Service
+---
+apiVersion: console.openshift.io/v1
+kind: ConsolePlugin
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/name: troubleshooting-panel-console-plugin
+    app.kubernetes.io/part-of: troubleshooting-panel
+  name: troubleshooting-panel-console-plugin
+  namespace: openshift-cluster-observability-operator
+spec:
+  backend:
+    service:
+      basePath: /
+      name: troubleshooting-panel
+      namespace: openshift-cluster-observability-operator
+      port: 9443
+    type: Service
+  contentSecurityPolicy: []
+  displayName: Troubleshooting Panel Console Plugin
+  i18n:
+    loadType: Preload
+  proxy:
+  - alias: korrel8r
+    authorization: UserToken
+    endpoint:
+      service:
+        name: korrel8r
+        namespace: openshift-cluster-observability-operator
+        port: 9443
+      type: Service
+---
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: openshift-cluster-observability-operator
+  namespace: openshift-cluster-observability-operator
+spec: {}
+status:
+  lastUpdated: null
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/name: opentelemetry-product
+    app.kubernetes.io/part-of: sample-observability
+  name: opentelemetry-product
+  namespace: openshift-cluster-observability-operator
+spec:
+  channel: stable
+  installPlanApproval: Automatic
+  name: opentelemetry-product
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/name: tempo-product
+    app.kubernetes.io/part-of: sample-observability
+  name: tempo-product
+  namespace: openshift-cluster-observability-operator
+spec:
+  channel: stable
+  installPlanApproval: Automatic
+  name: tempo-product
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/name: korrel8r
+    app.kubernetes.io/part-of: troubleshooting-panel
+  name: korrel8r
+  namespace: openshift-cluster-observability-operator
+spec:
+  port:
+    targetPort: web
+  tls:
+    termination: reencrypt
+  to:
+    kind: Service
+    name: korrel8r
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/name: dashboards-datasource-reader
+    app.kubernetes.io/part-of: dashboards
+  name: dashboards-datasource-reader
+  namespace: openshift-config-managed
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/name: observability-ui-dashboards-rolebinding
+    app.kubernetes.io/part-of: dashboards
+  name: observability-ui-dashboards-rolebinding
+  namespace: openshift-config-managed
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: dashboards-datasource-reader
+subjects:
+- kind: ServiceAccount
+  name: observability-ui-dashboards-sa
+  namespace: openshift-cluster-observability-operator
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/name: monitoring-alertmanager-view-rolebinding
+    app.kubernetes.io/part-of: troubleshooting-panel
+  name: monitoring-alertmanager-view-rolebinding
+  namespace: openshift-monitoring
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: monitoring-alertmanager-view
+subjects:
+- kind: ServiceAccount
+  name: troubleshooting-panel-sa
+  namespace: openshift-cluster-observability-operator
+---
+apiVersion: v1
+data:
+  access_key_id: bWluaW8=
+  access_key_secret: c3VwZXJzZWNyZXQ=
+  bucket: dGVtcG8=
+  endpoint: aHR0cDovL21pbmlvLm1pbmlvLnN2Yzo5MDAw
+kind: Secret
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/name: coo-sample-observability-tempo
+    app.kubernetes.io/part-of: sample-observability
+  name: coo-sample-observability-tempo
+  namespace: sample
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/name: sample-observability
+    app.kubernetes.io/part-of: sample-observability
+  name: sample-observability
+  namespace: sample
+spec:
+  config:
+    exporters:
+      debug: {}
+      otlphttp/tempo:
+        auth:
+          authenticator: bearertokenauth
+        endpoint: https://tempo-sample-observability-gateway.sample.svc.cluster.local:8080/api/traces/v1/application
+        tls:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+          insecure: false
+          reload_interval: 5s
+    extensions:
+      bearertokenauth:
+        filename: /var/run/secrets/kubernetes.io/serviceaccount/token
+    processors:
+      batch: {}
+      k8sattributes: {}
+      memory_limiter:
+        check_interval: 1s
+        limit_percentage: 75
+        spike_limit_percentage: 25
+    receivers:
+      jaeger:
+        protocols:
+          grpc: {}
+          thrift_binary: {}
+          thrift_compact: {}
+          thrift_http: {}
+      otlp:
+        protocols:
+          grpc: {}
+          http: {}
+      zipkin: {}
+    service:
+      extensions:
+      - bearertokenauth
+      pipelines:
+        traces:
+          exporters:
+          - debug
+          - otlphttp/tempo
+          processors:
+          - memory_limiter
+          - k8sattributes
+          - batch
+          receivers:
+          - otlp
+          - jaeger
+          - zipkin
+      telemetry:
+        logs:
+          development: true
+          encoding: json
+          level: INFO
+        metrics:
+          level: detailed
+          readers:
+          - pull:
+              exporter:
+                prometheus:
+                  host: 0.0.0.0
+                  port: 8888
+  mode: deployment
+  upgradeStrategy: automatic
+---
+apiVersion: tempo.grafana.com/v1alpha1
+kind: TempoStack
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/name: sample-observability
+    app.kubernetes.io/part-of: sample-observability
+  name: sample-observability
+  namespace: sample
+spec:
+  managementState: Managed
+  storage:
+    secret:
+      credentialMode: static
+      name: coo-sample-observability-tempo
+      type: s3
+  template:
+    gateway:
+      enabled: true
+    queryFrontend:
+      jaegerQuery:
+        enabled: false
+  tenants:
+    authentication:
+    - tenantId: 1610b0c3-c509-4592-a256-a1871353dbfb
+      tenantName: application
+    mode: openshift

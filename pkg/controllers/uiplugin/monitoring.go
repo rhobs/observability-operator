@@ -8,9 +8,7 @@ import (
 	persesconfig "github.com/rhobs/perses/pkg/model/api/config"
 	"golang.org/x/mod/semver"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
@@ -173,49 +171,6 @@ func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, im
 	return pluginInfo, nil
 }
 
-func newMonitoringService(name string, namespace string) *corev1.Service {
-	annotations := map[string]string{
-		"service.beta.openshift.io/serving-cert-secret-name": name,
-	}
-
-	return &corev1.Service{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: corev1.SchemeGroupVersion.String(),
-			Kind:       "Service",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
-			Namespace:   namespace,
-			Labels:      componentLabels(name),
-			Annotations: annotations,
-		},
-		Spec: corev1.ServiceSpec{
-			Ports: []corev1.ServicePort{
-				{
-					Port:       9443,
-					Name:       "backend",
-					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt32(9443),
-				},
-				{
-					Port:       9444,
-					Name:       "alertmanager-proxy",
-					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt32(9444),
-				},
-				{
-					Port:       9445,
-					Name:       "thanos-proxy",
-					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt32(9445),
-				},
-			},
-			Selector: componentLabels(name),
-			Type:     corev1.ServiceTypeClusterIP,
-		},
-	}
-}
-
 func newPerses(namespace string, persesImage string) *persesv1alpha2.Perses {
 	name := "perses"
 	return &persesv1alpha2.Perses{
@@ -313,66 +268,7 @@ func newPerses(namespace string, persesImage string) *persesv1alpha2.Perses {
 					"service.beta.openshift.io/serving-cert-secret-name": name,
 				},
 			},
-			ServiceAccountName: ptr.To("perses" + serviceAccountSuffix),
-		},
-	}
-}
-
-func newPersesClusterRole() *rbacv1.ClusterRole {
-	return &rbacv1.ClusterRole{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: rbacv1.SchemeGroupVersion.String(),
-			Kind:       "ClusterRole",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "perses-cr",
-			Labels: map[string]string{
-				"app.kubernetes.io/managed-by": "observability-operator",
-			},
-		},
-		Rules: []rbacv1.PolicyRule{
-			{
-				APIGroups: []string{""},
-				Resources: []string{"namespaces"},
-				Verbs:     []string{"list", "get"},
-			},
-			{
-				APIGroups: []string{"perses.dev"},
-				Resources: []string{"persesdashboards", "persesdatasources", "persesglobaldatasources"},
-				Verbs:     []string{"get", "list", "watch", "create", "update", "delete", "patch"},
-			},
-			{
-				APIGroups:     []string{"security.openshift.io"},
-				Resources:     []string{"securitycontextconstraints"},
-				ResourceNames: []string{"nonroot", "nonroot-v2"},
-				Verbs:         []string{"use"},
-			},
-		},
-	}
-}
-
-func newAlertManagerViewRoleBinding(serviceAccountName, namespace string) *rbacv1.RoleBinding {
-	return &rbacv1.RoleBinding{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: rbacv1.SchemeGroupVersion.String(),
-			Kind:       "RoleBinding",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "alertmanager-view-rolebinding",
-			Namespace: "openshift-monitoring",
-		},
-		Subjects: []rbacv1.Subject{
-			{
-				APIGroup:  corev1.SchemeGroupVersion.Group,
-				Kind:      "ServiceAccount",
-				Name:      serviceAccountName,
-				Namespace: namespace,
-			},
-		},
-		RoleRef: rbacv1.RoleRef{
-			APIGroup: rbacv1.SchemeGroupVersion.Group,
-			Kind:     "Role",
-			Name:     "monitoring-alertmanager-view",
+			ServiceAccountName: ptr.To("perses"),
 		},
 	}
 }

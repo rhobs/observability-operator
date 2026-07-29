@@ -7,7 +7,6 @@ import (
 
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
@@ -35,13 +34,14 @@ func createDistributedTracingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, 
 		ConsoleName:       pluginTypeToConsoleName[plugin.Spec.Type],
 		DisplayName:       "Distributed Tracing Console Plugin",
 		ResourceNamespace: namespace,
+		TempoServiceNames: map[string]string{OpenshiftTracingNs: defaultTempoService},
 		ExtraArgs:         extraArgs,
 		Proxies: []PluginProxy{
 			{
 				Alias:            "backend",
-				ServiceName:      name,
-				ServiceNamespace: namespace,
-				ServicePort:      port,
+				ServiceName:      defaultTempoService,
+				ServiceNamespace: OpenshiftTracingNs,
+				ServicePort:      tempoPort,
 				Authorize:        true,
 			},
 		},
@@ -56,48 +56,6 @@ func createDistributedTracingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, 
 			},
 			Data: map[string]string{
 				"config.yaml": configYaml,
-			},
-		},
-		ClusterRoles: []*rbacv1.ClusterRole{
-			{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: rbacv1.SchemeGroupVersion.String(),
-					Kind:       "ClusterRole",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      plugin.Name + "-cr",
-					Namespace: namespace,
-				},
-				Rules: []rbacv1.PolicyRule{
-					{
-						APIGroups: []string{"tempo.grafana.com"},
-						Resources: []string{"tempostacks", "tempomonolithics"},
-						Verbs:     []string{"list"},
-					},
-				},
-			},
-		},
-		ClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
-			{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: rbacv1.SchemeGroupVersion.String(),
-					Kind:       "ClusterRoleBinding",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      plugin.Name + "-crb",
-					Namespace: namespace,
-				},
-				Subjects: []rbacv1.Subject{{
-					APIGroup:  corev1.SchemeGroupVersion.Group,
-					Kind:      "ServiceAccount",
-					Name:      plugin.Name + "-sa",
-					Namespace: namespace,
-				}},
-				RoleRef: rbacv1.RoleRef{
-					APIGroup: rbacv1.SchemeGroupVersion.Group,
-					Kind:     "ClusterRole",
-					Name:     plugin.Name + "-cr",
-				},
 			},
 		},
 	}

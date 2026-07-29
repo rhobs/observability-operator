@@ -214,7 +214,7 @@ func TestUIPluginUninstallCleanup(t *testing.T) {
 
 		t.Run("monitoring plugin service account is deleted", func(t *testing.T) {
 			t.Parallel()
-			assertResourceGone(t, "monitoring-sa", ns, &corev1.ServiceAccount{}, cleanupTimeout)
+			assertResourceGone(t, "monitoring", ns, &corev1.ServiceAccount{}, cleanupTimeout)
 		})
 
 		t.Run("components-health-view ClusterRole is deleted", func(t *testing.T) {

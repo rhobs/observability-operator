@@ -3,11 +3,9 @@ package images
 import (
 	"fmt"
 	"maps"
-	"slices"
 
 	obopo "github.com/rhobs/obo-prometheus-operator/pkg/operator"
 )
-
 
 // DefaultImages map of default image values.
 //
@@ -20,6 +18,7 @@ var DefaultImages = map[string]string{
 	"perses":                       "quay.io/openshift-observability-ui/perses:v0.54.0",
 	"prometheus":                   "",
 	"thanos":                       obopo.DefaultThanosImage,
+	"ui-dashboards":                "quay.io/openshift-observability-ui/console-dashboards-plugin:v0.4.3",
 	"ui-distributed-tracing":       "quay.io/openshift-observability-ui/distributed-tracing-console-plugin:v1.1.0",
 	"ui-distributed-tracing-pf4":   "quay.io/openshift-observability-ui/distributed-tracing-console-plugin:v0.3.3",
 	"ui-distributed-tracing-pf5":   "quay.io/openshift-observability-ui/distributed-tracing-console-plugin:v0.4.3",
@@ -32,11 +31,6 @@ var DefaultImages = map[string]string{
 	"ui-monitoring-pf6":            "quay.io/openshift-observability-ui/monitoring-console-plugin:v0.5.4",
 	"ui-troubleshooting-panel":     "quay.io/openshift-observability-ui/troubleshooting-panel-console-plugin:v1.0.0",
 	"ui-troubleshooting-panel-pf6": "quay.io/openshift-observability-ui/troubleshooting-panel-console-plugin:v0.4.5",
-}
-
-// SortedNames returns the sorted list of known image names.
-func SortedNames() []string {
-	return slices.Sorted(maps.Keys(DefaultImages))
 }
 
 // Validate merges the passed images with the defaults and checks if any

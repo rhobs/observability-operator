@@ -6,6 +6,8 @@ import (
 	configv1 "github.com/openshift/api/config/v1"
 	osv1 "github.com/openshift/api/console/v1"
 	operatorv1 "github.com/openshift/api/operator/v1"
+	routev1 "github.com/openshift/api/route/v1"
+	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	monitoringv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
@@ -44,6 +46,8 @@ func NewScheme(cfg *OperatorConfiguration) *runtime.Scheme {
 		utilruntime.Must(monv1.AddToScheme(scheme))
 		utilruntime.Must(persesv1alpha2.AddToScheme(scheme))
 		utilruntime.Must(olmv1alpha1.AddToScheme(scheme))
+		utilruntime.Must(olmv1.AddToScheme(scheme))
+		utilruntime.Must(routev1.AddToScheme(scheme))
 
 		if uiplugin.IsVersionAheadOrEqual(cfg.FeatureGates.OpenShift.Version, "v4.19") {
 			utilruntime.Must(osv1.Install(scheme))

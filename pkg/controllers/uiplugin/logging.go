@@ -11,7 +11,6 @@ import (
 	"github.com/go-logr/logr"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -27,15 +26,7 @@ type loggingConfig struct {
 	ShowTimezoneSelector bool          `yaml:"showTimezoneSelector,omitempty"`
 }
 
-func createLoggingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string, ctx context.Context, dk dynamic.Interface, logger logr.Logger, korrel8rImage string) (*UIPluginInfo, error) {
-	lokiStack, err := getLokiStack(plugin, ctx, dk, logger)
-	if err != nil {
-		return nil, err
-	}
-
-	lokiStackName := lokiStack.Name
-	lokiStackNamespace := lokiStack.Namespace
-
+func createLoggingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string, lokiStackName, lokiStackNamespace string) (*UIPluginInfo, error) {
 	config := plugin.Spec.Logging
 
 	configYaml, err := marshalLoggingPluginConfig(config)
@@ -61,16 +52,6 @@ func createLoggingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image
 		},
 	}
 
-	if korrel8rImage != "" {
-		proxies = append(proxies, PluginProxy{
-			Alias:            "korrel8r",
-			ServiceName:      korrel8rName,
-			ServiceNamespace: namespace,
-			ServicePort:      port,
-			Authorize:        true,
-		})
-	}
-
 	pluginInfo := &UIPluginInfo{
 		Image:             image,
 		Name:              name,
@@ -79,7 +60,6 @@ func createLoggingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image
 		ExtraArgs:         extraArgs,
 		ResourceNamespace: namespace,
 		Proxies:           proxies,
-		Korrel8rImage:     korrel8rImage,
 		ConfigMap: &corev1.ConfigMap{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: corev1.SchemeGroupVersion.String(),
@@ -92,11 +72,6 @@ func createLoggingPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image
 			Data: map[string]string{
 				"config.yaml": configYaml,
 			},
-		},
-		ClusterRoles: []*rbacv1.ClusterRole{
-			loggingClusterRole("application"),
-			loggingClusterRole("infrastructure"),
-			loggingClusterRole("audit"),
 		},
 	}
 
@@ -148,34 +123,6 @@ func parseTimeoutValue(timeout string) (time.Duration, error) {
 	}
 
 	return time.Duration(seconds) * time.Second, nil
-}
-
-func loggingClusterRole(tenant string) *rbacv1.ClusterRole {
-	return &rbacv1.ClusterRole{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: rbacv1.SchemeGroupVersion.String(),
-			Kind:       "ClusterRole",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("cluster-logging-%s-view", tenant),
-		},
-		Rules: []rbacv1.PolicyRule{
-			{
-				APIGroups: []string{
-					"loki.grafana.com",
-				},
-				Resources: []string{
-					tenant,
-				},
-				ResourceNames: []string{
-					"logs",
-				},
-				Verbs: []string{
-					"get",
-				},
-			},
-		},
-	}
 }
 
 var lokiStackResource = schema.GroupVersionResource{

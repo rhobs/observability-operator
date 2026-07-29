@@ -2,6 +2,7 @@ package util
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -12,22 +13,27 @@ const (
 	OpName        = "observability-operator"
 )
 
+// Identifier is a global identifying string of the form GVK/name.namespace
+func Identifier(obj client.Object) string {
+	return fmt.Sprintf("%s/%s.%s", obj.GetObjectKind().GroupVersionKind().String(), obj.GetName(), obj.GetNamespace())
+}
+
 func AddCommonLabels(obj client.Object, name string) client.Object {
 	labels := obj.GetLabels()
+	if labels == nil {
+		labels = make(map[string]string)
+	}
 	want := map[string]string{
 		"app.kubernetes.io/part-of": name,
 		"app.kubernetes.io/name":    obj.GetName(),
 		ResourceLabel:               OpName,
 	}
-	if labels == nil {
-		obj.SetLabels(want)
-		return obj
-	}
-	for name, val := range want {
-		if _, ok := labels[name]; !ok {
-			labels[name] = val
+	for k, v := range want {
+		if _, ok := labels[k]; !ok {
+			labels[k] = v
 		}
 	}
+	obj.SetLabels(labels)
 	return obj
 }
 
@@ -55,4 +61,3 @@ func CompareObjects(a, b client.Object) int {
 	}
 	return strings.Compare(a.GetName(), b.GetName())
 }
-
