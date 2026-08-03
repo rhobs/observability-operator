@@ -37,13 +37,7 @@ func TestGetReconcilers(t *testing.T) {
 			mockClient: func() *MockClient {
 				mockClient := &MockClient{}
 				mockClient.On("Get", context.Background(), mock.Anything, mock.IsType(&olmv1alpha1.Subscription{}), mock.Anything).Return(nil)
-				mockClient.On("Patch", context.Background(), mock.IsType(&corev1.Namespace{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Patch", context.Background(), mock.IsType(&otelv1beta1.OpenTelemetryCollector{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Patch", context.Background(), mock.IsType(&rbacv1.ClusterRole{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Patch", context.Background(), mock.IsType(&rbacv1.ClusterRoleBinding{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Patch", context.Background(), mock.IsType(&tempov1alpha1.TempoStack{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Patch", context.Background(), mock.IsType(&corev1.Secret{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Patch", context.Background(), mock.IsType(&uiv1alpha1.UIPlugin{}), mock.Anything, mock.Anything).Return(nil)
+				mockClient.On("Apply", context.Background(), mock.Anything, mock.Anything).Return(nil)
 				return mockClient
 			},
 			instance: &obsv1alpha1.ObservabilityInstaller{
@@ -70,14 +64,7 @@ func TestGetReconcilers(t *testing.T) {
 				mockClient.On("Get", context.Background(), mock.Anything, mock.IsType(&olmv1alpha1.Subscription{}), mock.Anything).Return(nil)
 				mockClient.On("Get", context.Background(), mock.Anything, mock.IsType(&corev1.Secret{}), mock.Anything).Return(nil)
 				mockClient.On("Get", context.Background(), mock.Anything, mock.IsType(&corev1.ConfigMap{}), mock.Anything).Return(nil)
-				mockClient.On("Patch", context.Background(), mock.IsType(&corev1.Namespace{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Patch", context.Background(), mock.IsType(&otelv1beta1.OpenTelemetryCollector{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Patch", context.Background(), mock.IsType(&rbacv1.ClusterRole{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Patch", context.Background(), mock.IsType(&rbacv1.ClusterRoleBinding{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Patch", context.Background(), mock.IsType(&tempov1alpha1.TempoStack{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Patch", context.Background(), mock.IsType(&corev1.Secret{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Patch", context.Background(), mock.IsType(&corev1.ConfigMap{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Patch", context.Background(), mock.IsType(&uiv1alpha1.UIPlugin{}), mock.Anything, mock.Anything).Return(nil)
+				mockClient.On("Apply", context.Background(), mock.Anything, mock.Anything).Return(nil)
 				return mockClient
 			},
 			instance: &obsv1alpha1.ObservabilityInstaller{
@@ -184,13 +171,7 @@ func TestGetReconcilers(t *testing.T) {
 			name: "tracing capability enabled, subscription already installed",
 			mockClient: func() *MockClient {
 				mockClient := &MockClient{}
-				mockClient.On("Patch", context.Background(), mock.IsType(&corev1.Namespace{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Patch", context.Background(), mock.IsType(&otelv1beta1.OpenTelemetryCollector{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Patch", context.Background(), mock.IsType(&rbacv1.ClusterRole{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Patch", context.Background(), mock.IsType(&rbacv1.ClusterRoleBinding{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Patch", context.Background(), mock.IsType(&tempov1alpha1.TempoStack{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Patch", context.Background(), mock.IsType(&corev1.Secret{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Patch", context.Background(), mock.IsType(&uiv1alpha1.UIPlugin{}), mock.Anything, mock.Anything).Return(nil)
+				mockClient.On("Apply", context.Background(), mock.Anything, mock.Anything).Return(nil)
 				return mockClient
 			},
 			instance: &obsv1alpha1.ObservabilityInstaller{
