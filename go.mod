@@ -1,6 +1,6 @@
 module github.com/rhobs/observability-operator
 
-go 1.26.3
+go 1.26.5
 
 require (
 	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
@@ -17,7 +17,7 @@ require (
 	github.com/perses/plugins/prometheus v0.57.1
 	github.com/perses/plugins/table v0.11.2
 	github.com/perses/plugins/timeserieschart v0.12.1
-	github.com/perses/spec v0.1.2
+	github.com/perses/spec v0.2.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.93.0
 	github.com/prometheus/common v0.70.1

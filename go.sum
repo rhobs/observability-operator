@@ -291,8 +291,8 @@ github.com/perses/plugins/table v0.11.2 h1:ap7odfDd54vKXcexuX/GsLENUuaQ36r8sjhmQ
 github.com/perses/plugins/table v0.11.2/go.mod h1:8JjsmBD85zlgvNcpDNoQeb5zm7BB3cKWxDoOARoq9YE=
 github.com/perses/plugins/timeserieschart v0.12.1 h1:3OxNZw8FROg2oJKgP0lLMjsG/olU27K1ppeTLX9k+CY=
 github.com/perses/plugins/timeserieschart v0.12.1/go.mod h1:xKetTjF9DYdg0wIIDjcLNddxvHfbRoxzz2Vq7XoEAHM=
-github.com/perses/spec v0.1.2 h1:yGoygcR3ZusuGDCmRMwsVXCMvMwi1qZndKV6NYNreEw=
-github.com/perses/spec v0.1.2/go.mod h1:NoGI5jmGwRdkdPgyYSZJTBL4/Py+dqIPKS2QV8NOvGE=
+github.com/perses/spec v0.2.0 h1:m/cdXVErAfjDft+dfxkfL+63Z+ggJ0sY08Wg7Q9Ruzk=
+github.com/perses/spec v0.2.0/go.mod h1:fyW8gFeaTXbF2TaE0N+iWrHtC7UZiRcT13qo+Y0ZEJM=
 github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c h1:+mdjkGKdHQG3305AYmdv1U2eRNDiU2ErMBj1gwrq8eQ=
 github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c/go.mod h1:7rwL4CYBLnjLxUqIJNnCWiEdr3bn6IUYi15bNlnbCCU=
 github.com/pkg/errors v0.8.0/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
