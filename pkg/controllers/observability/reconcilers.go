@@ -120,15 +120,27 @@ func getReconcilers(ctx context.Context, k8sClient client.Client, k8sReader clie
 	if tracing := instance.Spec.GetCapabilities().GetTracing(); tracing != nil && tracing.Enabled {
 		// install operators and instances
 		if operatorsStatus.ShouldInstall("opentelemetry") {
-			reconcilers = append(reconcilers, reconciler.NewCreateUpdateReconciler(otelSubs, instance))
+			r, err := reconciler.NewCreateUpdateReconciler(otelSubs, instance)
+			if err != nil {
+				return nil, err
+			}
+			reconcilers = append(reconcilers, r)
 			installedObjects[gvkNameIdentifier(otelSubs)] = otelSubs
 		}
 		if operatorsStatus.ShouldInstall("tempo") {
-			reconcilers = append(reconcilers, reconciler.NewCreateUpdateReconciler(tempoSubs, instance))
+			r, err := reconciler.NewCreateUpdateReconciler(tempoSubs, instance)
+			if err != nil {
+				return nil, err
+			}
+			reconcilers = append(reconcilers, r)
 			installedObjects[gvkNameIdentifier(tempoSubs)] = tempoSubs
 		}
 		for _, obj := range instanceObjects {
-			reconcilers = append(reconcilers, reconciler.NewUpdater(obj, instance))
+			r, err := reconciler.NewUpdater(obj, instance)
+			if err != nil {
+				return nil, err
+			}
+			reconcilers = append(reconcilers, r)
 			installedObjects[gvkNameIdentifier(obj)] = obj
 		}
 	}
@@ -138,11 +150,19 @@ func getReconcilers(ctx context.Context, k8sClient client.Client, k8sReader clie
 		(tracing.GetOperators().Install != nil && *tracing.GetOperators().Install) {
 		// install operators only
 		if operatorsStatus.ShouldInstall("opentelemetry") {
-			reconcilers = append(reconcilers, reconciler.NewCreateUpdateReconciler(otelSubs, instance))
+			r, err := reconciler.NewCreateUpdateReconciler(otelSubs, instance)
+			if err != nil {
+				return nil, err
+			}
+			reconcilers = append(reconcilers, r)
 			installedObjects[gvkNameIdentifier(otelSubs)] = otelSubs
 		}
 		if operatorsStatus.ShouldInstall("tempo") {
-			reconcilers = append(reconcilers, reconciler.NewCreateUpdateReconciler(tempoSubs, instance))
+			r, err := reconciler.NewCreateUpdateReconciler(tempoSubs, instance)
+			if err != nil {
+				return nil, err
+			}
+			reconcilers = append(reconcilers, r)
 			installedObjects[gvkNameIdentifier(tempoSubs)] = tempoSubs
 		}
 	}
