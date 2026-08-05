@@ -158,6 +158,7 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 			reconciler.NewOptionalUpdater(newPersesClusterRole(), plugin, persesEnabled),
 			reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, persesServiceAccountName, "perses-cr", persesServiceAccountName+"-perses-cr"), plugin, persesEnabled),
 			reconciler.NewOptionalUpdater(newPerses(namespace, pluginInfo.PersesImage), plugin, persesEnabled),
+			reconciler.NewOptionalUpdater(newPrometheusGlobalDatasource(), plugin, persesEnabled),
 			reconciler.NewOptionalUpdater(newAcceleratorsDatasource(namespace), plugin, persesEnabled),
 		)
 
