@@ -8,12 +8,13 @@ import (
 	"github.com/perses/perses/go-sdk/panel"
 	panelgroup "github.com/perses/perses/go-sdk/panel-group"
 	listvariable "github.com/perses/perses/go-sdk/variable/list-variable"
-	"github.com/perses/perses/pkg/model/api/v1/variable"
 	"github.com/perses/plugins/prometheus/sdk/go/query"
 	labelvalues "github.com/perses/plugins/prometheus/sdk/go/variable/label-values"
 	timeseries "github.com/perses/plugins/timeserieschart/sdk/go"
 	specCommon "github.com/perses/spec/go/common"
+	"github.com/perses/spec/go/dashboard/variable"
 	dsSpec "github.com/perses/spec/go/datasource"
+	specPlugin "github.com/perses/spec/go/plugin"
 	persesv1alpha2 "github.com/rhobs/perses-operator/api/v1alpha2"
 	persesv1 "github.com/rhobs/perses/pkg/model/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,7 +41,7 @@ func newAcceleratorsDatasource(namespace string) *persesv1alpha2.PersesDatasourc
 						Name: "Accelerators Datasource",
 					},
 					Default: true,
-					Plugin: specCommon.Plugin{
+					Plugin: specPlugin.Plugin{
 						Kind: "PrometheusDatasource",
 						Spec: map[string]interface{}{
 							"proxy": map[string]interface{}{
