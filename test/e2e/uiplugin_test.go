@@ -3,6 +3,7 @@ package e2e
 import (
 	"context"
 	"flag"
+	"fmt"
 	"testing"
 	"time"
 
@@ -38,6 +39,10 @@ func TestUIPlugin(t *testing.T) {
 			name:     "Cluster health analyzer",
 			scenario: clusterHealthAnalyzer,
 		},
+		{
+			name:     "Create troubleshooting-panel UIPlugin",
+			scenario: troubleshootingPanelUIPlugin,
+		},
 	}
 
 	for _, tc := range ts {
@@ -55,6 +60,26 @@ func dashboardsUIPlugin(t *testing.T) {
 	dbDeployment := appsv1.Deployment{}
 	f.GetResourceWithRetry(t, name, uiPluginInstallNS, &dbDeployment)
 	f.AssertDeploymentReady(name, uiPluginInstallNS, framework.WithTimeout(5*time.Minute))(t)
+
+	assertDeploymentContainersReadOnlyRootFilesystem(t, dbDeployment)
+}
+
+func troubleshootingPanelUIPlugin(t *testing.T) {
+	f.DumpOnFailure(t, f.DebugNamespaces(uiPluginInstallNS))
+
+	tp := newTroubleshootingPanelUIPlugin(t)
+	err := f.K8sClient.Create(t.Context(), tp)
+	assert.NilError(t, err, "failed to create a troubleshooting-panel UIPlugin")
+
+	tpDeployment := appsv1.Deployment{}
+	f.GetResourceWithRetry(t, uiv1.TroubleshootingPanelPluginName, uiPluginInstallNS, &tpDeployment)
+	f.AssertDeploymentReady(uiv1.TroubleshootingPanelPluginName, uiPluginInstallNS, framework.WithTimeout(5*time.Minute))(t)
+	assertDeploymentContainersReadOnlyRootFilesystem(t, tpDeployment)
+
+	korrel8rDeployment := appsv1.Deployment{}
+	f.GetResourceWithRetry(t, "korrel8r", uiPluginInstallNS, &korrel8rDeployment)
+	f.AssertDeploymentReady("korrel8r", uiPluginInstallNS, framework.WithTimeout(5*time.Minute))(t)
+	assertDeploymentContainersReadOnlyRootFilesystem(t, korrel8rDeployment)
 }
 
 func newDashboardsUIPlugin(t *testing.T) *uiv1.UIPlugin {
@@ -72,6 +97,39 @@ func newDashboardsUIPlugin(t *testing.T) *uiv1.UIPlugin {
 	})
 
 	return db
+}
+
+func newTroubleshootingPanelUIPlugin(t *testing.T) *uiv1.UIPlugin {
+	plugin := &uiv1.UIPlugin{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: uiv1.TroubleshootingPanelPluginName,
+		},
+		Spec: uiv1.UIPluginSpec{
+			Type: uiv1.TypeTroubleshootingPanel,
+		},
+	}
+
+	deleteUIPluginIfExists(t, plugin.Name)
+
+	f.CleanUp(t, func() {
+		ctx := context.WithoutCancel(t.Context())
+		if err := f.K8sClient.Delete(ctx, plugin); err != nil && !errors.IsNotFound(err) {
+			t.Logf("warning: failed to delete troubleshooting-panel UIPlugin during cleanup: %v", err)
+		}
+		waitForUIPluginDeletion(plugin)
+	})
+	return plugin
+}
+
+func assertDeploymentContainersReadOnlyRootFilesystem(t *testing.T, dep appsv1.Deployment) {
+	t.Helper()
+	for _, container := range dep.Spec.Template.Spec.Containers {
+		sc := container.SecurityContext
+		assert.Assert(t, sc != nil,
+			fmt.Sprintf("deployment %s/%s container %s: SecurityContext is nil", dep.Namespace, dep.Name, container.Name))
+		assert.Assert(t, sc.ReadOnlyRootFilesystem != nil && *sc.ReadOnlyRootFilesystem,
+			fmt.Sprintf("deployment %s/%s container %s: ReadOnlyRootFilesystem is not true", dep.Namespace, dep.Name, container.Name))
+	}
 }
 
 func waitForUIPluginDeletion(db *uiv1.UIPlugin) error {

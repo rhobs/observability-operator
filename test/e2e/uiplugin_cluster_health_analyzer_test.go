@@ -42,6 +42,11 @@ func clusterHealthAnalyzer(t *testing.T) {
 	haDeployment := appsv1.Deployment{}
 	f.GetResourceWithRetry(t, healthAnalyzerDeploymentName, uiPluginInstallNS, &haDeployment)
 	f.AssertDeploymentReady(healthAnalyzerDeploymentName, uiPluginInstallNS, framework.WithTimeout(5*time.Minute))(t)
+	assertDeploymentContainersReadOnlyRootFilesystem(t, haDeployment)
+
+	monitoringDeployment := appsv1.Deployment{}
+	f.GetResourceWithRetry(t, uiv1.MonitoringPluginName, uiPluginInstallNS, &monitoringDeployment)
+	assertDeploymentContainersReadOnlyRootFilesystem(t, monitoringDeployment)
 
 	// Use a unique suffix so re-runs don't conflict with leftover rules from prior executions.
 	suffix := strconv.FormatInt(time.Now().UnixNano()%100000, 10)
