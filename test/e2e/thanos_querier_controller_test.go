@@ -83,6 +83,7 @@ func singleStackWithSidecar(t *testing.T) {
 	f.GetResourceWithRetry(t, name, tq.Namespace, &thanosService)
 
 	f.AssertDeploymentReady(name, tq.Namespace, framework.WithTimeout(5*time.Minute))(t)
+	assertDeploymentContainersReadOnlyRootFilesystem(t, thanosDeployment)
 
 	var lastErr error
 	if err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {

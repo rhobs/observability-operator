@@ -412,6 +412,7 @@ func newDeployment(info UIPluginInfo, namespace string, config *uiv1alpha1.Deplo
 							TerminationMessagePolicy: "FallbackToLogsOnError",
 							SecurityContext: &corev1.SecurityContext{
 								RunAsNonRoot:             ptr.To(bool(true)),
+								ReadOnlyRootFilesystem:   ptr.To(true),
 								AllowPrivilegeEscalation: ptr.To(bool(false)),
 								Capabilities: &corev1.Capabilities{
 									Drop: []corev1.Capability{
@@ -625,6 +626,7 @@ func newKorrel8rDeployment(name string, namespace string, info UIPluginInfo) *ap
 							},
 							SecurityContext: &corev1.SecurityContext{
 								RunAsNonRoot:             ptr.To(true),
+								ReadOnlyRootFilesystem:   ptr.To(true),
 								AllowPrivilegeEscalation: ptr.To(false),
 								Capabilities: &corev1.Capabilities{
 									Drop: []corev1.Capability{
