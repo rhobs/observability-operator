@@ -43,7 +43,7 @@ metadata:
     certified: "false"
     console.openshift.io/operator-monitoring-default: "true"
     containerImage: observability-operator:1.5.0
-    createdAt: "2026-07-15T13:23:02Z"
+    createdAt: "2026-08-07T09:32:44Z"
     description: A Go based Kubernetes operator to setup and manage highly available
       Monitoring Stack using Prometheus, Alertmanager and Thanos Querier.
     operatorframework.io/cluster-monitoring: "true"
@@ -1291,6 +1291,71 @@ spec:
                   secretName: observability-operator-tls
       - label:
           app.kubernetes.io/component: controller
+          app.kubernetes.io/name: thanos-operator
+          app.kubernetes.io/part-of: observability-operator
+        name: thanos-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app.kubernetes.io/component: controller
+              app.kubernetes.io/name: thanos-operator
+              app.kubernetes.io/part-of: observability-operator
+          strategy: {}
+          template:
+            metadata:
+              annotations:
+                kubectl.kubernetes.io/default-container: thanos-operator
+              labels:
+                app.kubernetes.io/component: controller
+                app.kubernetes.io/name: thanos-operator
+                app.kubernetes.io/part-of: observability-operator
+            spec:
+              affinity:
+                nodeAffinity:
+                  preferredDuringSchedulingIgnoredDuringExecution:
+                  - preference:
+                      matchExpressions:
+                      - key: node-role.kubernetes.io/infra
+                        operator: Exists
+                    weight: 1
+              containers:
+              - args:
+                - --leader-elect
+                - --health-probe-bind-address=:8081
+                image: quay.io/thanos/thanos-operator:main-2026-07-02-e6d1790
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: 8081
+                  initialDelaySeconds: 15
+                  periodSeconds: 20
+                name: thanos-operator
+                readinessProbe:
+                  httpGet:
+                    path: /readyz
+                    port: 8081
+                  initialDelaySeconds: 5
+                  periodSeconds: 10
+                resources:
+                  limits:
+                    cpu: 500m
+                    memory: 512Mi
+                  requests:
+                    cpu: 100m
+                    memory: 128Mi
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                    - ALL
+              serviceAccountName: thanos-operator
+              tolerations:
+              - effect: NoSchedule
+                key: node-role.kubernetes.io/infra
+                operator: Exists
+      - label:
+          app.kubernetes.io/component: controller
           app.kubernetes.io/name: perses-operator
           app.kubernetes.io/part-of: observability-operator
         name: perses-operator
@@ -1363,71 +1428,6 @@ spec:
                   name: openshift-service-ca.crt
                   optional: true
                 name: openshift-service-ca
-      - label:
-          app.kubernetes.io/component: controller
-          app.kubernetes.io/name: thanos-operator
-          app.kubernetes.io/part-of: observability-operator
-        name: thanos-operator
-        spec:
-          replicas: 1
-          selector:
-            matchLabels:
-              app.kubernetes.io/component: controller
-              app.kubernetes.io/name: thanos-operator
-              app.kubernetes.io/part-of: observability-operator
-          strategy: {}
-          template:
-            metadata:
-              annotations:
-                kubectl.kubernetes.io/default-container: thanos-operator
-              labels:
-                app.kubernetes.io/component: controller
-                app.kubernetes.io/name: thanos-operator
-                app.kubernetes.io/part-of: observability-operator
-            spec:
-              affinity:
-                nodeAffinity:
-                  preferredDuringSchedulingIgnoredDuringExecution:
-                  - preference:
-                      matchExpressions:
-                      - key: node-role.kubernetes.io/infra
-                        operator: Exists
-                    weight: 1
-              containers:
-              - args:
-                - --leader-elect
-                - --health-probe-bind-address=:8081
-                image: quay.io/thanos/thanos-operator:main-2026-07-02-e6d1790
-                livenessProbe:
-                  httpGet:
-                    path: /healthz
-                    port: 8081
-                  initialDelaySeconds: 15
-                  periodSeconds: 20
-                name: thanos-operator
-                readinessProbe:
-                  httpGet:
-                    path: /readyz
-                    port: 8081
-                  initialDelaySeconds: 5
-                  periodSeconds: 10
-                resources:
-                  limits:
-                    cpu: 500m
-                    memory: 512Mi
-                  requests:
-                    cpu: 100m
-                    memory: 128Mi
-                securityContext:
-                  allowPrivilegeEscalation: false
-                  capabilities:
-                    drop:
-                    - ALL
-              serviceAccountName: thanos-operator
-              tolerations:
-              - effect: NoSchedule
-                key: node-role.kubernetes.io/infra
-                operator: Exists
       permissions:
       - rules:
         - apiGroups:
