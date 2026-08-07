@@ -12,6 +12,7 @@ import (
 	osRhobsv1 "github.com/rhobs/openshift-api/console/v1"
 	osv1alpha1 "github.com/rhobs/openshift-api/console/v1alpha1"
 	persesv1alpha2 "github.com/rhobs/perses-operator/api/v1alpha2"
+	thanosv1alpha1 "github.com/thanos-community/thanos-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -43,6 +44,7 @@ func NewScheme(cfg *OperatorConfiguration) *runtime.Scheme {
 		utilruntime.Must(corev1.AddToScheme(scheme))
 		utilruntime.Must(monv1.AddToScheme(scheme))
 		utilruntime.Must(persesv1alpha2.AddToScheme(scheme))
+		utilruntime.Must(thanosv1alpha1.AddToScheme(scheme))
 		utilruntime.Must(olmv1alpha1.AddToScheme(scheme))
 
 		if uiplugin.IsVersionAheadOrEqual(cfg.FeatureGates.OpenShift.Version, "v4.19") {
