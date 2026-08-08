@@ -308,6 +308,115 @@ func testObservabilityInstallerEmptySpec(t *testing.T) {
 	require.NoError(t, err, "ObservabilityInstaller with empty spec should be fully deleted")
 }
 
+func TestObservabilityInstallerValidation(t *testing.T) {
+	assertCRDExists(t, "observabilityinstallers.observability.openshift.io")
+
+	ctx := context.Background()
+	ns := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{GenerateName: "obs-installer-validation-"},
+	}
+	err := f.K8sClient.Create(ctx, ns)
+	require.NoError(t, err)
+	f.CleanUp(t, func() { f.K8sClient.Delete(ctx, ns) })
+
+	s3Spec := &obsv1alpha1.S3Spec{
+		Bucket:          "test-bucket",
+		Endpoint:        "test-endpoint",
+		AccessKeyID:     "test-access-key",
+		AccessKeySecret: obsv1alpha1.SecretKeySelector{Name: "test-secret", Key: "key"},
+	}
+
+	tests := []struct {
+		name        string
+		spec        obsv1alpha1.ObservabilityInstallerSpec
+		expectValid bool
+	}{
+		{
+			name: "tracing disabled - valid",
+			spec: obsv1alpha1.ObservabilityInstallerSpec{
+				Capabilities: &obsv1alpha1.CapabilitiesSpec{
+					Tracing: &obsv1alpha1.TracingSpec{
+						CommonCapabilitiesSpec: obsv1alpha1.CommonCapabilitiesSpec{Enabled: false},
+					},
+				},
+			},
+			expectValid: true,
+		},
+		{
+			name: "tracing disabled with storage - valid",
+			spec: obsv1alpha1.ObservabilityInstallerSpec{
+				Capabilities: &obsv1alpha1.CapabilitiesSpec{
+					Tracing: &obsv1alpha1.TracingSpec{
+						CommonCapabilitiesSpec: obsv1alpha1.CommonCapabilitiesSpec{Enabled: false},
+						Storage: &obsv1alpha1.TracingStorageSpec{
+							ObjectStorageSpec: &obsv1alpha1.TracingObjectStorageSpec{S3: s3Spec},
+						},
+					},
+				},
+			},
+			expectValid: true,
+		},
+		{
+			name: "tracing enabled with storage - valid",
+			spec: obsv1alpha1.ObservabilityInstallerSpec{
+				Capabilities: &obsv1alpha1.CapabilitiesSpec{
+					Tracing: &obsv1alpha1.TracingSpec{
+						CommonCapabilitiesSpec: obsv1alpha1.CommonCapabilitiesSpec{Enabled: true},
+						Storage: &obsv1alpha1.TracingStorageSpec{
+							ObjectStorageSpec: &obsv1alpha1.TracingObjectStorageSpec{S3: s3Spec},
+						},
+					},
+				},
+			},
+			expectValid: true,
+		},
+		{
+			name: "tracing enabled without storage - invalid",
+			spec: obsv1alpha1.ObservabilityInstallerSpec{
+				Capabilities: &obsv1alpha1.CapabilitiesSpec{
+					Tracing: &obsv1alpha1.TracingSpec{
+						CommonCapabilitiesSpec: obsv1alpha1.CommonCapabilitiesSpec{Enabled: true},
+					},
+				},
+			},
+			expectValid: false,
+		},
+		{
+			name: "tracing enabled with empty storage - invalid",
+			spec: obsv1alpha1.ObservabilityInstallerSpec{
+				Capabilities: &obsv1alpha1.CapabilitiesSpec{
+					Tracing: &obsv1alpha1.TracingSpec{
+						CommonCapabilitiesSpec: obsv1alpha1.CommonCapabilitiesSpec{Enabled: true},
+						Storage: &obsv1alpha1.TracingStorageSpec{
+							ObjectStorageSpec: &obsv1alpha1.TracingObjectStorageSpec{},
+						},
+					},
+				},
+			},
+			expectValid: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			installer := &obsv1alpha1.ObservabilityInstaller{
+				ObjectMeta: metav1.ObjectMeta{
+					GenerateName: "validation-",
+					Namespace:    ns.Name,
+				},
+				Spec: tt.spec,
+			}
+			err := f.K8sClient.Create(ctx, installer)
+			if tt.expectValid {
+				assert.NilError(t, err, "expected ObservabilityInstaller to be created successfully")
+				f.CleanUp(t, func() { f.K8sClient.Delete(ctx, installer) })
+			} else {
+				assert.ErrorContains(t, err, "Storage configuration is required when tracing is enabled")
+			}
+		})
+	}
+}
+
 func deployManifest(t *testing.T, manifest string) client.Object {
 	// Create an unstructured object to decode the YAML into
 	obj := &unstructured.Unstructured{}
