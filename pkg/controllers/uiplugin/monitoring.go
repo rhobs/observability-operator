@@ -164,11 +164,7 @@ func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, im
 		features = append(features, "perses-dashboards")
 		pluginInfo.PersesImage = persesImage
 	}
-	if isValidIncidentsConfig {
-		pluginInfo.HealthAnalyzerImage = healthAnalyzerImage
-		features = append(features, "incidents")
-	}
-	if isValidHealthAnalyzerConfig {
+	if isValidIncidentsConfig || isValidHealthAnalyzerConfig {
 		pluginInfo.HealthAnalyzerImage = healthAnalyzerImage
 		features = append(features, "cluster-health-analyzer")
 	}
