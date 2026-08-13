@@ -192,6 +192,19 @@ func getLokiStack(plugin *uiv1alpha1.UIPlugin, ctx context.Context, client dynam
 		searchNamespace = config.LokiStack.Namespace
 	}
 
+	// A nil dynamic client (e.g. offline generation) falls back to the
+	// configured LokiStack name, or the default LokiStack.
+	if client == nil {
+		name := "loki-stack"
+		if config != nil && config.LokiStack != nil && config.LokiStack.Name != "" {
+			name = config.LokiStack.Name
+		}
+		return &types.NamespacedName{
+			Name:      name,
+			Namespace: searchNamespace,
+		}, nil
+	}
+
 	if config != nil && config.LokiStack != nil && config.LokiStack.Name != "" {
 		lokiStack, err := client.Resource(lokiStackResource).Namespace(searchNamespace).Get(ctx, config.LokiStack.Name, metav1.GetOptions{})
 		if err != nil {

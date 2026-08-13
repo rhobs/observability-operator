@@ -118,6 +118,10 @@ operator: generate build
 build:
 	go build -o ./tmp/operator ./cmd/operator/...
 
+.PHONY: generator
+generator:
+	go build -o ./tmp/generator ./cmd/generator/...
+
 .PHONY: operator-image
 operator-image: generate
 	$(CONTAINER_RUNTIME) build -f build/Dockerfile . -t $(OPERATOR_IMG)
