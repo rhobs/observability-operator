@@ -28,6 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
+	obsv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/observability/v1alpha1"
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 )
 
@@ -45,6 +46,9 @@ type UIPluginsConfiguration struct {
 	Images             map[string]string
 	ResourcesNamespace string
 	TLSProfile         configv1.TLSProfileSpec
+	Installers         []obsv1alpha1.ObservabilityInstaller
+	LokiServiceNames   map[string]string
+	TempoServiceNames  map[string]string
 }
 
 type Options struct {
@@ -254,7 +258,19 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, nil
 	}
 
-	pluginInfo, pluginInfoErr := PluginInfoBuilder(ctx, rm.k8sClient, rm.k8sDynamicClient, plugin, rm.pluginConf, compatibilityInfo, rm.clusterVersion, rm.logger)
+	pluginConf := rm.pluginConf
+	var installerList obsv1alpha1.ObservabilityInstallerList
+	if err := rm.k8sClient.List(ctx, &installerList); err != nil {
+		logger.V(6).Info("cannot list ObservabilityInstallers", "err", err)
+	}
+	pluginConf.Installers = installerList.Items
+	pluginConf.TempoServiceNames = map[string]string{}
+	pluginConf.TempoServiceNames[OpenshiftTracingNs], _ = getTempoServiceName(ctx, rm.k8sClient, OpenshiftTracingNs)
+	pluginConf.LokiServiceNames = map[string]string{}
+	pluginConf.LokiServiceNames[OpenshiftLoggingNs], _ = getLokiServiceName(ctx, rm.k8sClient, OpenshiftLoggingNs)
+	pluginConf.LokiServiceNames[OpenshiftNetobservNs], _ = getLokiServiceName(ctx, rm.k8sClient, OpenshiftNetobservNs)
+
+	pluginInfo, pluginInfoErr := PluginInfoBuilder(ctx, rm.k8sClient, rm.k8sDynamicClient, plugin, pluginConf, rm.clusterVersion, rm.logger)
 
 	if pluginInfo != nil {
 		reconcilers := pluginComponentReconcilers(plugin, *pluginInfo, rm.clusterVersion, rm.logger)

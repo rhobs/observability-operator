@@ -33,6 +33,10 @@ func (r createUpdateReconciler) Reconcile(ctx context.Context, c client.Client, 
 	return err
 }
 
+func (r createUpdateReconciler) Desired() []client.Object {
+	return []client.Object{r.resource}
+}
+
 func NewCreateUpdateReconciler(resource client.Object, owner metav1.Object) Reconciler {
 	return createUpdateReconciler{
 		resourceOwner: owner,

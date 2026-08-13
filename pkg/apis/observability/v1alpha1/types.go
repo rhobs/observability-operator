@@ -137,10 +137,11 @@ func (c *CommonCapabilitiesSpec) GetOperators() *OperatorsSpec {
 }
 
 // OperatorsSpec defines the operators installation.
+
 type OperatorsSpec struct {
 	// Install indicates whether the operator(s) used by the capability should be installed via OLM.
-	// When the capability is enabled, the install is set to true, otherwise it is set to false.
-	// This field can be used to install the operator(s) without installing any operands.
+	// Defaults to true if capability is enabled, false if not.
+	// Can be set explicitly to install the operator(s) without deploying operands or vice-versa.
 	// +optional
 	// +kubebuilder:validation:Optional
 	Install *bool `json:"install,omitempty"`
