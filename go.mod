@@ -19,7 +19,7 @@ require (
 	github.com/perses/plugins/timeserieschart v0.13.0
 	github.com/perses/spec v0.2.0
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.91.0
+	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.93.1
 	github.com/prometheus/common v0.70.1
 	github.com/rhobs/obo-prometheus-operator v0.93.1-rhobs1
 	github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.93.1-rhobs1
