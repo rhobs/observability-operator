@@ -37,6 +37,9 @@ var pluginConfigAll = &uiv1alpha1.UIPlugin{
 			Incidents: &uiv1alpha1.IncidentsReference{
 				Enabled: true,
 			},
+			ClusterHealthAnalyzer: &uiv1alpha1.ClusterHealthAnalyzerReference{
+				Enabled: true,
+			},
 		},
 	},
 }
@@ -175,6 +178,24 @@ var pluginConfigIncidents = &uiv1alpha1.UIPlugin{
 	},
 }
 
+var pluginConfigClusterHealthAnalyzer = &uiv1alpha1.UIPlugin{
+	TypeMeta: metav1.TypeMeta{
+		APIVersion: "observability.openshift.io/v1alpha1",
+		Kind:       "UIPlugin",
+	},
+	ObjectMeta: metav1.ObjectMeta{
+		Name: "monitoring-plugin",
+	},
+	Spec: uiv1alpha1.UIPluginSpec{
+		Type: "monitoring",
+		Monitoring: &uiv1alpha1.MonitoringConfig{
+			ClusterHealthAnalyzer: &uiv1alpha1.ClusterHealthAnalyzerReference{
+				Enabled: true,
+			},
+		},
+	},
+}
+
 var pluginMalformed = &uiv1alpha1.UIPlugin{
 	TypeMeta: metav1.TypeMeta{
 		APIVersion: "observability.openshift.io/v1alpha1",
@@ -190,9 +211,10 @@ var pluginMalformed = &uiv1alpha1.UIPlugin{
 }
 
 type featureFlagsStatus struct {
-	acmAlerting bool
-	perses      bool
-	incidents   bool
+	acmAlerting           bool
+	perses                bool
+	incidents             bool
+	clusterHealthAnalyzer bool
 }
 
 func containsFeatureFlag(pluginInfo *UIPluginInfo) featureFlagsStatus {
@@ -226,6 +248,8 @@ func containsFeatureFlag(pluginInfo *UIPluginInfo) featureFlagsStatus {
 			status.perses = true
 		case "incidents":
 			status.incidents = true
+		case "cluster-health-analyzer":
+			status.clusterHealthAnalyzer = true
 		}
 	}
 	return status
@@ -278,8 +302,8 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 	featuresForTest := []string{}
 
 	type expectedComponents struct {
-		persesImage    bool
-		healthAnalyzer bool
+		persesImage           bool
+		clusterHealthAnalyzer bool
 	}
 
 	type testCase struct {
@@ -302,13 +326,14 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 				perses:       true,
 			},
 			featureFlags: featureFlagsStatus{
-				acmAlerting: true,
-				perses:      true,
-				incidents:   true,
+				acmAlerting:           true,
+				perses:                true,
+				clusterHealthAnalyzer: true,
+				incidents:             false,
 			},
 			components: expectedComponents{
-				persesImage:    true,
-				healthAnalyzer: true,
+				persesImage:           true,
+				clusterHealthAnalyzer: true,
 			},
 			clusterVersionsToTest: []string{"v4.19"},
 		},
@@ -321,13 +346,14 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 				perses:       true,
 			},
 			featureFlags: featureFlagsStatus{
-				acmAlerting: true,
-				perses:      true,
-				incidents:   false, // Differs for v4.18
+				acmAlerting:           true,
+				perses:                true,
+				clusterHealthAnalyzer: false, // Differs for v4.18
+				incidents:             false,
 			},
 			components: expectedComponents{
-				persesImage:    true,
-				healthAnalyzer: false, // Differs for v4.18
+				persesImage:           true,
+				clusterHealthAnalyzer: false, // Differs for v4.18
 			},
 			clusterVersionsToTest: []string{"v4.18"},
 		},
@@ -340,13 +366,14 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 				perses:       false,
 			},
 			featureFlags: featureFlagsStatus{
-				acmAlerting: true,
-				perses:      false,
-				incidents:   false,
+				acmAlerting:           true,
+				perses:                false,
+				clusterHealthAnalyzer: false,
+				incidents:             false,
 			},
 			components: expectedComponents{
-				persesImage:    false,
-				healthAnalyzer: false,
+				persesImage:           false,
+				clusterHealthAnalyzer: false,
 			},
 			clusterVersionsToTest: []string{"v4.19", "v4.18"},
 		},
@@ -359,13 +386,14 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 				perses:       true,
 			},
 			featureFlags: featureFlagsStatus{
-				acmAlerting: false,
-				perses:      true,
-				incidents:   false,
+				acmAlerting:           false,
+				perses:                true,
+				clusterHealthAnalyzer: false,
+				incidents:             false,
 			},
 			components: expectedComponents{
-				persesImage:    true,
-				healthAnalyzer: false,
+				persesImage:           true,
+				clusterHealthAnalyzer: false,
 			},
 			clusterVersionsToTest: []string{"v4.19", "v4.18"},
 		},
@@ -378,13 +406,14 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 				perses:       true,
 			},
 			featureFlags: featureFlagsStatus{
-				acmAlerting: false,
-				perses:      true,
-				incidents:   false,
+				acmAlerting:           false,
+				perses:                true,
+				clusterHealthAnalyzer: false,
+				incidents:             false,
 			},
 			components: expectedComponents{
-				persesImage:    true,
-				healthAnalyzer: false,
+				persesImage:           true,
+				clusterHealthAnalyzer: false,
 			},
 			clusterVersionsToTest: []string{"v4.19", "v4.18"},
 		},
@@ -403,13 +432,34 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 				perses:       false,
 			},
 			featureFlags: featureFlagsStatus{
-				acmAlerting: false,
-				perses:      false,
-				incidents:   true,
+				acmAlerting:           false,
+				perses:                false,
+				clusterHealthAnalyzer: true,
+				incidents:             false,
 			},
 			components: expectedComponents{
-				persesImage:    false,
-				healthAnalyzer: true,
+				persesImage:           false,
+				clusterHealthAnalyzer: true,
+			},
+			clusterVersionsToTest: []string{"v4.19"},
+		},
+		{
+			name:         "ClusterHealthAnalyzer configuration only",
+			pluginConfig: pluginConfigClusterHealthAnalyzer,
+			proxies: proxiesStatus{
+				alertmanager: false,
+				thanos:       false,
+				perses:       false,
+			},
+			featureFlags: featureFlagsStatus{
+				acmAlerting:           false,
+				perses:                false,
+				clusterHealthAnalyzer: true,
+				incidents:             false,
+			},
+			components: expectedComponents{
+				persesImage:           false,
+				clusterHealthAnalyzer: true,
 			},
 			clusterVersionsToTest: []string{"v4.19"},
 		},
@@ -438,9 +488,10 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 				actualFlags := containsFeatureFlag(pluginInfo)
 				assert.Equal(t, actualFlags.acmAlerting, tc.featureFlags.acmAlerting, "ACM alerting flag mismatch")
 				assert.Equal(t, actualFlags.perses, tc.featureFlags.perses, "Perses flag mismatch")
+				assert.Equal(t, actualFlags.clusterHealthAnalyzer, tc.featureFlags.clusterHealthAnalyzer, "Incidents flag mismatch")
 				assert.Equal(t, actualFlags.incidents, tc.featureFlags.incidents, "Incidents flag mismatch")
 
-				assert.Equal(t, containsHealthAnalyzer(pluginInfo), tc.components.healthAnalyzer, "Health analyzer mismatch")
+				assert.Equal(t, containsHealthAnalyzer(pluginInfo), tc.components.clusterHealthAnalyzer, "Health analyzer mismatch")
 				assert.Equal(t, containsPerses(pluginInfo), tc.components.persesImage, "Perses image mismatch")
 			})
 		}
