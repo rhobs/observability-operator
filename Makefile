@@ -115,8 +115,12 @@ generate: generate-crds generate-deepcopy generate-kustomize generate-package-re
 operator: generate build
 
 .PHONY: build
-build:
+build: must-gather
 	go build -o ./tmp/operator ./cmd/operator/...
+
+.PHONY: must-gather
+must-gather:
+	go build -o ./tmp/gather ./must-gather/cmd
 
 .PHONY: operator-image
 operator-image: generate
