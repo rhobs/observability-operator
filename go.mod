@@ -8,7 +8,7 @@ require (
 	github.com/goccy/go-yaml v1.19.2
 	github.com/google/go-cmp v0.7.0
 	github.com/grafana/tempo-operator v0.21.0
-	github.com/open-telemetry/opentelemetry-operator/apis v0.156.0
+	github.com/open-telemetry/opentelemetry-operator/apis v0.157.0
 	github.com/openshift/api v0.0.0-20260511191110-9b69e5fa27e9
 	github.com/openshift/controller-runtime-common v0.0.0-20260318085703-1812aed6dbd2
 	github.com/openshift/library-go v0.0.0-20260512121938-431f18311e77
