@@ -64,6 +64,13 @@ generate-perses-op-crds: $(CONTROLLER_GEN)
 		output:dir=. \
 		output:crd:dir=./deploy/perses/crds
 
+.PHONY: generate-thanos-op-crds
+generate-thanos-op-crds: $(CONTROLLER_GEN)
+	$(CONTROLLER_GEN) crd:ignoreUnexportedFields=true,maxDescLen=0 \
+		paths=github.com/thanos-community/thanos-operator/api/... \
+		output:dir=. \
+		output:crd:dir=./deploy/thanos/crds
+
 .PHONY: generate-crds
 generate-crds: $(CONTROLLER_GEN) generate-prom-op-crds
 	$(CONTROLLER_GEN) crd \

@@ -153,6 +153,31 @@ spec:
         kind: PersesGlobalDatasource
         name: persesglobaldatasources.perses.dev
         version: v1alpha2
+      - description: ThanosQuery deploys a Thanos Querier
+        displayName: Thanos Query
+        kind: ThanosQuery
+        name: thanosqueries.monitoring.thanos.io
+        version: v1alpha1
+      - description: ThanosReceive deploys a Thanos Receive component
+        displayName: Thanos Receive
+        kind: ThanosReceive
+        name: thanosreceives.monitoring.thanos.io
+        version: v1alpha1
+      - description: ThanosCompact deploys a Thanos Compactor
+        displayName: Thanos Compact
+        kind: ThanosCompact
+        name: thanoscompacts.monitoring.thanos.io
+        version: v1alpha1
+      - description: ThanosStore deploys a Thanos Store Gateway
+        displayName: Thanos Store
+        kind: ThanosStore
+        name: thanosstores.monitoring.thanos.io
+        version: v1alpha1
+      - description: ThanosRuler deploys a Thanos Ruler
+        displayName: Thanos Ruler
+        kind: ThanosRuler
+        name: thanosrulers.monitoring.thanos.io
+        version: v1alpha1
   description: >+
 
     Observability Operator is a Go based Kubernetes operator to setup and
