@@ -5396,7 +5396,7 @@ UIPluginSpec is the specification for desired state of UIPlugin.
         <td>
           Type defines the UI plugin.<br/>
           <br/>
-            <i>Enum</i>: Dashboards, TroubleshootingPanel, DistributedTracing, Logging, Monitoring<br/>
+            <i>Enum</i>: TroubleshootingPanel, DistributedTracing, Logging, Monitoring<br/>
         </td>
         <td>true</td>
       </tr><tr>

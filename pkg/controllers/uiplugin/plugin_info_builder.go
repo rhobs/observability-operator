@@ -38,6 +38,8 @@ type UIPluginInfo struct {
 }
 
 var pluginTypeToConsoleName = map[uiv1alpha1.UIPluginType]string{
+	// Deprecated: retained for console deregistration during cleanup of existing Dashboards CRs.
+	//nolint:staticcheck
 	uiv1alpha1.TypeDashboards:           "console-dashboards-plugin",
 	uiv1alpha1.TypeTroubleshootingPanel: "troubleshooting-panel-console-plugin",
 	uiv1alpha1.TypeDistributedTracing:   "distributed-tracing-console-plugin",
@@ -61,12 +63,6 @@ func PluginInfoBuilder(ctx context.Context, k client.Client, dk dynamic.Interfac
 	var err error
 
 	switch plugin.Spec.Type {
-	case uiv1alpha1.TypeDashboards:
-		pluginInfo, err = createDashboardsPluginInfo(plugin, namespace, plugin.Name, image)
-		if err != nil {
-			return nil, err
-		}
-
 	case uiv1alpha1.TypeTroubleshootingPanel:
 		pluginInfo, err = createTroubleshootingPanelPluginInfo(plugin, namespace, plugin.Name, image, []string{}, clusterVersion, logger)
 		if err != nil {

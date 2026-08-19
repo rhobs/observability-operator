@@ -53,27 +53,6 @@ func TestLookupImageAndFeatures(t *testing.T) {
 		supportLevel     SupportLevel
 	}{
 		{
-			pluginType:     uiv1alpha1.TypeDashboards,
-			clusterVersion: "4.10",
-			expectedKey:    "",
-			expectedErr:    fmt.Errorf("dynamic plugins not supported before 4.11"),
-			supportLevel:   "",
-		},
-		{
-			pluginType:     uiv1alpha1.TypeDashboards,
-			clusterVersion: "4.11",
-			expectedKey:    "ui-dashboards",
-			expectedErr:    nil,
-			supportLevel:   DevPreview,
-		},
-		{
-			pluginType:     uiv1alpha1.TypeDashboards,
-			clusterVersion: "4.24.0-0.nightly-2024-03-11-200348",
-			expectedKey:    "ui-dashboards",
-			expectedErr:    nil,
-			supportLevel:   DevPreview,
-		},
-		{
 			pluginType:     uiv1alpha1.TypeLogging,
 			clusterVersion: "4.13",
 			expectedKey:    "ui-logging-pf4",

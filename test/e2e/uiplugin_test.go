@@ -31,10 +31,6 @@ func TestUIPlugin(t *testing.T) {
 
 	ts := []testCase{
 		{
-			name:     "Create dashboards UIPlugin",
-			scenario: dashboardsUIPlugin,
-		},
-		{
 			name:     "Cluster health analyzer",
 			scenario: clusterHealthAnalyzer,
 		},
@@ -47,18 +43,6 @@ func TestUIPlugin(t *testing.T) {
 	for _, tc := range ts {
 		t.Run(tc.name, tc.scenario)
 	}
-}
-
-func dashboardsUIPlugin(t *testing.T) {
-	f.DumpOnFailure(t, f.DebugNamespaces(uiPluginInstallNS))
-	db := newDashboardsUIPlugin(t)
-	err := f.K8sClient.Create(context.Background(), db)
-	assert.NilError(t, err, "failed to create a dashboards UIPlugin")
-	// Check deploy observability-ui-dashboards ius ready
-	name := "observability-ui-dashboards"
-	dbDeployment := appsv1.Deployment{}
-	f.GetResourceWithRetry(t, name, uiPluginInstallNS, &dbDeployment)
-	f.AssertDeploymentReady(name, uiPluginInstallNS, framework.WithTimeout(5*time.Minute))(t)
 }
 
 func troubleshootingPanelUIPlugin(t *testing.T) {
@@ -75,23 +59,6 @@ func troubleshootingPanelUIPlugin(t *testing.T) {
 	korrel8rDeployment := appsv1.Deployment{}
 	f.GetResourceWithRetry(t, "korrel8r", uiPluginInstallNS, &korrel8rDeployment)
 	f.AssertDeploymentReady("korrel8r", uiPluginInstallNS, framework.WithTimeout(5*time.Minute))(t)
-}
-
-func newDashboardsUIPlugin(t *testing.T) *uiv1.UIPlugin {
-	db := &uiv1.UIPlugin{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "dashboards",
-		},
-		Spec: uiv1.UIPluginSpec{
-			Type: uiv1.UIPluginType("Dashboards"),
-		},
-	}
-	f.CleanUp(t, func() {
-		f.K8sClient.Delete(context.Background(), db)
-		waitForUIPluginDeletion(db)
-	})
-
-	return db
 }
 
 func newTroubleshootingPanelUIPlugin(t *testing.T) *uiv1.UIPlugin {
