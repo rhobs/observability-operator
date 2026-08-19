@@ -1126,6 +1126,7 @@ spec:
                   capabilities:
                     drop:
                     - ALL
+                  readOnlyRootFilesystem: true
                 volumeMounts:
                 - mountPath: /etc/tls/private
                   name: observability-operator-tls
@@ -1200,6 +1201,7 @@ spec:
                   capabilities:
                     drop:
                     - ALL
+                  readOnlyRootFilesystem: true
                 volumeMounts:
                 - mountPath: /ca
                   name: openshift-service-ca
