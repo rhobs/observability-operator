@@ -27,7 +27,7 @@ require (
 	github.com/rhobs/openshift-api v0.0.0-20260512142436-2e89e902a420
 	github.com/rhobs/perses v0.0.0-20260422074433-2c06d5cd1312
 	github.com/rhobs/perses-operator v0.1.10-0.20260518165420-4a0e166ccfca
-	github.com/stretchr/testify v1.11.1
+	github.com/stretchr/testify v1.12.0
 	go.uber.org/zap v1.28.0
 	golang.org/x/exp v0.0.0-20260611194520-c48552f49976
 	golang.org/x/mod v0.40.0
@@ -126,7 +126,7 @@ require (
 	github.com/sirupsen/logrus v1.9.4 // indirect
 	github.com/spf13/cobra v1.10.2 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
-	github.com/stretchr/objx v0.5.2 // indirect
+	github.com/stretchr/objx v0.5.3 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
