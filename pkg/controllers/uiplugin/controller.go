@@ -214,6 +214,18 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, nil
 	}
 
+	// Auto-cleanup deprecated Dashboards UIPlugin type on upgrade.
+	//nolint:staticcheck // needed for de registration
+	if plugin.Spec.Type == uiv1alpha1.TypeDashboards {
+		logger.Info("Dashboards UIPlugin type is deprecated; deleting CR to clean up resources")
+		if err := rm.k8sClient.Delete(ctx, plugin); err != nil {
+			if !apierrors.IsNotFound(err) {
+				return ctrl.Result{}, err
+			}
+		}
+		return ctrl.Result{}, nil
+	}
+
 	if err := rm.removeLegacyFinalizer(ctx, plugin); err != nil {
 		return ctrl.Result{}, err
 	}

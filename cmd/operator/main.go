@@ -43,7 +43,6 @@ var defaultImages = map[string]string{
 	"prometheus":                   "",
 	"alertmanager":                 "",
 	"thanos":                       obopo.DefaultThanosImage,
-	"ui-dashboards":                "quay.io/openshift-observability-ui/console-dashboards-plugin:v0.4.3",
 	"ui-troubleshooting-panel-pf6": "quay.io/openshift-observability-ui/troubleshooting-panel-console-plugin:v0.4.5",
 	"ui-troubleshooting-panel":     "quay.io/openshift-observability-ui/troubleshooting-panel-console-plugin:v1.0.0",
 	"ui-distributed-tracing-pf4":   "quay.io/openshift-observability-ui/distributed-tracing-console-plugin:v0.3.3",

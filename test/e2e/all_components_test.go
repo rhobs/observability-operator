@@ -32,13 +32,6 @@ func TestReadOnlyRootFilesystem(t *testing.T) {
 		cr   *uiv1.UIPlugin
 	}{
 		{
-			name: "dashboards",
-			cr: &uiv1.UIPlugin{
-				ObjectMeta: metav1.ObjectMeta{Name: uiv1.DashboardsPluginName},
-				Spec:       uiv1.UIPluginSpec{Type: uiv1.TypeDashboards},
-			},
-		},
-		{
 			name: "monitoring",
 			cr: &uiv1.UIPlugin{
 				ObjectMeta: metav1.ObjectMeta{Name: uiv1.MonitoringPluginName},
@@ -105,7 +98,6 @@ func TestReadOnlyRootFilesystem(t *testing.T) {
 		name      string
 		namespace string
 	}{
-		{"observability-ui-dashboards", ns},
 		{uiv1.MonitoringPluginName, ns},
 		{"health-analyzer", ns},
 		{uiv1.TroubleshootingPanelPluginName, ns},

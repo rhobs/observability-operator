@@ -18,7 +18,6 @@ import (
 // +kubebuilder:validation:XValidation:rule="self.spec.type != 'Logging' || self.metadata.name == 'logging'",message="UIPlugin name must be 'logging' if type is Logging"
 // +kubebuilder:validation:XValidation:rule="self.spec.type != 'TroubleshootingPanel' || self.metadata.name == 'troubleshooting-panel'",message="UIPlugin name must be 'troubleshooting-panel' if type is TroubleshootingPanel"
 // +kubebuilder:validation:XValidation:rule="self.spec.type != 'DistributedTracing' || self.metadata.name == 'distributed-tracing'",message="UIPlugin name must be 'distributed-tracing' if type is DistributedTracing"
-// +kubebuilder:validation:XValidation:rule="self.spec.type != 'Dashboards' || self.metadata.name == 'dashboards'",message="UIPlugin name must be 'dashboards' if type is Dashboards"
 // +kubebuilder:validation:XValidation:rule="self.spec.type != 'Monitoring' || self.metadata.name == 'monitoring'",message="UIPlugin name must be 'monitoring' if type is Monitoring"
 type UIPlugin struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -37,11 +36,11 @@ type UIPluginList struct {
 	Items           []UIPlugin `json:"items"`
 }
 
-// +kubebuilder:validation:Enum=Dashboards;TroubleshootingPanel;DistributedTracing;Logging;Monitoring
+// +kubebuilder:validation:Enum=TroubleshootingPanel;DistributedTracing;Logging;Monitoring
 type UIPluginType string
 
 const (
-	// TypeDashboards deploys the Dashboards Dynamic Plugin for OpenShift Console.
+	// Deprecated: TypeDashboards is no longer supported. Existing CRs are auto-deleted on upgrade.
 	TypeDashboards UIPluginType = "Dashboards"
 
 	// TypeDistributedTracing deploys the Distributed Tracing Dynamic Plugin for the OpenShift Console
@@ -58,7 +57,7 @@ const (
 )
 
 const (
-	// DashboardsPluginName is the required name for the Dashboards Plugin resource.
+	// Deprecated: DashboardsPluginName is no longer supported.
 	DashboardsPluginName = "dashboards"
 
 	// DistributedTracingPluginName is the required name for the DistributedTracing Plugin resource.
