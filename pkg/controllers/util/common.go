@@ -1,6 +1,9 @@
 package util
 
 import (
+	"encoding/json"
+	"strings"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -27,3 +30,29 @@ func AddCommonLabels(obj client.Object, name string) client.Object {
 	}
 	return obj
 }
+
+// MarshalCopy copies a client.Object (structured or unstructured) into dst
+// via JSON round-trip.
+func MarshalCopy(dst, src client.Object) error {
+	data, err := json.Marshal(src)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(data, dst)
+}
+
+// CompareObjects orders objects by namespace, API group, kind, then name.
+// Callers must populate TypeMeta so Group and Kind are available.
+func CompareObjects(a, b client.Object) int {
+	if c := strings.Compare(a.GetNamespace(), b.GetNamespace()); c != 0 {
+		return c
+	}
+	if c := strings.Compare(a.GetObjectKind().GroupVersionKind().Group, b.GetObjectKind().GroupVersionKind().Group); c != 0 {
+		return c
+	}
+	if c := strings.Compare(a.GetObjectKind().GroupVersionKind().Kind, b.GetObjectKind().GroupVersionKind().Kind); c != 0 {
+		return c
+	}
+	return strings.Compare(a.GetName(), b.GetName())
+}
+

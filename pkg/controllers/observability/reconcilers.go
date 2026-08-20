@@ -49,7 +49,6 @@ func getReconcilers(ctx context.Context, k8sClient client.Client, k8sReader clie
 	var reconcilers []reconciler.Reconciler
 	//var otelOperator client.Object
 	//var tempoOperator client.Object
-	var instanceObjects []client.Object
 	installedObjects := map[string]client.Object{}
 
 	// the OTEL and Tempo operators are rolling release, meaning only the latest released versions are supported.
@@ -59,35 +58,20 @@ func getReconcilers(ctx context.Context, k8sClient client.Client, k8sReader clie
 	otelSubs := subscription(opts.OpenTelemetryOperator)
 	tempoSubs := subscription(opts.TempoOperator)
 
-	// instance objects
-	otelCol, err := otelCollector(instance)
+	instanceObjects, err := GenerateAllInstallerObjects(ctx, k8sClient, k8sReader, instance, opts)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create OpenTelemetryCollector: %w", err)
-	}
-	instanceObjects = append(instanceObjects, otelCol)
-	otelcolRBAC, otelcolRBACBinding := otelCollectorComponentsRBAC(instance)
-	instanceObjects = append(instanceObjects, otelcolRBAC)
-	instanceObjects = append(instanceObjects, otelcolRBACBinding)
-	instanceObjects = append(instanceObjects, tempoStack(instance))
-
-	secrets, err := tempoStackSecrets(ctx, k8sClient, k8sReader, *instance)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create TempoStack secret: %w", err)
-	}
-	if secrets.objectStorage != nil {
-		instanceObjects = append(instanceObjects, secrets.objectStorage)
-	}
-	if secrets.objectStorageTLSSecret != nil {
-		instanceObjects = append(instanceObjects, secrets.objectStorageTLSSecret)
-	}
-	if secrets.objectStorageCAConfigMap != nil {
-		instanceObjects = append(instanceObjects, secrets.objectStorageCAConfigMap)
+		return nil, fmt.Errorf("building full object set: %w", err)
 	}
 
-	otelcolTempoRBAC, otelcolTempoRBACBinding := otelCollectorTempoRBAC(instance)
-	instanceObjects = append(instanceObjects, otelcolTempoRBAC)
-	instanceObjects = append(instanceObjects, otelcolTempoRBACBinding)
-	instanceObjects = append(instanceObjects, uiPlugin())
+	// When all capabilities are already enabled, the current object set is
+	// identical to the full set — reuse to avoid duplicate API calls.
+	currentObjects := instanceObjects
+	if tracing := instance.Spec.GetCapabilities().GetTracing(); tracing == nil || !tracing.Enabled {
+		currentObjects, err = GenerateInstallerObjects(ctx, k8sClient, k8sReader, instance, opts, false, true)
+		if err != nil {
+			return nil, fmt.Errorf("building current object set: %w", err)
+		}
+	}
 
 	if instance.ObjectMeta.DeletionTimestamp != nil {
 		for _, obj := range instanceObjects {
@@ -127,7 +111,7 @@ func getReconcilers(ctx context.Context, k8sClient client.Client, k8sReader clie
 			reconcilers = append(reconcilers, reconciler.NewCreateUpdateReconciler(tempoSubs, instance))
 			installedObjects[gvkNameIdentifier(tempoSubs)] = tempoSubs
 		}
-		for _, obj := range instanceObjects {
+		for _, obj := range currentObjects {
 			reconcilers = append(reconcilers, reconciler.NewUpdater(obj, instance))
 			installedObjects[gvkNameIdentifier(obj)] = obj
 		}
