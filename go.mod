@@ -22,7 +22,7 @@ require (
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.93.1
 	github.com/prometheus/common v0.70.1
 	github.com/rhobs/obo-prometheus-operator v0.91.0-rhobs1
-	github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.91.0-rhobs1
+	github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.93.1-rhobs1
 	github.com/rhobs/observability-operator/pkg/apis v0.0.0-20251009091129-76135c924ed6
 	github.com/rhobs/openshift-api v0.0.0-20260512142436-2e89e902a420
 	github.com/rhobs/perses v0.0.0-20260422074433-2c06d5cd1312
