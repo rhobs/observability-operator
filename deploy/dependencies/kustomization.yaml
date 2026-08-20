@@ -110,7 +110,6 @@ patches:
           - security.openshift.io
         resourceNames:
           - nonroot-v2
-          - nonroot
         resources:
           - securitycontextconstraints
         verbs:

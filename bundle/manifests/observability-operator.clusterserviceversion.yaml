@@ -303,7 +303,6 @@ spec:
           - security.openshift.io
           resourceNames:
           - nonroot-v2
-          - nonroot
           resources:
           - securitycontextconstraints
           verbs:
@@ -314,7 +313,6 @@ spec:
           - security.openshift.io
           resourceNames:
           - nonroot-v2
-          - nonroot
           resources:
           - securitycontextconstraints
           verbs:
@@ -712,7 +710,6 @@ spec:
         - apiGroups:
           - security.openshift.io
           resourceNames:
-          - nonroot
           - nonroot-v2
           resources:
           - securitycontextconstraints
