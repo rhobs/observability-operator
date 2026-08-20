@@ -111,7 +111,7 @@ func newPrometheusClusterRole(rbacResourceName string, rbacVerbs []string) *rbac
 		}, {
 			APIGroups:     []string{"security.openshift.io"},
 			Resources:     []string{"securitycontextconstraints"},
-			ResourceNames: []string{"nonroot", "nonroot-v2"},
+			ResourceNames: []string{"nonroot-v2"},
 			Verbs:         []string{"use"},
 		}},
 	}
