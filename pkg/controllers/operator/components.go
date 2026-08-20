@@ -16,12 +16,12 @@ const (
 	name = "observability-operator"
 )
 
-func operatorComponentReconcilers(owner metav1.Object, namespace string) []reconciler.Reconciler {
-	return []reconciler.Reconciler{
-		reconciler.NewUpdater(newServiceMonitor(namespace), owner),
-		reconciler.NewUpdater(newPrometheusRole(namespace), owner),
-		reconciler.NewUpdater(newRoleBindingForPrometheusRole(namespace), owner),
-	}
+func operatorComponentReconcilers(owner metav1.Object, namespace string) ([]reconciler.Reconciler, error) {
+	b := &reconciler.ReconcilerBuilder{}
+	b.Add(reconciler.NewUpdater(newServiceMonitor(namespace), owner))
+	b.Add(reconciler.NewUpdater(newPrometheusRole(namespace), owner))
+	b.Add(reconciler.NewUpdater(newRoleBindingForPrometheusRole(namespace), owner))
+	return b.Build()
 }
 
 func newServiceMonitor(namespace string) *monv1.ServiceMonitor {
