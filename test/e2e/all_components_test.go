@@ -22,6 +22,7 @@ func TestReadOnlyRootFilesystem(t *testing.T) {
 		t.Skip("Skipping: requires OpenShift cluster")
 	}
 
+	f.SkipIfClusterVersionBelow(t, "4.22")
 	flag.Parse()
 	ns := *operatorInstallNS
 
