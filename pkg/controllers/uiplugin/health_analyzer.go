@@ -182,6 +182,30 @@ func newHealthAnalyzerDeployment(namespace string,
 									Name:          "metrics",
 								},
 							},
+							LivenessProbe: &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path:   "/livez",
+										Port:   intstr.FromString("metrics"),
+										Scheme: corev1.URISchemeHTTPS,
+									},
+								},
+								InitialDelaySeconds: 15,
+								PeriodSeconds:       20,
+								TimeoutSeconds:      5,
+							},
+							ReadinessProbe: &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path:   "/readyz",
+										Port:   intstr.FromString("metrics"),
+										Scheme: corev1.URISchemeHTTPS,
+									},
+								},
+								InitialDelaySeconds: 5,
+								PeriodSeconds:       10,
+								TimeoutSeconds:      5,
+							},
 							TerminationMessagePolicy: corev1.TerminationMessageFallbackToLogsOnError,
 							VolumeMounts: []corev1.VolumeMount{
 								{
