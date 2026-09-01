@@ -136,10 +136,6 @@ func TestReadOnlyRootFilesystem(t *testing.T) {
 		for i := range statefulsets.Items {
 			sts := &statefulsets.Items[i]
 			t.Logf("  - %s (%d container(s))", sts.Name, len(sts.Spec.Template.Spec.Containers))
-			if sts.Name == "perses" {
-				// TODO: remove once perses-operator sets readOnlyRootFilesystem on the Perses container
-				continue
-			}
 			assertStatefulSetContainersReadOnlyRootFilesystem(t, *sts)
 		}
 	}
