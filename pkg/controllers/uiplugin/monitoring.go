@@ -272,6 +272,19 @@ func newPerses(namespace string, persesImage string) *persesv1alpha2.Perses {
 				RunAsNonRoot: ptr.To(true),
 				RunAsUser:    ptr.To(PersesUserFSGroupID),
 			},
+			ContainerSecurityContext: &corev1.SecurityContext{
+				AllowPrivilegeEscalation: ptr.To(false),
+				Capabilities: &corev1.Capabilities{
+					Drop: []corev1.Capability{
+						"ALL",
+					},
+				},
+				RunAsNonRoot:           ptr.To(true),
+				ReadOnlyRootFilesystem: ptr.To(true),
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+			},
 			TLS: &persesv1alpha2.TLS{
 				Enable: ptr.To(true),
 				UserCert: &persesv1alpha2.Certificate{

@@ -1208,8 +1208,9 @@ spec:
                               if server does not support TLS
                             type: boolean
                           allow_native_passwords:
-                            description: Allows the native password authentication
-                              method
+                            description: |-
+                              Allows the native password authentication method.
+                              When unset, the driver default (true) is used.
                             type: boolean
                           allow_old_passwords:
                             description: Allows the old insecure password method
@@ -1217,8 +1218,9 @@ spec:
                           case_sensitive:
                             type: boolean
                           check_conn_liveness:
-                            description: Check connections for liveness before using
-                              them
+                            description: |-
+                              Check connections for liveness before using them.
+                              When unset, the driver default (true) is used.
                             type: boolean
                           client_found_rows:
                             description: Return number of matching rows instead of
@@ -1230,6 +1232,21 @@ spec:
                           columns_with_alias:
                             description: Prepend table alias to column names
                             type: boolean
+                          conn_max_idle_time:
+                            description: |-
+                              ConnMaxIdleTime is the maximum amount of time a connection may be idle
+                              before it is closed. Defaults to 1 minute.
+                            format: duration
+                            pattern: ^(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?$
+                            type: string
+                          conn_max_lifetime:
+                            description: |-
+                              ConnMaxLifetime is the maximum amount of time a connection may be reused.
+                              It should be kept shorter than the server's wait_timeout to avoid reusing
+                              connections that the server has already closed. Defaults to 3 minutes.
+                            format: duration
+                            pattern: ^(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?$
+                            type: string
                           db_name:
                             description: Database name
                             type: string
@@ -1241,6 +1258,16 @@ spec:
                             type: object
                           max_allowed_packet:
                             description: Max packet size allowed
+                            type: integer
+                          max_idle_conns:
+                            description: |-
+                              MaxIdleConns is the maximum number of connections in the idle connection
+                              pool. A value <= 0 keeps the Go default (2).
+                            type: integer
+                          max_open_conns:
+                            description: |-
+                              MaxOpenConns is the maximum number of open connections to the database.
+                              A value <= 0 means unlimited (the Go default).
                             type: integer
                           multi_statements:
                             description: Allow multiple statements in one query
@@ -1317,10 +1344,8 @@ spec:
                         - allow_all_files
                         - allow_cleartext_passwords
                         - allow_fallback_to_plaintext
-                        - allow_native_passwords
                         - allow_old_passwords
                         - case_sensitive
-                        - check_conn_liveness
                         - client_found_rows
                         - columns_with_alias
                         - db_name
@@ -1654,6 +1679,10 @@ spec:
                         description: When it is true, Perses won't serve the frontend
                           anymore, and any other config set here will be ignored
                         type: boolean
+                      enable_keyboard_shortcuts:
+                        description: EnableKeyboardShortcuts enables keyboard shortcuts
+                          in the UI. Defaults to true when omitted.
+                        type: boolean
                       explorer:
                         description: |-
                           Explorer is activating the different kind of explorer supported.
@@ -1730,10 +1759,28 @@ spec:
                         items:
                           type: string
                         type: array
+                      disabled:
+                        description: |-
+                          Disabled is a list of plugin deactivated. Leave empty if you want to activate all plugins found in the `path` directory.
+                          If not empty, the plugins whose name is in this list will be deactivated.
+                          The name can be the name of the plugin or the name of the module. For example, you can put `Prometheus` to disable the Prometheus module that contains query, variables and datasource plugin.
+                          Use either Enabled or Disabled. Both can not be used at the same time.
+                        items:
+                          type: string
+                        type: array
                       enable_dev:
                         description: DevEnvironment is the configuration to use when
                           developing a plugin
                         type: boolean
+                      enabled:
+                        description: |-
+                          Enabled is a list of plugin activated. Leave empty if you want to activate all plugins found in the `path` directory.
+                          If not empty, only the plugins whose name is in this list will be activated.
+                          The name can be the name of the plugin or the name of the module. For example, you can put `Prometheus` to enable the Prometheus module that contains query, variables and datasource plugin.
+                          Use either Enabled or Disabled. Both can not be used at the same time.
+                        items:
+                          type: string
+                        type: array
                       path:
                         description: Path is the path to the directory containing
                           the runtime plugins
@@ -4058,6 +4105,18 @@ spec:
                             || has(self.__namespace__)
                     type: object
                 type: object
+                x-kubernetes-validations:
+                - message: kubernetesAuth and oauth are mutually exclusive; both cannot
+                    be enabled simultaneously
+                  rule: '!(has(self.kubernetesAuth) && has(self.kubernetesAuth.enable)
+                    && self.kubernetesAuth.enable == true && has(self.oauth))'
+                - message: kubernetesAuth and basicAuth are mutually exclusive; both
+                    cannot be enabled simultaneously
+                  rule: '!(has(self.kubernetesAuth) && has(self.kubernetesAuth.enable)
+                    && self.kubernetesAuth.enable == true && has(self.basicAuth))'
+                - message: oauth and basicAuth are mutually exclusive; both cannot
+                    be enabled simultaneously
+                  rule: '!(has(self.basicAuth) && has(self.oauth))'
               config:
                 description: config specifies the Perses server configuration
                 properties:
@@ -4140,8 +4199,9 @@ spec:
                               if server does not support TLS
                             type: boolean
                           allow_native_passwords:
-                            description: Allows the native password authentication
-                              method
+                            description: |-
+                              Allows the native password authentication method.
+                              When unset, the driver default (true) is used.
                             type: boolean
                           allow_old_passwords:
                             description: Allows the old insecure password method
@@ -4149,8 +4209,9 @@ spec:
                           case_sensitive:
                             type: boolean
                           check_conn_liveness:
-                            description: Check connections for liveness before using
-                              them
+                            description: |-
+                              Check connections for liveness before using them.
+                              When unset, the driver default (true) is used.
                             type: boolean
                           client_found_rows:
                             description: Return number of matching rows instead of
@@ -4162,6 +4223,21 @@ spec:
                           columns_with_alias:
                             description: Prepend table alias to column names
                             type: boolean
+                          conn_max_idle_time:
+                            description: |-
+                              ConnMaxIdleTime is the maximum amount of time a connection may be idle
+                              before it is closed. Defaults to 1 minute.
+                            format: duration
+                            pattern: ^(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?$
+                            type: string
+                          conn_max_lifetime:
+                            description: |-
+                              ConnMaxLifetime is the maximum amount of time a connection may be reused.
+                              It should be kept shorter than the server's wait_timeout to avoid reusing
+                              connections that the server has already closed. Defaults to 3 minutes.
+                            format: duration
+                            pattern: ^(([0-9]+)y)?(([0-9]+)w)?(([0-9]+)d)?(([0-9]+)h)?(([0-9]+)m)?(([0-9]+)s)?(([0-9]+)ms)?$
+                            type: string
                           db_name:
                             description: Database name
                             type: string
@@ -4173,6 +4249,16 @@ spec:
                             type: object
                           max_allowed_packet:
                             description: Max packet size allowed
+                            type: integer
+                          max_idle_conns:
+                            description: |-
+                              MaxIdleConns is the maximum number of connections in the idle connection
+                              pool. A value <= 0 keeps the Go default (2).
+                            type: integer
+                          max_open_conns:
+                            description: |-
+                              MaxOpenConns is the maximum number of open connections to the database.
+                              A value <= 0 means unlimited (the Go default).
                             type: integer
                           multi_statements:
                             description: Allow multiple statements in one query
@@ -4249,10 +4335,8 @@ spec:
                         - allow_all_files
                         - allow_cleartext_passwords
                         - allow_fallback_to_plaintext
-                        - allow_native_passwords
                         - allow_old_passwords
                         - case_sensitive
-                        - check_conn_liveness
                         - client_found_rows
                         - columns_with_alias
                         - db_name
@@ -4586,6 +4670,10 @@ spec:
                         description: When it is true, Perses won't serve the frontend
                           anymore, and any other config set here will be ignored
                         type: boolean
+                      enable_keyboard_shortcuts:
+                        description: EnableKeyboardShortcuts enables keyboard shortcuts
+                          in the UI. Defaults to true when omitted.
+                        type: boolean
                       explorer:
                         description: |-
                           Explorer is activating the different kind of explorer supported.
@@ -4662,10 +4750,28 @@ spec:
                         items:
                           type: string
                         type: array
+                      disabled:
+                        description: |-
+                          Disabled is a list of plugin deactivated. Leave empty if you want to activate all plugins found in the `path` directory.
+                          If not empty, the plugins whose name is in this list will be deactivated.
+                          The name can be the name of the plugin or the name of the module. For example, you can put `Prometheus` to disable the Prometheus module that contains query, variables and datasource plugin.
+                          Use either Enabled or Disabled. Both can not be used at the same time.
+                        items:
+                          type: string
+                        type: array
                       enable_dev:
                         description: DevEnvironment is the configuration to use when
                           developing a plugin
                         type: boolean
+                      enabled:
+                        description: |-
+                          Enabled is a list of plugin activated. Leave empty if you want to activate all plugins found in the `path` directory.
+                          If not empty, only the plugins whose name is in this list will be activated.
+                          The name can be the name of the plugin or the name of the module. For example, you can put `Prometheus` to enable the Prometheus module that contains query, variables and datasource plugin.
+                          Use either Enabled or Disabled. Both can not be used at the same time.
+                        items:
+                          type: string
+                        type: array
                       path:
                         description: Path is the path to the directory containing
                           the runtime plugins
@@ -5272,6 +5378,418 @@ spec:
                 maximum: 65535
                 minimum: 1
                 type: integer
+              containerSecurityContext:
+                description: |-
+                  containerSecurityContext holds security attributes for the Perses container
+                  If not specified, defaults to runAsUser: 65534 (nobody) and drops all capabilities
+                properties:
+                  allowPrivilegeEscalation:
+                    description: |-
+                      AllowPrivilegeEscalation controls whether a process can gain more
+                      privileges than its parent process. This bool directly controls if
+                      the no_new_privs flag will be set on the container process.
+                      AllowPrivilegeEscalation is true always when the container is:
+                      1) run as Privileged
+                      2) has CAP_SYS_ADMIN
+                      Note that this field cannot be set when spec.os.name is windows.
+                    type: boolean
+                  appArmorProfile:
+                    description: |-
+                      appArmorProfile is the AppArmor options to use by this container. If set, this profile
+                      overrides the pod's appArmorProfile.
+                      Note that this field cannot be set when spec.os.name is windows.
+                    properties:
+                      localhostProfile:
+                        description: |-
+                          localhostProfile indicates a profile loaded on the node that should be used.
+                          The profile must be preconfigured on the node to work.
+                          Must match the loaded name of the profile.
+                          Must be set if and only if type is "Localhost".
+                        type: string
+                      type:
+                        description: |-
+                          type indicates which kind of AppArmor profile will be applied.
+                          Valid options are:
+                            Localhost - a profile pre-loaded on the node.
+                            RuntimeDefault - the container runtime's default profile.
+                            Unconfined - no AppArmor enforcement.
+                        type: string
+                    required:
+                    - type
+                    type: object
+                  capabilities:
+                    description: |-
+                      The capabilities to add/drop when running containers.
+                      Defaults to the default set of capabilities granted by the container runtime.
+                      Note that this field cannot be set when spec.os.name is windows.
+                    properties:
+                      add:
+                        description: Added capabilities
+                        items:
+                          description: Capability represent POSIX capabilities type
+                          type: string
+                        type: array
+                        x-kubernetes-list-type: atomic
+                      drop:
+                        description: Removed capabilities
+                        items:
+                          description: Capability represent POSIX capabilities type
+                          type: string
+                        type: array
+                        x-kubernetes-list-type: atomic
+                    type: object
+                  privileged:
+                    description: |-
+                      Run container in privileged mode.
+                      Processes in privileged containers are essentially equivalent to root on the host.
+                      Defaults to false.
+                      Note that this field cannot be set when spec.os.name is windows.
+                    type: boolean
+                  procMount:
+                    description: |-
+                      procMount denotes the type of proc mount to use for the containers.
+                      The default value is Default which uses the container runtime defaults for
+                      readonly paths and masked paths.
+                      Note that this field cannot be set when spec.os.name is windows.
+                    type: string
+                  readOnlyRootFilesystem:
+                    description: |-
+                      Whether this container has a read-only root filesystem.
+                      Default is false.
+                      Note that this field cannot be set when spec.os.name is windows.
+                    type: boolean
+                  runAsGroup:
+                    description: |-
+                      The GID to run the entrypoint of the container process.
+                      Uses runtime default if unset.
+                      May also be set in PodSecurityContext.  If set in both SecurityContext and
+                      PodSecurityContext, the value specified in SecurityContext takes precedence.
+                      Note that this field cannot be set when spec.os.name is windows.
+                    format: int64
+                    type: integer
+                  runAsNonRoot:
+                    description: |-
+                      Indicates that the container must run as a non-root user.
+                      If true, the Kubelet will validate the image at runtime to ensure that it
+                      does not run as UID 0 (root) and fail to start the container if it does.
+                      If unset or false, no such validation will be performed.
+                      May also be set in PodSecurityContext.  If set in both SecurityContext and
+                      PodSecurityContext, the value specified in SecurityContext takes precedence.
+                    type: boolean
+                  runAsUser:
+                    description: |-
+                      The UID to run the entrypoint of the container process.
+                      Defaults to user specified in image metadata if unspecified.
+                      May also be set in PodSecurityContext.  If set in both SecurityContext and
+                      PodSecurityContext, the value specified in SecurityContext takes precedence.
+                      Note that this field cannot be set when spec.os.name is windows.
+                    format: int64
+                    type: integer
+                  seLinuxOptions:
+                    description: |-
+                      The SELinux context to be applied to the container.
+                      If unspecified, the container runtime will allocate a random SELinux context for each
+                      container.  May also be set in PodSecurityContext.  If set in both SecurityContext and
+                      PodSecurityContext, the value specified in SecurityContext takes precedence.
+                      Note that this field cannot be set when spec.os.name is windows.
+                    properties:
+                      level:
+                        description: Level is SELinux level label that applies to
+                          the container.
+                        type: string
+                      role:
+                        description: Role is a SELinux role label that applies to
+                          the container.
+                        type: string
+                      type:
+                        description: Type is a SELinux type label that applies to
+                          the container.
+                        type: string
+                      user:
+                        description: User is a SELinux user label that applies to
+                          the container.
+                        type: string
+                    type: object
+                  seccompProfile:
+                    description: |-
+                      The seccomp options to use by this container. If seccomp options are
+                      provided at both the pod & container level, the container options
+                      override the pod options.
+                      Note that this field cannot be set when spec.os.name is windows.
+                    properties:
+                      localhostProfile:
+                        description: |-
+                          localhostProfile indicates a profile defined in a file on the node should be used.
+                          The profile must be preconfigured on the node to work.
+                          Must be a descending path, relative to the kubelet's configured seccomp profile location.
+                          Must be set if type is "Localhost". Must NOT be set for any other type.
+                        type: string
+                      type:
+                        description: |-
+                          type indicates which kind of seccomp profile will be applied.
+                          Valid options are:
+
+                          Localhost - a profile defined in a file on the node should be used.
+                          RuntimeDefault - the container runtime default profile should be used.
+                          Unconfined - no profile should be applied.
+                        type: string
+                    required:
+                    - type
+                    type: object
+                  windowsOptions:
+                    description: |-
+                      The Windows specific settings applied to all containers.
+                      If unspecified, the options from the PodSecurityContext will be used.
+                      If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+                      Note that this field cannot be set when spec.os.name is linux.
+                    properties:
+                      gmsaCredentialSpec:
+                        description: |-
+                          GMSACredentialSpec is where the GMSA admission webhook
+                          (https://github.com/kubernetes-sigs/windows-gmsa) inlines the contents of the
+                          GMSA credential spec named by the GMSACredentialSpecName field.
+                        type: string
+                      gmsaCredentialSpecName:
+                        description: GMSACredentialSpecName is the name of the GMSA
+                          credential spec to use.
+                        type: string
+                      hostProcess:
+                        description: |-
+                          HostProcess determines if a container should be run as a 'Host Process' container.
+                          All of a Pod's containers must have the same effective HostProcess value
+                          (it is not allowed to have a mix of HostProcess containers and non-HostProcess containers).
+                          In addition, if HostProcess is true then HostNetwork must also be set to true.
+                        type: boolean
+                      runAsUserName:
+                        description: |-
+                          The UserName in Windows to run the entrypoint of the container process.
+                          Defaults to the user specified in image metadata if unspecified.
+                          May also be set in PodSecurityContext. If set in both SecurityContext and
+                          PodSecurityContext, the value specified in SecurityContext takes precedence.
+                        type: string
+                    type: object
+                type: object
+              env:
+                description: |-
+                  env allows setting environment variables on the Perses container using the standard
+                  Kubernetes EnvVar shape: each entry has a name plus either a literal value or a
+                  valueFrom source (secretKeyRef, configMapKeyRef, fieldRef, resourceFieldRef).
+                  Variables are merged on top of the operator-generated config file at startup using
+                  the PERSES_ env prefix (e.g. PERSES_SECURITY_AUTHENTICATION_PROVIDERS_OIDC_0_CLIENT_ID).
+                  Environment variables always override values from the config file.
+                  corev1.EnvVar is the canonical Kubernetes env-var type
+                items:
+                  description: EnvVar represents an environment variable present in
+                    a Container.
+                  properties:
+                    name:
+                      description: |-
+                        Name of the environment variable.
+                        May consist of any printable ASCII characters except '='.
+                      type: string
+                    value:
+                      description: |-
+                        Variable references $(VAR_NAME) are expanded
+                        using the previously defined environment variables in the container and
+                        any service environment variables. If a variable cannot be resolved,
+                        the reference in the input string will be unchanged. Double $$ are reduced
+                        to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                        "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
+                        Escaped references will never be expanded, regardless of whether the variable
+                        exists or not.
+                        Defaults to "".
+                      type: string
+                    valueFrom:
+                      description: Source for the environment variable's value. Cannot
+                        be used if value is not empty.
+                      properties:
+                        configMapKeyRef:
+                          description: Selects a key of a ConfigMap.
+                          properties:
+                            key:
+                              description: The key to select.
+                              type: string
+                            name:
+                              default: ""
+                              description: |-
+                                Name of the referent.
+                                This field is effectively required, but due to backwards compatibility is
+                                allowed to be empty. Instances of this type with an empty value here are
+                                almost certainly wrong.
+                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              type: string
+                            optional:
+                              description: Specify whether the ConfigMap or its key
+                                must be defined
+                              type: boolean
+                          required:
+                          - key
+                          type: object
+                          x-kubernetes-map-type: atomic
+                        fieldRef:
+                          description: |-
+                            Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
+                            spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
+                          properties:
+                            apiVersion:
+                              description: Version of the schema the FieldPath is
+                                written in terms of, defaults to "v1".
+                              type: string
+                            fieldPath:
+                              description: Path of the field to select in the specified
+                                API version.
+                              type: string
+                          required:
+                          - fieldPath
+                          type: object
+                          x-kubernetes-map-type: atomic
+                        fileKeyRef:
+                          description: |-
+                            FileKeyRef selects a key of the env file.
+                            Requires the EnvFiles feature gate to be enabled.
+                          properties:
+                            key:
+                              description: |-
+                                The key within the env file. An invalid key will prevent the pod from starting.
+                                The keys defined within a source may consist of any printable ASCII characters except '='.
+                                During Alpha stage of the EnvFiles feature gate, the key size is limited to 128 characters.
+                              type: string
+                            optional:
+                              default: false
+                              description: |-
+                                Specify whether the file or its key must be defined. If the file or key
+                                does not exist, then the env var is not published.
+                                If optional is set to true and the specified key does not exist,
+                                the environment variable will not be set in the Pod's containers.
+
+                                If optional is set to false and the specified key does not exist,
+                                an error will be returned during Pod creation.
+                              type: boolean
+                            path:
+                              description: |-
+                                The path within the volume from which to select the file.
+                                Must be relative and may not contain the '..' path or start with '..'.
+                              type: string
+                            volumeName:
+                              description: The name of the volume mount containing
+                                the env file.
+                              type: string
+                          required:
+                          - key
+                          - path
+                          - volumeName
+                          type: object
+                          x-kubernetes-map-type: atomic
+                        resourceFieldRef:
+                          description: |-
+                            Selects a resource of the container: only resources limits and requests
+                            (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
+                          properties:
+                            containerName:
+                              description: 'Container name: required for volumes,
+                                optional for env vars'
+                              type: string
+                            divisor:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              description: Specifies the output format of the exposed
+                                resources, defaults to "1"
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            resource:
+                              description: 'Required: resource to select'
+                              type: string
+                          required:
+                          - resource
+                          type: object
+                          x-kubernetes-map-type: atomic
+                        secretKeyRef:
+                          description: Selects a key of a secret in the pod's namespace
+                          properties:
+                            key:
+                              description: The key of the secret to select from.  Must
+                                be a valid secret key.
+                              type: string
+                            name:
+                              default: ""
+                              description: |-
+                                Name of the referent.
+                                This field is effectively required, but due to backwards compatibility is
+                                allowed to be empty. Instances of this type with an empty value here are
+                                almost certainly wrong.
+                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              type: string
+                            optional:
+                              description: Specify whether the Secret or its key must
+                                be defined
+                              type: boolean
+                          required:
+                          - key
+                          type: object
+                          x-kubernetes-map-type: atomic
+                      type: object
+                  required:
+                  - name
+                  type: object
+                maxItems: 50
+                type: array
+                x-kubernetes-list-map-keys:
+                - name
+                x-kubernetes-list-type: map
+              envFrom:
+                description: |-
+                  envFrom allows bulk-populating environment variables from Kubernetes Secrets or ConfigMaps.
+                  All keys in the referenced object become environment variable names. Combined with the
+                  PERSES_ prefix convention, this allows overriding multiple config values from a single Secret.
+                  corev1.EnvFromSource is the canonical Kubernetes envFrom type
+                items:
+                  description: EnvFromSource represents the source of a set of ConfigMaps
+                    or Secrets
+                  properties:
+                    configMapRef:
+                      description: The ConfigMap to select from
+                      properties:
+                        name:
+                          default: ""
+                          description: |-
+                            Name of the referent.
+                            This field is effectively required, but due to backwards compatibility is
+                            allowed to be empty. Instances of this type with an empty value here are
+                            almost certainly wrong.
+                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          type: string
+                        optional:
+                          description: Specify whether the ConfigMap must be defined
+                          type: boolean
+                      type: object
+                      x-kubernetes-map-type: atomic
+                    prefix:
+                      description: |-
+                        Optional text to prepend to the name of each environment variable.
+                        May consist of any printable ASCII characters except '='.
+                      type: string
+                    secretRef:
+                      description: The Secret to select from
+                      properties:
+                        name:
+                          default: ""
+                          description: |-
+                            Name of the referent.
+                            This field is effectively required, but due to backwards compatibility is
+                            allowed to be empty. Instances of this type with an empty value here are
+                            almost certainly wrong.
+                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          type: string
+                        optional:
+                          description: Specify whether the Secret must be defined
+                          type: boolean
+                      type: object
+                      x-kubernetes-map-type: atomic
+                  type: object
+                maxItems: 50
+                type: array
+                x-kubernetes-list-type: atomic
               image:
                 description: image specifies the container image that should be used
                   for the Perses deployment
@@ -5699,6 +6217,11 @@ spec:
                         type: string
                     type: object
                 type: object
+              priorityClassName:
+                description: priorityClassName assigns the pods to a PriorityClass,
+                  influencing scheduling and preemption
+                minLength: 1
+                type: string
               provisioning:
                 description: provisioning configuration for provisioning secrets
                 properties:
@@ -7339,7 +7862,7 @@ spec:
                         A failure to resolve or pull the image during pod startup will block containers from starting and may add significant latency. Failures will be retried using normal volume backoff and will be reported on the pod reason and message.
                         The types of objects that may be mounted by this volume are defined by the container runtime implementation on a host machine and at minimum must include all valid types supported by the container image field.
                         The OCI object gets mounted in a single directory (spec.containers[*].volumeMounts.mountPath) by merging the manifest layers in the same way as for container images.
-                        The volume will be mounted read-only (ro) and non-executable files (noexec).
+                        The volume will be mounted read-only (ro).
                         Sub path mounts for containers are not supported (spec.containers[*].volumeMounts.subpath) before 1.33.
                         The field spec.securityContext.fsGroupChangePolicy has no effect on this volume type.
                       properties:
@@ -7511,8 +8034,7 @@ spec:
                       description: |-
                         portworxVolume represents a portworx volume attached and mounted on kubelets host machine.
                         Deprecated: PortworxVolume is deprecated. All operations for the in-tree portworxVolume type
-                        are redirected to the pxd.portworx.com CSI driver when the CSIMigrationPortworx feature-gate
-                        is on.
+                        are redirected to the pxd.portworx.com CSI driver.
                       properties:
                         fsType:
                           description: |-

@@ -43,7 +43,7 @@ metadata:
     certified: "false"
     console.openshift.io/operator-monitoring-default: "true"
     containerImage: observability-operator:1.5.0
-    createdAt: "2026-08-19T12:51:19Z"
+    createdAt: "2026-09-01T10:06:32Z"
     description: A Go based Kubernetes operator to setup and manage highly available
       Monitoring Stack using Prometheus, Alertmanager and Thanos Querier.
     operatorframework.io/cluster-monitoring: "true"
@@ -1175,7 +1175,7 @@ spec:
                         operator: Exists
                     weight: 1
               containers:
-              - image: quay.io/openshift-observability-ui/perses-operator:v0.4.0
+              - image: quay.io/openshift-observability-ui/perses-operator:v0.5.0
                 livenessProbe:
                   httpGet:
                     path: /healthz
