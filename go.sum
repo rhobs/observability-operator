@@ -337,8 +337,8 @@ github.com/prometheus/sigv4 v0.4.1 h1:EIc3j+8NBea9u1iV6O5ZAN8uvPq2xOIUPcqCTivHuX
 github.com/prometheus/sigv4 v0.4.1/go.mod h1:eu+ZbRvsc5TPiHwqh77OWuCnWK73IdkETYY46P4dXOU=
 github.com/rhobs/obo-prometheus-operator v0.91.0-rhobs1 h1:izvycs3I49TMM2P5H3uM9aRUqOuR5t9vp/qeAZk00mE=
 github.com/rhobs/obo-prometheus-operator v0.91.0-rhobs1/go.mod h1:sy080um01Gm9VRWFzdDmPmu49DpMfoagGt/wdGouAkA=
-github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.91.0-rhobs1 h1:6tJrvJASUtN2hXUr06bxyWIOQEEGAugJ2y3faGSFDEM=
-github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.91.0-rhobs1/go.mod h1:smEIMH0TANmMFkksWwrwxSP/pNdjVa66WNO06Nf7ylc=
+github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.93.1-rhobs1 h1:kWS/4uUQjoqhQtgnv/kBzhb2RbG4I/9XrSa4AxSICp0=
+github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.93.1-rhobs1/go.mod h1:ynpxidv4ejYwUMR/FZhKomqUME7Peva7i9ogB4PHoGA=
 github.com/rhobs/obo-prometheus-operator/pkg/client v0.91.0-rhobs1 h1:a3pLXKQBXzU0BMDNyX2fYOnGvwor5Rd+96AK5OIQB/0=
 github.com/rhobs/obo-prometheus-operator/pkg/client v0.91.0-rhobs1/go.mod h1:4RXdlPkose9047ZMHO6AGXq6y0vfMN2pBP44x/yB7fQ=
 github.com/rhobs/openshift-api v0.0.0-20260512142436-2e89e902a420 h1:7e9fFgSnTQH6mOUK9ne8eueLoDe0qFdxPZn0yYD3T4Y=
