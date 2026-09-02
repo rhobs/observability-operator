@@ -16,8 +16,9 @@ import (
 )
 
 const (
-	tenantName = "application"
-	tenantID   = "1610b0c3-c509-4592-a256-a1871353dbfb"
+	TracingTenant = "application"
+	tenantName    = TracingTenant
+	tenantID      = "1610b0c3-c509-4592-a256-a1871353dbfb"
 )
 
 func tempoStack(instance *obsv1alpha1.ObservabilityInstaller) *tempov1alpha1.TempoStack {

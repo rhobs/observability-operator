@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dashboards
+  labels:
+    app.kubernetes.io/instance: dashboards
+    app.kubernetes.io/managed-by: observability-operator
+    app.kubernetes.io/part-of: UIPlugin
+spec:
+  replicas: 1
+  progressDeadlineSeconds: 300
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: dashboards
+      app.kubernetes.io/managed-by: observability-operator
+      app.kubernetes.io/part-of: UIPlugin
+  template:
+    metadata:
+      name: dashboards
+      labels:
+        app.kubernetes.io/instance: dashboards
+        app.kubernetes.io/managed-by: observability-operator
+        app.kubernetes.io/part-of: UIPlugin
+    spec:
+      serviceAccountName: dashboards
+      nodeSelector:
+        kubernetes.io/os: linux
+      restartPolicy: Always
+      dnsPolicy: ClusterFirst
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: dashboards
+          image: console-dashboards-plugin:latest
+          args:
+            - -port=9443
+            - -cert=/var/serving-cert/tls.crt
+            - -key=/var/serving-cert/tls.key
+          ports:
+            - containerPort: 9443
+              name: web
+          terminationMessagePolicy: FallbackToLogsOnError
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: serving-cert
+              readOnly: true
+              mountPath: /var/serving-cert
+      volumes:
+        - name: serving-cert
+          secret:
+            secretName: dashboards
+            defaultMode: 420

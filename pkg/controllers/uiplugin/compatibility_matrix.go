@@ -35,6 +35,15 @@ type ListFunction func(ctx context.Context, list client.ObjectList, opts ...clie
 
 var compatibilityMatrix = []CompatibilityEntry{
 	{
+		//nolint:staticcheck // allow deprecated version
+		PluginType:        uiv1alpha1.TypeDashboards,
+		MinClusterVersion: "v4.11",
+		MaxClusterVersion: "",
+		ImageKey:          "ui-dashboards",
+		SupportLevel:      GeneralAvailability,
+		Features:          []string{},
+	},
+	{
 		PluginType:        uiv1alpha1.TypeTroubleshootingPanel,
 		MinClusterVersion: "v4.19",
 		MaxClusterVersion: "v4.22",

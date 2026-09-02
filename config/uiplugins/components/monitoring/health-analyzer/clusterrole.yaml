@@ -1,0 +1,17 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: components-health-view
+rules:
+  - apiGroups: [""]
+    resources: [nodes]
+    verbs: [get, list]
+  - apiGroups: [config.openshift.io]
+    resources: [clusteroperators]
+    verbs: [get, list]
+  - apiGroups: [machineconfiguration.openshift.io]
+    resources: [machineconfigpools]
+    verbs: [get, list]
+  - apiGroups: [kubevirt.io]
+    resources: [kubevirts]
+    verbs: [get, list]

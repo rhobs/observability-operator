@@ -1,0 +1,15 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: perses
+rules:
+  - apiGroups: [""]
+    resources: [namespaces]
+    verbs: [list, get]
+  - apiGroups: [perses.dev]
+    resources: [persesdashboards, persesdatasources, persesglobaldatasources]
+    verbs: [get, list, watch, create, update, delete, patch]
+  - apiGroups: [security.openshift.io]
+    resources: [securitycontextconstraints]
+    resourceNames: [nonroot, nonroot-v2]
+    verbs: [use]

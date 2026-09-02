@@ -1,0 +1,15 @@
+apiVersion: console.openshift.io/v1
+kind: ConsolePlugin
+metadata:
+  name: consoleplugin
+spec:
+  displayName: ""
+  backend:
+    type: Service
+    service:
+      name: consoleplugin
+      namespace: placeholder
+      port: 9443
+      basePath: /
+  i18n:
+    loadType: Preload

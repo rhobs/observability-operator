@@ -25,6 +25,7 @@ import (
 	clientfake "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	kyaml "sigs.k8s.io/yaml"
 
+	"github.com/rhobs/observability-operator/config"
 	obsv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/observability/v1alpha1"
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 	"github.com/rhobs/observability-operator/pkg/controllers/observability"
@@ -332,17 +333,21 @@ func TestReconcilerMatchGenerator(t *testing.T) {
 
 	resolvedImages, err := images.Validate(nil)
 	require.NoError(t, err)
-	pluginConf := uiplugin.UIPluginBuildConfig{
-		Images:           resolvedImages,
-		Namespace:        testNamespace,
-		ClusterVersion:   testClusterVersion,
-		TracingInstaller: findTracingInstaller(installers),
+	tracingInstaller := findTracingInstaller(installers)
+	pluginInfo := uiplugin.UIPluginInfo{
+		Scheme:            scheme,
+		ConfigFS:          config.FS,
+		Images:            resolvedImages,
+		Namespace:         testNamespace,
+		ClusterVersion:    testClusterVersion,
+		TracingInstaller:  tracingInstaller,
+		TempoServiceNames: tempoServiceNamesFromInstaller(tracingInstaller),
 	}
 	for _, plugin := range allPlugins {
 		if plugin.UID == "" {
 			plugin.UID = types.UID(fmt.Sprintf("parity-plugin-%s", plugin.Name))
 		}
-		pluginObjects, _, err := uiplugin.GenerateUIPluginObjects(context.Background(), plugin, pluginConf, logr.Discard())
+		pluginObjects, _, err := uiplugin.ResolvePlugin(plugin, pluginInfo, logr.Discard())
 		require.NoError(t, err)
 		for _, obj := range pluginObjects {
 			require.NoError(t, reconciler.NewUpdater(obj, plugin).Reconcile(context.Background(), rec, scheme))
