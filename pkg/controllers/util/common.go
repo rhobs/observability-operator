@@ -20,20 +20,20 @@ func Identifier(obj client.Object) string {
 
 func AddCommonLabels(obj client.Object, name string) client.Object {
 	labels := obj.GetLabels()
+	if labels == nil {
+		labels = make(map[string]string)
+	}
 	want := map[string]string{
 		"app.kubernetes.io/part-of": name,
 		"app.kubernetes.io/name":    obj.GetName(),
 		ResourceLabel:               OpName,
 	}
-	if labels == nil {
-		obj.SetLabels(want)
-		return obj
-	}
-	for name, val := range want {
-		if _, ok := labels[name]; !ok {
-			labels[name] = val
+	for k, v := range want {
+		if _, ok := labels[k]; !ok {
+			labels[k] = v
 		}
 	}
+	obj.SetLabels(labels)
 	return obj
 }
 
