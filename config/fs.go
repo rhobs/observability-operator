@@ -2,5 +2,5 @@ package config
 
 import "embed"
 
-//go:embed uiplugins
+//go:embed observabilityinstaller uiplugins
 var FS embed.FS

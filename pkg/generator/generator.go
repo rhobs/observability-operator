@@ -15,6 +15,7 @@ import (
 	"github.com/go-logr/logr"
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/controller-runtime-common/pkg/tls"
+	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -163,7 +164,10 @@ func Run(cfg RunConfig) (string, string, error) {
 	reader := NewFallbackReader(cfg.K8sClient, others...)
 
 	var errs error
-	err = generateInstallerObjects(installers, installerOpts, set, reader, installOperators, installResources)
+	installerConf := observability.NewOverlayConfig(scheme, installerOpts)
+	installerConf.Operators = installOperators
+	installerConf.Resources = installResources
+	err = resolveInstallers(installers, installerConf, set, reader)
 	errs = errors.Join(errs, err)
 
 	if installResources {
@@ -186,10 +190,10 @@ func Run(cfg RunConfig) (string, string, error) {
 
 	objects := set.Build()
 
-	// UIPlugin CRs have been resolved into concrete resources, remove them from output.
+	// Installer and UIPlugin CRs have been resolved into concrete resources, remove them from output.
 	objects = slices.DeleteFunc(objects, func(obj client.Object) bool {
 		gvk := obj.GetObjectKind().GroupVersionKind()
-		return gvk.Group == "observability.openshift.io" && gvk.Kind == "UIPlugin"
+		return gvk.Group == "observability.openshift.io" && (gvk.Kind == "UIPlugin" || gvk.Kind == "ObservabilityInstaller")
 	})
 
 	var buf bytes.Buffer
@@ -253,6 +257,7 @@ and version from a live cluster.
 		clusterScheme := runtime.NewScheme()
 		exitErr(clientgoscheme.AddToScheme(clusterScheme), "error loading scheme")
 		exitErr(configv1.Install(clusterScheme), "error loading OpenShift config scheme")
+		exitErr(olmv1.AddToScheme(clusterScheme), "error loading OLM scheme")
 
 		var err error
 		k8sClient, err = client.New(restConfig, client.Options{Scheme: clusterScheme})
@@ -284,16 +289,12 @@ and version from a live cluster.
 	}
 }
 
-// generateInstallerObjects generates the operands of each installer and adds to set.
-func generateInstallerObjects(installers []*obsv1alpha1.ObservabilityInstaller, opts observability.Options, set *resourceSet, reader client.Reader, installOperators, installResources bool) error {
+// resolveInstallers generates the operands of each installer and adds to set.
+func resolveInstallers(installers []*obsv1alpha1.ObservabilityInstaller, opts observability.OverlayConfig, set *resourceSet, reader client.Reader) error {
 	var errs error
 
 	for _, installer := range installers {
-		if installer.Namespace == "" {
-			errs = errors.Join(errs, fmt.Errorf("skipping ObservabilityInstaller %q: no namespace set (use metadata.namespace or kubectl -n)", installer.Name))
-			continue
-		}
-		installerObjects, err := observability.GenerateInstallerObjects(context.Background(), reader, installer, opts, installOperators, installResources)
+		installerObjects, err := observability.ResolveInstaller(context.Background(), reader, installer, opts)
 		if err != nil {
 			errs = errors.Join(errs, err)
 			continue
