@@ -23,12 +23,12 @@ import (
 	"os"
 	"slices"
 
+	"github.com/go-logr/logr"
 	configv1 "github.com/openshift/api/config/v1"
 	openshifttls "github.com/openshift/controller-runtime-common/pkg/tls"
 	obopo "github.com/rhobs/obo-prometheus-operator/pkg/operator"
 	"go.uber.org/zap/zapcore"
 	k8sflag "k8s.io/component-base/cli/flag"
-	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -100,7 +100,7 @@ func main() {
 
 		setupLog = ctrl.Log.WithName("setup")
 	)
-	images := k8sflag.NewMapStringString(ptr.To(make(map[string]string)))
+	images := k8sflag.NewMapStringString(new(map[string]string))
 
 	flag.StringVar(&namespace, "namespace", "default", "The namespace in which the operator runs")
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
@@ -117,14 +117,15 @@ func main() {
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
-	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+	// Auto-detect OpenShift if --openshift.enabled was not explicitly set.
+	openShiftExplicit := false
+	flag.Visit(func(f *flag.Flag) {
+		if f.Name == "openshift.enabled" {
+			openShiftExplicit = true
+		}
+	})
 
-	setupLog.Info("running with arguments",
-		"namespace", namespace,
-		"metrics-bind-address", metricsAddr,
-		"images", images,
-		"openshift.enabled", openShiftEnabled,
-	)
+	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	imgMap, err := validateImages(images)
 	if err != nil {
@@ -139,31 +140,25 @@ func main() {
 	ctx, cancel := context.WithCancel(signalCtx)
 	defer cancel()
 
-	var initialTLSProfileSpec configv1.TLSProfileSpec
-	var openshiftVersion string
-	if openShiftEnabled {
-		scheme := operator.NewOpenShiftScheme()
-		directClient, err := client.New(ctrl.GetConfigOrDie(), client.Options{Scheme: scheme})
-		if err != nil {
-			setupLog.Error(err, "failed to create client for TLS profile fetch")
-			os.Exit(1)
+	var (
+		initialTLSProfileSpec configv1.TLSProfileSpec
+		openshiftVersion      string
+	)
+	if openShiftEnabled || !openShiftExplicit {
+		initialTLSProfileSpec, openshiftVersion, err = fetchOpenShiftData(ctx, setupLog)
+		if err != nil && openShiftExplicit {
+			setupLog.Error(err, "not an OpenShift cluster")
+			os.Exit(1) // Fail if enabled explicitly.
 		}
-
-		initialTLSProfileSpec, err = openshifttls.FetchAPIServerTLSProfile(ctx, directClient)
-		if err != nil {
-			setupLog.Error(err, "failed to fetch TLS profile from cluster")
-			os.Exit(1)
-		}
-		setupLog.Info("fetched initial TLS profile", "minVersion", initialTLSProfileSpec.MinTLSVersion, "ciphers", initialTLSProfileSpec.Ciphers)
-
-		clusterVersion := &configv1.ClusterVersion{}
-		key := client.ObjectKey{Name: "version"}
-		if err := directClient.Get(ctx, key, clusterVersion); err != nil {
-			setupLog.Error(err, "failed to fetch cluster version")
-			os.Exit(1)
-		}
-		openshiftVersion = clusterVersion.Status.Desired.Version
+		openShiftEnabled = (err == nil)
 	}
+
+	setupLog.Info("running with arguments",
+		"namespace", namespace,
+		"metrics-bind-address", metricsAddr,
+		"images", images,
+		"openshift.enabled", openShiftEnabled,
+	)
 
 	op, err := operator.New(
 		ctx,
@@ -206,4 +201,23 @@ func main() {
 		setupLog.Error(err, "terminating")
 		os.Exit(1)
 	}
+}
+
+func fetchOpenShiftData(ctx context.Context, setupLog logr.Logger) (configv1.TLSProfileSpec, string, error) {
+	var tls configv1.TLSProfileSpec
+	scheme := operator.NewOpenShiftScheme()
+	c, err := client.New(ctrl.GetConfigOrDie(), client.Options{Scheme: scheme})
+	if err != nil {
+		return tls, "", fmt.Errorf("failed to create client: %w", err)
+	}
+	tls, err = openshifttls.FetchAPIServerTLSProfile(ctx, c)
+	if err != nil {
+		return tls, "", fmt.Errorf("failed to fetch TLS profile: %w", err)
+	}
+	setupLog.Info("fetched TLS profile", "minVersion", tls.MinTLSVersion, "ciphers", tls.Ciphers)
+	clusterVersion := &configv1.ClusterVersion{}
+	if err := c.Get(ctx, client.ObjectKey{Name: "version"}, clusterVersion); err != nil {
+		return tls, "", fmt.Errorf("failed to fetch cluster version: %w", err)
+	}
+	return tls, clusterVersion.Status.Desired.Version, nil
 }
