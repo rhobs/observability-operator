@@ -4,42 +4,19 @@ Using the Observability UI, you can install and manage plugins that extend the o
 
 ## Plugins
 
-- [dashboards](#dashboards): Add enhanced dashboards to the OpenShift web console. This plugin allows you to add other Prometheus datasources present in the cluster, apart from the in-cluster one, to the default dashboards.
 - [troubleshooting-panel](#troubleshooting-panel): Add the troubleshooting panel to the OpenShift web console. This plugin adds a troubleshooting panel to the console dashboard, which queries and displays results from [Korrel8r](https://github.com/korrel8r/korrel8r) to help troubleshoot issues.
 - [distributed-tracing](#distributed-tracing): Add the Observability > Traces page to the Openshift web console. This plugin allows a user to select a [Tempo](https://docs.openshift.com/container-platform/4.13/observability/distr_tracing/distr_tracing_arch/distr-tracing-architecture.html#distr-tracing-architecture_distributed-tracing-architecture) instance and view trace data from it.
 - [monitoring](#monitoring): Add the a number of Observing pages to the Openshift web related to Alerting. This plugin allows a user to view Alerts, Silences, and Alert rules.
 
-| __COO Version__ |   __OCP Versions__  | __Dashboards__ | __Distributed Tracing__ | __Logging__ | __Troubleshooting Panel__ | __Monitoring__ |
-| --------------- | ------------------- | -------------- | ----------------------- | ----------- | ------------------------- | ---------------|
-| 0.2.0           | 4.12                |       ✔        |             ✘           |       ✘     |             ✘             |       ✘       |
-| 0.3.0+          | 4.12 - 4.14         |       ✔        |             ✔           |       ✔     |             ✘             |       ✘       |
-| 1.0.0+          | 4.15                |       ✔        |             ✔           |       ✔     |             ✘             |       ✔       |
-| 1.3.0+          | 4.19+               |       ✔        |             ✔           |       ✔     |             ✔             |       ✔       |
+| **COO Version** | **OCP Versions** | **Dashboards**                            | **Distributed Tracing** | **Logging** | **Troubleshooting Panel** | **Monitoring** |
+| --------------- | ---------------- | ----------------------------------------- | ----------------------- | ----------- | ------------------------- | -------------- |
+| 0.2.0           | 4.12             | ✔                                         | ✘                       | ✘           | ✘                         | ✘              |
+| 0.3.0+          | 4.12 - 4.14      | ✔                                         | ✔                       | ✔           | ✘                         | ✘              |
+| 1.0.0+          | 4.15             | ✔                                         | ✔                       | ✔           | ✘                         | ✔              |
+| 1.3.0+          | 4.19+            | ✔                                         | ✔                       | ✔           | ✔                         | ✔              |
+| 1.6.0+          | 4.19+            | ✘ (removed in favor of Perses dashboards) | ✔                       | ✔           | ✔                         | ✔              |
 
 Some plugin offer additional features that are available dependant on the cluster version. COO will always deploy all features available for the cluster it is running on.
-
-### Dashboards
-
-The plugin will search for datasources as ConfigMaps in the `openshift-config-managed` namespace with the `console.openshift.io/dashboard-datasource: 'true'` label. The namespace `openshift-config-managed` is required, more details on how to create a datasource ConfigMap can be found in the [console-dashboards-plugin](https://github.com/openshift/console-dashboards-plugin/blob/main/docs/add-datasource.md)
-
-#### Plugin Creation
-
-To enable the console dashboards plugin, create a `UIPlugin` CR. The following example shows how to create a CR to enable the console dashboards plugin:
-
-```yaml
-apiVersion: observability.openshift.io/v1alpha1
-kind: UIPlugin
-metadata:
-  name: dashboards
-spec:
-  type: Dashboards
-```
-
-#### Feature Matrix
-
-| __COO Version__ |   __OCP Versions__  | __Features__                                          |
-| --------------- | ------------------- | ----------------------------------------------------- |
-| 0.2.0+          | 4.11+               | _No features configuration, just core functionality_  |
 
 ### Troubleshooting Panel
 
@@ -62,9 +39,9 @@ spec:
 
 #### Feature Matrix
 
-| __COO Version__ |   __OCP Versions__  | __Features__                                          |
-| --------------- | ------------------- | ----------------------------------------------------- |
-| 1.3.0+          | 4.19+               | _No features configuration, just core functionality_  |
+| **COO Version** | **OCP Versions** | **Features**                                         |
+| --------------- | ---------------- | ---------------------------------------------------- |
+| 1.3.0+          | 4.19+            | _No features configuration, just core functionality_ |
 
 ### Distributed Tracing
 
@@ -85,44 +62,47 @@ spec:
 
 #### Feature Matrix
 
-| __COO Version__ |   __OCP Versions__  | __Features__                                          |
-| --------------- | ------------------- | ----------------------------------------------------- |
-| 0.3.0+          | 4.11+               | _No features configuration, just core functionality_  |
+| **COO Version** | **OCP Versions** | **Features**                                         |
+| --------------- | ---------------- | ---------------------------------------------------- |
+| 0.3.0+          | 4.11+            | _No features configuration, just core functionality_ |
 
 ### Logging
 
 The plugin adds various Logging UI functionalities to the OpenShift web console. The core functionality of this plugin adds a new admin perspective tab `Observe > Logs`. This page includes query and log filters, the list of logs, and a histogram showing log frequency by severity. The logs can be filtered by an number of tags, such as `tenant` and `namespace`. The page also has controls for the length of time to query over, the refresh rate of the logging page, and whether to show kubernetes resource information in the results, such as `pod` and `container`. The results section shows a list of collapsed logs, which can then be expanded to show more detailed information for each log.
 
-When a __TroubleshootingPanel__ `UIPlugin` is deployed the plugin will connect the [Korrel8r](https://github.com/korrel8r/korrel8r) service and add direct links from the admin perspective `Observe > Logs` page to the `Observe > Metrics` page with a correlated PromQL query. It will also add a "See Related Logs" link from the admin perspective `Observe > Alerting` on an alerting detail page to the `Observe > Logs` page with a correlated filter set selected.
+When a **TroubleshootingPanel** `UIPlugin` is deployed the plugin will connect the [Korrel8r](https://github.com/korrel8r/korrel8r) service and add direct links from the admin perspective `Observe > Logs` page to the `Observe > Metrics` page with a correlated PromQL query. It will also add a "See Related Logs" link from the admin perspective `Observe > Alerting` on an alerting detail page to the `Observe > Logs` page with a correlated filter set selected.
 
 #### Feature List
 
-| __Feature__   | __Description__                                                                                                                                                            | __Support Level__ |
-| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| **Feature**   | **Description**                                                                                                                                                            | **Support Level**    |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
 | `dev-console` | Adds the logging view to the developer perspective                                                                                                                         | General Availability |
 | `alerts`      | Merges the OpenShift console alerts with log-based alerts defined in the Loki ruler. Adds a log-based metrics chart in the alert detail view                               | General Availability |
 | `dev-alerts`  | Merges the OpenShift console alerts with log-based alerts defined in the Loki ruler. Adds a log-based metrics chart in the alert detail view for the developer perspective | General Availability |
 
 #### Feature Matrix
 
-| __COO version__ | __OCP versions__ | __Features__                                          |
-| --------------- | ---------------- | ----------------------------------------------------- |
-| 0.3.0+          | 4.11             | _No features configuration, just core functionality_  |
-| 0.3.0+          | 4.12             | `dev-console`                                         |
-| 0.3.0+          | 4.13             | `dev-console`, `alerts`                               |
-| 0.3.0+          | 4.14+            | `dev-console`, `alerts`, `dev-alerts`                 |
+| **COO version** | **OCP versions** | **Features**                                         |
+| --------------- | ---------------- | ---------------------------------------------------- |
+| 0.3.0+          | 4.11             | _No features configuration, just core functionality_ |
+| 0.3.0+          | 4.12             | `dev-console`                                        |
+| 0.3.0+          | 4.13             | `dev-console`, `alerts`                              |
+| 0.3.0+          | 4.14+            | `dev-console`, `alerts`, `dev-alerts`                |
 
 #### Plugin Creation
 
-To enable to logging view plugin, create a `UIPlugin` CR. 
-This CR has five parameters located under `spec.logging`, used to control the behavior of the logging-view-plugin. 
-The `spec.logging.lokiStack` required parameter locates the LokiStack instance in the `openshift-logging` namespace to connect to. 
+To enable to logging view plugin, create a `UIPlugin` CR.
+This CR has five parameters located under `spec.logging`, used to control the behavior of the logging-view-plugin.
+The `spec.logging.lokiStack` required parameter locates the LokiStack instance in the `openshift-logging` namespace to connect to.
 The `spec.logging.logsLimit` and the `spec.logging.timeout` determine the number of logs returned from a query and the time before the query timeouts respectively.
 The `spec.logging.schema` accepts 3 options:
-- Defaults to `viaq` if not specified. 
+
+- Defaults to `viaq` if not specified.
 - Use `otel` for OpenTelemetry schema
 - or `select` to allow users to choose the schema from the UI.
+
 The `spec.logging.showTimezoneSelector`:
+
 - Defaults to `false` if not specified.
 - Use `true` shows the timezone selector in the UI.
 
@@ -141,7 +121,6 @@ spec:
     logsLimit: 50
     timeout: 30s
     schema: <otel or viaq or select>
-
 ```
 
 ### Monitoring
@@ -149,6 +128,7 @@ spec:
 #### Overview
 
 The plugin adds monitoring related UI features to the OpenShift web console, related to the Advance Cluster Management (ACM) perspective, incidents (cluster health analysis), and [Perses](https://github.com/perses/perses). A number of new pages and features are enabled through this plugin. Including, but not limited to:
+
 - `ACM > Observe > Alerting`
 - `ACM > Observe > Alerting > Silences`
 - `ACM > Observe > Alerting > Alert rules`
@@ -169,6 +149,7 @@ To deploy the Perses dashboard feature, the `perses-dashboards` configuration mu
 Besides, when `spec.monitoring.perses.enabled: true`, Accelerator Perses dashboard and Accelerator Perses datasource are both created.
 
 The Cluster Observability Operator creates the following roles:
+
 - `persesdashboard-editor-role` - ability to create, read, update and delete `PersesDashboard` Custom Resources under the PersesDashboards tab, and view Perses dashboards presentation in Dashboards (Perses).
 - `persesdashboard-viewer-role` - ability to read `PersesDashboard` Custom Resources under the PersesDashboards tab, and view Perses dashboards presentation in Dashboards (Perses).
 - `persesdatasource-editor-role` - ability to create, read, update and delete `PersesDatasource` Custom Resources under the PersesDatasources tab, and view Perses dashboards with data being loaded from Perses datasource in Dashboards (Perses).
@@ -179,7 +160,9 @@ The Cluster Observability Operator creates the following roles:
 When assigned via `ClusterRoleBinding`, a user has access to all Perses dashboards and datasources in all namespaces/projects. When assigned via `RoleBinding`, user has access to all Perses dashboards and datasources in the given namespace/project.
 
 Examples:
+
 - Granting `user1` the `persesdashboard-viewer-role` and `persesdatasource-viewer-role` permissions in the `openshift-cluster-observability-operator`namespace via `RoleBinding`:
+
 ```yaml
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -211,6 +194,7 @@ roleRef:
 ```
 
 - Granting `user1` the `persesdashboard-editor-role` and `persesdatasource-editor-role` permissions via `ClusterRoleBinding`:
+
 ```yaml
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -256,9 +240,9 @@ spec:
     acm:
       enabled: true
       alertmanager:
-        url: 'https://alertmanager.open-cluster-management-observability.svc:9095'
+        url: "https://alertmanager.open-cluster-management-observability.svc:9095"
       thanosQuerier:
-        url: 'https://rbac-query-proxy.open-cluster-management-observability.svc:8443'
+        url: "https://rbac-query-proxy.open-cluster-management-observability.svc:8443"
     perses:
       enabled: true
     incidents:
@@ -267,18 +251,17 @@ spec:
 
 #### Feature List
 
-| __Feature__         | __Description__                                                                                                          | __Support Level__    |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------ | -----------------    |
-| `acm-alerting`      | Adds alerting UI to multi-cluster view. Configures proxies to connect with any Alertmanager and Thanos Query API.        | Dev Preview          |
-| `incidents`         | Adds incidents UI to `Observe` section of OpenShift Console Platform. Deploys the [Cluster Health Analyzer](https://github.com/openshift/cluster-health-analyzer) and configures proxies in the plugin to connect with it. | General Availability |
-| `perses-dashboards` | Adds perses UI to `Observe` section of OpenShift Console Platform. Configures proxies to connect with a Perses instance. Installs Accelerator Perses Dashboard and Accelerator Perses Datasource. See details [here](./perses-dashboards.md) | Dev Preview          |
-
+| **Feature**         | **Description**                                                                                                                                                                                                                                                           | **Support Level**    |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| `acm-alerting`      | Adds alerting UI to multi-cluster view. Configures proxies to connect with any Alertmanager and Thanos Query API.                                                                                                                                                         | Dev Preview          |
+| `incidents`         | Adds incidents UI to `Observe` section of OpenShift Console Platform. Deploys the [Cluster Health Analyzer](https://github.com/openshift/cluster-health-analyzer) and configures proxies in the plugin to connect with it.                                                | General Availability |
+| `perses-dashboards` | Adds perses UI to `Observe` section of OpenShift Console Platform. Configures proxies to connect with a Perses instance. Installs Accelerator Perses Dashboard and Accelerator Perses Datasource. See details in [Perses dashboard documentation](./perses-dashboards.md) | Dev Preview          |
 
 #### Feature Matrix
 
-| __COO Version__ |   __OCP Versions__  | __Features__                      |
-| --------------- | ------------------- | --------------------------------- |
-| 1.0.0+          | 4.14+               | `acm-alerting`                    |
-| 1.1.0+          | 4.15+               | `acm-alerting, perses-dashboards` |
-| 1.2.0           | 4.19+               | `acm-alerting, perses-dashboards, incidents (Tech Preview)` |
-| 1.3.0+          | 4.19+               | `acm-alerting, perses-dashboards, incidents (General Availability)` |
+| **COO Version** | **OCP Versions** | **Features**                                                        |
+| --------------- | ---------------- | ------------------------------------------------------------------- |
+| 1.0.0+          | 4.14+            | `acm-alerting`                                                      |
+| 1.1.0+          | 4.15+            | `acm-alerting, perses-dashboards`                                   |
+| 1.2.0           | 4.19+            | `acm-alerting, perses-dashboards, incidents (Tech Preview)`         |
+| 1.3.0+          | 4.19+            | `acm-alerting, perses-dashboards, incidents (General Availability)` |
