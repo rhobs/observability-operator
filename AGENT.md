@@ -6,17 +6,17 @@ tags). Consult the authoritative sources referenced below instead.
 
 ## Quick reference
 
-| What                  | Where / command                                      |
-|-----------------------|------------------------------------------------------|
-| Go version            | `go.mod` (`go` directive)                            |
-| Build                 | `make operator`                                      |
-| Unit tests            | `make test-unit`                                     |
-| E2E tests             | `make test-e2e` (requires a running cluster)         |
-| Lint                  | `make lint` (Go + shell)                             |
-| Code generation       | `make generate`                                      |
-| Install dev tools     | `make tools` (installs to `tmp/bin/`)                |
-| Container runtime     | `podman` preferred, `docker` fallback                |
-| All Makefile targets  | `make help` or read `Makefile` and `Makefile.tools`  |
+| What                 | Where / command                                     |
+| -------------------- | --------------------------------------------------- |
+| Go version           | `go.mod` (`go` directive)                           |
+| Build                | `make operator`                                     |
+| Unit tests           | `make test-unit`                                    |
+| E2E tests            | `make test-e2e` (requires a running cluster)        |
+| Lint                 | `make lint` (Go + shell)                            |
+| Code generation      | `make generate`                                     |
+| Install dev tools    | `make tools` (installs to `tmp/bin/`)               |
+| Container runtime    | `podman` preferred, `docker` fallback               |
+| All Makefile targets | `make help` or read `Makefile` and `Makefile.tools` |
 
 ## Project overview
 
@@ -31,7 +31,7 @@ Key custom resources (all `v1alpha1`):
 - **ThanosQuerier** (`monitoring.rhobs`) — federates queries across
   MonitoringStacks.
 - **UIPlugin** (`observability.openshift.io`, cluster-scoped) — deploys
-  OpenShift Console dynamic plugins (dashboards, logging, tracing,
+  OpenShift Console dynamic plugins (logging, tracing,
   troubleshooting panel, monitoring).
 - **ObservabilityInstaller** (`observability.openshift.io`) — installs
   Tempo and OpenTelemetry operators via OLM subscriptions.
@@ -109,15 +109,15 @@ non-conforming messages.
 
 Common prefixes observed in this project:
 
-| Prefix    | Use for                                     |
-|-----------|---------------------------------------------|
-| `feat:`   | New features or capabilities                |
-| `fix:`    | Bug fixes                                   |
-| `chore:`  | Maintenance, dep bumps, refactors           |
-| `test:`   | Test-only changes                           |
-| `docs:`   | Documentation                               |
-| `build:`  | Build system, CI                            |
-| `api:`    | API type changes                            |
+| Prefix   | Use for                           |
+| -------- | --------------------------------- |
+| `feat:`  | New features or capabilities      |
+| `fix:`   | Bug fixes                         |
+| `chore:` | Maintenance, dep bumps, refactors |
+| `test:`  | Test-only changes                 |
+| `docs:`  | Documentation                     |
+| `build:` | Build system, CI                  |
+| `api:`   | API type changes                  |
 
 PR titles often carry a Jira ticket prefix, e.g.
 `COO-1234: fix: description` or `NO-JIRA: chore: description`.
