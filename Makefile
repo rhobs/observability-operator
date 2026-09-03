@@ -25,7 +25,7 @@ all: generate lint test-unit operator-image bundle-image
 
 .PHONY: test-unit
 test-unit:
-	go test -cover ./cmd/... ./pkg/...
+	go test -fullpath -cover ./cmd/... ./pkg/...
 
 .PHONY: lint
 lint: lint-golang lint-shell
@@ -117,6 +117,7 @@ operator: generate build
 .PHONY: build
 build:
 	go build -o ./tmp/operator ./cmd/operator/...
+	go build -o ./tmp/generator ./cmd/generator/...
 
 .PHONY: generator
 generator:
@@ -142,7 +143,7 @@ osd-e2e-test-push: osd-e2e-test-image
 
 .PHONY: test-e2e
 test-e2e:
-	go test ./test/e2e/...
+	go test -fullpath ./test/e2e/...
 
 
 ## OLM - Bundle

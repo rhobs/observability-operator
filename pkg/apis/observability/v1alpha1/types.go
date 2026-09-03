@@ -129,11 +129,26 @@ type CommonCapabilitiesSpec struct {
 	Operators *OperatorsSpec `json:"operators,omitempty"`
 }
 
+// GetOperators returns the OperatorSpec.
+// Safe to call on a nil value.
 func (c *CommonCapabilitiesSpec) GetOperators() *OperatorsSpec {
 	if c != nil {
 		return c.Operators
 	}
 	return nil
+}
+
+// InstallOperators returns true if the operator should be installed.
+// Safe to call on a nil value.
+func (c *CommonCapabilitiesSpec) InstallOperators() bool {
+	switch {
+	case c == nil:
+		return false
+	case c.Operators == nil || c.Operators.Install == nil:
+		return c.Enabled // No explicit value
+	default:
+		return *c.Operators.Install // Explicit value
+	}
 }
 
 // OperatorsSpec defines the operators installation.

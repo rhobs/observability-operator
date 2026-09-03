@@ -2,12 +2,13 @@ package uiplugin
 
 import (
 	"context"
-	"fmt"
-	"maps"
+	"io/fs"
 
 	"github.com/go-logr/logr"
+	configv1 "github.com/openshift/api/config/v1"
+	libgocrypto "github.com/openshift/library-go/pkg/crypto"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -16,33 +17,43 @@ import (
 )
 
 type UIPluginInfo struct {
-	Image                      string
-	Korrel8rImage              string
-	HealthAnalyzerImage        string
+	Scheme                     *runtime.Scheme
+	ConfigFS                   fs.FS
+	Images                     map[string]string
+	Namespace                  string
+	ClusterVersion             string
+	LokiStackName              string
+	LokiStackNamespace         string
+	TLSCiphers                 []string
+	TLSMinVersion              string
 	LokiServiceNames           map[string]string
 	TempoServiceNames          map[string]string
 	TracingInstaller           *obsv1alpha1.ObservabilityInstaller
+	Image                      string
+	Korrel8rImage              string
+	HealthAnalyzerImage        string
+	TracingTenant              string
 	Name                       string
 	ConsoleName                string
 	DisplayName                string
 	ExtraArgs                  []string
 	Proxies                    []PluginProxy
-	Role                       *rbacv1.Role
-	RoleBinding                *rbacv1.RoleBinding
-	ClusterRoles               []*rbacv1.ClusterRole
-	ClusterRoleBindings        []*rbacv1.ClusterRoleBinding
 	ConfigMap                  *corev1.ConfigMap
-	ResourceNamespace          string
 	PersesImage                string
 	AreMonitoringFeatsDisabled bool
-	TLSMinVersion              string
-	TLSCiphers                 []string
+}
+
+// ApplyTLSProfile fills the TLSMinVersion and TLSCiphers fields from an
+// OpenShift TLS security profile. OpenSSL cipher names from the profile are
+// converted to the IANA names expected by the plugin server's
+// -tls-cipher-suites flag.
+func (c *UIPluginInfo) ApplyTLSProfile(profile configv1.TLSProfileSpec) {
+	c.TLSMinVersion = string(profile.MinTLSVersion)
+	c.TLSCiphers = libgocrypto.OpenSSLToIANACipherSuites(profile.Ciphers)
 }
 
 var pluginTypeToConsoleName = map[uiv1alpha1.UIPluginType]string{
-	// Deprecated: retained for console deregistration during cleanup of existing Dashboards CRs.
-	//nolint:staticcheck
-	uiv1alpha1.TypeDashboards:           "console-dashboards-plugin",
+	uiv1alpha1.TypeDashboards:           "console-dashboards-plugin", //nolint:staticcheck // needed for deregistration of deprecated type
 	uiv1alpha1.TypeTroubleshootingPanel: "troubleshooting-panel-console-plugin",
 	uiv1alpha1.TypeDistributedTracing:   "distributed-tracing-console-plugin",
 	uiv1alpha1.TypeLogging:              "logging-view-plugin",
@@ -53,68 +64,43 @@ func ConsoleNameForType(pluginType uiv1alpha1.UIPluginType) string {
 	return pluginTypeToConsoleName[pluginType]
 }
 
-func PluginInfoBuilder(ctx context.Context, k client.Client, dk dynamic.Interface, plugin *uiv1alpha1.UIPlugin, pluginConf UIPluginsConfiguration, clusterVersion string, logger logr.Logger) (*UIPluginInfo, error) {
-	conf := UIPluginBuildConfig{
-		Images:            pluginConf.Images,
-		Namespace:         pluginConf.ResourcesNamespace,
-		ClusterVersion:    clusterVersion,
-		DynamicClient:     dk,
-		LokiServiceNames:  pluginConf.LokiServiceNames,
-		TempoServiceNames: pluginConf.TempoServiceNames,
-		TracingInstaller:  findTracingInstaller(pluginConf.Installers),
+// PluginInfoBuilder constructs a UIPluginInfo with configuration fields
+// populated from the controller state, including per-plugin-type cluster
+// lookups (Tempo/Loki service names, LokiStack).
+func PluginInfoBuilder(ctx context.Context, k client.Client, dk dynamic.Interface, scheme *runtime.Scheme, configFS fs.FS, plugin *uiv1alpha1.UIPlugin, pluginConf UIPluginsConfiguration, clusterVersion string, logger logr.Logger) (UIPluginInfo, error) {
+	info := UIPluginInfo{
+		Scheme:         scheme,
+		ConfigFS:       configFS,
+		Images:         pluginConf.Images,
+		Namespace:      pluginConf.ResourcesNamespace,
+		ClusterVersion: clusterVersion,
 	}
-	conf.ApplyTLSProfile(pluginConf.TLSProfile)
-	return buildPluginInfo(ctx, plugin, conf, logger)
-}
+	info.ApplyTLSProfile(pluginConf.TLSProfile)
 
-func findTracingInstaller(installers []obsv1alpha1.ObservabilityInstaller) *obsv1alpha1.ObservabilityInstaller {
-	for i := range installers {
-		if t := installers[i].Spec.GetCapabilities().GetTracing(); t != nil && t.Enabled {
-			return &installers[i]
-		}
-	}
-	return nil
-}
-
-func buildPluginInfo(ctx context.Context, plugin *uiv1alpha1.UIPlugin, conf UIPluginBuildConfig, logger logr.Logger) (*UIPluginInfo, error) {
-	compatibilityInfo, err := lookupImageAndFeatures(plugin.Spec.Type, conf.ClusterVersion)
-	if err != nil {
-		return nil, err
-	}
-
-	image := conf.Images[compatibilityInfo.ImageKey]
-	if image == "" {
-		return nil, fmt.Errorf("no image provided for plugin type %s with key %s", plugin.Spec.Type, compatibilityInfo.ImageKey)
-	}
-
-	var pluginInfo *UIPluginInfo
 	switch plugin.Spec.Type {
 	case uiv1alpha1.TypeDistributedTracing:
-		pluginInfo, err = createDistributedTracingPluginInfo(plugin, conf.Namespace, plugin.Name, image, compatibilityInfo.Features)
-
-	case uiv1alpha1.TypeLogging:
-		pluginInfo, err = createLoggingPluginInfo(plugin, conf.Namespace, plugin.Name, image, compatibilityInfo.Features, ctx, conf.DynamicClient, logger, conf.Images["korrel8r"])
-
-	case uiv1alpha1.TypeTroubleshootingPanel:
-		pluginInfo, err = createTroubleshootingPanelPluginInfo(plugin, conf.Namespace, plugin.Name, image, compatibilityInfo.Features, conf.ClusterVersion, logger)
-		if err == nil {
-			pluginInfo.Korrel8rImage = conf.Images["korrel8r"]
-			pluginInfo.LokiServiceNames = maps.Clone(conf.LokiServiceNames)
+		info.TempoServiceNames = make(map[string]string)
+		if name, _ := getTempoServiceName(ctx, k, OpenshiftTracingNs); name != "" {
+			info.TempoServiceNames[OpenshiftTracingNs] = name
 		}
 
-	case uiv1alpha1.TypeMonitoring:
-		pluginInfo, err = createMonitoringPluginInfo(plugin, conf.Namespace, plugin.Name, image, compatibilityInfo.Features, conf.ClusterVersion, conf.Images["health-analyzer"], conf.Images["perses"])
+	case uiv1alpha1.TypeTroubleshootingPanel:
+		info.LokiServiceNames = make(map[string]string)
+		info.LokiServiceNames[OpenshiftLoggingNs], _ = getLokiServiceName(ctx, k, OpenshiftLoggingNs)
+		info.LokiServiceNames[OpenshiftNetobservNs], _ = getLokiServiceName(ctx, k, OpenshiftNetobservNs)
+		info.TempoServiceNames = make(map[string]string)
+		if name, _ := getTempoServiceName(ctx, k, OpenshiftTracingNs); name != "" {
+			info.TempoServiceNames[OpenshiftTracingNs] = name
+		}
 
-	default:
-		return nil, fmt.Errorf("plugin type not supported: %s", plugin.Spec.Type)
-	}
-	if err != nil {
-		return nil, err
+	case uiv1alpha1.TypeLogging:
+		lokiStack, err := getLokiStack(plugin, ctx, dk, logger)
+		if err != nil {
+			return info, err
+		}
+		info.LokiStackName = lokiStack.Name
+		info.LokiStackNamespace = lokiStack.Namespace
 	}
 
-	pluginInfo.TracingInstaller = conf.TracingInstaller
-	pluginInfo.TempoServiceNames = maps.Clone(conf.TempoServiceNames)
-	pluginInfo.TLSMinVersion = conf.TLSMinVersion
-	pluginInfo.TLSCiphers = conf.TLSCiphers
-	return pluginInfo, nil
+	return info, nil
 }

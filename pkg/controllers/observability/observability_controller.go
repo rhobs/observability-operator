@@ -104,7 +104,7 @@ func (o observabilityInstallerController) Reconcile(ctx context.Context, request
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	reconcilers, err := getReconcilers(ctx, o.apiReader, instance, o.Options, operatorsStatus{
+	reconcilers, err := getReconcilers(ctx, o.apiReader, instance, o.scheme, o.Options, operatorsStatus{
 		cooNamespace: o.Options.COONamespace,
 		subs:         subs.Items,
 	})
@@ -113,16 +113,29 @@ func (o observabilityInstallerController) Reconcile(ctx context.Context, request
 	}
 	for _, reconciler := range reconcilers {
 		reconcileErr := reconciler.Reconcile(ctx, o.client, o.scheme)
-		// handle creation / update errors that can happen due to a stale cache by
-		// retrying after some time.
-		if apierrors.IsAlreadyExists(err) || apierrors.IsConflict(err) {
-			o.logger.V(1).Info("skipping reconcile error", "err", reconcileErr)
+		if apierrors.IsAlreadyExists(reconcileErr) || apierrors.IsConflict(reconcileErr) {
+			o.logger.V(1).Info("skipping reconcile error", "error", reconcileErr)
 			return ctrl.Result{RequeueAfter: 2 * time.Second}, nil
 		}
 		if reconcileErr != nil {
 			o.logger.Error(reconcileErr, "Failed to reconcile")
-			return o.updateStatus(ctx, instance, err), err
+			return o.updateStatus(ctx, instance, reconcileErr), reconcileErr
 		}
+	}
+
+	// Remove finalizer after cleanup reconcilers have run.
+	if instance.ObjectMeta.DeletionTimestamp != nil {
+		if controllerutil.ContainsFinalizer(instance, finalizerName) {
+			patch := client.MergeFrom(instance.DeepCopy())
+			controllerutil.RemoveFinalizer(instance, finalizerName)
+			if err := o.client.Patch(ctx, instance, patch); err != nil {
+				if apierrors.IsNotFound(err) {
+					return ctrl.Result{}, nil
+				}
+				return ctrl.Result{}, err
+			}
+		}
+		return ctrl.Result{}, nil
 	}
 
 	groups, err := o.discoveryClient.ServerGroups()
@@ -144,22 +157,6 @@ func (o observabilityInstallerController) Reconcile(ctx context.Context, request
 					o.logger.Error(err, "Failed to watch TempoStack resources")
 				}
 			})
-		}
-	}
-
-	// We have a deletion, short circuit and let the deletion happen
-	if instance.ObjectMeta.DeletionTimestamp != nil {
-		if controllerutil.ContainsFinalizer(instance, finalizerName) {
-			// Once all finalizers have been
-			// removed, the object will be deleted.
-			patch := client.MergeFrom(instance.DeepCopy())
-			controllerutil.RemoveFinalizer(instance, finalizerName)
-			if err := o.client.Patch(ctx, instance, patch); err != nil {
-				if apierrors.IsNotFound(err) {
-					return ctrl.Result{}, nil
-				}
-				return ctrl.Result{}, err
-			}
 		}
 	}
 
@@ -206,7 +203,7 @@ func (o observabilityInstallerController) updateStatus(ctx context.Context, inst
 			otelcol := &otelv1beta1.OpenTelemetryCollector{}
 			err := o.client.Get(ctx, types.NamespacedName{
 				Namespace: instance.Namespace,
-				Name:      otelCollectorName(instance.Name),
+				Name:      instance.Name,
 			}, otelcol)
 			if err != nil {
 				return ctrl.Result{RequeueAfter: 2 * time.Second}
@@ -221,7 +218,7 @@ func (o observabilityInstallerController) updateStatus(ctx context.Context, inst
 			}
 
 			instance.Status.Tempo = fmt.Sprintf("%s/%s (%s)", instance.Namespace, tempoName(instance.Name), tempo.Status.TempoVersion)
-			instance.Status.OpenTelemetry = fmt.Sprintf("%s/%s (%s)", instance.Namespace, otelCollectorName(instance.Name), otelcol.Status.Version)
+			instance.Status.OpenTelemetry = fmt.Sprintf("%s/%s (%s)", instance.Namespace, instance.Name, otelcol.Status.Version)
 		}
 	} else {
 		instance.Status.Tempo = ""

@@ -1,0 +1,11 @@
+apiVersion: console.openshift.io/v1alpha1
+kind: ConsolePlugin
+metadata:
+  name: consoleplugin
+spec:
+  displayName: ""
+  service:
+    name: consoleplugin
+    namespace: placeholder
+    port: 9443
+    basePath: /

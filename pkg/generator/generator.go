@@ -15,6 +15,7 @@ import (
 	"github.com/go-logr/logr"
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/openshift/controller-runtime-common/pkg/tls"
+	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -28,6 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	kyaml "sigs.k8s.io/yaml"
 
+	"github.com/rhobs/observability-operator/config"
 	obsv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/observability/v1alpha1"
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 	"github.com/rhobs/observability-operator/pkg/controllers/observability"
@@ -162,30 +164,36 @@ func Run(cfg RunConfig) (string, string, error) {
 	reader := NewFallbackReader(cfg.K8sClient, others...)
 
 	var errs error
-	err = generateInstallerObjects(installers, installerOpts, set, reader, installOperators, installResources)
+	installerConf := observability.NewOverlayConfig(scheme, installerOpts)
+	installerConf.Operators = installOperators
+	installerConf.Resources = installResources
+	err = resolveInstallers(installers, installerConf, set, reader)
 	errs = errors.Join(errs, err)
 
 	if installResources {
-		pluginConf := uiplugin.UIPluginBuildConfig{
-			Images:           resolvedImages,
-			Namespace:        cfg.Namespace,
-			ClusterVersion:   clusterVersion,
-			TracingInstaller: findTracingInstaller(installers),
-			DynamicClient:    cfg.DynamicClient,
+		tracingInstaller := findTracingInstaller(installers)
+		pluginInfo := uiplugin.UIPluginInfo{
+			Scheme:            scheme,
+			ConfigFS:          config.FS,
+			Images:            resolvedImages,
+			Namespace:         cfg.Namespace,
+			ClusterVersion:    clusterVersion,
+			TracingInstaller:  tracingInstaller,
+			TempoServiceNames: tempoServiceNamesFromInstaller(tracingInstaller),
 		}
-		pluginConf.ApplyTLSProfile(tlsProfile)
+		pluginInfo.ApplyTLSProfile(tlsProfile)
 
-		if err := generateUIPluginObjects(plugins, pluginConf, set); err != nil {
+		if err := resolveUIPlugins(plugins, pluginInfo, set); err != nil {
 			errs = errors.Join(errs, fmt.Errorf("resolving UIPlugins: %w", err))
 		}
 	}
 
 	objects := set.Build()
 
-	// UIPlugin CRs have been resolved into concrete resources, remove them from output.
+	// Installer and UIPlugin CRs have been resolved into concrete resources, remove them from output.
 	objects = slices.DeleteFunc(objects, func(obj client.Object) bool {
 		gvk := obj.GetObjectKind().GroupVersionKind()
-		return gvk.Group == "observability.openshift.io" && gvk.Kind == "UIPlugin"
+		return gvk.Group == "observability.openshift.io" && (gvk.Kind == "UIPlugin" || gvk.Kind == "ObservabilityInstaller")
 	})
 
 	var buf bytes.Buffer
@@ -249,6 +257,7 @@ and version from a live cluster.
 		clusterScheme := runtime.NewScheme()
 		exitErr(clientgoscheme.AddToScheme(clusterScheme), "error loading scheme")
 		exitErr(configv1.Install(clusterScheme), "error loading OpenShift config scheme")
+		exitErr(olmv1.AddToScheme(clusterScheme), "error loading OLM scheme")
 
 		var err error
 		k8sClient, err = client.New(restConfig, client.Options{Scheme: clusterScheme})
@@ -280,16 +289,12 @@ and version from a live cluster.
 	}
 }
 
-// generateInstallerObjects generates the operands of each installer and adds to set.
-func generateInstallerObjects(installers []*obsv1alpha1.ObservabilityInstaller, opts observability.Options, set *resourceSet, reader client.Reader, installOperators, installResources bool) error {
+// resolveInstallers generates the operands of each installer and adds to set.
+func resolveInstallers(installers []*obsv1alpha1.ObservabilityInstaller, opts observability.OverlayConfig, set *resourceSet, reader client.Reader) error {
 	var errs error
 
 	for _, installer := range installers {
-		if installer.Namespace == "" {
-			errs = errors.Join(errs, fmt.Errorf("skipping ObservabilityInstaller %q: no namespace set (use metadata.namespace or kubectl -n)", installer.Name))
-			continue
-		}
-		installerObjects, err := observability.GenerateInstallerObjects(context.Background(), reader, installer, opts, installOperators, installResources)
+		installerObjects, err := observability.ResolveInstaller(context.Background(), reader, installer, opts)
 		if err != nil {
 			errs = errors.Join(errs, err)
 			continue
@@ -310,6 +315,15 @@ func findTracingInstaller(installers []*obsv1alpha1.ObservabilityInstaller) *obs
 		}
 	}
 	return nil
+}
+
+func tempoServiceNamesFromInstaller(installer *obsv1alpha1.ObservabilityInstaller) map[string]string {
+	if installer == nil {
+		return nil
+	}
+	return map[string]string{
+		installer.Namespace: fmt.Sprintf("tempo-%s-gateway", installer.Name),
+	}
 }
 
 func readInputs(files []string) ([]byte, error) {
@@ -367,8 +381,8 @@ func readInputs(files []string) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// generateUIPluginObjects generates the operands of each uiplugin and adds to the set.
-func generateUIPluginObjects(plugins []*uiv1alpha1.UIPlugin, conf uiplugin.UIPluginBuildConfig, set *resourceSet) error {
+// resolveUIPlugins generates the operands of each uiplugin and adds to the set.
+func resolveUIPlugins(plugins []*uiv1alpha1.UIPlugin, conf uiplugin.UIPluginInfo, set *resourceSet) error {
 	// Add UIPlugin CRs generated by the observabilityinstaller.
 	uiPluginGVK := uiv1alpha1.GroupVersion.WithKind("UIPlugin")
 	for _, obj := range set.Build() {
@@ -387,9 +401,10 @@ func generateUIPluginObjects(plugins []*uiv1alpha1.UIPlugin, conf uiplugin.UIPlu
 
 	var errs error
 	for _, plugin := range plugins {
-		pluginObjects, _, err := uiplugin.GenerateUIPluginObjects(context.Background(), plugin, conf, logr.Discard())
+		pluginObjects, _, err := uiplugin.ResolvePlugin(plugin, conf, logr.Discard())
 		errs = errors.Join(errs, err)
 		for _, obj := range pluginObjects {
+			util.AddCommonLabels(obj, plugin.Name)
 			if err := set.AddResource(obj); err != nil {
 				errs = errors.Join(errs, err)
 			}

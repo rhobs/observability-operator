@@ -10,9 +10,9 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -36,7 +36,7 @@ func TestGetReconcilers(t *testing.T) {
 			name: "tracing capability enabled",
 			mockClient: func() *MockClient {
 				mockClient := &MockClient{}
-				mockClient.On("Get", context.Background(), mock.Anything, mock.IsType(&olmv1alpha1.Subscription{}), mock.Anything).Return(nil)
+				mockClient.On("Get", context.Background(), mock.Anything, mock.IsType(&unstructured.Unstructured{}), mock.Anything).Return(nil)
 				mockClient.On("Apply", context.Background(), mock.Anything, mock.Anything).Return(nil)
 				return mockClient
 			},
@@ -61,7 +61,7 @@ func TestGetReconcilers(t *testing.T) {
 			name: "tracing capability enabled, s3 storage with TLS",
 			mockClient: func() *MockClient {
 				mockClient := &MockClient{}
-				mockClient.On("Get", context.Background(), mock.Anything, mock.IsType(&olmv1alpha1.Subscription{}), mock.Anything).Return(nil)
+				mockClient.On("Get", context.Background(), mock.Anything, mock.IsType(&unstructured.Unstructured{}), mock.Anything).Return(nil)
 				mockClient.On("Get", context.Background(), mock.Anything, mock.IsType(&corev1.Secret{}), mock.Anything).Return(nil)
 				mockClient.On("Get", context.Background(), mock.Anything, mock.IsType(&corev1.ConfigMap{}), mock.Anything).Return(nil)
 				mockClient.On("Apply", context.Background(), mock.Anything, mock.Anything).Return(nil)
@@ -83,7 +83,7 @@ func TestGetReconcilers(t *testing.T) {
 								ObjectStorageSpec: &obsv1alpha1.TracingObjectStorageSpec{
 									S3: &obsv1alpha1.S3Spec{
 										Bucket:      "tempo",
-										Endpoint:    "tmepo:111",
+										Endpoint:    "tempo:111",
 										AccessKeyID: "id",
 										AccessKeySecret: obsv1alpha1.SecretKeySelector{
 											Key:  "key",
@@ -107,14 +107,9 @@ func TestGetReconcilers(t *testing.T) {
 			name: "tracing capability disabled, install operators enabled",
 			mockClient: func() *MockClient {
 				mockClient := &MockClient{}
-				mockClient.On("Get", context.Background(), mock.Anything, mock.IsType(&olmv1alpha1.Subscription{}), mock.Anything).Return(nil)
-				mockClient.On("Delete", context.Background(), mock.IsType(&corev1.Namespace{}), mock.Anything).Return(nil)
-				mockClient.On("Delete", context.Background(), mock.IsType(&otelv1beta1.OpenTelemetryCollector{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Delete", context.Background(), mock.IsType(&rbacv1.ClusterRole{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Delete", context.Background(), mock.IsType(&rbacv1.ClusterRoleBinding{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Delete", context.Background(), mock.IsType(&tempov1alpha1.TempoStack{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Delete", context.Background(), mock.IsType(&corev1.Secret{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Delete", context.Background(), mock.IsType(&uiv1alpha1.UIPlugin{}), mock.Anything, mock.Anything).Return(nil)
+				mockClient.On("Get", context.Background(), mock.Anything, mock.IsType(&unstructured.Unstructured{}), mock.Anything).Return(nil)
+				mockClient.On("Delete", context.Background(), mock.IsType(&unstructured.Unstructured{}), mock.Anything).Return(nil)
+				mockClient.On("Delete", context.Background(), mock.IsType(&corev1.Secret{}), mock.Anything).Return(nil)
 				return mockClient
 			},
 			instance: &obsv1alpha1.ObservabilityInstaller{
@@ -140,15 +135,8 @@ func TestGetReconcilers(t *testing.T) {
 			name: "tracing capability disabled",
 			mockClient: func() *MockClient {
 				mockClient := &MockClient{}
-				mockClient.On("Delete", context.Background(), mock.IsType(&olmv1alpha1.Subscription{}), mock.Anything).Return(nil)
-				mockClient.On("Delete", context.Background(), mock.IsType(&olmv1alpha1.ClusterServiceVersion{}), mock.Anything).Return(nil)
-				mockClient.On("Delete", context.Background(), mock.IsType(&corev1.Namespace{}), mock.Anything).Return(nil)
-				mockClient.On("Delete", context.Background(), mock.IsType(&otelv1beta1.OpenTelemetryCollector{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Delete", context.Background(), mock.IsType(&rbacv1.ClusterRole{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Delete", context.Background(), mock.IsType(&rbacv1.ClusterRoleBinding{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Delete", context.Background(), mock.IsType(&tempov1alpha1.TempoStack{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Delete", context.Background(), mock.IsType(&corev1.Secret{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Delete", context.Background(), mock.IsType(&uiv1alpha1.UIPlugin{}), mock.Anything, mock.Anything).Return(nil)
+				mockClient.On("Delete", context.Background(), mock.IsType(&unstructured.Unstructured{}), mock.Anything).Return(nil)
+				mockClient.On("Delete", context.Background(), mock.IsType(&corev1.Secret{}), mock.Anything).Return(nil)
 				return mockClient
 			},
 			instance: &obsv1alpha1.ObservabilityInstaller{
@@ -208,15 +196,8 @@ func TestGetReconcilers(t *testing.T) {
 			name: "empty spec",
 			mockClient: func() *MockClient {
 				mockClient := &MockClient{}
-				mockClient.On("Delete", context.Background(), mock.IsType(&olmv1alpha1.Subscription{}), mock.Anything).Return(nil)
-				mockClient.On("Delete", context.Background(), mock.IsType(&olmv1alpha1.ClusterServiceVersion{}), mock.Anything).Return(nil)
-				mockClient.On("Delete", context.Background(), mock.IsType(&corev1.Namespace{}), mock.Anything).Return(nil)
-				mockClient.On("Delete", context.Background(), mock.IsType(&otelv1beta1.OpenTelemetryCollector{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Delete", context.Background(), mock.IsType(&rbacv1.ClusterRole{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Delete", context.Background(), mock.IsType(&rbacv1.ClusterRoleBinding{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Delete", context.Background(), mock.IsType(&tempov1alpha1.TempoStack{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Delete", context.Background(), mock.IsType(&corev1.Secret{}), mock.Anything, mock.Anything).Return(nil)
-				mockClient.On("Delete", context.Background(), mock.IsType(&uiv1alpha1.UIPlugin{}), mock.Anything, mock.Anything).Return(nil)
+				mockClient.On("Delete", context.Background(), mock.IsType(&unstructured.Unstructured{}), mock.Anything).Return(nil)
+				mockClient.On("Delete", context.Background(), mock.IsType(&corev1.Secret{}), mock.Anything).Return(nil)
 				return mockClient
 			},
 			instance: &obsv1alpha1.ObservabilityInstaller{
@@ -234,7 +215,7 @@ func TestGetReconcilers(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			mockClient := test.mockClient()
 
-			reconcilers, err := getReconcilers(context.Background(), mockClient, test.instance, Options{
+			reconcilers, err := getReconcilers(context.Background(), mockClient, test.instance, getScheme(), Options{
 				COONamespace: "operators",
 				OpenTelemetryOperator: OperatorInstallConfig{
 					Namespace:   "operators",

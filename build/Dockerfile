@@ -13,6 +13,7 @@ RUN go mod download
 # Copy the go source
 COPY cmd/operator/main.go cmd/operator/main.go
 COPY pkg/ pkg/
+COPY config/ config/
 COPY must-gather/ must-gather/
 
 # Build
