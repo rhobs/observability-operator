@@ -20,12 +20,12 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"maps"
 	"os"
 	"slices"
 
 	configv1 "github.com/openshift/api/config/v1"
 	openshifttls "github.com/openshift/controller-runtime-common/pkg/tls"
-	obopo "github.com/rhobs/obo-prometheus-operator/pkg/operator"
 	"go.uber.org/zap/zapcore"
 	k8sflag "k8s.io/component-base/cli/flag"
 	"k8s.io/utils/ptr"
@@ -33,60 +33,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	"github.com/rhobs/observability-operator/pkg/images"
 	"github.com/rhobs/observability-operator/pkg/operator"
 )
 
-// The default values we use. Prometheus and Alertmanager are handled by
-// prometheus-operator. For thanos we use the default version from
-// prometheus-operator.
-var defaultImages = map[string]string{
-	"prometheus":                   "",
-	"alertmanager":                 "",
-	"thanos":                       obopo.DefaultThanosImage,
-	"ui-troubleshooting-panel-pf6": "quay.io/openshift-observability-ui/troubleshooting-panel-console-plugin:v0.4.5",
-	"ui-troubleshooting-panel":     "quay.io/openshift-observability-ui/troubleshooting-panel-console-plugin:v1.0.0",
-	"ui-distributed-tracing-pf4":   "quay.io/openshift-observability-ui/distributed-tracing-console-plugin:v0.3.3",
-	"ui-distributed-tracing-pf5":   "quay.io/openshift-observability-ui/distributed-tracing-console-plugin:v0.4.3",
-	"ui-distributed-tracing-pf6":   "quay.io/openshift-observability-ui/distributed-tracing-console-plugin:v1.0.3",
-	"ui-distributed-tracing":       "quay.io/openshift-observability-ui/distributed-tracing-console-plugin:v1.1.0",
-	"ui-logging-pf4":               "quay.io/openshift-observability-ui/logging-view-plugin:v6.0.5",
-	"ui-logging-pf5":               "quay.io/openshift-observability-ui/logging-view-plugin:v6.1.6",
-	"ui-logging":                   "quay.io/openshift-observability-ui/logging-view-plugin:v6.2.1",
-	"korrel8r":                     "quay.io/korrel8r/korrel8r:0.11.1",
-	"health-analyzer":              "quay.io/openshiftanalytics/cluster-health-analyzer:v1.1.1",
-	"ui-monitoring-pf5":            "quay.io/openshift-observability-ui/monitoring-console-plugin:v0.4.5",
-	"ui-monitoring-pf6":            "quay.io/openshift-observability-ui/monitoring-console-plugin:v0.5.4",
-	"ui-monitoring":                "quay.io/openshift-observability-ui/monitoring-console-plugin:v1.1.0",
-	"perses":                       "quay.io/openshift-observability-ui/perses:v0.54.1",
-}
-
-func imagesUsed() []string {
-	i := 0
-	imgs := make([]string, len(defaultImages))
-	for k := range defaultImages {
-		imgs[i] = k
-		i++
+func validateImages(overrides *k8sflag.MapStringString) (map[string]string, error) {
+	if overrides.Empty() {
+		return images.Validate(nil)
 	}
-	slices.Sort(imgs)
-	return imgs
-}
-
-// validateImages merges the passed images with the defaults and checks if any
-// unknown image names are passed. If an unknown image is found, this raises an
-// error.
-func validateImages(images *k8sflag.MapStringString) (map[string]string, error) {
-	res := defaultImages
-	if images.Empty() {
-		return res, nil
-	}
-	imgs := *images.Map
-	for k, v := range imgs {
-		if _, ok := res[k]; !ok {
-			return nil, fmt.Errorf("image %v is unknown", k)
-		}
-		res[k] = v
-	}
-	return res, nil
+	return images.Validate(*overrides.Map)
 }
 
 func main() {
@@ -100,12 +55,12 @@ func main() {
 
 		setupLog = ctrl.Log.WithName("setup")
 	)
-	images := k8sflag.NewMapStringString(ptr.To(make(map[string]string)))
+	imageOverrides := k8sflag.NewMapStringString(ptr.To(make(map[string]string)))
 
 	flag.StringVar(&namespace, "namespace", "default", "The namespace in which the operator runs")
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&healthProbeAddr, "health-probe-bind-address", ":8081", "The address the health probe endpoint binds to.")
-	flag.Var(images, "images", fmt.Sprintf("Full images refs to use for containers managed by the operator. E.g thanos=quay.io/thanos/thanos:v0.33.0. Images used are %v", imagesUsed()))
+	flag.Var(imageOverrides, "images", fmt.Sprintf("Full images refs to use for containers managed by the operator. E.g thanos=quay.io/thanos/thanos:v0.33.0. Images used are %v", slices.Sorted(maps.Keys(images.DefaultImages))))
 	flag.BoolVar(&openShiftEnabled, "openshift.enabled", false, "Enable OpenShift specific features such as Console Plugins.")
 	flag.StringVar(&otelCSVName, "opentelemetry-csv", "", "OpenTelemetry Operator starting CSV name. This can be used to install a specific OpenTelemetry Operator version. Empty string means the latest version will be installed.")
 	flag.StringVar(&tempoCSVName, "tempo-csv", "", "Tempo Operator starting CSV name. This can be used to install a specific Tempo Operator version. Empty string means the latest version will be installed.")
@@ -122,11 +77,11 @@ func main() {
 	setupLog.Info("running with arguments",
 		"namespace", namespace,
 		"metrics-bind-address", metricsAddr,
-		"images", images,
+		"images", imageOverrides,
 		"openshift.enabled", openShiftEnabled,
 	)
 
-	imgMap, err := validateImages(images)
+	imgMap, err := validateImages(imageOverrides)
 	if err != nil {
 		setupLog.Error(err, "cannot create a new operator")
 		os.Exit(1)

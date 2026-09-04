@@ -83,6 +83,30 @@ func TestClientObjectApplyConfig_RoundTrip(t *testing.T) {
 	require.Equal(t, original.Data, target.Data)
 }
 
+func TestUpdaterDesired(t *testing.T) {
+	cm := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "cm", Namespace: "ns"}}
+	owner := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "owner", Namespace: "ns"}}
+	u := NewUpdater(cm, owner)
+	desired := u.Desired()
+	require.Equal(t, 1, len(desired))
+	require.Equal(t, "cm", desired[0].GetName())
+}
+
+func TestDeleterDesired(t *testing.T) {
+	cm := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "cm"}}
+	d := NewDeleter(cm)
+	require.Nil(t, d.Desired())
+}
+
+func TestCreateUpdateReconcilerDesired(t *testing.T) {
+	cm := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "cm", Namespace: "ns"}}
+	owner := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "owner", Namespace: "ns"}}
+	r := NewCreateUpdateReconciler(cm, owner)
+	desired := r.Desired()
+	require.Equal(t, 1, len(desired))
+	require.Equal(t, "cm", desired[0].GetName())
+}
+
 func TestClientObjectApplyConfig_Getters(t *testing.T) {
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{

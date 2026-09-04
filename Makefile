@@ -21,7 +21,7 @@ CATALOG_TEMP := $(shell mktemp -d)
 ## Development
 
 .PHONY: all
-all: lint test-unit operator-image bundle-image
+all: generate lint test-unit operator-image bundle-image
 
 .PHONY: test-unit
 test-unit:
@@ -117,6 +117,10 @@ operator: generate build
 .PHONY: build
 build:
 	go build -o ./tmp/operator ./cmd/operator/...
+
+.PHONY: generator
+generator:
+	go build -o ./tmp/generator ./cmd/generator/...
 
 .PHONY: operator-image
 operator-image: generate
