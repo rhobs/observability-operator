@@ -33,9 +33,13 @@ func (r createUpdateReconciler) Reconcile(ctx context.Context, c client.Client, 
 	return err
 }
 
-func NewCreateUpdateReconciler(resource client.Object, owner metav1.Object) Reconciler {
+func NewCreateUpdateReconciler(resource client.Object, owner metav1.Object) (Reconciler, error) {
+	labeled, err := util.AddCommonLabels(resource, owner.GetName())
+	if err != nil {
+		return nil, err
+	}
 	return createUpdateReconciler{
 		resourceOwner: owner,
-		resource:      util.AddCommonLabels(resource, owner.GetName()),
-	}
+		resource:      labeled,
+	}, nil
 }

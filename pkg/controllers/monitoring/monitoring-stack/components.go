@@ -47,7 +47,7 @@ func stackComponentReconcilers(
 	thanos ThanosConfiguration,
 	prometheus PrometheusConfiguration,
 	alertmanager AlertmanagerConfiguration,
-) []reconciler.Reconciler {
+) ([]reconciler.Reconciler, error) {
 	prometheusName := ms.Name + "-prometheus"
 	alertmanagerName := ms.Name + "-alertmanager"
 	additionalScrapeConfigsSecretName := ms.Name + "-self-scrape"
@@ -55,36 +55,33 @@ func stackComponentReconcilers(
 	createCRB := hasNsSelector && ms.Spec.CreateClusterRoleBindings == stack.CreateClusterRoleBindings
 	deployAlertmanager := !ms.Spec.AlertmanagerConfig.Disabled
 
-	return []reconciler.Reconciler{
-		// Create RBAC
-		reconciler.NewUpdater(newServiceAccount(prometheusName, ms.Namespace), ms),
-		reconciler.NewOptionalUpdater(newServiceAccount(alertmanagerName, ms.Namespace), ms, deployAlertmanager),
+	b := &reconciler.ReconcilerBuilder{}
+	// Create RBAC
+	b.Add(reconciler.NewUpdater(newServiceAccount(prometheusName, ms.Namespace), ms))
+	b.Add(reconciler.NewOptionalUpdater(newServiceAccount(alertmanagerName, ms.Namespace), ms, deployAlertmanager))
 
-		reconciler.NewUpdater(newPrometheusClusterRole(prometheusName, rbacVerbs), ms),
-		// create clusterrolebinding if nsSelector's present otherwise a rolebinding
-		reconciler.NewOptionalUpdater(newClusterRoleBinding(ms, prometheusName), ms, createCRB),
-		reconciler.NewOptionalUpdater(newRoleBindingForClusterRole(ms, prometheusName), ms, !createCRB),
+	b.Add(reconciler.NewUpdater(newPrometheusClusterRole(prometheusName, rbacVerbs), ms))
+	// create clusterrolebinding if nsSelector's present otherwise a rolebinding
+	b.Add(reconciler.NewOptionalUpdater(newClusterRoleBinding(ms, prometheusName), ms, createCRB))
+	b.Add(reconciler.NewOptionalUpdater(newRoleBindingForClusterRole(ms, prometheusName), ms, !createCRB))
 
-		reconciler.NewOptionalUpdater(newAlertManagerClusterRole(alertmanagerName, rbacVerbs), ms, deployAlertmanager),
-		// create clusterrolebinding if alertmanager is enabled and namespace selector is also present in MonitoringStack
-		reconciler.NewOptionalUpdater(newClusterRoleBinding(ms, alertmanagerName), ms, deployAlertmanager && createCRB),
-		reconciler.NewOptionalUpdater(newRoleBindingForClusterRole(ms, alertmanagerName), ms, deployAlertmanager && !createCRB),
+	b.Add(reconciler.NewOptionalUpdater(newAlertManagerClusterRole(alertmanagerName, rbacVerbs), ms, deployAlertmanager))
+	// create clusterrolebinding if alertmanager is enabled and namespace selector is also present in MonitoringStack
+	b.Add(reconciler.NewOptionalUpdater(newClusterRoleBinding(ms, alertmanagerName), ms, deployAlertmanager && createCRB))
+	b.Add(reconciler.NewOptionalUpdater(newRoleBindingForClusterRole(ms, alertmanagerName), ms, deployAlertmanager && !createCRB))
 
-		// Prometheus Deployment
-		reconciler.NewUpdater(newPrometheus(ms, prometheusName,
-			additionalScrapeConfigsSecretName,
-			thanos, prometheus), ms),
-		reconciler.NewUpdater(newPrometheusService(ms), ms),
-		reconciler.NewUpdater(newThanosSidecarService(ms), ms),
-		reconciler.NewUpdater(newAdditionalScrapeConfigsSecret(ms, additionalScrapeConfigsSecretName), ms),
-		reconciler.NewOptionalUpdater(newPrometheusPDB(ms), ms,
-			*ms.Spec.PrometheusConfig.Replicas > 1),
+	// Prometheus Deployment
+	b.Add(reconciler.NewUpdater(newPrometheus(ms, prometheusName, additionalScrapeConfigsSecretName, thanos, prometheus), ms))
+	b.Add(reconciler.NewUpdater(newPrometheusService(ms), ms))
+	b.Add(reconciler.NewUpdater(newThanosSidecarService(ms), ms))
+	b.Add(reconciler.NewUpdater(newAdditionalScrapeConfigsSecret(ms, additionalScrapeConfigsSecretName), ms))
+	b.Add(reconciler.NewOptionalUpdater(newPrometheusPDB(ms), ms, *ms.Spec.PrometheusConfig.Replicas > 1))
 
-		// Alertmanager Deployment
-		reconciler.NewOptionalUpdater(newAlertmanager(ms, alertmanagerName, alertmanager), ms, deployAlertmanager),
-		reconciler.NewOptionalUpdater(newAlertmanagerService(ms), ms, deployAlertmanager),
-		reconciler.NewOptionalUpdater(newAlertmanagerPDB(ms), ms, deployAlertmanager && *ms.Spec.AlertmanagerConfig.Replicas > 1),
-	}
+	// Alertmanager Deployment
+	b.Add(reconciler.NewOptionalUpdater(newAlertmanager(ms, alertmanagerName, alertmanager), ms, deployAlertmanager))
+	b.Add(reconciler.NewOptionalUpdater(newAlertmanagerService(ms), ms, deployAlertmanager))
+	b.Add(reconciler.NewOptionalUpdater(newAlertmanagerPDB(ms), ms, deployAlertmanager && *ms.Spec.AlertmanagerConfig.Replicas > 1))
+	return b.Build()
 }
 
 func newPrometheusClusterRole(rbacResourceName string, rbacVerbs []string) *rbacv1.ClusterRole {
