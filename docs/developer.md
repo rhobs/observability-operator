@@ -189,6 +189,8 @@ Most commonly used types are:
 Other than `fix:` and `feat:`, the following type can also be used: `build:`,
 `chore:`, `ci:`, `docs:`, `style:`, `refactor:`, `perf:` and `test:`.
 
+Run `make commit-lint` to validate your branch's commit messages locally before pushing.
+
 # Release management
 
 The project follows [SemVer 2.0.0](https://semver.org/)
