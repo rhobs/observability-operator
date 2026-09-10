@@ -1,0 +1,50 @@
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_1.26 as builder
+
+WORKDIR /workspace
+# Copy the Go Modules manifests
+COPY observability-operator/ .
+
+ENV GOFLAGS='-mod=readonly'
+ENV GOTOOLCHAIN=local
+ENV CGO_ENABLED=1
+ENV GOEXPERIMENT=strictfipsruntime
+
+# Build
+RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -a -tags netgo,osusergo -o manager cmd/operator/main.go
+
+FROM registry.redhat.io/openshift4/ose-cli-rhel9 AS origincli
+
+RUN OC_PATH=$(which oc); \
+    echo ${OC_PATH}; \
+    cp ${OC_PATH} /tmp/oc
+
+FROM registry.redhat.io/ubi9/ubi-minimal:latest@sha256:8eb2830d0936237fc13a1f2f7e45aecf90d69043380ad167fad0343632937f41
+WORKDIR /
+
+# skip, only needed for must gather
+# RUN microdnf install -y rsync tar xz
+
+COPY --from=origincli /tmp/oc /usr/bin/oc
+
+COPY --from=builder /workspace/manager .
+COPY --from=builder --chmod=0755 /workspace/must-gather/collection-scripts/* /usr/bin/
+COPY --from=builder /workspace/LICENSE      /licenses/.
+USER 65532:65532
+
+ENTRYPOINT ["/manager"]
+
+ARG VERSION=v1.5.2
+LABEL com.redhat.component="coo-operator" \
+    name="cluster-observability-operator/cluster-observability-rhel9-operator" \
+    cpe="cpe:/a:redhat:cluster_observability_operator:1.5::el9" \
+    version="${VERSION}" \
+    release="${VERSION}" \
+    vendor="Red Hat, Inc." \
+    distribution-scope="public" \
+    url="https://github.com/rhobs/observability-operator" \
+    summary="Cluster Observability Operator" \
+    io.openshift.tags="openshift,observability" \
+    io.k8s.display-name="Cluster Observability Operator" \
+    io.k8s.description="Cluster Observability Operator enables administrators to create standalone monitoring stacks that are independently configurable for use by different services and users." \
+    maintainer="Cluster Observability Operator Team <team-monitoring-incluster@redhat.com>" \
+    description="Cluster Observability Operator"
