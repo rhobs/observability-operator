@@ -40,6 +40,7 @@ lint-shell: $(SHELLCHECK)
 
 .PHONY: commit-lint
 commit-lint:
+	git fetch origin main --quiet
 	npx --yes @commitlint/cli --from $(shell git merge-base HEAD origin/main) --to HEAD
 
 .PHONY: check-jq
