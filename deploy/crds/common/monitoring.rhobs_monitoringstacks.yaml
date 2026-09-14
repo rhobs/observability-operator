@@ -50,6 +50,12 @@ spec:
                     default: false
                     description: Disables the deployment of Alertmanager.
                     type: boolean
+                  externalUrl:
+                    description: |-
+                      ExternalURL is the URL under which Alertmanager is externally reachable.
+                      It is passed to Alertmanager as --web.external-url and is used as
+                      .ExternalURL in notification templates.
+                    type: string
                   matcherStrategy:
                     default:
                       type: None
@@ -310,6 +316,12 @@ spec:
                       type: string
                     description: Define ExternalLabels for prometheus
                     type: object
+                  externalUrl:
+                    description: |-
+                      ExternalURL is the URL under which Prometheus is externally reachable
+                      (for example behind a Route or Ingress). It is passed to Prometheus as
+                      --web.external-url and is used as the base of alert GeneratorURLs.
+                    type: string
                   persistentVolumeClaim:
                     description: Define persistent volume claim for prometheus
                     properties:

@@ -269,6 +269,11 @@ type PrometheusConfig struct {
 	// Define ExternalLabels for prometheus
 	// +optional
 	ExternalLabels map[string]string `json:"externalLabels,omitempty"`
+	// ExternalURL is the URL under which Prometheus is externally reachable
+	// (for example behind a Route or Ingress). It is passed to Prometheus as
+	// --web.external-url and is used as the base of alert GeneratorURLs.
+	// +optional
+	ExternalURL string `json:"externalUrl,omitempty"`
 	// Enable Prometheus to be used as a receiver for the Prometheus remote write protocol. Defaults to the value of `false`.
 	// +optional
 	EnableRemoteWriteReceiver bool `json:"enableRemoteWriteReceiver,omitempty"`
@@ -315,6 +320,12 @@ type AlertmanagerConfig struct {
 	// Configure TLS options for the Alertmanager web server.
 	// +optional
 	WebTLSConfig *WebTLSConfig `json:"webTLSConfig,omitempty"`
+
+	// ExternalURL is the URL under which Alertmanager is externally reachable.
+	// It is passed to Alertmanager as --web.external-url and is used as
+	// .ExternalURL in notification templates.
+	// +optional
+	ExternalURL string `json:"externalUrl,omitempty"`
 }
 
 // NamespaceSelector is a selector for selecting either all namespaces or a

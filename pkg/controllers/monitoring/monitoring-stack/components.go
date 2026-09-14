@@ -247,6 +247,10 @@ func newPrometheus(
 		prometheus.Spec.Secrets = append(prometheus.Spec.Secrets, tlsConfig.CertificateAuthority.Name)
 	}
 
+	if config != nil && config.ExternalURL != "" {
+		prometheus.Spec.ExternalURL = config.ExternalURL
+	}
+
 	if prometheusCfg.Image != "" {
 		prometheus.Spec.CommonPrometheusFields.Image = ptr.To(prometheusCfg.Image)
 	}

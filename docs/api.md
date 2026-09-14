@@ -231,6 +231,15 @@ Define Alertmanager config
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b>externalUrl</b></td>
+        <td>string</td>
+        <td>
+          ExternalURL is the URL under which Alertmanager is externally reachable.
+It is passed to Alertmanager as --web.external-url and is used as
+.ExternalURL in notification templates.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#monitoringstackspecalertmanagerconfigmatcherstrategy">matcherStrategy</a></b></td>
         <td>object</td>
         <td>
@@ -660,6 +669,15 @@ The resulting endpoint is /api/v1/otlp/v1/metrics.<br/>
         <td>map[string]string</td>
         <td>
           Define ExternalLabels for prometheus<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>externalUrl</b></td>
+        <td>string</td>
+        <td>
+          ExternalURL is the URL under which Prometheus is externally reachable
+(for example behind a Route or Ingress). It is passed to Prometheus as
+--web.external-url and is used as the base of alert GeneratorURLs.<br/>
         </td>
         <td>false</td>
       </tr><tr>

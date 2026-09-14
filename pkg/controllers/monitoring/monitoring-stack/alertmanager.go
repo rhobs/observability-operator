@@ -80,6 +80,9 @@ func newAlertmanager(
 	if alertmanagerCfg.Image != "" {
 		am.Spec.Image = ptr.To(alertmanagerCfg.Image)
 	}
+	if ms.Spec.AlertmanagerConfig.ExternalURL != "" {
+		am.Spec.ExternalURL = ms.Spec.AlertmanagerConfig.ExternalURL
+	}
 	if ms.Spec.AlertmanagerConfig.WebTLSConfig != nil {
 		tlsConfig := ms.Spec.AlertmanagerConfig.WebTLSConfig
 		am.Spec.Web = &monv1.AlertmanagerWebSpec{
