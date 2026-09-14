@@ -4,6 +4,10 @@ observability-operator must-gather
 `observability-operator-must-gather` is a tool built on top of [OpenShift must-gather](https://github.com/openshift/must-gather)
 that expands its capabilities to gather Observability Operator information.
 
+The collection logic is implemented in Go (see `must-gather/`) and talks to the
+cluster directly via the Kubernetes API. It does **not** require the `oc` binary
+to be present in the image.
+
 **Note:** This image is only built for x86_64 architecture
 
 ### Usage

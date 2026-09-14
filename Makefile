@@ -25,7 +25,7 @@ all: lint test-unit operator-image bundle-image
 
 .PHONY: test-unit
 test-unit:
-	go test -cover ./cmd/... ./pkg/...
+	go test -cover ./cmd/... ./pkg/... ./must-gather/...
 
 .PHONY: lint
 lint: lint-golang lint-shell
@@ -115,8 +115,12 @@ generate: generate-crds generate-deepcopy generate-kustomize generate-package-re
 operator: generate build
 
 .PHONY: build
-build:
+build: must-gather
 	go build -o ./tmp/operator ./cmd/operator/...
+
+.PHONY: must-gather
+must-gather:
+	go build -o ./tmp/gather ./must-gather/cmd
 
 .PHONY: operator-image
 operator-image: generate
