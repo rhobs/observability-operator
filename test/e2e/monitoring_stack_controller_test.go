@@ -66,6 +66,9 @@ func TestMonitoringStackController(t *testing.T) {
 		name:     "Empty stack spec must create a Prometheus",
 		scenario: emptyStackCreatesPrometheus,
 	}, {
+		name:     "externalUrl propagates to Prometheus and Alertmanager",
+		scenario: assertExternalURLPropagates,
+	}, {
 		name:     "resource selector nil propagates to Prometheus",
 		scenario: nilResrouceSelectorPropagatesToPrometheus,
 	}, {
@@ -158,6 +161,29 @@ func emptyStackCreatesPrometheus(t *testing.T) {
 	// Creating an Empty monitoring stack must create a Prometheus with defaults applied
 	prometheus := monv1.Prometheus{}
 	f.GetResourceWithRetry(t, ms.Name, ms.Namespace, &prometheus)
+}
+
+func assertExternalURLPropagates(t *testing.T) {
+	const (
+		prometheusURL   = "https://prometheus.example.com"
+		alertmanagerURL = "https://alertmanager.example.com"
+	)
+	ms := newMonitoringStack(t, "external-url")
+	ms.Spec.PrometheusConfig = &stack.PrometheusConfig{
+		ExternalURL: prometheusURL,
+	}
+	ms.Spec.AlertmanagerConfig.ExternalURL = alertmanagerURL
+
+	err := f.K8sClient.Create(context.Background(), ms)
+	assert.NilError(t, err, "failed to create a monitoring stack")
+
+	prometheus := monv1.Prometheus{}
+	f.GetResourceWithRetry(t, ms.Name, ms.Namespace, &prometheus)
+	assert.Equal(t, prometheusURL, prometheus.Spec.ExternalURL)
+
+	alertmanager := monv1.Alertmanager{}
+	f.GetResourceWithRetry(t, ms.Name, ms.Namespace, &alertmanager)
+	assert.Equal(t, alertmanagerURL, alertmanager.Spec.ExternalURL)
 }
 
 func nilResrouceSelectorPropagatesToPrometheus(t *testing.T) {

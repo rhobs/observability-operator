@@ -247,7 +247,7 @@ func newPrometheus(
 		prometheus.Spec.Secrets = append(prometheus.Spec.Secrets, tlsConfig.CertificateAuthority.Name)
 	}
 
-	if config != nil && config.ExternalURL != "" {
+	if config.ExternalURL != "" {
 		prometheus.Spec.ExternalURL = config.ExternalURL
 	}
 

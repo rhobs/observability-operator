@@ -116,74 +116,61 @@ func TestNewPrometheusSetsThanosSidecarResources(t *testing.T) {
 	assert.DeepEqual(t, promResources, prom.Spec.Resources)
 }
 
-func TestNewPrometheusSetsExternalURL(t *testing.T) {
-	ms := &stack.MonitoringStack{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "ns",
-		},
-		Spec: stack.MonitoringStackSpec{
-			PrometheusConfig: &stack.PrometheusConfig{
-				ExternalURL: "https://prometheus.example.com",
-			},
-			AlertmanagerConfig: stack.AlertmanagerConfig{Disabled: true},
-		},
-	}
+func TestNewPrometheusExternalURL(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		url  string
+	}{
+		{name: "set", url: "https://prometheus.example.com"},
+		{name: "omit-empty", url: ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			ms := &stack.MonitoringStack{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "ns",
+				},
+				Spec: stack.MonitoringStackSpec{
+					PrometheusConfig: &stack.PrometheusConfig{
+						ExternalURL: tc.url,
+					},
+					AlertmanagerConfig: stack.AlertmanagerConfig{Disabled: true},
+				},
+			}
 
-	prom := newPrometheus(ms, "test-prometheus", "test-scrape",
-		ThanosConfiguration{Image: "thanos:latest"},
-		PrometheusConfiguration{})
-	assert.Equal(t, "https://prometheus.example.com", prom.Spec.ExternalURL)
+			prom := newPrometheus(ms, "test-prometheus", "test-scrape",
+				ThanosConfiguration{Image: "thanos:latest"},
+				PrometheusConfiguration{})
+			assert.Equal(t, tc.url, prom.Spec.ExternalURL)
+		})
+	}
 }
 
-func TestNewPrometheusOmitsEmptyExternalURL(t *testing.T) {
-	ms := &stack.MonitoringStack{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "ns",
-		},
-		Spec: stack.MonitoringStackSpec{
-			PrometheusConfig:   &stack.PrometheusConfig{},
-			AlertmanagerConfig: stack.AlertmanagerConfig{Disabled: true},
-		},
+func TestNewAlertmanagerExternalURL(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		url  string
+	}{
+		{name: "set", url: "https://alertmanager.example.com"},
+		{name: "omit-empty", url: ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			ms := &stack.MonitoringStack{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "ns",
+				},
+				Spec: stack.MonitoringStackSpec{
+					AlertmanagerConfig: stack.AlertmanagerConfig{
+						ExternalURL: tc.url,
+					},
+				},
+			}
+
+			am := newAlertmanager(ms, "test-alertmanager", AlertmanagerConfiguration{})
+			assert.Equal(t, tc.url, am.Spec.ExternalURL)
+		})
 	}
-
-	prom := newPrometheus(ms, "test-prometheus", "test-scrape",
-		ThanosConfiguration{Image: "thanos:latest"},
-		PrometheusConfiguration{})
-	assert.Equal(t, "", prom.Spec.ExternalURL)
-}
-
-func TestNewAlertmanagerSetsExternalURL(t *testing.T) {
-	ms := &stack.MonitoringStack{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "ns",
-		},
-		Spec: stack.MonitoringStackSpec{
-			AlertmanagerConfig: stack.AlertmanagerConfig{
-				ExternalURL: "https://alertmanager.example.com",
-			},
-		},
-	}
-
-	am := newAlertmanager(ms, "test-alertmanager", AlertmanagerConfiguration{})
-	assert.Equal(t, "https://alertmanager.example.com", am.Spec.ExternalURL)
-}
-
-func TestNewAlertmanagerOmitsEmptyExternalURL(t *testing.T) {
-	ms := &stack.MonitoringStack{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: "ns",
-		},
-		Spec: stack.MonitoringStackSpec{
-			AlertmanagerConfig: stack.AlertmanagerConfig{},
-		},
-	}
-
-	am := newAlertmanager(ms, "test-alertmanager", AlertmanagerConfiguration{})
-	assert.Equal(t, "", am.Spec.ExternalURL)
 }
 
 func TestNewAdditionalScrapeConfigsSecret(t *testing.T) {
