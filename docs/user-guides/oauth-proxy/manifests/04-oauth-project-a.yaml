@@ -69,6 +69,7 @@ spec:
         resources: {}
         securityContext:
           allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
@@ -76,6 +77,8 @@ spec:
           name: secret-thanos-tls
         - mountPath: /etc/proxy/secrets
           name: secret-thanos-proxy
+        - mountPath: /tmp
+          name: oauth-proxy-tmp
       dnsPolicy: ClusterFirst
       nodeSelector:
         kubernetes.io/os: linux
@@ -97,3 +100,5 @@ spec:
         secret:
           defaultMode: 420
           secretName: thanos-proxy
+      - name: oauth-proxy-tmp
+        emptyDir: {}

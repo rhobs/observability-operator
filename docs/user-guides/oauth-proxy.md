@@ -355,11 +355,14 @@ spec:
           protocol: TCP
         securityContext:
           allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
         volumeMounts:
         - mountPath: /etc/tls/private
           name: secret-thanos-tls
         - mountPath: /etc/proxy/secrets
           name: secret-thanos-proxy
+        - mountPath: /tmp
+          name: oauth-proxy-tmp
       serviceAccount: thanos-querier
       serviceAccountName: thanos-querier
       volumes:
@@ -369,6 +372,8 @@ spec:
       - name: secret-thanos-proxy
         secret:
           secretName: thanos-proxy # 👈 the session secret created above
+      - name: oauth-proxy-tmp
+        emptyDir: {} # 👈 writable /tmp required by oauth-proxy with readOnlyRootFilesystem
 ```
 
 Or run
