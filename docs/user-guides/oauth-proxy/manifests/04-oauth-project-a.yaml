@@ -67,6 +67,8 @@ spec:
           name: oauth-proxy
           protocol: TCP
         resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:

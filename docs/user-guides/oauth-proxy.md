@@ -353,6 +353,8 @@ spec:
         - containerPort: 8888
           name: oauth-proxy
           protocol: TCP
+        securityContext:
+          allowPrivilegeEscalation: false
         volumeMounts:
         - mountPath: /etc/tls/private
           name: secret-thanos-tls
