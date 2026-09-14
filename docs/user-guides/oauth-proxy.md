@@ -345,8 +345,7 @@ spec:
         - -cookie-secret-file=/etc/proxy/secrets/session_secret
         - -openshift-service-account=thanos-querier
         - -openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-        - -skip-auth-regex=^/metrics
-        - -openshift-sar={"resource":"namespaces","resourceName":"thanos-querier","namespace":"project-a","verb":"get"} # 👈 user must have get access on this namespace to authenticate
+        - -openshift-sar={"resource":"pods","namespace":"project-a","verb":"get"} # 👈 user must be able to get pods in this namespace to authenticate
         - -openshift-delegate-urls={"/":{"resource":"pods","namespace":"project-a","verb":"get"}} # 👈 enables bearer token delegation for ServiceAccounts
         image: quay.io/openshift/origin-oauth-proxy:4.19
         name: oauth-proxy

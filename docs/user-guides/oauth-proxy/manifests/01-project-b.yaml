@@ -55,7 +55,7 @@ spec:
     - namespaceSelector:
         matchLabels:
           project: project-c
-  - ports:
+    ports:
     - protocol: TCP
       port: 10901
 ---
