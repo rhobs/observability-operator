@@ -357,7 +357,7 @@ func newPersesClusterRole() *rbacv1.ClusterRole {
 			{
 				APIGroups:     []string{"security.openshift.io"},
 				Resources:     []string{"securitycontextconstraints"},
-				ResourceNames: []string{"nonroot", "nonroot-v2"},
+				ResourceNames: []string{"nonroot-v2"},
 				Verbs:         []string{"use"},
 			},
 		},

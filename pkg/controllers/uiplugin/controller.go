@@ -91,8 +91,8 @@ const (
 // +kubebuilder:rbac:groups=perses.dev,resources=perses/status;persesdatasources/status;persesglobaldatasources/status;persesdashboards/status,verbs=get;patch;update
 // +kubebuilder:rbac:groups=perses.dev,resources=perses/finalizers;persesglobaldatasources/finalizers;persesdashboards/finalizers;persesdatasources/finalizers;persesdashboards/finalizers,verbs=update
 
-// RBAC for delegating the use of SCC nonroot-v2 (for OpenShift >= 4.11) and nonroot (for OpenShift < 4.11) for Perses
-//+kubebuilder:rbac:groups="security.openshift.io",resources=securitycontextconstraints,resourceNames=nonroot;nonroot-v2,verbs=use
+// RBAC for delegating the use of SCC nonroot-v2 for Perses
+//+kubebuilder:rbac:groups="security.openshift.io",resources=securitycontextconstraints,resourceNames=nonroot-v2,verbs=use
 
 // RBAC for korrel8r
 //+kubebuilder:rbac:groups=apps,resources=daemonsets;deployments;replicasets;statefulsets,verbs=get;list;watch
