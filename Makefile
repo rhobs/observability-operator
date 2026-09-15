@@ -28,7 +28,7 @@ test-unit:
 	go test -cover ./cmd/... ./pkg/...
 
 .PHONY: lint
-lint: lint-golang lint-shell
+lint: lint-golang lint-shell commit-lint
 
 .PHONY: lint-golang
 lint-golang: $(GOLANGCI_LINT)
@@ -37,6 +37,11 @@ lint-golang: $(GOLANGCI_LINT)
 .PHONY: lint-shell
 lint-shell: $(SHELLCHECK)
 	find -name "*.sh" -print0 | xargs --null $(SHELLCHECK)
+
+.PHONY: commit-lint
+commit-lint:
+	git fetch origin main --quiet
+	npx --yes @commitlint/cli --from $(shell git merge-base HEAD origin/main) --to HEAD
 
 .PHONY: check-jq
 check-jq:

@@ -5,12 +5,12 @@ const Configuration = {
   extends: ['@commitlint/config-conventional'],
   /*
    * Ignore dependabot commit messages until https://github.com/dependabot/dependabot-core/issues/2445 is fixed.
+   * Ignore konflux commit messages.
    */
-  ignores: [(msg) => /Signed-off-by: dependabot\[bot]/m.test(msg)],
-  /*
-   * Ignore konflux commit messages
-   */
-  ignores: [(msg) => /Signed-off-by: red-hat-konflux/m.test(msg)],
+  ignores: [
+    (msg) => /Signed-off-by: dependabot\[bot]/m.test(msg),
+    (msg) => /Signed-off-by: red-hat-konflux/m.test(msg),
+  ],
 };
 
 export default Configuration
