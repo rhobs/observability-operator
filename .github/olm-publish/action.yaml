@@ -16,7 +16,7 @@ runs:
     run: |
       go version
   - name: Setup Go environment
-    uses: actions/setup-go@v5
+    uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
     if: steps.go-version.outcome == 'failure'
     with:
       go-version-file: 'go.mod'
@@ -26,7 +26,7 @@ runs:
     uses: ./.github/tools-cache
 
   - name: Registry Login
-    uses: docker/login-action@v2
+    uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc # v2
     with:
       registry: quay.io
       username: ${{ inputs.quay_login }}

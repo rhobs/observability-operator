@@ -11,7 +11,7 @@ jobs:
   e2e-tests-olm:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: e2e tests through OLM
         uses: ./.github/e2e-tests-olm
@@ -23,7 +23,7 @@ jobs:
     needs:
       - e2e-tests-olm
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
 
@@ -32,7 +32,7 @@ jobs:
       # Therefore, we first need to setup Go so that we can install the
       # controller-gen binary.
       - name: Setup Go environment
-        uses: actions/setup-go@v7
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
         with:
           go-version-file: 'go.mod'
           check-latest: true
@@ -56,7 +56,7 @@ jobs:
           quay_token: ${{ secrets.QUAY_TOKEN }}
 
       - name: Push catalog index changes
-        uses: ad-m/github-push-action@master
+        uses: ad-m/github-push-action@881a6320fdb16eb5318c5054f31c218aec2b324c # master
         with:
           github_token: ${{ secrets.REPOSITORY_PUSH_TOKEN }}
           branch: olm-catalog
@@ -86,7 +86,7 @@ jobs:
     if: "startsWith(github.event.head_commit.message, 'chore(release):')"
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
           token: ${{ secrets.REPOSITORY_PUSH_TOKEN }}
@@ -97,7 +97,7 @@ jobs:
       # Therefore, we first need to setup Go so that we can install the
       # controller-gen binary.
       - name: Setup Go environment
-        uses: actions/setup-go@v7
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
         with:
           go-version-file: 'go.mod'
           check-latest: true
@@ -120,7 +120,7 @@ jobs:
           echo "tag_name=$(git describe HEAD --abbrev=0)" >> $GITHUB_OUTPUT
 
       - name: Create Github release
-        uses: ncipollo/release-action@v1
+        uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd # v1
         with:
           tag: ${{ steps.publish_tag.outputs.tag_name }}
           bodyFile: RELEASE_BODY.md
@@ -134,13 +134,13 @@ jobs:
     environment: quay
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
           token: ${{ secrets.REPOSITORY_PUSH_TOKEN }}
 
       - name: Setup Go environment
-        uses: actions/setup-go@v7
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
         with:
           go-version-file: 'go.mod'
           check-latest: true
@@ -164,7 +164,7 @@ jobs:
           quay_token: ${{ secrets.QUAY_TOKEN }}
 
       - name: Push catalog index changes
-        uses: ad-m/github-push-action@master
+        uses: ad-m/github-push-action@881a6320fdb16eb5318c5054f31c218aec2b324c # master
         with:
           github_token: ${{ secrets.REPOSITORY_PUSH_TOKEN }}
           branch: olm-catalog
