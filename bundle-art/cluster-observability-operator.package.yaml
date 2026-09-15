@@ -1,0 +1,12 @@
+---
+# OLM package definition for the downstream (ART) bundle.
+# Required by ART's olm_bundle_konflux builder (otherwise it fails with
+# "IndexError: list index out of range"). Channels mirror the product FBC
+# (github.com/rhobs/konflux-coo-fbc).
+packageName: cluster-observability-operator
+defaultChannel: stable
+channels:
+- name: stable
+  currentCSV: cluster-observability-operator.v1.5.2
+- name: fast
+  currentCSV: cluster-observability-operator.v1.5.2

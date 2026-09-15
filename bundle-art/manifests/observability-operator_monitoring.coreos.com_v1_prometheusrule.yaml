@@ -1,0 +1,27 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    app.kubernetes.io/component: operator
+    app.kubernetes.io/name: observability-operator
+    app.kubernetes.io/part-of: observability-operator
+    openshift.io/user-monitoring: "false"
+  name: observability-operator
+spec:
+  groups:
+  - name: operator
+    rules:
+    - alert: ClusterObservabilityOperatorReconciliationsFailed
+      annotations:
+        description: |-
+          {{$value | humanize}}% of reconciliation requests are failing for the '{{ $labels.controller}}' controller.
+
+          Check the logs of the {{$labels.namespace}}/{{$labels.pod}} pod to investigate further.
+        summary: Cluster observability operator fails to reconcile resources
+      expr: |-
+        sum by(controller,pod,namespace) (rate(controller_runtime_reconcile_total{result="error",job="observability-operator"}[5m]))
+        /
+        sum by(controller,pod,namespace) (rate(controller_runtime_reconcile_total{job="observability-operator"}[5m])) > 0.1
+      for: 15m
+      labels:
+        severity: warning
