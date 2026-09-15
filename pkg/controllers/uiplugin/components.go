@@ -691,14 +691,22 @@ func newKorrel8rConfigMap(name string, namespace string, info UIPluginInfo) (*co
 		"TracingNs":    OpenshiftTracingNs,
 	}
 
+	if inst := info.TracingInstaller; inst != nil {
+		korrel8rData["TracingTenant"] = "application"
+		korrel8rData["TracingNs"] = inst.Namespace
+		korrel8rData["Trace"] = fmt.Sprintf("tempo-%s-gateway", inst.Name)
+	} else {
+		korrel8rData["TracingTenant"] = "platform"
+		if info.TempoServiceNames[OpenshiftTracingNs] != "" {
+			korrel8rData["Trace"] = info.TempoServiceNames[OpenshiftTracingNs]
+		}
+	}
+
 	if info.LokiServiceNames[OpenshiftLoggingNs] != "" {
 		korrel8rData["Log"] = info.LokiServiceNames[OpenshiftLoggingNs]
 	}
 	if info.LokiServiceNames[OpenshiftNetobservNs] != "" {
 		korrel8rData["Netflow"] = info.LokiServiceNames[OpenshiftNetobservNs]
-	}
-	if info.TempoServiceNames[OpenshiftTracingNs] != "" {
-		korrel8rData["Trace"] = info.TempoServiceNames[OpenshiftTracingNs]
 	}
 
 	var korrel8rConfigYAMLTmpl = template.Must(template.ParseFS(korrel8rConfigYAMLTmplFile, "config/korrel8r.yaml"))

@@ -4502,8 +4502,8 @@ Operators defines the operators installation for the capability.
         <td>boolean</td>
         <td>
           Install indicates whether the operator(s) used by the capability should be installed via OLM.
-When the capability is enabled, the install is set to true, otherwise it is set to false.
-This field can be used to install the operator(s) without installing any operands.<br/>
+Defaults to true if capability is enabled, false if not.
+Can be set explicitly to install the operator(s) without deploying operands or vice-versa.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
