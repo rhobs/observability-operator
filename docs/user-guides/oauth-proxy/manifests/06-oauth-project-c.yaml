@@ -10,40 +10,14 @@ spec:
     port: 8888
     protocol: TCP
     targetPort: oauth-proxy
-  selector:
-    app.kubernetes.io/instance: thanos-querier-example-coo-thanos
-  sessionAffinity: None
-  type: ClusterIP
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels:
-    app.kubernetes.io/instance: thanos-querier-example-coo-thanos
-    app.kubernetes.io/managed-by: observability-operator
-    app.kubernetes.io/part-of: ThanosQuerier
   name: thanos-querier-example-coo-thanos
   namespace: project-c
 spec:
-  progressDeadlineSeconds: 300
-  replicas: 1
-  revisionHistoryLimit: 10
-  selector:
-    matchLabels:
-      app.kubernetes.io/instance: thanos-querier-example-coo-thanos
-  strategy:
-    rollingUpdate:
-      maxSurge: 25%
-      maxUnavailable: 25%
-    type: RollingUpdate
   template:
-    metadata:
-      labels:
-        app.kubernetes.io/instance: thanos-querier-example-coo-thanos
-        app.kubernetes.io/managed-by: observability-operator
-        app.kubernetes.io/part-of: ThanosQuerier
-      name: thanos-querier-example-coo-thanos
-      namespace: project-c
     spec:
       containers:
       - args:
@@ -55,7 +29,7 @@ spec:
         - -tls-cert=/etc/tls/private/tls.crt
         - -tls-key=/etc/tls/private/tls.key
         - -cookie-secret-file=/etc/proxy/secrets/session_secret
-        - -openshift-service-account=thanos-querier
+        - -openshift-service-account=thanos-querier-example-coo-thanos
         - -openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
         - -openshift-sar={"resource":"pods","namespace":"project-c","verb":"get"}
         image: quay.io/openshift/origin-oauth-proxy:4.19
@@ -65,12 +39,9 @@ spec:
         - containerPort: 8888
           name: oauth-proxy
           protocol: TCP
-        resources: {}
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /etc/tls/private
           name: secret-thanos-tls
@@ -78,26 +49,14 @@ spec:
           name: secret-thanos-proxy
         - mountPath: /tmp
           name: oauth-proxy-tmp
-      dnsPolicy: ClusterFirst
-      nodeSelector:
-        kubernetes.io/os: linux
-      restartPolicy: Always
-      schedulerName: default-scheduler
-      securityContext:
-        runAsNonRoot: true
-        seccompProfile:
-          type: RuntimeDefault
-      serviceAccount: thanos-querier
-      serviceAccountName: thanos-querier
-      terminationGracePeriodSeconds: 30
+      serviceAccount: thanos-querier-example-coo-thanos
+      serviceAccountName: thanos-querier-example-coo-thanos
       volumes:
       - name: secret-thanos-tls
         secret:
-          defaultMode: 420
           secretName: thanos-tls
       - name: secret-thanos-proxy
         secret:
-          defaultMode: 420
           secretName: thanos-proxy
       - name: oauth-proxy-tmp
         emptyDir: {}

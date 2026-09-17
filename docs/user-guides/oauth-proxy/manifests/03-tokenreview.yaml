@@ -8,5 +8,5 @@ roleRef:
   name: system:auth-delegator
 subjects:
 - kind: ServiceAccount
-  name: thanos-querier
+  name: thanos-querier-example-coo-thanos
   namespace: project-a

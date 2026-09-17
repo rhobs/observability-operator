@@ -14,7 +14,7 @@ Access is controlled per namespace:
 * `user2` can query metrics in `project-b` only.
 * `user3` can query metrics from both `project-b` and `project-c` via the `ThanosQuerier` in `project-c`.
 
-The `ThanosQuerier` in `project-c` uses a `namespaceSelector` to federate metrics from both `project-b` and `project-c`. A `NetworkPolicy` in `project-b` permits the Thanos sidecar in `project-c` to scrape it.
+The `ThanosQuerier` in `project-c` uses a `namespaceSelector` to federate metrics from both `project-b` and `project-c`. A `NetworkPolicy` in `project-b` permits the Thanos querier in `project-c` to communicate with the Thanos sidecar in `project-b`.
 
 In `project-a`, bearer token authentication is also enabled, allowing a `robot-user` ServiceAccount to query metrics programmatically without browser-based login.
 
@@ -132,7 +132,7 @@ spec:
       k8s-app: prometheus-coo-example-monitor
   namespaceSelector:
     matchLabels:
-      monitoring.rhobs/stack: project-a
+      monitoring.rhobs/stack: project-a # 👈 can be omitted; without it the MonitoringStack only discovers ServiceMonitors in its own namespace
 ---
 apiVersion: monitoring.rhobs/v1alpha1
 kind: ThanosQuerier
@@ -232,7 +232,7 @@ spec:
 
 #### Enable bearer token authentication
 
-To allow ServiceAccounts to authenticate with bearer tokens, grant the `thanos-querier` ServiceAccount permission to create `TokenReview` resources:
+To allow ServiceAccounts to authenticate with bearer tokens, grant the operator-managed `thanos-querier-example-coo-thanos` ServiceAccount permission to create `TokenReview` resources:
 
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -247,7 +247,7 @@ roleRef:
   name: system:auth-delegator # 👈 grants permission to create TokenReviews and SubjectAccessReviews
 subjects:
 - kind: ServiceAccount
-  name: thanos-querier
+  name: thanos-querier-example-coo-thanos
   namespace: project-a
 ```
 
@@ -268,12 +268,10 @@ kubectl -n project-a create secret generic thanos-proxy \
   --from-literal=session_secret=$(head -c 32 /dev/urandom | base64)
 ```
 
-Create the `thanos-querier` ServiceAccount and annotate it to enable the OAuth redirect flow:
+Annotate the operator-managed `thanos-querier-example-coo-thanos` ServiceAccount to enable the OAuth redirect flow:
 
 ```sh
-kubectl -n project-a create serviceaccount thanos-querier
-
-kubectl -n project-a annotate serviceaccount thanos-querier \
+kubectl -n project-a annotate serviceaccount thanos-querier-example-coo-thanos \
   serviceaccounts.openshift.io/oauth-redirectreference.thanos-querier='{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"thanos-querier-authenticated"}}'
 ```
 
@@ -295,7 +293,7 @@ kubectl -n project-a create rolebinding view-robot-user \
 
 #### Inject the OAuth Proxy sidecar
 
-**NOTE:** The `thanos-querier` ServiceAccount, `thanos-proxy` secret, and `thanos-tls` serving-cert secret created in the preceding step must all exist before applying this patch, otherwise the new pod will fail to start.
+**NOTE:** The `thanos-proxy` secret and `thanos-tls` serving-cert secret created in the preceding step must both exist before applying this patch, otherwise the new pod will fail to start.
 
 The `ThanosQuerier` Deployment is managed by the Observability Operator. Patch it using server-side apply to inject the oauth-proxy container and update the Service to route traffic through the proxy:
 
@@ -316,22 +314,10 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels:
-    app.kubernetes.io/instance: thanos-querier-example-coo-thanos
-    app.kubernetes.io/managed-by: observability-operator
-    app.kubernetes.io/part-of: ThanosQuerier
   name: thanos-querier-example-coo-thanos
   namespace: project-a
 spec:
-  selector:
-    matchLabels:
-      app.kubernetes.io/instance: thanos-querier-example-coo-thanos
   template:
-    metadata:
-      labels:
-        app.kubernetes.io/instance: thanos-querier-example-coo-thanos
-        app.kubernetes.io/managed-by: observability-operator
-        app.kubernetes.io/part-of: ThanosQuerier
     spec:
       containers:
       - args:
@@ -343,7 +329,7 @@ spec:
         - -tls-cert=/etc/tls/private/tls.crt
         - -tls-key=/etc/tls/private/tls.key
         - -cookie-secret-file=/etc/proxy/secrets/session_secret
-        - -openshift-service-account=thanos-querier
+        - -openshift-service-account=thanos-querier-example-coo-thanos
         - -openshift-ca=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
         - -openshift-sar={"resource":"pods","namespace":"project-a","verb":"get"} # 👈 user must be able to get pods in this namespace to authenticate
         - -openshift-delegate-urls={"/":{"resource":"pods","namespace":"project-a","verb":"get"}} # 👈 enables bearer token delegation for ServiceAccounts
@@ -363,8 +349,8 @@ spec:
           name: secret-thanos-proxy
         - mountPath: /tmp
           name: oauth-proxy-tmp
-      serviceAccount: thanos-querier
-      serviceAccountName: thanos-querier
+      serviceAccount: thanos-querier-example-coo-thanos
+      serviceAccountName: thanos-querier-example-coo-thanos
       volumes:
       - name: secret-thanos-tls
         secret:
@@ -439,9 +425,7 @@ kubectl apply -f docs/user-guides/oauth-proxy/manifests/01-project-b.yaml
 kubectl -n project-b create secret generic thanos-proxy \
   --from-literal=session_secret=$(head -c 32 /dev/urandom | base64)
 
-kubectl -n project-b create serviceaccount thanos-querier
-
-kubectl -n project-b annotate serviceaccount thanos-querier \
+kubectl -n project-b annotate serviceaccount thanos-querier-example-coo-thanos \
   serviceaccounts.openshift.io/oauth-redirectreference.thanos-querier='{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"thanos-querier-authenticated"}}'
 
 kubectl -n project-b annotate service thanos-querier-example-coo-thanos \
@@ -486,9 +470,7 @@ kubectl apply -f docs/user-guides/oauth-proxy/manifests/02-project-c.yaml
 kubectl -n project-c create secret generic thanos-proxy \
   --from-literal=session_secret=$(head -c 32 /dev/urandom | base64)
 
-kubectl -n project-c create serviceaccount thanos-querier
-
-kubectl -n project-c annotate serviceaccount thanos-querier \
+kubectl -n project-c annotate serviceaccount thanos-querier-example-coo-thanos \
   serviceaccounts.openshift.io/oauth-redirectreference.thanos-querier='{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"thanos-querier-authenticated"}}'
 
 kubectl -n project-c annotate service thanos-querier-example-coo-thanos \
@@ -540,5 +522,5 @@ Generate a short-lived token for the `robot-user` ServiceAccount and query the T
 ```sh
 TOKEN=$(kubectl -n project-a create token robot-user)
 ROUTE=$(kubectl get route -n project-a thanos-querier-authenticated -o jsonpath='{.spec.host}')
-curl -H "Authorization: Bearer ${TOKEN}" "https://${ROUTE}/api/v1/query?query=up"
+curl -k -H "Authorization: Bearer ${TOKEN}" "https://${ROUTE}/api/v1/query?query=up"
 ```
