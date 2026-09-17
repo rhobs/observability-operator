@@ -19,10 +19,8 @@ const (
 	// nameLabel selects the operator pods themselves.
 	nameLabel = "app.kubernetes.io/name=observability-operator"
 
-	promContainer = "prometheus"
-	promPort      = "9090"
-	amContainer   = "alertmanager"
-	amPort        = "9093"
+	promPort = "9090"
+	amPort   = "9093"
 )
 
 // monitoringStackGVR is the GroupVersionResource for MonitoringStack.
@@ -38,11 +36,11 @@ var monitoringStackGVR = schema.GroupVersionResource{
 type Client interface {
 	ListPods(ctx context.Context, namespace, labelSelector string) (*corev1.PodList, error)
 	ListResources(ctx context.Context, gvr schema.GroupVersionResource) ([]client.ResourceRef, error)
-	PodExec(ctx context.Context, namespace, pod, container string, command []string) (stdout, stderr string, err error)
+	PodProxyGet(ctx context.Context, namespace, pod, port, endpoint string) (string, error)
 }
 
 // Collector gathers observability-operator specific monitoring information such
-// as operator/operant pods and Prometheus/Alertmanager runtime state.
+// as operator/operand pods and Prometheus/Alertmanager runtime state.
 type Collector struct {
 	client  Client
 	logger  api.Logger
@@ -73,8 +71,8 @@ func (m *Collector) Collect(ctx context.Context) error {
 		return err
 	}
 
-	// Gather operator and operant pods (best-effort).
-	m.gatherOperants(ctx)
+	// Gather operator and operand pods (best-effort).
+	m.gatherOperands(ctx)
 
 	// Discover MonitoringStacks across all namespaces.
 	stacks, err := m.client.ListResources(ctx, monitoringStackGVR)
@@ -91,10 +89,10 @@ func (m *Collector) Collect(ctx context.Context) error {
 	return nil
 }
 
-// gatherOperants collects the operator deployment pods and all operant pods.
-func (m *Collector) gatherOperants(ctx context.Context) {
-	// Operant pods: managed-by and part-of observability-operator.
-	var operants []byte
+// gatherOperands collects the operator deployment pods and all operand pods.
+func (m *Collector) gatherOperands(ctx context.Context) {
+	// Operand pods: managed-by and part-of observability-operator.
+	var operands []byte
 	for _, selector := range []string{managedByLabel, partOfLabel} {
 		pods, err := m.client.ListPods(ctx, "", selector)
 		if err != nil {
@@ -106,12 +104,12 @@ func (m *Collector) gatherOperants(ctx context.Context) {
 			m.logger.Warn("Failed to marshal pods (%s): %v", selector, err)
 			continue
 		}
-		if len(operants) > 0 {
-			operants = append(operants, []byte("---\n")...)
+		if len(operands) > 0 {
+			operands = append(operands, []byte("---\n")...)
 		}
-		operants = append(operants, data...)
+		operands = append(operands, data...)
 	}
-	if err := m.destDir.Add("operants.yaml").WriteFile(operants); err != nil {
+	if err := m.destDir.Add("operants.yaml").WriteFile(operands); err != nil {
 		m.logger.Warn("Failed to write operants.yaml: %v", err)
 	}
 
@@ -182,7 +180,7 @@ func (m *Collector) promGet(ctx context.Context, object, ns, name string) {
 	}
 
 	resultPath := m.destDir.Add(ns, name, "prometheus", object)
-	m.curl(ctx, ns, pod, promContainer, promPort, "v1", object, resultPath)
+	m.get(ctx, ns, pod, promPort, "v1", object, resultPath)
 }
 
 // promGetFromReplicas queries the Prometheus API on every replica of a stack and
@@ -194,8 +192,11 @@ func (m *Collector) promGetFromReplicas(ctx context.Context, object, ns, name, p
 		return
 	}
 	for _, pod := range pods {
+		if !podReady(pod) {
+			continue
+		}
 		resultPath := m.destDir.Add(ns, name, "prometheus", pod.Name, path)
-		m.curl(ctx, ns, pod.Name, promContainer, promPort, "v1", object, resultPath)
+		m.get(ctx, ns, pod.Name, promPort, "v1", object, resultPath)
 	}
 }
 
@@ -209,23 +210,20 @@ func (m *Collector) alertmanagerGet(ctx context.Context, object, ns, name string
 	}
 
 	resultPath := m.destDir.Add(ns, name, "alertmanager", object)
-	m.curl(ctx, ns, pod, amContainer, amPort, "v2", object, resultPath)
+	m.get(ctx, ns, pod, amPort, "v2", object, resultPath)
 }
 
-// curl execs a curl against the pod's local API endpoint and writes stdout to
+// get requests the pod's API through the Kubernetes proxy and writes stdout to
 // <resultPath>.json and any stderr/error to <resultPath>.stderr.
-func (m *Collector) curl(ctx context.Context, ns, pod, container, port, apiVersion, object string, resultPath api.Path) {
+func (m *Collector) get(ctx context.Context, ns, pod, port, apiVersion, object string, resultPath api.Path) {
 	m.logger.Info("Getting %s from %s", object, pod)
 
-	url := fmt.Sprintf("http://localhost:%s/api/%s/%s", port, apiVersion, object)
-	cmd := []string{"/bin/bash", "-c", fmt.Sprintf("curl -sG %q", url)}
-
-	stdout, stderr, err := m.client.PodExec(ctx, ns, pod, container, cmd)
+	endpoint := fmt.Sprintf("/api/%s/%s", apiVersion, object)
+	stdout, err := m.client.PodProxyGet(ctx, ns, pod, port, endpoint)
+	stderr := ""
 	if err != nil {
 		m.logger.Warn("Failed to get %s from %s: %v", object, pod, err)
-		if stderr == "" {
-			stderr = err.Error()
-		}
+		stderr = err.Error()
 	}
 
 	if writeErr := resultPath.WithSuffix(".json").WriteFile([]byte(stdout)); writeErr != nil {
@@ -242,19 +240,21 @@ func (m *Collector) curl(ctx context.Context, ns, pod, container, port, apiVersi
 // ready, or an empty string when none is found.
 func firstReadyPod(pods []corev1.Pod) string {
 	for _, pod := range pods {
-		if pod.Status.Phase != corev1.PodRunning {
-			continue
-		}
-		ready := true
-		for _, cs := range pod.Status.ContainerStatuses {
-			if !cs.Ready {
-				ready = false
-				break
-			}
-		}
-		if ready {
+		if podReady(pod) {
 			return pod.Name
 		}
 	}
 	return ""
+}
+
+func podReady(pod corev1.Pod) bool {
+	if pod.Status.Phase != corev1.PodRunning || len(pod.Status.ContainerStatuses) == 0 {
+		return false
+	}
+	for _, cs := range pod.Status.ContainerStatuses {
+		if !cs.Ready {
+			return false
+		}
+	}
+	return true
 }

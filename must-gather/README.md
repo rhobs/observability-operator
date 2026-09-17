@@ -7,6 +7,7 @@ that expands its capabilities to gather Observability Operator information.
 The collection logic is implemented in Go (see `must-gather/`) and talks to the
 cluster directly via the Kubernetes API. It does **not** require the `oc` binary
 to be present in the image.
+The host starting the collection still needs `oc` for `oc adm must-gather`.
 
 **Note:** This image is only built for x86_64 architecture
 
@@ -25,7 +26,7 @@ The command above will create a local directory with a dump of the Observability
 
 You will get a dump of:
 - The observability-operator operator deployment
-- All observability-operator operant pods
+- All observability-operator operand pods
 - Alertmanager and Prometheus status for all stacks
 
 In order to get data about other parts of the cluster (not specific to observability-operator ) you should

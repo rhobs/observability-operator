@@ -21,6 +21,11 @@ func main() {
 	flag.StringVar(&logFileName, "log-file", "gather-debug.log", "Name of the debug log file")
 	flag.Parse()
 
+	if !validLogFileName(logFileName) {
+		fmt.Fprintln(os.Stderr, "log-file must be a file name without path separators")
+		os.Exit(1)
+	}
+
 	if err := os.MkdirAll(destDir, 0755); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create destination directory: %v\n", err)
 		os.Exit(1)
@@ -53,4 +58,8 @@ func main() {
 	}
 
 	fmt.Println("Must-gather completed successfully")
+}
+
+func validLogFileName(name string) bool {
+	return name != "" && name != "." && name != ".." && !filepath.IsAbs(name) && filepath.Base(name) == name
 }

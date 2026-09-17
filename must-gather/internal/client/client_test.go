@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"gotest.tools/v3/assert"
@@ -96,8 +97,11 @@ func TestListResources(t *testing.T) {
 }
 
 func TestMarshalYAML(t *testing.T) {
-	p := pod("ns", "name", map[string]string{"k": "v"})
-	data, err := MarshalYAML(p)
+	pods := &corev1.PodList{Items: []corev1.Pod{*pod("ns", "name", map[string]string{"k": "v"})}}
+	data, err := MarshalYAML(pods)
 	assert.NilError(t, err)
 	assert.Assert(t, len(data) > 0)
+	assert.Assert(t, strings.Contains(string(data), "apiVersion: v1"))
+	assert.Assert(t, strings.Contains(string(data), "kind: List"))
+	assert.Assert(t, strings.Contains(string(data), "kind: Pod"))
 }

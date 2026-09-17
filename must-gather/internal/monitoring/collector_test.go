@@ -19,12 +19,12 @@ import (
 	"github.com/rhobs/observability-operator/must-gather/internal/client"
 )
 
-// execCall records the arguments of a PodExec invocation.
-type execCall struct {
+// proxyCall records the arguments of a PodProxyGet invocation.
+type proxyCall struct {
 	namespace string
 	pod       string
-	container string
-	command   []string
+	port      string
+	endpoint  string
 }
 
 // fakeClient is a test double for the monitoring.Client interface.
@@ -34,9 +34,9 @@ type fakeClient struct {
 	// resources are the MonitoringStacks returned by ListResources.
 	resources []client.ResourceRef
 
-	execCalls []execCall
-	// execFunc lets a test customise exec output/errors.
-	execFunc func(call execCall) (stdout, stderr string, err error)
+	proxyCalls []proxyCall
+	// proxyFunc lets a test customise proxy output/errors.
+	proxyFunc func(call proxyCall) (string, error)
 }
 
 func (f *fakeClient) ListPods(_ context.Context, namespace, labelSelector string) (*corev1.PodList, error) {
@@ -48,13 +48,13 @@ func (f *fakeClient) ListResources(_ context.Context, _ schema.GroupVersionResou
 	return f.resources, nil
 }
 
-func (f *fakeClient) PodExec(_ context.Context, namespace, pod, container string, command []string) (string, string, error) {
-	call := execCall{namespace: namespace, pod: pod, container: container, command: command}
-	f.execCalls = append(f.execCalls, call)
-	if f.execFunc != nil {
-		return f.execFunc(call)
+func (f *fakeClient) PodProxyGet(_ context.Context, namespace, pod, port, endpoint string) (string, error) {
+	call := proxyCall{namespace: namespace, pod: pod, port: port, endpoint: endpoint}
+	f.proxyCalls = append(f.proxyCalls, call)
+	if f.proxyFunc != nil {
+		return f.proxyFunc(call)
 	}
-	return "{}", "", nil
+	return "{}", nil
 }
 
 func runningPod(name string) corev1.Pod {
@@ -88,11 +88,11 @@ func TestName(t *testing.T) {
 	assert.Equal(t, "MonitoringCollector", c.Name())
 }
 
-func TestCollectWritesOperantAndOperatorFiles(t *testing.T) {
+func TestCollectWritesOperandAndOperatorFiles(t *testing.T) {
 	fc := &fakeClient{
 		pods: map[string][]corev1.Pod{
-			"|" + managedByLabel: {runningPod("operant-managed")},
-			"|" + partOfLabel:    {runningPod("operant-partof")},
+			"|" + managedByLabel: {runningPod("operand-managed")},
+			"|" + partOfLabel:    {runningPod("operand-partof")},
 			"|" + nameLabel:      {runningPod("operator-0")},
 		},
 	}
@@ -103,8 +103,8 @@ func TestCollectWritesOperantAndOperatorFiles(t *testing.T) {
 
 	base := filepath.Join(tmp, "monitoring", "observability-operator")
 	// operants.yaml contains both managed-by and part-of results, separated by a YAML doc marker.
-	fileContains(t, filepath.Join(base, "operants.yaml"), "operant-managed")
-	fileContains(t, filepath.Join(base, "operants.yaml"), "operant-partof")
+	fileContains(t, filepath.Join(base, "operants.yaml"), "operand-managed")
+	fileContains(t, filepath.Join(base, "operants.yaml"), "operand-partof")
 	fileContains(t, filepath.Join(base, "operants.yaml"), "---")
 	fileContains(t, filepath.Join(base, "operator.yaml"), "operator-0")
 }
@@ -120,8 +120,8 @@ func TestCollectGathersPrometheusAndAlertmanager(t *testing.T) {
 			promSel: {runningPod("prometheus-stack-a-0"), runningPod("prometheus-stack-a-1")},
 			amSel:   {runningPod("alertmanager-stack-a-0")},
 		},
-		execFunc: func(call execCall) (string, string, error) {
-			return fmt.Sprintf("output-from-%s", call.pod), "", nil
+		proxyFunc: func(call proxyCall) (string, error) {
+			return fmt.Sprintf("output-from-%s", call.pod), nil
 		},
 	}
 	c, tmp := newTestCollector(t, fc)
@@ -148,20 +148,20 @@ func TestCollectGathersPrometheusAndAlertmanager(t *testing.T) {
 	// Alertmanager status.
 	fileContains(t, filepath.Join(amDir, "status.json"), "output-from-alertmanager-stack-a-0")
 
-	// Alertmanager exec must target the stack's namespace and container.
-	var amCall *execCall
-	for i := range fc.execCalls {
-		if fc.execCalls[i].container == amContainer {
-			amCall = &fc.execCalls[i]
+	// Alertmanager proxy requests must target the stack's namespace and port.
+	var amCall *proxyCall
+	for i := range fc.proxyCalls {
+		if fc.proxyCalls[i].port == amPort {
+			amCall = &fc.proxyCalls[i]
 			break
 		}
 	}
-	assert.Assert(t, amCall != nil, "expected an alertmanager exec call")
+	assert.Assert(t, amCall != nil, "expected an alertmanager proxy call")
 	assert.Equal(t, ns, amCall.namespace)
-	assert.Assert(t, strings.Contains(strings.Join(amCall.command, " "), "9093/api/v2/status"))
+	assert.Equal(t, "/api/v2/status", amCall.endpoint)
 }
 
-func TestCurlWritesStderrOnError(t *testing.T) {
+func TestGetWritesStderrOnError(t *testing.T) {
 	const ns, name = "team-a", "stack-a"
 	promSel := fmt.Sprintf("%s|app.kubernetes.io/part-of=%s,app.kubernetes.io/component=prometheus", ns, name)
 
@@ -170,8 +170,8 @@ func TestCurlWritesStderrOnError(t *testing.T) {
 		pods: map[string][]corev1.Pod{
 			promSel: {runningPod("prometheus-stack-a-0")},
 		},
-		execFunc: func(_ execCall) (string, string, error) {
-			return "", "boom", fmt.Errorf("exec failed")
+		proxyFunc: func(_ proxyCall) (string, error) {
+			return "", fmt.Errorf("boom")
 		},
 	}
 	c, tmp := newTestCollector(t, fc)
@@ -186,17 +186,22 @@ func TestCurlWritesStderrOnError(t *testing.T) {
 
 func TestGatherStackSkipsWhenNoReadyPods(t *testing.T) {
 	const ns, name = "team-a", "stack-a"
+	promSel := fmt.Sprintf("%s|app.kubernetes.io/part-of=%s,app.kubernetes.io/component=prometheus", ns, name)
 	fc := &fakeClient{
 		resources: []client.ResourceRef{{Namespace: ns, Name: name}},
-		// No pods registered -> nothing ready.
-		pods: map[string][]corev1.Pod{},
+		pods: map[string][]corev1.Pod{
+			promSel: {
+				{ObjectMeta: metav1.ObjectMeta{Name: "pending"}, Status: corev1.PodStatus{Phase: corev1.PodPending}},
+				{ObjectMeta: metav1.ObjectMeta{Name: "no-statuses"}, Status: corev1.PodStatus{Phase: corev1.PodRunning}},
+			},
+		},
 	}
 	c, _ := newTestCollector(t, fc)
 
 	err := c.Collect(context.Background())
 	assert.NilError(t, err)
-	// No exec calls should have happened.
-	assert.Equal(t, 0, len(fc.execCalls))
+	// No proxy calls should have happened.
+	assert.Equal(t, 0, len(fc.proxyCalls))
 }
 
 func TestFirstReadyPod(t *testing.T) {
@@ -211,15 +216,19 @@ func TestFirstReadyPod(t *testing.T) {
 			ContainerStatuses: []corev1.ContainerStatus{{Ready: false}},
 		},
 	}
+	noStatuses := corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{Name: "running-without-statuses"},
+		Status:     corev1.PodStatus{Phase: corev1.PodRunning},
+	}
 	ready := runningPod("running-ready")
 
 	assert.Equal(t, "", firstReadyPod(nil))
-	assert.Equal(t, "", firstReadyPod([]corev1.Pod{notRunning, notReady}))
-	assert.Equal(t, "running-ready", firstReadyPod([]corev1.Pod{notRunning, notReady, ready}))
+	assert.Equal(t, "", firstReadyPod([]corev1.Pod{notRunning, notReady, noStatuses}))
+	assert.Equal(t, "running-ready", firstReadyPod([]corev1.Pod{notRunning, notReady, noStatuses, ready}))
 }
 
-// TestExecCommandShape verifies the prometheus queries use the expected URLs.
-func TestExecCommandShape(t *testing.T) {
+// TestProxyRequestShape verifies the prometheus queries use the expected paths.
+func TestProxyRequestShape(t *testing.T) {
 	const ns, name = "team-a", "stack-a"
 	promSel := fmt.Sprintf("%s|app.kubernetes.io/part-of=%s,app.kubernetes.io/component=prometheus", ns, name)
 
@@ -233,21 +242,21 @@ func TestExecCommandShape(t *testing.T) {
 	assert.NilError(t, c.Collect(context.Background()))
 
 	var promURLs []string
-	for _, call := range fc.execCalls {
-		if call.container == promContainer {
-			promURLs = append(promURLs, strings.Join(call.command, " "))
+	for _, call := range fc.proxyCalls {
+		if call.port == promPort {
+			promURLs = append(promURLs, call.endpoint)
 		}
 	}
 	sort.Strings(promURLs)
 
 	for _, want := range []string{
-		"9090/api/v1/alertmanagers",
-		"9090/api/v1/rules",
-		"9090/api/v1/status/config",
-		"9090/api/v1/status/flags",
-		"9090/api/v1/status/runtimeinfo",
-		"9090/api/v1/targets?state=active",
-		"9090/api/v1/status/tsdb",
+		"/api/v1/alertmanagers",
+		"/api/v1/rules",
+		"/api/v1/status/config",
+		"/api/v1/status/flags",
+		"/api/v1/status/runtimeinfo",
+		"/api/v1/targets?state=active",
+		"/api/v1/status/tsdb",
 	} {
 		found := false
 		for _, got := range promURLs {

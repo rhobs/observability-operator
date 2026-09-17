@@ -19,8 +19,11 @@ COPY must-gather/ must-gather/
 RUN GOOS=linux GOARCH=amd64 go build -a -tags netgo,osusergo -o manager cmd/operator/main.go
 RUN GOOS=linux GOARCH=amd64 go build -a -tags netgo,osusergo -o gather ./must-gather/cmd
 
-FROM registry.access.redhat.com/ubi8/ubi-micro
+FROM registry.access.redhat.com/ubi8/ubi-minimal
 WORKDIR /
+
+# oc adm must-gather uses tar to copy the collected data from the pod.
+RUN microdnf install -y tar && microdnf clean all
 
 COPY --from=builder /workspace/manager /usr/bin/manager
 # The must-gather entrypoint is a self-contained Go binary; no oc dependency.

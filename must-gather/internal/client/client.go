@@ -1,18 +1,16 @@
 package client
 
 import (
-	"bytes"
 	"context"
 	"fmt"
+	"net/url"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/remotecommand"
 	ctrlconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/yaml"
 
@@ -23,7 +21,6 @@ import (
 type Client struct {
 	KubernetesClient kubernetes.Interface
 	DynamicClient    dynamic.Interface
-	config           *rest.Config
 	logger           api.Logger
 }
 
@@ -49,7 +46,6 @@ func NewClient(logger api.Logger) (*Client, error) {
 	return &Client{
 		KubernetesClient: k8sClient,
 		DynamicClient:    dynamicClient,
-		config:           config,
 		logger:           logger,
 	}, nil
 }
@@ -90,42 +86,45 @@ func (c *Client) ListResources(ctx context.Context, gvr schema.GroupVersionResou
 	return items, nil
 }
 
-// PodExec executes a command in a pod container and returns its stdout and
-// stderr separately.
-func (c *Client) PodExec(ctx context.Context, namespace, pod, container string, command []string) (stdout, stderr string, err error) {
-	req := c.KubernetesClient.CoreV1().RESTClient().Post().
+// PodProxyGet performs a GET against an HTTP endpoint exposed by a pod.
+func (c *Client) PodProxyGet(ctx context.Context, namespace, pod, port, endpoint string) (string, error) {
+	target, err := url.Parse(endpoint)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse pod proxy endpoint: %w", err)
+	}
+
+	req := c.KubernetesClient.CoreV1().RESTClient().Get().
 		Resource("pods").
-		Name(pod).
+		Name(pod + ":" + port).
 		Namespace(namespace).
-		SubResource("exec")
-
-	req.VersionedParams(&corev1.PodExecOptions{
-		Container: container,
-		Command:   command,
-		Stdout:    true,
-		Stderr:    true,
-	}, scheme.ParameterCodec)
-
-	exec, err := remotecommand.NewSPDYExecutor(c.config, "POST", req.URL())
-	if err != nil {
-		return "", "", fmt.Errorf("failed to create executor: %w", err)
+		SubResource("proxy")
+	for _, segment := range strings.Split(strings.Trim(target.Path, "/"), "/") {
+		if segment != "" {
+			req = req.Suffix(segment)
+		}
+	}
+	for name, values := range target.Query() {
+		for _, value := range values {
+			req = req.Param(name, value)
+		}
 	}
 
-	stdoutBuf := &bytes.Buffer{}
-	stderrBuf := &bytes.Buffer{}
-
-	err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
-		Stdout: stdoutBuf,
-		Stderr: stderrBuf,
-	})
+	data, err := req.Do(ctx).Raw()
 	if err != nil {
-		return stdoutBuf.String(), stderrBuf.String(), fmt.Errorf("exec failed: %w", err)
+		return "", fmt.Errorf("pod proxy GET %s failed: %w", endpoint, err)
 	}
-
-	return stdoutBuf.String(), stderrBuf.String(), nil
+	return string(data), nil
 }
 
 // MarshalYAML converts an object to YAML bytes.
 func MarshalYAML(obj interface{}) ([]byte, error) {
+	if podList, ok := obj.(*corev1.PodList); ok {
+		podList = podList.DeepCopy()
+		podList.TypeMeta = metav1.TypeMeta{APIVersion: "v1", Kind: "List"}
+		for i := range podList.Items {
+			podList.Items[i].TypeMeta = metav1.TypeMeta{APIVersion: "v1", Kind: "Pod"}
+		}
+		obj = podList
+	}
 	return yaml.Marshal(obj)
 }
