@@ -18,7 +18,7 @@ trap cleanup EXIT
 rm -rf "$OUTPUT_DIR"
 mkdir -p "$ARTIFACT_DIR"
 
-oc delete namespace "$TEST_NAMESPACE" --ignore-not-found --wait=true
+oc delete namespace "$TEST_NAMESPACE" --ignore-not-found --wait=true --timeout=2m
 oc create namespace "$TEST_NAMESPACE"
 
 oc apply -f - <<EOF
