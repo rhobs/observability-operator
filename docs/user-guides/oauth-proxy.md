@@ -145,12 +145,6 @@ spec:
       discover: project-a
 ```
 
-Or run
-
-```sh
-kubectl apply -f docs/user-guides/oauth-proxy/manifests/00-project-a.yaml
-```
-
 #### Deploy a test application
 
 ```yaml
@@ -228,7 +222,13 @@ spec:
         severity: warning
 ```
 
-**NOTE:** The test application is included in `00-project-a.yaml` applied in the previous step. Equivalent applications for `project-b` and `project-c` are included in `01-project-b.yaml` and `02-project-c.yaml` respectively.
+Or run
+
+```sh
+kubectl apply -f docs/user-guides/oauth-proxy/manifests/01-project-a.yaml
+```
+
+**NOTE:** Equivalent test applications for `project-b` and `project-c` are included in `05-project-b.yaml` and `08-project-c.yaml` respectively.
 
 #### Enable bearer token authentication
 
@@ -254,7 +254,7 @@ subjects:
 Or run
 
 ```sh
-kubectl apply -f docs/user-guides/oauth-proxy/manifests/03-tokenreview.yaml
+kubectl apply -f docs/user-guides/oauth-proxy/manifests/02-tokenreview.yaml
 ```
 
 **NOTE:** This step is only required for `project-a`. Projects `project-b` and `project-c` use OpenShift user authentication only.
@@ -365,7 +365,7 @@ spec:
 Or run
 
 ```sh
-kubectl apply -f docs/user-guides/oauth-proxy/manifests/04-oauth-project-a.yaml --server-side
+kubectl apply -f docs/user-guides/oauth-proxy/manifests/03-oauth-project-a.yaml --server-side
 ```
 
 **NOTE:** The `--server-side` flag is required because the Deployment is managed by the Observability Operator. For more details see [Using Server-Side Apply to customize Prometheus resources](server-side-apply.md).
@@ -393,7 +393,7 @@ spec:
 Or run
 
 ```sh
-kubectl apply -f docs/user-guides/oauth-proxy/manifests/07-route-project-a.yaml
+kubectl apply -f docs/user-guides/oauth-proxy/manifests/04-route-project-a.yaml
 ```
 
 #### Grant user1 access
@@ -402,6 +402,24 @@ kubectl apply -f docs/user-guides/oauth-proxy/manifests/07-route-project-a.yaml
 kubectl -n project-a create rolebinding view-user1 \
   --clusterrole=view \
   --user=user1
+```
+
+#### Validate access
+
+Retrieve the route hostname and open it in a browser:
+
+```sh
+kubectl get route -n project-a thanos-querier-authenticated -o jsonpath="{.spec.host}"
+```
+
+You will be prompted to authenticate with your OpenShift credentials. `user1` should be granted access; `user2` and `user3` should be denied.
+
+To validate bearer token access, generate a short-lived token for the `robot-user` ServiceAccount and query the Thanos API directly:
+
+```sh
+TOKEN=$(kubectl -n project-a create token robot-user)
+ROUTE=$(kubectl get route -n project-a thanos-querier-authenticated -o jsonpath='{.spec.host}')
+curl -k -H "Authorization: Bearer ${TOKEN}" "https://${ROUTE}/api/v1/query?query=up" | jq
 ```
 
 ### Setting up project-b
@@ -416,7 +434,7 @@ The `project-b` namespace includes an additional `allow-thanos` NetworkPolicy th
 #### Create the namespace, NetworkPolicies, MonitoringStack, and ThanosQuerier
 
 ```sh
-kubectl apply -f docs/user-guides/oauth-proxy/manifests/01-project-b.yaml
+kubectl apply -f docs/user-guides/oauth-proxy/manifests/05-project-b.yaml
 ```
 
 #### Configure OAuth Proxy
@@ -435,13 +453,13 @@ kubectl -n project-b annotate service thanos-querier-example-coo-thanos \
 #### Inject the OAuth Proxy sidecar
 
 ```sh
-kubectl apply -f docs/user-guides/oauth-proxy/manifests/05-oauth-project-b.yaml --server-side
+kubectl apply -f docs/user-guides/oauth-proxy/manifests/06-oauth-project-b.yaml --server-side
 ```
 
 #### Create the authenticated route
 
 ```sh
-kubectl apply -f docs/user-guides/oauth-proxy/manifests/08-route-project-b.yaml
+kubectl apply -f docs/user-guides/oauth-proxy/manifests/07-route-project-b.yaml
 ```
 
 #### Grant user2 access
@@ -452,6 +470,14 @@ kubectl -n project-b create rolebinding view-user2 \
   --user=user2
 ```
 
+#### Validate access
+
+```sh
+kubectl get route -n project-b thanos-querier-authenticated -o jsonpath="{.spec.host}"
+```
+
+Browse to the URL. `user2` should be granted access; `user1` and `user3` should be denied.
+
 ### Setting up project-c
 
 `project-c` follows the same pattern as `project-b`. The key difference is that the `ThanosQuerier` in `project-c` uses a `namespaceSelector` to federate metrics from both `project-b` and `project-c`, giving `user3` a unified view of both namespaces.
@@ -461,7 +487,7 @@ kubectl -n project-b create rolebinding view-user2 \
 The `project-c` namespace is labeled `project: project-c` so that the `allow-thanos` NetworkPolicy in `project-b` can permit its Thanos sidecar to connect.
 
 ```sh
-kubectl apply -f docs/user-guides/oauth-proxy/manifests/02-project-c.yaml
+kubectl apply -f docs/user-guides/oauth-proxy/manifests/08-project-c.yaml
 ```
 
 #### Configure OAuth Proxy
@@ -480,13 +506,13 @@ kubectl -n project-c annotate service thanos-querier-example-coo-thanos \
 #### Inject the OAuth Proxy sidecar
 
 ```sh
-kubectl apply -f docs/user-guides/oauth-proxy/manifests/06-oauth-project-c.yaml --server-side
+kubectl apply -f docs/user-guides/oauth-proxy/manifests/09-oauth-project-c.yaml --server-side
 ```
 
 #### Create the authenticated route
 
 ```sh
-kubectl apply -f docs/user-guides/oauth-proxy/manifests/09-route-project-c.yaml
+kubectl apply -f docs/user-guides/oauth-proxy/manifests/10-route-project-c.yaml
 ```
 
 #### Grant user3 access
@@ -497,30 +523,10 @@ kubectl -n project-c create rolebinding view-user3 \
   --user=user3
 ```
 
-## Validation
-
-### Browser-based access
-
-Retrieve the route hostname for each namespace:
+#### Validate access
 
 ```sh
-kubectl get route -n project-a thanos-querier-authenticated -o jsonpath="{.spec.host}"
-kubectl get route -n project-b thanos-querier-authenticated -o jsonpath="{.spec.host}"
 kubectl get route -n project-c thanos-querier-authenticated -o jsonpath="{.spec.host}"
 ```
 
-Browse to each URL. You will be prompted to authenticate with your OpenShift credentials.
-
-* `user1` can authenticate to the `project-a` route only.
-* `user2` can authenticate to the `project-b` route only.
-* `user3` can authenticate to the `project-c` route and will see metrics from both `project-b` and `project-c`.
-
-### Bearer token access (project-a only)
-
-Generate a short-lived token for the `robot-user` ServiceAccount and query the Thanos API directly:
-
-```sh
-TOKEN=$(kubectl -n project-a create token robot-user)
-ROUTE=$(kubectl get route -n project-a thanos-querier-authenticated -o jsonpath='{.spec.host}')
-curl -k -H "Authorization: Bearer ${TOKEN}" "https://${ROUTE}/api/v1/query?query=up"
-```
+Browse to the URL. `user3` should be granted access and will see metrics from both `project-b` and `project-c`. `user1` and `user2` should be denied.
