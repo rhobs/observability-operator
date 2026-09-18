@@ -4,7 +4,7 @@ description: Runs E2E tests against the OLM bundle using unified setup
 runs:
   using: composite
   steps:
-    - uses: actions/setup-go@v5
+    - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
       with:
         go-version-file: 'go.mod'
         check-latest: true
@@ -36,7 +36,7 @@ runs:
 
     - name: Archive production artifacts
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
       with:
         name: cluster-state
         path: cluster-state
