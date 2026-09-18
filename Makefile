@@ -21,7 +21,7 @@ CATALOG_TEMP := $(shell mktemp -d)
 ## Development
 
 .PHONY: all
-all: lint test-unit operator-image bundle-image
+all: lint test-unit operator-image bundle-image bundle-art-image
 
 .PHONY: test-unit
 test-unit:
@@ -147,6 +147,10 @@ test-e2e:
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
 BUNDLE_IMG ?= $(IMG_BASE)-bundle:$(VERSION)
 
+# BUNDLE_ART_IMG defines the image:tag used for the downstream (ART) bundle.
+# ART/Konflux overrides this; it is only used for local `bundle-art-image` builds.
+BUNDLE_ART_IMG ?= $(IMG_BASE)-bundle-art:$(VERSION)
+
 # CHANNELS define the bundle channels used in the bundle.
 # To re-generate a bundle for other specific channels without changing the standard setup, you can:
 # - use the CHANNELS as arg of the bundle target (e.g make bundle CHANNELS=candidate,fast,stable)
@@ -192,6 +196,30 @@ bundle-image: bundle ## Build the bundle image.
 .PHONY: bundle-push
 bundle-push: ## Build the bundle image.
 	$(CONTAINER_RUNTIME) push $(PUSH_OPTIONS) $(BUNDLE_IMG)
+
+## OLM - Downstream (ART) Bundle
+#
+# bundle-art/ is a second bundle targeting downstream builds via ART's
+# olm_bundle_konflux builder. It is rendered from the community bundle/ by
+# hack/render-art-bundle.py (requires python3 + PyYAML) and adds the ART inputs
+# (image-references, art.yaml, <package>.package.yaml), RELATED_IMAGE_* env vars
+# for disconnected installs, and downstream naming/channels (see the product FBC
+# at github.com/rhobs/konflux-coo-fbc).
+
+.PHONY: bundle-art
+bundle-art: bundle ## Render the downstream (ART) bundle into bundle-art/.
+	python3 hack/render-art-bundle.py
+	$(OPERATOR_SDK) bundle validate ./bundle-art \
+		--select-optional suite=operatorframework
+	git diff --quiet -I'^    createdAt: ' bundle-art && git checkout -- bundle-art || true
+
+.PHONY: bundle-art-image
+bundle-art-image: bundle-art ## Build the downstream (ART) bundle image.
+	$(CONTAINER_RUNTIME) build -f bundle-art.Dockerfile -t $(BUNDLE_ART_IMG) .
+
+.PHONY: bundle-art-push
+bundle-art-push: ## Push the downstream (ART) bundle image.
+	$(CONTAINER_RUNTIME) push $(PUSH_OPTIONS) $(BUNDLE_ART_IMG)
 
 # The image tag given to the resulting catalog image
 CATALOG_IMG_BASE ?= $(IMG_BASE)-catalog
