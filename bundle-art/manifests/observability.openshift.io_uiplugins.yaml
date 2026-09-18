@@ -1,0 +1,356 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.19.0
+  creationTimestamp: null
+  name: uiplugins.observability.openshift.io
+spec:
+  group: observability.openshift.io
+  names:
+    kind: UIPlugin
+    listKind: UIPluginList
+    plural: uiplugins
+    singular: uiplugin
+  scope: Cluster
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: UIPlugin defines an observability console plugin.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: UIPluginSpec is the specification for desired state of UIPlugin.
+            properties:
+              deployment:
+                description: Deployment allows customizing aspects of the generated
+                  deployment hosting the UI Plugin.
+                properties:
+                  nodeSelector:
+                    additionalProperties:
+                      type: string
+                    description: |-
+                      Define a label-selector for nodes which the Pods should be scheduled on.
+
+                      When no selector is specified it will default to a value only selecting Linux nodes ("kubernetes.io/os=linux").
+                    type: object
+                  tolerations:
+                    description: Define the tolerations used for the deployment.
+                    items:
+                      description: |-
+                        The pod this Toleration is attached to tolerates any taint that matches
+                        the triple <key,value,effect> using the matching operator <operator>.
+                      properties:
+                        effect:
+                          description: |-
+                            Effect indicates the taint effect to match. Empty means match all taint effects.
+                            When specified, allowed values are NoSchedule, PreferNoSchedule and NoExecute.
+                          type: string
+                        key:
+                          description: |-
+                            Key is the taint key that the toleration applies to. Empty means match all taint keys.
+                            If the key is empty, operator must be Exists; this combination means to match all values and all keys.
+                          type: string
+                        operator:
+                          description: |-
+                            Operator represents a key's relationship to the value.
+                            Valid operators are Exists and Equal. Defaults to Equal.
+                            Exists is equivalent to wildcard for value, so that a pod can
+                            tolerate all taints of a particular category.
+                          type: string
+                        tolerationSeconds:
+                          description: |-
+                            TolerationSeconds represents the period of time the toleration (which must be
+                            of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
+                            it is not set, which means tolerate the taint forever (do not evict). Zero and
+                            negative values will be treated as 0 (evict immediately) by the system.
+                          format: int64
+                          type: integer
+                        value:
+                          description: |-
+                            Value is the taint value the toleration matches to.
+                            If the operator is Exists, the value should be empty, otherwise just a regular string.
+                          type: string
+                      type: object
+                    type: array
+                type: object
+              distributedTracing:
+                description: DistributedTracing contains configuration for the distributed
+                  tracing console plugin.
+                properties:
+                  timeout:
+                    description: |-
+                      Timeout is the maximum duration before a query timeout.
+
+                      The value is expected to be a sequence of digits followed by a unit suffix, which can be 's' (seconds)
+                      or 'm' (minutes).
+                    pattern: ^([0-9]+)([sm]{1})$
+                    type: string
+                type: object
+              logging:
+                description: |-
+                  Logging contains configuration for the logging console plugin.
+
+                  It only applies to UIPlugin Type: Logging.
+                properties:
+                  logsLimit:
+                    description: LogsLimit is the max number of entries returned for
+                      a query.
+                    format: int32
+                    minimum: 0
+                    type: integer
+                  lokiStack:
+                    description: |-
+                      LokiStack points to the LokiStack instance of which logs should be displayed.
+                      It always references a LokiStack in the "openshift-logging" namespace.
+                    properties:
+                      name:
+                        description: Name of the LokiStack resource.
+                        type: string
+                      namespace:
+                        type: string
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  schema:
+                    description: |-
+                      Schema is the schema to use for logs querying and display.
+
+                      Defaults to "viaq" if not specified. Use "otel" for OpenTelemetry schema, or "select" to allow users to choose the schema from the UI.
+                    enum:
+                    - viaq
+                    - otel
+                    - select
+                    type: string
+                  showTimezoneSelector:
+                    description: |-
+                      ShowTimezoneSelector indicates whether to show the timezone selector in the UI.
+
+                      Defaults to false if not specified.
+                    type: boolean
+                  timeout:
+                    description: |-
+                      Timeout is the maximum duration before a query timeout.
+
+                      The value is expected to be a sequence of digits followed by an optional unit suffix, which can be 's' (seconds)
+                      or 'm' (minutes). If the unit is omitted, it defaults to seconds.
+                    pattern: ^([0-9]+)([sm]{0,1})$
+                    type: string
+                type: object
+              monitoring:
+                description: Monitoring contains configuration for the monitoring
+                  console plugin.
+                properties:
+                  acm:
+                    description: ACM points to the alertmanager and thanosQuerier
+                      instance services of which it should create a proxy to.
+                    properties:
+                      alertmanager:
+                        description: Alertmanager points to the alertmanager instance
+                          of which it should create a proxy to.
+                        properties:
+                          url:
+                            description: Url of the Alertmanager to proxy to.
+                            type: string
+                        required:
+                        - url
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      enabled:
+                        description: Indicates if ACM-related feature(s) should be
+                          enabled
+                        type: boolean
+                      thanosQuerier:
+                        description: ThanosQuerier points to the thanos-querier service
+                          of which it should create a proxy to.
+                        properties:
+                          url:
+                            description: Url of the ThanosQuerier to proxy to.
+                            type: string
+                        required:
+                        - url
+                        type: object
+                        x-kubernetes-map-type: atomic
+                    required:
+                    - alertmanager
+                    - enabled
+                    - thanosQuerier
+                    type: object
+                  clusterHealthAnalyzer:
+                    description: ClusterHealthAnalyzer feature flag enablement
+                    properties:
+                      enabled:
+                        description: Indicates if the cluster-health-analyzer features
+                          should be enabled.
+                        type: boolean
+                    required:
+                    - enabled
+                    type: object
+                  incidents:
+                    description: |-
+                      Incidents feature flag enablement
+
+                      Deprecated: Use clusterHealthAnalyzer instead
+                    properties:
+                      enabled:
+                        description: Indicates if incidents-related feature(s) should
+                          be enabled.
+                        type: boolean
+                    required:
+                    - enabled
+                    type: object
+                  perses:
+                    description: Perses points to the perses instance service of which
+                      it should create a proxy to.
+                    properties:
+                      enabled:
+                        description: Indicates if perses-related feature(s) should
+                          be enabled
+                        type: boolean
+                    required:
+                    - enabled
+                    type: object
+                type: object
+              troubleshootingPanel:
+                description: TroubleshootingPanel contains configuration for the troubleshooting
+                  console plugin.
+                properties:
+                  enableAgentNavigation:
+                    description: |-
+                      EnableAgentNavigation if true allows an AI agent to read and navigate the main view and troubleshooting panel on your behalf.
+
+                      Defaults to false if not specified.
+                    type: boolean
+                  timeout:
+                    description: |-
+                      Timeout is the maximum duration before a query timeout.
+
+                      The value is expected to be a sequence of digits followed by a unit suffix, which can be 's' (seconds)
+                      or 'm' (minutes).
+                    pattern: ^([0-9]+)([sm]{1})$
+                    type: string
+                type: object
+              type:
+                description: Type defines the UI plugin.
+                enum:
+                - Dashboards
+                - TroubleshootingPanel
+                - DistributedTracing
+                - Logging
+                - Monitoring
+                type: string
+            required:
+            - type
+            type: object
+            x-kubernetes-validations:
+            - message: Troubleshooting Panel configuration is only supported with
+                the TroubleshootingPanel type
+              rule: self.type == 'TroubleshootingPanel' || !has(self.troubleshootingPanel)
+            - message: Distributed Tracing configuration is only supported with the
+                DistributedTracing type
+              rule: self.type == 'DistributedTracing' || !has(self.distributedTracing)
+          status:
+            description: |-
+              UIPluginStatus defines the observed state of UIPlugin.
+              It should always be reconstructable from the state of the cluster and/or outside world.
+            properties:
+              conditions:
+                description: Conditions provide status information about the plugin.
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-type: atomic
+            required:
+            - conditions
+            type: object
+        type: object
+        x-kubernetes-validations:
+        - message: UIPlugin name must be 'logging' if type is Logging
+          rule: self.spec.type != 'Logging' || self.metadata.name == 'logging'
+        - message: UIPlugin name must be 'troubleshooting-panel' if type is TroubleshootingPanel
+          rule: self.spec.type != 'TroubleshootingPanel' || self.metadata.name ==
+            'troubleshooting-panel'
+        - message: UIPlugin name must be 'distributed-tracing' if type is DistributedTracing
+          rule: self.spec.type != 'DistributedTracing' || self.metadata.name == 'distributed-tracing'
+        - message: UIPlugin name must be 'dashboards' if type is Dashboards
+          rule: self.spec.type != 'Dashboards' || self.metadata.name == 'dashboards'
+        - message: UIPlugin name must be 'monitoring' if type is Monitoring
+          rule: self.spec.type != 'Monitoring' || self.metadata.name == 'monitoring'
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
+  storedVersions: null
