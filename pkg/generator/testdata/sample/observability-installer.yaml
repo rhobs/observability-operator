@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sample
+---
+apiVersion: v1
+data:
+  access_key_secret: c3VwZXJzZWNyZXQ=
+kind: Secret
+metadata:
+  name: minio-secret
+  namespace: sample
+---
+apiVersion: observability.openshift.io/v1alpha1
+kind: ObservabilityInstaller
+metadata:
+  name: sample-observability
+  namespace: sample
+spec:
+  capabilities:
+    tracing:
+      enabled: true
+      storage:
+        objectStorage:
+          s3:
+            bucket: tempo
+            endpoint: http://minio.minio.svc:9000
+            accessKeyID: minio
+            accessKeySecret:
+              name: minio-secret
+              key: access_key_secret
