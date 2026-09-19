@@ -139,6 +139,8 @@ func newThanosQuerierDeployment(
 							Type: corev1.SeccompProfileTypeRuntimeDefault,
 						},
 					},
+					ServiceAccountName:           name,
+					AutomountServiceAccountToken: new(false),
 				},
 			},
 			ProgressDeadlineSeconds: ptr.To(int32(300)),
