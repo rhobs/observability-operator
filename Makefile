@@ -2,9 +2,13 @@ SHELL=/usr/bin/env bash -o pipefail
 
 include Makefile.tools
 
-# IMG_BASE defines the registry/namespace and part of the image name
-# This variable is used to construct full image tags for bundle and catalog images.
-IMG_BASE ?= observability-operator
+# IMG_BASE defines the full registry/namespace/name image name
+# This variable is used to construct image tags for bundle and catalog images.
+# You can also set REGISTRY_BASE to just the registry/namespace part.
+IMG_BASE ?= $(and $(REGISTRY_BASE),$(REGISTRY_BASE)/)observability-operator
+
+# COO_NAMESPACE is the namespace to deploy the operator.
+COO_NAMESPACE ?= operators
 
 VERSION ?= $(shell cat VERSION)
 RELEASE_SHA ?= $(shell git rev-parse origin/main)
@@ -21,7 +25,7 @@ CATALOG_TEMP := $(shell mktemp -d)
 ## Development
 
 .PHONY: all
-all: lint test-unit operator-image bundle-image
+all: generate lint test-unit operator-image bundle-image
 
 .PHONY: test-unit
 test-unit:
@@ -297,9 +301,21 @@ initiate-release-as: $(STANDARD_VERSION)
 kind-cluster: $(OPERATOR_SDK)
 	kind create cluster --config hack/kind/config.yaml
 	$(OPERATOR_SDK) olm install
-	kubectl apply -f hack/kind/registry.yaml -n operators
+	kubectl apply -f hack/kind/registry.yaml -n $(COO_NAMESPACE)
 	kubectl create -k deploy/crds/kubernetes/
 	kubectl create -k deploy/dependencies
+
+.PHONY: deploy
+deploy: $(OPERATOR_SDK) operator-image operator-push bundle-image bundle-push run-bundle
+
+.PHONY: run-bundle
+run-bundle:
+	kubectl get ns/$(COO_NAMESPACE) 2> /dev/null || kubectl create namespace $(COO_NAMESPACE)
+	$(OPERATOR_SDK) run bundle $(BUNDLE_IMG) --namespace $(COO_NAMESPACE) --install-mode AllNamespaces
+
+.PHONY: undeploy
+undeploy: $(OPERATOR_SDK)
+	$(OPERATOR_SDK) cleanup observability-operator --namespace $(COO_NAMESPACE)
 
 .PHONY: clean
 clean: clean-tools
