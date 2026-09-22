@@ -144,9 +144,55 @@ func TestMonitoringStackController(t *testing.T) {
 	}, {
 		name:     "ClusterRoleBinding cleanup on policy change",
 		scenario: assertClusterRoleBindingCleanupOnPolicyChange,
+	}, {
+		name:     "restricted-v2 assigns namespace user and group IDs",
+		scenario: assertRestrictedV2PodSecurityProfile,
 	}}
 	for _, tc := range ts {
 		t.Run(tc.name, tc.scenario)
+	}
+}
+
+func assertRestrictedV2PodSecurityProfile(t *testing.T) {
+	if !f.IsOpenshiftCluster {
+		t.Skip("requires an OpenShift cluster")
+	}
+
+	ms := newMonitoringStack(t, "restricted-v2-security")
+	ms.Spec.PodSecurity.Profile = stack.RestrictedV2PodSecurityProfile
+	ms.Spec.PrometheusConfig.Replicas = ptr.To(int32(1))
+	ms.Spec.AlertmanagerConfig.Replicas = ptr.To(int32(1))
+
+	err := f.K8sClient.Create(t.Context(), ms)
+	assert.NilError(t, err, "failed to create a monitoring stack")
+
+	statefulSets := []struct {
+		name     string
+		staticID int64
+	}{
+		{name: "prometheus-" + ms.Name, staticID: monitoringstack.PrometheusUserFSGroupID},
+		{name: "alertmanager-" + ms.Name, staticID: monitoringstack.AlertmanagerUserFSGroupID},
+	}
+
+	for _, statefulSet := range statefulSets {
+		f.AssertStatefulsetReady(statefulSet.name, ms.Namespace, framework.WithTimeout(5*time.Minute))(t)
+		pods, err := f.GetStatefulSetPods(statefulSet.name, ms.Namespace)
+		assert.NilError(t, err)
+
+		matchedPods := 0
+		for _, pod := range pods {
+			if pod.Namespace != ms.Namespace {
+				continue
+			}
+			matchedPods++
+			assert.Equal(t, pod.Annotations["openshift.io/scc"], "restricted-v2")
+			assert.Assert(t, pod.Spec.SecurityContext != nil)
+			assert.Assert(t, pod.Spec.SecurityContext.RunAsUser != nil)
+			assert.Assert(t, pod.Spec.SecurityContext.FSGroup != nil)
+			assert.Assert(t, *pod.Spec.SecurityContext.RunAsUser != statefulSet.staticID)
+			assert.Assert(t, *pod.Spec.SecurityContext.FSGroup != statefulSet.staticID)
+		}
+		assert.Assert(t, matchedPods > 0)
 	}
 }
 
@@ -1057,6 +1103,9 @@ const oboManagedFieldsJson = `
   },
   "f:logLevel": {},
   "f:podMetadata": {
+    "f:annotations": {
+      "f:openshift.io/required-scc": {}
+    },
     "f:labels": {
       "f:app.kubernetes.io/component": {},
       "f:app.kubernetes.io/part-of": {}
@@ -1085,7 +1134,10 @@ const oboManagedFieldsJson = `
   "f:securityContext": {
     "f:fsGroup": {},
     "f:runAsNonRoot": {},
-    "f:runAsUser": {}
+    "f:runAsUser": {},
+    "f:seccompProfile": {
+      "f:type": {}
+    }
   },
   "f:serviceAccountName": {},
   "f:serviceMonitorNamespaceSelector": {},

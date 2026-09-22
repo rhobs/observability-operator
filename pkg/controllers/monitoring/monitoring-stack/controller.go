@@ -18,6 +18,7 @@ package monitoringstack
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -25,7 +26,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -38,6 +39,7 @@ import (
 
 type resourceManager struct {
 	k8sClient    client.Client
+	apiReader    client.Reader
 	scheme       *runtime.Scheme
 	logger       logr.Logger
 	prometheus   PrometheusConfiguration
@@ -81,13 +83,14 @@ const finalizerName = "monitoring.observability.openshift.io/finalizer"
 //+kubebuilder:rbac:groups=discovery.k8s.io,resources=endpointslices,verbs=get;list;watch
 //+kubebuilder:rbac:groups=extensions;networking.k8s.io,resources=ingresses,verbs=get;list;watch
 
-// RBAC for delegating the use of SCC nonroot-v2
-//+kubebuilder:rbac:groups="security.openshift.io",resources=securitycontextconstraints,resourceNames=nonroot-v2,verbs=use
+// RBAC for delegating the use of supported SCCs
+//+kubebuilder:rbac:groups="security.openshift.io",resources=securitycontextconstraints,resourceNames=nonroot-v2;restricted-v2;restricted-v3,verbs=get;use
 
 // RegisterWithManager registers the controller with Manager
 func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 	rm := &resourceManager{
 		k8sClient:    mgr.GetClient(),
+		apiReader:    mgr.GetAPIReader(),
 		scheme:       mgr.GetScheme(),
 		logger:       ctrl.Log.WithName("observability-operator"),
 		thanos:       opts.Thanos,
@@ -145,7 +148,7 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			patch := client.MergeFrom(ms.DeepCopy())
 			controllerutil.RemoveFinalizer(ms, finalizerName)
 			if err := rm.k8sClient.Patch(ctx, ms, patch); err != nil {
-				if errors.IsNotFound(err) {
+				if apierrors.IsNotFound(err) {
 					return ctrl.Result{}, nil
 				}
 				return ctrl.Result{}, err
@@ -161,11 +164,23 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		patch := client.MergeFrom(ms.DeepCopy())
 		controllerutil.AddFinalizer(ms, finalizerName)
 		if err := rm.k8sClient.Patch(ctx, ms, patch); err != nil {
-			if errors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) {
 				return ctrl.Result{}, nil
 			}
 			return ctrl.Result{}, err
 		}
+	}
+
+	if err := validatePodSecurityProfile(ctx, rm.apiReader, ms); err != nil {
+		var validationError *podSecurityValidationError
+		if errors.As(err, &validationError) {
+			result := rm.updateStatus(ctx, req, ms, err, err)
+			if result.IsZero() {
+				result.RequeueAfter = time.Minute
+			}
+			return result, nil
+		}
+		return ctrl.Result{}, err
 	}
 
 	reconcilers := stackComponentReconcilers(ms,
@@ -177,19 +192,25 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		err := reconciler.Reconcile(ctx, rm.k8sClient, rm.scheme)
 		// handle create / update errors that can happen due to a stale cache by
 		// retrying after some time.
-		if errors.IsAlreadyExists(err) || errors.IsConflict(err) {
+		if apierrors.IsAlreadyExists(err) || apierrors.IsConflict(err) {
 			logger.V(3).Info("skipping reconcile error", "err", err)
 			return ctrl.Result{RequeueAfter: 2 * time.Second}, nil
 		}
 		if err != nil {
-			return rm.updateStatus(ctx, req, ms, err), err
+			return rm.updateStatus(ctx, req, ms, err, nil), err
 		}
 	}
 
-	return rm.updateStatus(ctx, req, ms, nil), nil
+	return rm.updateStatus(ctx, req, ms, nil, nil), nil
 }
 
-func (rm resourceManager) updateStatus(ctx context.Context, req ctrl.Request, ms *stack.MonitoringStack, recError error) ctrl.Result {
+func (rm resourceManager) updateStatus(
+	ctx context.Context,
+	req ctrl.Request,
+	ms *stack.MonitoringStack,
+	recError error,
+	securityError error,
+) ctrl.Result {
 	var prom monv1.Prometheus
 	logger := rm.logger.WithValues("stack", req.NamespacedName)
 	key := client.ObjectKey{
@@ -197,11 +218,11 @@ func (rm resourceManager) updateStatus(ctx context.Context, req ctrl.Request, ms
 		Namespace: ms.Namespace,
 	}
 	err := rm.k8sClient.Get(ctx, key, &prom)
-	if err != nil {
+	if err != nil && !apierrors.IsNotFound(err) {
 		logger.Info("Failed to get prometheus object", "err", err)
 		return ctrl.Result{RequeueAfter: 2 * time.Second}
 	}
-	ms.Status.Conditions = updateConditions(ms, prom, recError)
+	ms.Status.Conditions = updateConditions(ms, prom, recError, securityError)
 	err = rm.k8sClient.Status().Update(ctx, ms)
 	if err != nil {
 		logger.Info("Failed to update status", "err", err)
@@ -216,7 +237,7 @@ func (rm resourceManager) getStack(ctx context.Context, req ctrl.Request) (*stac
 	ms := stack.MonitoringStack{}
 
 	if err := rm.k8sClient.Get(ctx, req.NamespacedName, &ms); err != nil {
-		if errors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			logger.V(3).Info("stack could not be found; may be marked for deletion")
 			return nil, nil
 		}

@@ -116,6 +116,92 @@ func TestNewPrometheusSetsThanosSidecarResources(t *testing.T) {
 	assert.DeepEqual(t, promResources, prom.Spec.Resources)
 }
 
+func TestPodSecurityProfiles(t *testing.T) {
+	tests := []struct {
+		name            string
+		profile         stack.PodSecurityProfile
+		expectedSCC     string
+		expectStaticIDs bool
+		expectHostUsers bool
+	}{
+		{
+			name:            "default profile preserves static IDs",
+			expectedSCC:     "nonroot-v2",
+			expectStaticIDs: true,
+		},
+		{
+			name:        "restricted-v2 uses namespace IDs",
+			profile:     stack.RestrictedV2PodSecurityProfile,
+			expectedSCC: "restricted-v2",
+		},
+		{
+			name:            "restricted-v3 enables pod user namespaces",
+			profile:         stack.RestrictedV3PodSecurityProfile,
+			expectedSCC:     "restricted-v3",
+			expectHostUsers: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ms := &stack.MonitoringStack{
+				ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "ns"},
+				Spec: stack.MonitoringStackSpec{
+					PrometheusConfig: &stack.PrometheusConfig{},
+					PodSecurity: stack.PodSecurityConfig{
+						Profile: test.profile,
+					},
+				},
+			}
+
+			prometheus := newPrometheus(
+				ms,
+				"test-prometheus",
+				"test-scrape",
+				ThanosConfiguration{},
+				PrometheusConfiguration{},
+			)
+			alertmanager := newAlertmanager(ms, "test-alertmanager", AlertmanagerConfiguration{})
+
+			assert.Equal(t, prometheus.Spec.PodMetadata.Annotations[requiredSCCAnnotation], test.expectedSCC)
+			assert.Equal(t, alertmanager.Spec.PodMetadata.Annotations[requiredSCCAnnotation], test.expectedSCC)
+			assert.Equal(t, prometheus.Spec.SecurityContext.SeccompProfile.Type, corev1.SeccompProfileTypeRuntimeDefault)
+			assert.Equal(t, alertmanager.Spec.SecurityContext.SeccompProfile.Type, corev1.SeccompProfileTypeRuntimeDefault)
+			assert.Assert(t, *prometheus.Spec.SecurityContext.RunAsNonRoot)
+			assert.Assert(t, *alertmanager.Spec.SecurityContext.RunAsNonRoot)
+
+			if test.expectStaticIDs {
+				assert.Equal(t, *prometheus.Spec.SecurityContext.RunAsUser, PrometheusUserFSGroupID)
+				assert.Equal(t, *prometheus.Spec.SecurityContext.FSGroup, PrometheusUserFSGroupID)
+				assert.Equal(t, *alertmanager.Spec.SecurityContext.RunAsUser, AlertmanagerUserFSGroupID)
+				assert.Equal(t, *alertmanager.Spec.SecurityContext.FSGroup, AlertmanagerUserFSGroupID)
+				assert.Assert(t, prometheus.Spec.SecurityContext.FSGroupChangePolicy == nil)
+				assert.Assert(t, alertmanager.Spec.SecurityContext.FSGroupChangePolicy == nil)
+			} else {
+				assert.Assert(t, prometheus.Spec.SecurityContext.RunAsUser == nil)
+				assert.Assert(t, prometheus.Spec.SecurityContext.FSGroup == nil)
+				assert.Assert(t, alertmanager.Spec.SecurityContext.RunAsUser == nil)
+				assert.Assert(t, alertmanager.Spec.SecurityContext.FSGroup == nil)
+				assert.Equal(t, *prometheus.Spec.SecurityContext.FSGroupChangePolicy, corev1.FSGroupChangeOnRootMismatch)
+				assert.Equal(t, *alertmanager.Spec.SecurityContext.FSGroupChangePolicy, corev1.FSGroupChangeOnRootMismatch)
+			}
+
+			if test.expectHostUsers {
+				assert.Assert(t, prometheus.Spec.HostUsers != nil && !*prometheus.Spec.HostUsers)
+				assert.Assert(t, alertmanager.Spec.HostUsers != nil && !*alertmanager.Spec.HostUsers)
+			} else {
+				assert.Assert(t, prometheus.Spec.HostUsers == nil)
+				assert.Assert(t, alertmanager.Spec.HostUsers == nil)
+			}
+
+			prometheusRole := newPrometheusClusterRole("test-prometheus", rbacVerbs, podSecurityProfile(ms))
+			alertmanagerRole := newAlertManagerClusterRole("test-alertmanager", rbacVerbs, podSecurityProfile(ms))
+			assert.DeepEqual(t, prometheusRole.Rules[len(prometheusRole.Rules)-1].ResourceNames, []string{test.expectedSCC})
+			assert.DeepEqual(t, alertmanagerRole.Rules[0].ResourceNames, []string{test.expectedSCC})
+		})
+	}
+}
+
 func TestNewAdditionalScrapeConfigsSecret(t *testing.T) {
 	for _, tc := range []struct {
 		name       string

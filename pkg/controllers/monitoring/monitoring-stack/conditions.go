@@ -1,6 +1,7 @@
 package monitoringstack
 
 import (
+	"errors"
 	"fmt"
 
 	monv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
@@ -23,14 +24,42 @@ const (
 	ResourceSelectorIsNilMessage   = "No resources will be discovered, ResourceSelector is nil"
 	ResourceDiscoveryOnMessage     = "Resource discovery is operational"
 	NoReason                       = "None"
+	SecurityProfileReadyReason     = "SecurityProfileReady"
+	SecurityProfileReadyMessage    = "Pod security profile is ready"
 )
 
-func updateConditions(ms *v1alpha1.MonitoringStack, prom monv1.Prometheus, recError error) []v1alpha1.Condition {
+func updateConditions(ms *v1alpha1.MonitoringStack, prom monv1.Prometheus, recError, securityError error) []v1alpha1.Condition {
 	return []v1alpha1.Condition{
 		updateResourceDiscovery(ms),
 		updateAvailable(ms.Status.Conditions, prom, ms.Generation),
 		updateReconciled(ms.Status.Conditions, prom, ms.Generation, recError),
+		updateSecurityProfile(ms, securityError),
 	}
+}
+
+func updateSecurityProfile(ms *v1alpha1.MonitoringStack, validationError error) v1alpha1.Condition {
+	condition := v1alpha1.Condition{
+		Type:               v1alpha1.SecurityProfileReadyCondition,
+		Status:             v1alpha1.ConditionTrue,
+		Reason:             SecurityProfileReadyReason,
+		Message:            SecurityProfileReadyMessage,
+		LastTransitionTime: metav1.Now(),
+		ObservedGeneration: ms.Generation,
+	}
+
+	if validationError == nil {
+		return condition
+	}
+
+	condition.Status = v1alpha1.ConditionFalse
+	condition.Message = validationError.Error()
+	condition.Reason = FailedToReconcileReason
+	var profileError *podSecurityValidationError
+	if errors.As(validationError, &profileError) {
+		condition.Reason = profileError.reason
+	}
+
+	return condition
 }
 
 func getMSCondition(conditions []v1alpha1.Condition, t v1alpha1.ConditionType) (v1alpha1.Condition, error) {

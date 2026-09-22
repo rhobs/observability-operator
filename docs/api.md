@@ -143,6 +143,20 @@ To monitor resources in the namespace where Monitoring Stack was created in, set
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#monitoringstackspecpodsecurity">podSecurity</a></b></td>
+        <td>object</td>
+        <td>
+          PodSecurity configures the security profile for Prometheus, Alertmanager,
+and their sidecar and init containers.
+
+Changing the profile restarts the managed pods. When persistent storage is
+configured, changing from LegacyStatic can cause the volume ownership to be
+updated on the next mount.<br/>
+          <br/>
+            <i>Default</i>: map[profile:LegacyStatic]<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#monitoringstackspecprometheusconfig">prometheusConfig</a></b></td>
         <td>object</td>
         <td>
@@ -617,6 +631,48 @@ Valid operators are In, NotIn, Exists and DoesNotExist.<br/>
 the values array must be non-empty. If the operator is Exists or DoesNotExist,
 the values array must be empty. This array is replaced during a strategic
 merge patch.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### MonitoringStack.spec.podSecurity
+<sup><sup>[↩ Parent](#monitoringstackspec)</sup></sup>
+
+
+
+PodSecurity configures the security profile for Prometheus, Alertmanager,
+and their sidecar and init containers.
+
+Changing the profile restarts the managed pods. When persistent storage is
+configured, changing from LegacyStatic can cause the volume ownership to be
+updated on the next mount.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>profile</b></td>
+        <td>enum</td>
+        <td>
+          Profile selects how user and filesystem group IDs are assigned to the
+MonitoringStack workloads.
+
+LegacyStatic preserves the historical static IDs and uses nonroot-v2 on
+OpenShift. RestrictedV2 uses namespace-assigned IDs. RestrictedV3 also
+enables pod user namespaces and requires storage that supports ID-mapped
+mounts. RestrictedV2 and RestrictedV3 require OpenShift. RestrictedV3 also
+requires namespace UID and supplemental group ranges between 1 and 65535.<br/>
+          <br/>
+            <i>Enum</i>: LegacyStatic, RestrictedV2, RestrictedV3<br/>
+            <i>Default</i>: LegacyStatic<br/>
         </td>
         <td>false</td>
       </tr></tbody>

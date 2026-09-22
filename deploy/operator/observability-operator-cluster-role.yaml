@@ -401,6 +401,17 @@ rules:
   verbs:
   - use
 - apiGroups:
+  - security.openshift.io
+  resourceNames:
+  - nonroot-v2
+  - restricted-v2
+  - restricted-v3
+  resources:
+  - securitycontextconstraints
+  verbs:
+  - get
+  - use
+- apiGroups:
   - storage.k8s.io
   resources:
   - storageclasses

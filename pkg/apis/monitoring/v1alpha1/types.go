@@ -58,6 +58,11 @@ type ClusterRoleBindingPolicy string
 // +kubebuilder:validation:Enum=OnNamespace;OnNamespaceExceptForAlertmanagerNamespace;None
 type AlertmanagerConfigMatcherStrategyType string
 
+// PodSecurityProfile defines the security profile applied to MonitoringStack
+// workloads.
+// +kubebuilder:validation:Enum=LegacyStatic;RestrictedV2;RestrictedV3
+type PodSecurityProfile string
+
 const (
 	// CreateClusterRoleBindings instructs the MonitoringStack to create the
 	// default ClusterRoleBindings if a NamespaceSelector is present. Note that
@@ -71,6 +76,38 @@ const (
 	// RoleBindings to allow access to the desired namespaces.
 	NoClusterRoleBindings ClusterRoleBindingPolicy = "NoClusterRoleBindings"
 )
+
+const (
+	// LegacyStaticPodSecurityProfile preserves the static user and filesystem
+	// group IDs used by earlier versions of the operator. On OpenShift, workloads
+	// use the nonroot-v2 SCC.
+	LegacyStaticPodSecurityProfile PodSecurityProfile = "LegacyStatic"
+
+	// RestrictedV2PodSecurityProfile lets OpenShift assign user and filesystem
+	// group IDs from the namespace ranges and requires the restricted-v2 SCC.
+	RestrictedV2PodSecurityProfile PodSecurityProfile = "RestrictedV2"
+
+	// RestrictedV3PodSecurityProfile runs workloads in a pod user namespace and
+	// requires the restricted-v3 SCC. This profile requires storage with support
+	// for ID-mapped mounts.
+	RestrictedV3PodSecurityProfile PodSecurityProfile = "RestrictedV3"
+)
+
+// PodSecurityConfig configures the security profile for all pods managed by a
+// MonitoringStack.
+type PodSecurityConfig struct {
+	// Profile selects how user and filesystem group IDs are assigned to the
+	// MonitoringStack workloads.
+	//
+	// LegacyStatic preserves the historical static IDs and uses nonroot-v2 on
+	// OpenShift. RestrictedV2 uses namespace-assigned IDs. RestrictedV3 also
+	// enables pod user namespaces and requires storage that supports ID-mapped
+	// mounts. RestrictedV2 and RestrictedV3 require OpenShift. RestrictedV3 also
+	// requires namespace UID and supplemental group ranges between 1 and 65535.
+	// +optional
+	// +kubebuilder:default=LegacyStatic
+	Profile PodSecurityProfile `json:"profile,omitempty"`
+}
 
 const (
 	// OnNamespaceMatcherStrategy configures AlertmanagerConfig routes to only
@@ -177,6 +214,16 @@ type MonitoringStackSpec struct {
 	// +optional
 	// +kubebuilder:default={disabled: false}
 	AlertmanagerConfig AlertmanagerConfig `json:"alertmanagerConfig,omitempty"`
+
+	// PodSecurity configures the security profile for Prometheus, Alertmanager,
+	// and their sidecar and init containers.
+	//
+	// Changing the profile restarts the managed pods. When persistent storage is
+	// configured, changing from LegacyStatic can cause the volume ownership to be
+	// updated on the next mount.
+	// +optional
+	// +kubebuilder:default={profile: LegacyStatic}
+	PodSecurity PodSecurityConfig `json:"podSecurity,omitempty"`
 }
 
 // MonitoringStackStatus defines the observed state of MonitoringStack.
@@ -200,9 +247,10 @@ const (
 	ConditionFalse   ConditionStatus = "False"
 	ConditionUnknown ConditionStatus = "Unknown"
 
-	ReconciledCondition        ConditionType = "Reconciled"
-	AvailableCondition         ConditionType = "Available"
-	ResourceDiscoveryCondition ConditionType = "ResourceDiscovery"
+	ReconciledCondition           ConditionType = "Reconciled"
+	AvailableCondition            ConditionType = "Available"
+	ResourceDiscoveryCondition    ConditionType = "ResourceDiscovery"
+	SecurityProfileReadyCondition ConditionType = "SecurityProfileReady"
 )
 
 type Condition struct {

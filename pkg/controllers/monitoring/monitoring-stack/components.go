@@ -32,11 +32,12 @@ var (
 func stackComponentCleanup(ms *stack.MonitoringStack) []reconciler.Reconciler {
 	prometheusName := ms.Name + "-prometheus"
 	alertmanagerName := ms.Name + "-alertmanager"
+	profile := podSecurityProfile(ms)
 	return []reconciler.Reconciler{
-		reconciler.NewDeleter(newPrometheusClusterRole(prometheusName, rbacVerbs)),
+		reconciler.NewDeleter(newPrometheusClusterRole(prometheusName, rbacVerbs, profile)),
 		reconciler.NewDeleter(newClusterRoleBinding(ms, prometheusName)),
 		reconciler.NewDeleter(newRoleBindingForClusterRole(ms, prometheusName)),
-		reconciler.NewDeleter(newAlertManagerClusterRole(alertmanagerName, rbacVerbs)),
+		reconciler.NewDeleter(newAlertManagerClusterRole(alertmanagerName, rbacVerbs, profile)),
 		reconciler.NewDeleter(newClusterRoleBinding(ms, alertmanagerName)),
 		reconciler.NewDeleter(newRoleBindingForClusterRole(ms, alertmanagerName)),
 	}
@@ -54,18 +55,19 @@ func stackComponentReconcilers(
 	hasNsSelector := ms.Spec.NamespaceSelector != nil
 	createCRB := hasNsSelector && ms.Spec.CreateClusterRoleBindings == stack.CreateClusterRoleBindings
 	deployAlertmanager := !ms.Spec.AlertmanagerConfig.Disabled
+	profile := podSecurityProfile(ms)
 
 	return []reconciler.Reconciler{
 		// Create RBAC
 		reconciler.NewUpdater(newServiceAccount(prometheusName, ms.Namespace), ms),
 		reconciler.NewOptionalUpdater(newServiceAccount(alertmanagerName, ms.Namespace), ms, deployAlertmanager),
 
-		reconciler.NewUpdater(newPrometheusClusterRole(prometheusName, rbacVerbs), ms),
+		reconciler.NewUpdater(newPrometheusClusterRole(prometheusName, rbacVerbs, profile), ms),
 		// create clusterrolebinding if nsSelector's present otherwise a rolebinding
 		reconciler.NewOptionalUpdater(newClusterRoleBinding(ms, prometheusName), ms, createCRB),
 		reconciler.NewOptionalUpdater(newRoleBindingForClusterRole(ms, prometheusName), ms, !createCRB),
 
-		reconciler.NewOptionalUpdater(newAlertManagerClusterRole(alertmanagerName, rbacVerbs), ms, deployAlertmanager),
+		reconciler.NewOptionalUpdater(newAlertManagerClusterRole(alertmanagerName, rbacVerbs, profile), ms, deployAlertmanager),
 		// create clusterrolebinding if alertmanager is enabled and namespace selector is also present in MonitoringStack
 		reconciler.NewOptionalUpdater(newClusterRoleBinding(ms, alertmanagerName), ms, deployAlertmanager && createCRB),
 		reconciler.NewOptionalUpdater(newRoleBindingForClusterRole(ms, alertmanagerName), ms, deployAlertmanager && !createCRB),
@@ -87,7 +89,7 @@ func stackComponentReconcilers(
 	}
 }
 
-func newPrometheusClusterRole(rbacResourceName string, rbacVerbs []string) *rbacv1.ClusterRole {
+func newPrometheusClusterRole(rbacResourceName string, rbacVerbs []string, profile stack.PodSecurityProfile) *rbacv1.ClusterRole {
 	return &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: rbacv1.SchemeGroupVersion.String(),
@@ -111,7 +113,7 @@ func newPrometheusClusterRole(rbacResourceName string, rbacVerbs []string) *rbac
 		}, {
 			APIGroups:     []string{"security.openshift.io"},
 			Resources:     []string{"securitycontextconstraints"},
-			ResourceNames: []string{"nonroot-v2"},
+			ResourceNames: []string{sccForProfile(profile)},
 			Verbs:         []string{"use"},
 		}},
 	}
@@ -138,6 +140,7 @@ func newPrometheus(
 	prometheusCfg PrometheusConfiguration,
 ) *monv1.Prometheus {
 	prometheusSelector := ms.Spec.ResourceSelector
+	profile := podSecurityProfile(ms)
 
 	config := ms.Spec.PrometheusConfig
 
@@ -156,7 +159,8 @@ func newPrometheus(
 				Replicas: config.Replicas,
 
 				PodMetadata: &monv1.EmbeddedObjectMetadata{
-					Labels: podLabels("prometheus", ms.Name),
+					Labels:      podLabels("prometheus", ms.Name),
+					Annotations: podAnnotations(profile),
 				},
 
 				// Prometheus does not use an Enum for LogLevel, so need to convert to string
@@ -198,12 +202,9 @@ func newPrometheus(
 					},
 					Key: AdditionalScrapeConfigsSelfScrapeKey,
 				},
-				Storage: storageForPVC(config.PersistentVolumeClaim),
-				SecurityContext: &corev1.PodSecurityContext{
-					FSGroup:      ptr.To(PrometheusUserFSGroupID),
-					RunAsNonRoot: ptr.To(true),
-					RunAsUser:    ptr.To(PrometheusUserFSGroupID),
-				},
+				Storage:                   storageForPVC(config.PersistentVolumeClaim),
+				SecurityContext:           podSecurityContext(profile, PrometheusUserFSGroupID),
+				HostUsers:                 hostUsers(profile),
 				RemoteWrite:               config.RemoteWrite,
 				ExternalLabels:            config.ExternalLabels,
 				EnableRemoteWriteReceiver: config.EnableRemoteWriteReceiver,

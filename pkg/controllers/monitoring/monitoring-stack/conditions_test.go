@@ -323,3 +323,21 @@ func TestUpdateResourceDiscovery(t *testing.T) {
 	}
 
 }
+
+func TestUpdateSecurityProfile(t *testing.T) {
+	ms := &v1alpha1.MonitoringStack{ObjectMeta: metav1.ObjectMeta{Generation: 2}}
+
+	ready := updateSecurityProfile(ms, nil)
+	assert.Equal(t, ready.Type, v1alpha1.SecurityProfileReadyCondition)
+	assert.Equal(t, ready.Status, v1alpha1.ConditionTrue)
+	assert.Equal(t, ready.Reason, SecurityProfileReadyReason)
+	assert.Equal(t, ready.ObservedGeneration, int64(2))
+
+	notReady := updateSecurityProfile(ms, &podSecurityValidationError{
+		reason:  sccUnavailableReason,
+		message: "SCC unavailable",
+	})
+	assert.Equal(t, notReady.Status, v1alpha1.ConditionFalse)
+	assert.Equal(t, notReady.Reason, sccUnavailableReason)
+	assert.Equal(t, notReady.Message, "SCC unavailable")
+}

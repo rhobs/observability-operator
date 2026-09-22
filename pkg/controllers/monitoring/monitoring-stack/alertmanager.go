@@ -18,6 +18,7 @@ func newAlertmanager(
 	alertmanagerCfg AlertmanagerConfiguration,
 ) *monv1.Alertmanager {
 	resourceSelector := ms.Spec.ResourceSelector
+	profile := podSecurityProfile(ms)
 	if resourceSelector == nil {
 		resourceSelector = &metav1.LabelSelector{}
 	}
@@ -33,7 +34,8 @@ func newAlertmanager(
 		},
 		Spec: monv1.AlertmanagerSpec{
 			PodMetadata: &monv1.EmbeddedObjectMetadata{
-				Labels: podLabels("alertmanager", ms.Name),
+				Labels:      podLabels("alertmanager", ms.Name),
+				Annotations: podAnnotations(profile),
 			},
 			Replicas:                   ms.Spec.AlertmanagerConfig.Replicas,
 			Resources:                  ms.Spec.AlertmanagerConfig.Resources,
@@ -69,11 +71,8 @@ func newAlertmanager(
 					},
 				},
 			},
-			SecurityContext: &corev1.PodSecurityContext{
-				FSGroup:      ptr.To(AlertmanagerUserFSGroupID),
-				RunAsNonRoot: ptr.To(true),
-				RunAsUser:    ptr.To(AlertmanagerUserFSGroupID),
-			},
+			SecurityContext:                     podSecurityContext(profile, AlertmanagerUserFSGroupID),
+			HostUsers:                           hostUsers(profile),
 			AlertmanagerConfigNamespaceSelector: ms.Spec.NamespaceSelector,
 		},
 	}
@@ -155,7 +154,7 @@ func newAlertmanagerPDB(ms *stack.MonitoringStack) *policyv1.PodDisruptionBudget
 	}
 }
 
-func newAlertManagerClusterRole(rbacResourceName string, rbacVerbs []string) *rbacv1.ClusterRole {
+func newAlertManagerClusterRole(rbacResourceName string, rbacVerbs []string, profile stack.PodSecurityProfile) *rbacv1.ClusterRole {
 	return &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: rbacv1.SchemeGroupVersion.String(),
@@ -167,7 +166,7 @@ func newAlertManagerClusterRole(rbacResourceName string, rbacVerbs []string) *rb
 		Rules: []rbacv1.PolicyRule{{
 			APIGroups:     []string{"security.openshift.io"},
 			Resources:     []string{"securitycontextconstraints"},
-			ResourceNames: []string{"nonroot-v2"},
+			ResourceNames: []string{sccForProfile(profile)},
 			Verbs:         []string{"use"},
 		}},
 	}
