@@ -104,7 +104,7 @@ func (o observabilityInstallerController) Reconcile(ctx context.Context, request
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	reconcilers, err := getReconcilers(ctx, o.client, o.apiReader, instance, o.Options, operatorsStatus{
+	reconcilers, err := getReconcilers(ctx, o.apiReader, instance, o.Options, operatorsStatus{
 		cooNamespace: o.Options.COONamespace,
 		subs:         subs.Items,
 	})

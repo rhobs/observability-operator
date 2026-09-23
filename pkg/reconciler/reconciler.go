@@ -24,6 +24,11 @@ const (
 // a new type that implements this interface.
 type Reconciler interface {
 	Reconcile(ctx context.Context, c client.Client, scheme *runtime.Scheme) error
+	// Desired returns the objects this reconciler creates or updates when
+	// applied in its present state. It returns nil for reconcilers that only
+	// delete resources. It is used to compute the object set the reconciler
+	// would apply without a cluster (e.g. by the offline generator).
+	Desired() []client.Object
 }
 
 // Updater simply updates a resource by setting a controller reference
@@ -58,6 +63,10 @@ func (r Updater) Reconcile(ctx context.Context, c client.Client, scheme *runtime
 	return nil
 }
 
+func (r Updater) Desired() []client.Object {
+	return []client.Object{r.resource}
+}
+
 func NewUpdater(resource client.Object, owner metav1.Object) Updater {
 	return newUpdater(resource, owner, false)
 }
@@ -86,6 +95,11 @@ func (r Deleter) Reconcile(ctx context.Context, c client.Client, scheme *runtime
 			r.resource.GetNamespace(), r.resource.GetName(),
 			r.resource.GetObjectKind().GroupVersionKind().String(), err)
 	}
+	return nil
+}
+
+func (r Deleter) Desired() []client.Object {
+	// A Deleter removes a resource; it does not declare a desired object.
 	return nil
 }
 
