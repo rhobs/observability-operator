@@ -113,20 +113,19 @@ make operator-image bundle-image operator-push bundle-push  \
 
 ### Deploy the development Operator Bundle
 
-Use `operator-sdk` to deploy the operator bundle:
+Use the `deploy` Makefile target to deploy the operator bundle:
 
 ```sh
-./tmp/bin/operator-sdk run bundle \
-    local-registry:30000/observability-operator-bundle:0.0.0-dev \
-    --install-mode AllNamespaces \
-    --namespace operators --skip-tls
-
+make deploy \
+    IMG_BASE="local-registry:30000/observability-operator" \
+    VERSION=0.0.0-dev \
+    PUSH_OPTIONS=--tls-verify=false
 ```
-Running the above should deploy operator and show
 
-```
-INFO[0044] OLM has successfully installed "observability-operator.v0.0.0-dev"
+To remove the deployed operator:
 
+```sh
+make undeploy
 ```
 
 ### Run the Operator from your local machine
