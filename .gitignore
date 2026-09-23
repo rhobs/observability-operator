@@ -4,3 +4,5 @@ jsonnet/vendor
 deploy/package-operator/package/crds
 deploy/package-operator/package/dependencies
 deploy/package-operator/package/operator
+# The index is generated from olm/index-template.yaml, so no need to track
+olm/observability-operator-index
