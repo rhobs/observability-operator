@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.5.2](https://github.com/rhobs/monitoring-stack-operator/commit/) (2026-09-01)
+
+
+### Bug Fixes
+
+* add update RBAC for NetworkPolicy resources ([#1187](https://github.com/rhobs/monitoring-stack-operator/issues/1187)) ([#1188](https://github.com/rhobs/monitoring-stack-operator/issues/1188)) ([29a9a4a](https://github.com/rhobs/monitoring-stack-operator/commit/29a9a4aa3b6e1e1a34327bf67906ca82819e7be5))
+* **deps:** bump x/text and grpc to resolve FedRAMP CVEs (COO-2038) ([#1189](https://github.com/rhobs/monitoring-stack-operator/issues/1189)) ([1239629](https://github.com/rhobs/monitoring-stack-operator/commit/12396290bf0ed3905d808342e45a261309910a3b))
+* use case sensitive dao to check correctly uppercase user names ([#1154](https://github.com/rhobs/monitoring-stack-operator/issues/1154)) ([403d558](https://github.com/rhobs/monitoring-stack-operator/commit/403d5583f3483052bcf8a57e12b88db97c147674))
+* use patch instead of merge when registering plugins in the console ([#1156](https://github.com/rhobs/monitoring-stack-operator/issues/1156)) ([285798c](https://github.com/rhobs/monitoring-stack-operator/commit/285798c35ef11046296202dc5c0cbb06758c1950))
+
 ## [1.4.0](https://github.com/rhobs/monitoring-stack-operator/commit/) (2026-03-05)
 
 
