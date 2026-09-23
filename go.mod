@@ -20,14 +20,14 @@ require (
 	github.com/perses/spec v0.2.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.93.1
-	github.com/prometheus/common v0.70.1
+	github.com/prometheus/common v0.71.0
 	github.com/rhobs/obo-prometheus-operator v0.93.1-rhobs1
 	github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.93.1-rhobs1
 	github.com/rhobs/observability-operator/pkg/apis v0.0.0-20251009091129-76135c924ed6
 	github.com/rhobs/openshift-api v0.0.0-20260512142436-2e89e902a420
 	github.com/rhobs/perses v0.0.0-20260422074433-2c06d5cd1312
 	github.com/rhobs/perses-operator v0.1.10-0.20260518165420-4a0e166ccfca
-	github.com/stretchr/testify v1.12.0
+	github.com/stretchr/testify v1.12.1
 	go.uber.org/zap v1.28.0
 	golang.org/x/exp v0.0.0-20260611194520-c48552f49976
 	golang.org/x/mod v0.40.0
@@ -140,7 +140,7 @@ require (
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
-	go.yaml.in/yaml/v3 v3.0.4 // indirect
+	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/crypto v0.55.0 // indirect
 	golang.org/x/net v0.58.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
@@ -152,7 +152,7 @@ require (
 	gomodules.xyz/jsonpatch/v2 v2.5.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260615183401-62b3387ff324 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260615183401-62b3387ff324 // indirect
-	google.golang.org/protobuf v1.36.12-0.20260120151049-f2248ac996af // indirect
+	google.golang.org/protobuf v1.36.12 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect
