@@ -23,12 +23,14 @@ import (
 	"os"
 	"slices"
 
+	"github.com/go-logr/logr"
 	configv1 "github.com/openshift/api/config/v1"
 	openshifttls "github.com/openshift/controller-runtime-common/pkg/tls"
 	obopo "github.com/rhobs/obo-prometheus-operator/pkg/operator"
 	"go.uber.org/zap/zapcore"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	k8sflag "k8s.io/component-base/cli/flag"
-	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -100,7 +102,7 @@ func main() {
 
 		setupLog = ctrl.Log.WithName("setup")
 	)
-	images := k8sflag.NewMapStringString(ptr.To(make(map[string]string)))
+	images := k8sflag.NewMapStringString(new(map[string]string))
 
 	flag.StringVar(&namespace, "namespace", "default", "The namespace in which the operator runs")
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
@@ -119,13 +121,6 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
-	setupLog.Info("running with arguments",
-		"namespace", namespace,
-		"metrics-bind-address", metricsAddr,
-		"images", images,
-		"openshift.enabled", openShiftEnabled,
-	)
-
 	imgMap, err := validateImages(images)
 	if err != nil {
 		setupLog.Error(err, "cannot create a new operator")
@@ -139,30 +134,27 @@ func main() {
 	ctx, cancel := context.WithCancel(signalCtx)
 	defer cancel()
 
-	var initialTLSProfileSpec configv1.TLSProfileSpec
-	var openshiftVersion string
+	// Are we using OpenShift?
+	//   no flag enables auto-detection
+	//   --openshift.enabled=true  requires OpenShift
+	//   --openshift.enabled=false skips all OpenShift setup
+	openShiftExplicit := flagWasSet(flag.CommandLine, "openshift.enabled")
+	data, openShiftEnabled, err := setupOpenShift(ctx, openShiftEnabled, openShiftExplicit, setupLog)
+	if err != nil {
+		setupLog.Error(err, "OpenShift setup failed")
+		os.Exit(1)
+	}
+
+	setupLog.Info("running with arguments",
+		"namespace", namespace,
+		"metrics-bind-address", metricsAddr,
+		"images", images,
+		"openshift.enabled", openShiftEnabled,
+	)
+
+	tlsOption := func(*operator.OperatorConfiguration) {}
 	if openShiftEnabled {
-		scheme := operator.NewOpenShiftScheme()
-		directClient, err := client.New(ctrl.GetConfigOrDie(), client.Options{Scheme: scheme})
-		if err != nil {
-			setupLog.Error(err, "failed to create client for TLS profile fetch")
-			os.Exit(1)
-		}
-
-		initialTLSProfileSpec, err = openshifttls.FetchAPIServerTLSProfile(ctx, directClient)
-		if err != nil {
-			setupLog.Error(err, "failed to fetch TLS profile from cluster")
-			os.Exit(1)
-		}
-		setupLog.Info("fetched initial TLS profile", "minVersion", initialTLSProfileSpec.MinTLSVersion, "ciphers", initialTLSProfileSpec.Ciphers)
-
-		clusterVersion := &configv1.ClusterVersion{}
-		key := client.ObjectKey{Name: "version"}
-		if err := directClient.Get(ctx, key, clusterVersion); err != nil {
-			setupLog.Error(err, "failed to fetch cluster version")
-			os.Exit(1)
-		}
-		openshiftVersion = clusterVersion.Status.Desired.Version
+		tlsOption = operator.WithTLSProfile(data.TLSProfile)
 	}
 
 	op, err := operator.New(
@@ -184,17 +176,11 @@ func main() {
 			operator.WithFeatureGates(operator.FeatureGates{
 				OpenShift: operator.OpenShiftFeatureGates{
 					Enabled: openShiftEnabled,
-					Version: openshiftVersion,
+					Version: data.Version,
 				},
 			}),
 			operator.WithCancelFunc(cancel),
-
-			func() func(*operator.OperatorConfiguration) {
-				if openShiftEnabled {
-					return operator.WithTLSProfile(initialTLSProfileSpec)
-				}
-				return func(*operator.OperatorConfiguration) {}
-			}(),
+			tlsOption,
 		))
 	if err != nil {
 		setupLog.Error(err, "cannot create a new operator")
@@ -206,4 +192,72 @@ func main() {
 		setupLog.Error(err, "terminating")
 		os.Exit(1)
 	}
+}
+
+type openShiftData struct {
+	TLSProfile configv1.TLSProfileSpec
+	Version    string
+}
+
+func setupOpenShift(ctx context.Context, enabled, explicit bool, setupLog logr.Logger) (openShiftData, bool, error) {
+	var data openShiftData
+	if !enabled && explicit {
+		return data, false, nil
+	}
+
+	cfg, err := ctrl.GetConfig()
+	if err != nil {
+		return data, enabled, fmt.Errorf("failed to get Kubernetes config: %w", err)
+	}
+	c, err := client.New(cfg, client.Options{Scheme: operator.NewOpenShiftScheme()})
+	if err != nil {
+		return data, enabled, fmt.Errorf("failed to create OpenShift client: %w", err)
+	}
+	data, enabled, err = detectOpenShift(ctx, explicit, setupLog, c)
+	if err != nil {
+		return data, enabled, fmt.Errorf("OpenShift detection failed: %w", err)
+	}
+	return data, enabled, nil
+}
+
+func detectOpenShift(ctx context.Context, required bool, setupLog logr.Logger, c client.Client) (openShiftData, bool, error) {
+	data, err := fetchOpenShiftData(ctx, setupLog, c)
+	switch {
+	case err == nil:
+		return data, true, nil
+	case required:
+		return data, false, fmt.Errorf("failed to fetch OpenShift cluster data: %w", err)
+	case apierrors.IsNotFound(err) || meta.IsNoMatchError(err):
+		setupLog.Info("OpenShift API resources not found, running in non-OpenShift mode")
+		return data, false, nil
+	default:
+		return data, false, fmt.Errorf("OpenShift detection failed with unexpected error: %w", err)
+	}
+}
+
+func fetchOpenShiftData(ctx context.Context, setupLog logr.Logger, c client.Client) (openShiftData, error) {
+	var (
+		data openShiftData
+		err  error
+	)
+	if data.TLSProfile, err = openshifttls.FetchAPIServerTLSProfile(ctx, c); err != nil {
+		return data, fmt.Errorf("failed to fetch TLS profile: %w", err)
+	}
+	setupLog.Info("fetched TLS profile", "minVersion", data.TLSProfile.MinTLSVersion, "ciphers", data.TLSProfile.Ciphers)
+	clusterVersion := &configv1.ClusterVersion{}
+	if err := c.Get(ctx, client.ObjectKey{Name: "version"}, clusterVersion); err != nil {
+		return data, fmt.Errorf("failed to fetch cluster version: %w", err)
+	}
+	data.Version = clusterVersion.Status.Desired.Version
+	return data, nil
+}
+
+func flagWasSet(flags *flag.FlagSet, name string) bool {
+	set := false
+	flags.Visit(func(f *flag.Flag) {
+		if f.Name == name {
+			set = true
+		}
+	})
+	return set
 }
