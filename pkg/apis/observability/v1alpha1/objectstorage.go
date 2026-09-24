@@ -1,5 +1,33 @@
 package v1alpha1
 
+// ObjectStorageSpec defines the object storage configuration.
+// +kubebuilder:validation:XValidation:rule="[has(self.s3), has(self.s3STS), has(self.s3CCO), has(self.azure), has(self.azureWIF), has(self.gcs), has(self.gcsWIF)].filter(x, x).size() <= 1",message="Only one or zero storage configurations can be specified"
+type ObjectStorageSpec struct {
+	// S3 defines the S3 object storage configuration.
+	S3 *S3Spec `json:"s3,omitempty"`
+	// S3STS defines the S3 object storage configuration using short-lived credentials.
+	S3STS *S3STSpec `json:"s3STS,omitempty"`
+	// S3CCO defines the S3 object storage configuration using CCO.
+	S3CCO *S3CCOSpec `json:"s3CCO,omitempty"`
+
+	// Azure defines the Azure Blob Storage configuration.
+	Azure *AzureSpec `json:"azure,omitempty"`
+	// AzureWIF defines the Azure Blob Storage configuration using a Workload Identity Federation.
+	AzureWIF *AzureWIFSpec `json:"azureWIF,omitempty"`
+
+	// GCS defines the Google Cloud Storage configuration.
+	GCS *GCSSpec `json:"gcs,omitempty"`
+	// GCSWIF defines the Google Cloud Storage configuration using Workload Identity Federation.
+	GCSWIF *GCSWIFSpec `json:"gcsWIF,omitempty"`
+
+	// TLS configuration for reaching the object storage endpoint.
+	//
+	// +optional
+	// +kubebuilder:validation:Optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="TLS Config"
+	TLS *TLSSpec `json:"tls,omitempty"`
+}
+
 type S3Spec struct {
 	// Bucket is the name of the S3 bucket.
 	// +kubebuilder:validation:Required
@@ -64,6 +92,10 @@ type AzureWIFSpec struct {
 	// TenantID is the tenant ID of the Azure Active Directory.
 	// +kubebuilder:validation:Required
 	TenantID string `json:"tenantID"`
+	// SubscriptionID is the ID of the Azure subscription holding the workload
+	// identity. Required by logging, ignored by tracing.
+	// +kubebuilder:validation:Optional
+	SubscriptionID string `json:"subscriptionID,omitempty"`
 	// Audience is the optional audience for the Azure Workload Identity Federation.
 	// +kubebuilder:validation:Optional
 	Audience string `json:"audience,omitempty"` // Optional audience for the Azure WIF
@@ -118,4 +150,11 @@ type ConfigMapKeySelector struct {
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Secret Name",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:text"}
 	Name string `json:"name"`
+}
+
+func (o *ObjectStorageSpec) GetTLS() *TLSSpec {
+	if o != nil {
+		return o.TLS
+	}
+	return nil
 }
