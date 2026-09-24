@@ -295,14 +295,24 @@ metadata:
   namespace: project-a
 ---
 apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: robot-user
+  namespace: project-a
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: view-robot-user
   namespace: project-a
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: view
+  kind: Role
+  name: robot-user
 subjects:
 - kind: ServiceAccount
   name: robot-user
