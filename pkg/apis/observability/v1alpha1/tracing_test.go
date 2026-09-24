@@ -12,9 +12,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func extractTracingObjectStorageValidationRule() (string, error) {
+func extractObjectStorageValidationRule() (string, error) {
 	// Read the source file directly since kubebuilder annotations are in comments
-	sourceFile := "tracing.go"
+	sourceFile := "objectstorage.go"
 
 	data, err := os.ReadFile(sourceFile)
 	if err != nil {
@@ -23,8 +23,8 @@ func extractTracingObjectStorageValidationRule() (string, error) {
 
 	content := string(data)
 
-	// Find the TracingObjectStorageSpec struct and extract the XValidation rule
-	structPattern := regexp.MustCompile(`// TracingObjectStorageSpec[^{]*?// \+kubebuilder:validation:XValidation:rule="([^"]+)"`)
+	// Find the ObjectStorageSpec struct and extract the XValidation rule
+	structPattern := regexp.MustCompile(`// ObjectStorageSpec[^{]*?// \+kubebuilder:validation:XValidation:rule="([^"]+)"`)
 	match := structPattern.FindStringSubmatch(content)
 	if len(match) < 2 {
 		return "", fmt.Errorf("XValidation rule not found in source")
@@ -49,9 +49,9 @@ func structToMap(v interface{}) (map[string]interface{}, error) {
 	return result, nil
 }
 
-func TestTracingObjectStorageSpecValidation(t *testing.T) {
+func TestObjectStorageSpecValidation(t *testing.T) {
 	// Extract the validation rule directly from the source code annotation
-	validationRule, err := extractTracingObjectStorageValidationRule()
+	validationRule, err := extractObjectStorageValidationRule()
 	require.NoError(t, err, "Failed to extract validation rule from source annotation")
 
 	env, err := cel.NewEnv(cel.Variable("self", cel.MapType(cel.StringType, cel.DynType)))
@@ -65,17 +65,17 @@ func TestTracingObjectStorageSpecValidation(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		spec        TracingObjectStorageSpec
+		spec        ObjectStorageSpec
 		expectValid bool
 	}{
 		{
 			name:        "no storage types specified - valid",
-			spec:        TracingObjectStorageSpec{},
+			spec:        ObjectStorageSpec{},
 			expectValid: true,
 		},
 		{
 			name: "only S3 specified",
-			spec: TracingObjectStorageSpec{
+			spec: ObjectStorageSpec{
 				S3: &S3Spec{
 					Bucket:          "test-bucket",
 					Endpoint:        "test-endpoint",
@@ -87,7 +87,7 @@ func TestTracingObjectStorageSpecValidation(t *testing.T) {
 		},
 		{
 			name: "only S3STS specified",
-			spec: TracingObjectStorageSpec{
+			spec: ObjectStorageSpec{
 				S3STS: &S3STSpec{
 					Bucket:  "test-bucket",
 					RoleARN: "arn:aws:iam::123456789012:role/test-role",
@@ -97,7 +97,7 @@ func TestTracingObjectStorageSpecValidation(t *testing.T) {
 		},
 		{
 			name: "only S3CCO specified",
-			spec: TracingObjectStorageSpec{
+			spec: ObjectStorageSpec{
 				S3CCO: &S3CCOSpec{
 					Bucket: "test-bucket",
 				},
@@ -106,7 +106,7 @@ func TestTracingObjectStorageSpecValidation(t *testing.T) {
 		},
 		{
 			name: "only Azure specified",
-			spec: TracingObjectStorageSpec{
+			spec: ObjectStorageSpec{
 				Azure: &AzureSpec{
 					Container:        "test-container",
 					AccountName:      "test-account",
@@ -117,7 +117,7 @@ func TestTracingObjectStorageSpecValidation(t *testing.T) {
 		},
 		{
 			name: "only AzureWIF specified",
-			spec: TracingObjectStorageSpec{
+			spec: ObjectStorageSpec{
 				AzureWIF: &AzureWIFSpec{
 					Container:   "test-container",
 					AccountName: "test-account",
@@ -129,7 +129,7 @@ func TestTracingObjectStorageSpecValidation(t *testing.T) {
 		},
 		{
 			name: "only GCS specified",
-			spec: TracingObjectStorageSpec{
+			spec: ObjectStorageSpec{
 				GCS: &GCSSpec{
 					Bucket:        "test-bucket",
 					KeyJSONSecret: SecretKeySelector{Name: "test-secret", Key: "key"},
@@ -139,7 +139,7 @@ func TestTracingObjectStorageSpecValidation(t *testing.T) {
 		},
 		{
 			name: "only GCSWIFSpec specified",
-			spec: TracingObjectStorageSpec{
+			spec: ObjectStorageSpec{
 				GCSWIF: &GCSWIFSpec{
 					Bucket:        "test-bucket",
 					KeyJSONSecret: SecretKeySelector{Name: "test-secret", Key: "key"},
@@ -149,7 +149,7 @@ func TestTracingObjectStorageSpecValidation(t *testing.T) {
 		},
 		{
 			name: "S3 and S3STS specified - invalid",
-			spec: TracingObjectStorageSpec{
+			spec: ObjectStorageSpec{
 				S3: &S3Spec{
 					Bucket:          "test-bucket",
 					Endpoint:        "test-endpoint",
@@ -165,7 +165,7 @@ func TestTracingObjectStorageSpecValidation(t *testing.T) {
 		},
 		{
 			name: "S3 and Azure specified - invalid",
-			spec: TracingObjectStorageSpec{
+			spec: ObjectStorageSpec{
 				S3: &S3Spec{
 					Bucket:          "test-bucket",
 					Endpoint:        "test-endpoint",
@@ -182,7 +182,7 @@ func TestTracingObjectStorageSpecValidation(t *testing.T) {
 		},
 		{
 			name: "Azure and GCS specified - invalid",
-			spec: TracingObjectStorageSpec{
+			spec: ObjectStorageSpec{
 				Azure: &AzureSpec{
 					Container:        "test-container",
 					AccountName:      "test-account",
@@ -197,7 +197,7 @@ func TestTracingObjectStorageSpecValidation(t *testing.T) {
 		},
 		{
 			name: "three storage types specified - invalid",
-			spec: TracingObjectStorageSpec{
+			spec: ObjectStorageSpec{
 				S3: &S3Spec{
 					Bucket:          "test-bucket",
 					Endpoint:        "test-endpoint",
@@ -218,7 +218,7 @@ func TestTracingObjectStorageSpecValidation(t *testing.T) {
 		},
 		{
 			name: "S3CCO and AzureWIF specified - invalid",
-			spec: TracingObjectStorageSpec{
+			spec: ObjectStorageSpec{
 				S3CCO: &S3CCOSpec{
 					Bucket: "test-bucket",
 				},
@@ -289,7 +289,7 @@ func TestTracingSpecValidation(t *testing.T) {
 					Enabled: false,
 				},
 				Storage: &TracingStorageSpec{
-					ObjectStorageSpec: &TracingObjectStorageSpec{
+					ObjectStorageSpec: &ObjectStorageSpec{
 						S3: &S3Spec{
 							Bucket:          "test-bucket",
 							Endpoint:        "test-endpoint",
@@ -308,7 +308,7 @@ func TestTracingSpecValidation(t *testing.T) {
 					Enabled: true,
 				},
 				Storage: &TracingStorageSpec{
-					ObjectStorageSpec: &TracingObjectStorageSpec{
+					ObjectStorageSpec: &ObjectStorageSpec{
 						S3: &S3Spec{
 							Bucket:          "test-bucket",
 							Endpoint:        "test-endpoint",
@@ -336,7 +336,7 @@ func TestTracingSpecValidation(t *testing.T) {
 					Enabled: true,
 				},
 				Storage: &TracingStorageSpec{
-					ObjectStorageSpec: &TracingObjectStorageSpec{},
+					ObjectStorageSpec: &ObjectStorageSpec{},
 				},
 			},
 			expectValid: false,
