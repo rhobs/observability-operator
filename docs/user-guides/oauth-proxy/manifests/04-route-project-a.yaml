@@ -1,0 +1,15 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: thanos-querier-authenticated
+  namespace: project-a
+spec:
+  port:
+    targetPort: proxy
+  tls:
+    insecureEdgeTerminationPolicy: Redirect
+    termination: reencrypt
+  to:
+    kind: Service
+    name: thanos-querier-example-coo-thanos
+    weight: 100
