@@ -26,7 +26,7 @@ import (
 )
 
 var (
-	//go:embed traces_minio.yaml
+	//go:embed minio.yaml
 	minioManifests string
 	//go:embed traces_telemetrygen.yaml
 	telemetrygenManifest string
@@ -105,7 +105,7 @@ func testObservabilityInstallerTracing(t *testing.T) {
 						Enabled: true,
 					},
 					Storage: &obsv1alpha1.TracingStorageSpec{
-						ObjectStorageSpec: &obsv1alpha1.TracingObjectStorageSpec{
+						ObjectStorageSpec: &obsv1alpha1.ObjectStorageSpec{
 							S3: &obsv1alpha1.S3Spec{
 								Bucket:      "tempo",
 								Endpoint:    "http://minio.minio.svc:9000",
@@ -349,7 +349,7 @@ func TestObservabilityInstallerValidation(t *testing.T) {
 					Tracing: &obsv1alpha1.TracingSpec{
 						CommonCapabilitiesSpec: obsv1alpha1.CommonCapabilitiesSpec{Enabled: false},
 						Storage: &obsv1alpha1.TracingStorageSpec{
-							ObjectStorageSpec: &obsv1alpha1.TracingObjectStorageSpec{S3: s3Spec},
+							ObjectStorageSpec: &obsv1alpha1.ObjectStorageSpec{S3: s3Spec},
 						},
 					},
 				},
@@ -363,7 +363,7 @@ func TestObservabilityInstallerValidation(t *testing.T) {
 					Tracing: &obsv1alpha1.TracingSpec{
 						CommonCapabilitiesSpec: obsv1alpha1.CommonCapabilitiesSpec{Enabled: true},
 						Storage: &obsv1alpha1.TracingStorageSpec{
-							ObjectStorageSpec: &obsv1alpha1.TracingObjectStorageSpec{S3: s3Spec},
+							ObjectStorageSpec: &obsv1alpha1.ObjectStorageSpec{S3: s3Spec},
 						},
 					},
 				},
@@ -388,7 +388,7 @@ func TestObservabilityInstallerValidation(t *testing.T) {
 					Tracing: &obsv1alpha1.TracingSpec{
 						CommonCapabilitiesSpec: obsv1alpha1.CommonCapabilitiesSpec{Enabled: true},
 						Storage: &obsv1alpha1.TracingStorageSpec{
-							ObjectStorageSpec: &obsv1alpha1.TracingObjectStorageSpec{},
+							ObjectStorageSpec: &obsv1alpha1.ObjectStorageSpec{},
 						},
 					},
 				},

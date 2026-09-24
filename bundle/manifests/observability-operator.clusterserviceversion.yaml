@@ -43,7 +43,7 @@ metadata:
     certified: "false"
     console.openshift.io/operator-monitoring-default: "true"
     containerImage: observability-operator:1.5.2
-    createdAt: "2026-09-21T08:40:31Z"
+    createdAt: "2026-09-24T20:11:54Z"
     description: A Go based Kubernetes operator to setup and manage highly available
       Monitoring Stack using Prometheus, Alertmanager and Thanos Querier.
     operatorframework.io/cluster-monitoring: "true"
@@ -466,16 +466,35 @@ spec:
           - application
           - audit
           - infrastructure
-          - network
           verbs:
+          - create
           - get
         - apiGroups:
           - loki.grafana.com
           resources:
           - lokistacks
           verbs:
+          - create
+          - delete
           - get
           - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - loki.grafana.com
+          resources:
+          - lokistacks/status
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - loki.grafana.com
+          resources:
+          - network
+          verbs:
+          - get
         - apiGroups:
           - machineconfiguration.openshift.io
           resources:
@@ -576,6 +595,7 @@ spec:
         - apiGroups:
           - observability.openshift.io
           resources:
+          - clusterlogforwarders
           - observabilityinstallers
           - uiplugins
           verbs:
@@ -585,6 +605,14 @@ spec:
           - list
           - patch
           - update
+          - watch
+        - apiGroups:
+          - observability.openshift.io
+          resources:
+          - clusterlogforwarders/status
+          verbs:
+          - get
+          - list
           - watch
         - apiGroups:
           - observability.openshift.io
@@ -708,6 +736,16 @@ spec:
           - patch
           - update
           - watch
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resourceNames:
+          - collect-application-logs
+          - collect-infrastructure-logs
+          resources:
+          - clusterroles
+          verbs:
+          - bind
+          - get
         - apiGroups:
           - security.openshift.io
           resourceNames:

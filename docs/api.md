@@ -4425,12 +4425,856 @@ Each capability has to be enabled explicitly.
         </tr>
     </thead>
     <tbody><tr>
+        <td><b><a href="#observabilityinstallerspeccapabilitieslogging">logging</a></b></td>
+        <td>object</td>
+        <td>
+          Logging defines the logging capabilities.
+The logging capability installs a ClusterLogForwarder to collect application and infrastructure logs,
+and a LokiStack instance for log storage and querying.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b><a href="#observabilityinstallerspeccapabilitiestracing">tracing</a></b></td>
         <td>object</td>
         <td>
           Tracing defines the tracing capabilities.
 The tracing capability install an OpenTelemetry Operator instance and a Tempo instance.
 The Tempo instance is configured with a single tenant called application.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ObservabilityInstaller.spec.capabilities.logging
+<sup><sup>[↩ Parent](#observabilityinstallerspeccapabilities)</sup></sup>
+
+
+
+Logging defines the logging capabilities.
+The logging capability installs a ClusterLogForwarder to collect application and infrastructure logs,
+and a LokiStack instance for log storage and querying.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>enabled</b></td>
+        <td>boolean</td>
+        <td>
+          Enabled indicates whether the capability is enabled and whether the operator should deploy an instance.
+By default, it is set to false.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#observabilityinstallerspeccapabilitieslogginglokistack">lokiStack</a></b></td>
+        <td>object</td>
+        <td>
+          LokiStack configures a LokiStack store for log data.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#observabilityinstallerspeccapabilitiesloggingoperators">operators</a></b></td>
+        <td>object</td>
+        <td>
+          Operators defines the operators installation for the capability.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ObservabilityInstaller.spec.capabilities.logging.lokiStack
+<sup><sup>[↩ Parent](#observabilityinstallerspeccapabilitieslogging)</sup></sup>
+
+
+
+LokiStack configures a LokiStack store for log data.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>size</b></td>
+        <td>enum</td>
+        <td>
+          Size defines one of the support Loki deployment scale out sizes.<br/>
+          <br/>
+            <i>Enum</i>: 1x.demo, 1x.pico, 1x.extra-small, 1x.small, 1x.medium<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>storageClassName</b></td>
+        <td>string</td>
+        <td>
+          Storage class name defines the storage class for ingester/querier PVCs.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#observabilityinstallerspeccapabilitieslogginglokistackobjectstorage">objectStorage</a></b></td>
+        <td>object</td>
+        <td>
+          ObjectStorage configures an object storage bucket.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#observabilityinstallerspeccapabilitieslogginglokistackschemasindex">schemas</a></b></td>
+        <td>[]object</td>
+        <td>
+          Schemas for reading and writing logs.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ObservabilityInstaller.spec.capabilities.logging.lokiStack.objectStorage
+<sup><sup>[↩ Parent](#observabilityinstallerspeccapabilitieslogginglokistack)</sup></sup>
+
+
+
+ObjectStorage configures an object storage bucket.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#observabilityinstallerspeccapabilitieslogginglokistackobjectstorageazure">azure</a></b></td>
+        <td>object</td>
+        <td>
+          Azure defines the Azure Blob Storage configuration.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#observabilityinstallerspeccapabilitieslogginglokistackobjectstorageazurewif">azureWIF</a></b></td>
+        <td>object</td>
+        <td>
+          AzureWIF defines the Azure Blob Storage configuration using a Workload Identity Federation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#observabilityinstallerspeccapabilitieslogginglokistackobjectstoragegcs">gcs</a></b></td>
+        <td>object</td>
+        <td>
+          GCS defines the Google Cloud Storage configuration.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#observabilityinstallerspeccapabilitieslogginglokistackobjectstoragegcswif">gcsWIF</a></b></td>
+        <td>object</td>
+        <td>
+          GCSWIF defines the Google Cloud Storage configuration using Workload Identity Federation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#observabilityinstallerspeccapabilitieslogginglokistackobjectstorages3">s3</a></b></td>
+        <td>object</td>
+        <td>
+          S3 defines the S3 object storage configuration.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#observabilityinstallerspeccapabilitieslogginglokistackobjectstorages3cco">s3CCO</a></b></td>
+        <td>object</td>
+        <td>
+          S3CCO defines the S3 object storage configuration using CCO.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#observabilityinstallerspeccapabilitieslogginglokistackobjectstorages3sts">s3STS</a></b></td>
+        <td>object</td>
+        <td>
+          S3STS defines the S3 object storage configuration using short-lived credentials.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#observabilityinstallerspeccapabilitieslogginglokistackobjectstoragetls">tls</a></b></td>
+        <td>object</td>
+        <td>
+          TLS configuration for reaching the object storage endpoint.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ObservabilityInstaller.spec.capabilities.logging.lokiStack.objectStorage.azure
+<sup><sup>[↩ Parent](#observabilityinstallerspeccapabilitieslogginglokistackobjectstorage)</sup></sup>
+
+
+
+Azure defines the Azure Blob Storage configuration.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#observabilityinstallerspeccapabilitieslogginglokistackobjectstorageazureaccountkeysecret">accountKeySecret</a></b></td>
+        <td>object</td>
+        <td>
+          AccountKey is a reference to a secret containing the account key for the Azure Storage account.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>accountName</b></td>
+        <td>string</td>
+        <td>
+          AccountName is the name of the Azure Storage account.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>container</b></td>
+        <td>string</td>
+        <td>
+          Container is the name of the Azure Blob Storage container.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ObservabilityInstaller.spec.capabilities.logging.lokiStack.objectStorage.azure.accountKeySecret
+<sup><sup>[↩ Parent](#observabilityinstallerspeccapabilitieslogginglokistackobjectstorageazure)</sup></sup>
+
+
+
+AccountKey is a reference to a secret containing the account key for the Azure Storage account.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key contains the name of the key inside the referenced Secret.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          SecretName contains the name of the Secret containing the referenced value.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ObservabilityInstaller.spec.capabilities.logging.lokiStack.objectStorage.azureWIF
+<sup><sup>[↩ Parent](#observabilityinstallerspeccapabilitieslogginglokistackobjectstorage)</sup></sup>
+
+
+
+AzureWIF defines the Azure Blob Storage configuration using a Workload Identity Federation.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>accountName</b></td>
+        <td>string</td>
+        <td>
+          AccountName is the name of the Azure Storage account.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>clientID</b></td>
+        <td>string</td>
+        <td>
+          ClientID is the client ID of the Azure Active Directory application.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>container</b></td>
+        <td>string</td>
+        <td>
+          Container is the name of the Azure Blob Storage container.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>tenantID</b></td>
+        <td>string</td>
+        <td>
+          TenantID is the tenant ID of the Azure Active Directory.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>audience</b></td>
+        <td>string</td>
+        <td>
+          Audience is the optional audience for the Azure Workload Identity Federation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>subscriptionID</b></td>
+        <td>string</td>
+        <td>
+          SubscriptionID is the ID of the Azure subscription holding the workload
+identity. Required by logging, ignored by tracing.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ObservabilityInstaller.spec.capabilities.logging.lokiStack.objectStorage.gcs
+<sup><sup>[↩ Parent](#observabilityinstallerspeccapabilitieslogginglokistackobjectstorage)</sup></sup>
+
+
+
+GCS defines the Google Cloud Storage configuration.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>bucket</b></td>
+        <td>string</td>
+        <td>
+          Bucket is the name of the Google Cloud Storage bucket.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#observabilityinstallerspeccapabilitieslogginglokistackobjectstoragegcskeyjsonsecret">keyJSONSecret</a></b></td>
+        <td>object</td>
+        <td>
+          KeyJSON is the key.json file encoded in a secret.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ObservabilityInstaller.spec.capabilities.logging.lokiStack.objectStorage.gcs.keyJSONSecret
+<sup><sup>[↩ Parent](#observabilityinstallerspeccapabilitieslogginglokistackobjectstoragegcs)</sup></sup>
+
+
+
+KeyJSON is the key.json file encoded in a secret.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key contains the name of the key inside the referenced Secret.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          SecretName contains the name of the Secret containing the referenced value.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ObservabilityInstaller.spec.capabilities.logging.lokiStack.objectStorage.gcsWIF
+<sup><sup>[↩ Parent](#observabilityinstallerspeccapabilitieslogginglokistackobjectstorage)</sup></sup>
+
+
+
+GCSWIF defines the Google Cloud Storage configuration using Workload Identity Federation.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>bucket</b></td>
+        <td>string</td>
+        <td>
+          Bucket is the name of the Google Cloud Storage bucket.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#observabilityinstallerspeccapabilitieslogginglokistackobjectstoragegcswifkeyjsonsecret">keyJSONSecret</a></b></td>
+        <td>object</td>
+        <td>
+          KeyJSON is the key.json file encoded in a secret.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>audience</b></td>
+        <td>string</td>
+        <td>
+          Audience is the optional audience.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ObservabilityInstaller.spec.capabilities.logging.lokiStack.objectStorage.gcsWIF.keyJSONSecret
+<sup><sup>[↩ Parent](#observabilityinstallerspeccapabilitieslogginglokistackobjectstoragegcswif)</sup></sup>
+
+
+
+KeyJSON is the key.json file encoded in a secret.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key contains the name of the key inside the referenced Secret.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          SecretName contains the name of the Secret containing the referenced value.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ObservabilityInstaller.spec.capabilities.logging.lokiStack.objectStorage.s3
+<sup><sup>[↩ Parent](#observabilityinstallerspeccapabilitieslogginglokistackobjectstorage)</sup></sup>
+
+
+
+S3 defines the S3 object storage configuration.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>accessKeyID</b></td>
+        <td>string</td>
+        <td>
+          AccessKeyID is the access key ID for the S3 bucket.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#observabilityinstallerspeccapabilitieslogginglokistackobjectstorages3accesskeysecret">accessKeySecret</a></b></td>
+        <td>object</td>
+        <td>
+          AccessKeySecret is a reference to a secret containing the access key secret for the S3.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>bucket</b></td>
+        <td>string</td>
+        <td>
+          Bucket is the name of the S3 bucket.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>endpoint</b></td>
+        <td>string</td>
+        <td>
+          Endpoint is the S3 endpoint URL.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>region</b></td>
+        <td>string</td>
+        <td>
+          Region is the region where the S3 bucket is located.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ObservabilityInstaller.spec.capabilities.logging.lokiStack.objectStorage.s3.accessKeySecret
+<sup><sup>[↩ Parent](#observabilityinstallerspeccapabilitieslogginglokistackobjectstorages3)</sup></sup>
+
+
+
+AccessKeySecret is a reference to a secret containing the access key secret for the S3.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key contains the name of the key inside the referenced Secret.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          SecretName contains the name of the Secret containing the referenced value.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ObservabilityInstaller.spec.capabilities.logging.lokiStack.objectStorage.s3CCO
+<sup><sup>[↩ Parent](#observabilityinstallerspeccapabilitieslogginglokistackobjectstorage)</sup></sup>
+
+
+
+S3CCO defines the S3 object storage configuration using CCO.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>bucket</b></td>
+        <td>string</td>
+        <td>
+          Bucket is the name of the S3 bucket.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>region</b></td>
+        <td>string</td>
+        <td>
+          Region is the region where the S3 bucket is located.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ObservabilityInstaller.spec.capabilities.logging.lokiStack.objectStorage.s3STS
+<sup><sup>[↩ Parent](#observabilityinstallerspeccapabilitieslogginglokistackobjectstorage)</sup></sup>
+
+
+
+S3STS defines the S3 object storage configuration using short-lived credentials.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>bucket</b></td>
+        <td>string</td>
+        <td>
+          Bucket is the name of the S3 bucket.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>roleARN</b></td>
+        <td>string</td>
+        <td>
+          RoleARN is the ARN of the IAM role to assume for accessing the S3 bucket.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>region</b></td>
+        <td>string</td>
+        <td>
+          Region is the region where the S3 bucket is located.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ObservabilityInstaller.spec.capabilities.logging.lokiStack.objectStorage.tls
+<sup><sup>[↩ Parent](#observabilityinstallerspeccapabilitieslogginglokistackobjectstorage)</sup></sup>
+
+
+
+TLS configuration for reaching the object storage endpoint.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#observabilityinstallerspeccapabilitieslogginglokistackobjectstoragetlscaconfigmap">caConfigMap</a></b></td>
+        <td>object</td>
+        <td>
+          CAConfigMap is the name of a ConfigMap containing a CA certificate (e.g. service-ca.crt).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#observabilityinstallerspeccapabilitieslogginglokistackobjectstoragetlscertsecret">certSecret</a></b></td>
+        <td>object</td>
+        <td>
+          CertSecret is the name of a Secret containing a certificate (e.g. tls.crt).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#observabilityinstallerspeccapabilitieslogginglokistackobjectstoragetlskeysecret">keySecret</a></b></td>
+        <td>object</td>
+        <td>
+          KeySecret is the name of a Secret containing a private key (e.g. tls.key).<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>minVersion</b></td>
+        <td>string</td>
+        <td>
+          MinVersion defines the minimum acceptable TLS version.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ObservabilityInstaller.spec.capabilities.logging.lokiStack.objectStorage.tls.caConfigMap
+<sup><sup>[↩ Parent](#observabilityinstallerspeccapabilitieslogginglokistackobjectstoragetls)</sup></sup>
+
+
+
+CAConfigMap is the name of a ConfigMap containing a CA certificate (e.g. service-ca.crt).
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key contains the name of the key inside the referenced Secret.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          SecretName contains the name of the Secret containing the referenced value.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ObservabilityInstaller.spec.capabilities.logging.lokiStack.objectStorage.tls.certSecret
+<sup><sup>[↩ Parent](#observabilityinstallerspeccapabilitieslogginglokistackobjectstoragetls)</sup></sup>
+
+
+
+CertSecret is the name of a Secret containing a certificate (e.g. tls.crt).
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key contains the name of the key inside the referenced Secret.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          SecretName contains the name of the Secret containing the referenced value.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ObservabilityInstaller.spec.capabilities.logging.lokiStack.objectStorage.tls.keySecret
+<sup><sup>[↩ Parent](#observabilityinstallerspeccapabilitieslogginglokistackobjectstoragetls)</sup></sup>
+
+
+
+KeySecret is the name of a Secret containing a private key (e.g. tls.key).
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>key</b></td>
+        <td>string</td>
+        <td>
+          Key contains the name of the key inside the referenced Secret.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          SecretName contains the name of the Secret containing the referenced value.<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ObservabilityInstaller.spec.capabilities.logging.lokiStack.schemas[index]
+<sup><sup>[↩ Parent](#observabilityinstallerspeccapabilitieslogginglokistack)</sup></sup>
+
+
+
+ObjectStorageSchema defines a schema version and the date when it will become effective.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>effectiveDate</b></td>
+        <td>string</td>
+        <td>
+          EffectiveDate contains a date in YYYY-MM-DD format which is interpreted in the UTC time zone.
+
+The configuration always needs at least one schema that is currently valid. This means that when creating a new
+LokiStack it is recommended to add a schema with the latest available version and an effective date of "yesterday".
+New schema versions added to the configuration always needs to be placed "in the future", so that Loki can start
+using it once the day rolls over.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>version</b></td>
+        <td>enum</td>
+        <td>
+          Version for writing and reading logs.<br/>
+          <br/>
+            <i>Enum</i>: v11, v12, v13<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ObservabilityInstaller.spec.capabilities.logging.operators
+<sup><sup>[↩ Parent](#observabilityinstallerspeccapabilitieslogging)</sup></sup>
+
+
+
+Operators defines the operators installation for the capability.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>install</b></td>
+        <td>boolean</td>
+        <td>
+          Install indicates whether the operator(s) used by the capability should be installed via OLM.
+When the capability is enabled, the install is set to true, otherwise it is set to false.
+This field can be used to install the operator(s) without installing any operands.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -4737,6 +5581,14 @@ AzureWIF defines the Azure Blob Storage configuration using a Workload Identity 
         <td>string</td>
         <td>
           Audience is the optional audience for the Azure Workload Identity Federation.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>subscriptionID</b></td>
+        <td>string</td>
+        <td>
+          SubscriptionID is the ID of the Azure subscription holding the workload
+identity. Required by logging, ignored by tracing.<br/>
         </td>
         <td>false</td>
       </tr></tbody>
@@ -5221,6 +6073,22 @@ Status of the signal manager.
         <td>[]object</td>
         <td>
           Conditions provide status information about the instance.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>logging</b></td>
+        <td>string</td>
+        <td>
+          Logging defines the status of the Logging capability.
+The value is in the form of instance namespace/name (version)<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>lokistack</b></td>
+        <td>string</td>
+        <td>
+          LokiStack defines the status of the LokiStack instance.
+The value is in the form of instance namespace/name (version)<br/>
         </td>
         <td>false</td>
       </tr><tr>

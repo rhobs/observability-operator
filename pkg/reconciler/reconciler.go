@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -82,6 +83,10 @@ type Deleter struct {
 
 func (r Deleter) Reconcile(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 	if err := c.Delete(ctx, r.resource); client.IgnoreNotFound(err) != nil {
+		if meta.IsNoMatchError(err) {
+			// CRD not installed, treat as successful cleanup
+			return nil
+		}
 		return fmt.Errorf("%s/%s (%s): deleter failed to delete: %w",
 			r.resource.GetNamespace(), r.resource.GetName(),
 			r.resource.GetObjectKind().GroupVersionKind().String(), err)
