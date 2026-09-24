@@ -25,6 +25,12 @@ spec:
     - jsonPath: .status.tempo
       name: Tempo
       type: string
+    - jsonPath: .status.lokistack
+      name: LokiStack
+      type: string
+    - jsonPath: .status.logging
+      name: Logging
+      type: string
     name: v1alpha1
     schema:
       openAPIV3Schema:
@@ -56,6 +62,372 @@ spec:
                   Capabilities defines the observability capabilities.
                   Each capability has to be enabled explicitly.
                 properties:
+                  logging:
+                    description: |-
+                      Logging defines the logging capabilities.
+                      The logging capability installs a ClusterLogForwarder to collect application and infrastructure logs,
+                      and a LokiStack instance for log storage and querying.
+                    properties:
+                      enabled:
+                        description: |-
+                          Enabled indicates whether the capability is enabled and whether the operator should deploy an instance.
+                          By default, it is set to false.
+                        type: boolean
+                      lokiStack:
+                        description: LokiStack configures a LokiStack store for log
+                          data.
+                        properties:
+                          objectStorage:
+                            description: ObjectStorage configures an object storage
+                              bucket.
+                            properties:
+                              azure:
+                                description: Azure defines the Azure Blob Storage
+                                  configuration.
+                                properties:
+                                  accountKeySecret:
+                                    description: AccountKey is a reference to a secret
+                                      containing the account key for the Azure Storage
+                                      account.
+                                    properties:
+                                      key:
+                                        description: Key contains the name of the
+                                          key inside the referenced Secret.
+                                        type: string
+                                      name:
+                                        description: SecretName contains the name
+                                          of the Secret containing the referenced
+                                          value.
+                                        type: string
+                                    required:
+                                    - key
+                                    - name
+                                    type: object
+                                  accountName:
+                                    description: AccountName is the name of the Azure
+                                      Storage account.
+                                    type: string
+                                  container:
+                                    description: Container is the name of the Azure
+                                      Blob Storage container.
+                                    type: string
+                                required:
+                                - accountKeySecret
+                                - accountName
+                                - container
+                                type: object
+                              azureWIF:
+                                description: AzureWIF defines the Azure Blob Storage
+                                  configuration using a Workload Identity Federation.
+                                properties:
+                                  accountName:
+                                    description: AccountName is the name of the Azure
+                                      Storage account.
+                                    type: string
+                                  audience:
+                                    description: Audience is the optional audience
+                                      for the Azure Workload Identity Federation.
+                                    type: string
+                                  clientID:
+                                    description: ClientID is the client ID of the
+                                      Azure Active Directory application.
+                                    type: string
+                                  container:
+                                    description: Container is the name of the Azure
+                                      Blob Storage container.
+                                    type: string
+                                  subscriptionID:
+                                    description: |-
+                                      SubscriptionID is the ID of the Azure subscription holding the workload
+                                      identity. Required by logging, ignored by tracing.
+                                    type: string
+                                  tenantID:
+                                    description: TenantID is the tenant ID of the
+                                      Azure Active Directory.
+                                    type: string
+                                required:
+                                - accountName
+                                - clientID
+                                - container
+                                - tenantID
+                                type: object
+                              gcs:
+                                description: GCS defines the Google Cloud Storage
+                                  configuration.
+                                properties:
+                                  bucket:
+                                    description: Bucket is the name of the Google
+                                      Cloud Storage bucket.
+                                    type: string
+                                  keyJSONSecret:
+                                    description: KeyJSON is the key.json file encoded
+                                      in a secret.
+                                    properties:
+                                      key:
+                                        description: Key contains the name of the
+                                          key inside the referenced Secret.
+                                        type: string
+                                      name:
+                                        description: SecretName contains the name
+                                          of the Secret containing the referenced
+                                          value.
+                                        type: string
+                                    required:
+                                    - key
+                                    - name
+                                    type: object
+                                required:
+                                - bucket
+                                - keyJSONSecret
+                                type: object
+                              gcsWIF:
+                                description: GCSWIF defines the Google Cloud Storage
+                                  configuration using Workload Identity Federation.
+                                properties:
+                                  audience:
+                                    description: Audience is the optional audience.
+                                    type: string
+                                  bucket:
+                                    description: Bucket is the name of the Google
+                                      Cloud Storage bucket.
+                                    type: string
+                                  keyJSONSecret:
+                                    description: KeyJSON is the key.json file encoded
+                                      in a secret.
+                                    properties:
+                                      key:
+                                        description: Key contains the name of the
+                                          key inside the referenced Secret.
+                                        type: string
+                                      name:
+                                        description: SecretName contains the name
+                                          of the Secret containing the referenced
+                                          value.
+                                        type: string
+                                    required:
+                                    - key
+                                    - name
+                                    type: object
+                                required:
+                                - bucket
+                                - keyJSONSecret
+                                type: object
+                              s3:
+                                description: S3 defines the S3 object storage configuration.
+                                properties:
+                                  accessKeyID:
+                                    description: AccessKeyID is the access key ID
+                                      for the S3 bucket.
+                                    type: string
+                                  accessKeySecret:
+                                    description: AccessKeySecret is a reference to
+                                      a secret containing the access key secret for
+                                      the S3.
+                                    properties:
+                                      key:
+                                        description: Key contains the name of the
+                                          key inside the referenced Secret.
+                                        type: string
+                                      name:
+                                        description: SecretName contains the name
+                                          of the Secret containing the referenced
+                                          value.
+                                        type: string
+                                    required:
+                                    - key
+                                    - name
+                                    type: object
+                                  bucket:
+                                    description: Bucket is the name of the S3 bucket.
+                                    type: string
+                                  endpoint:
+                                    description: Endpoint is the S3 endpoint URL.
+                                    type: string
+                                  region:
+                                    description: Region is the region where the S3
+                                      bucket is located.
+                                    type: string
+                                required:
+                                - accessKeyID
+                                - accessKeySecret
+                                - bucket
+                                - endpoint
+                                type: object
+                              s3CCO:
+                                description: S3CCO defines the S3 object storage configuration
+                                  using CCO.
+                                properties:
+                                  bucket:
+                                    description: Bucket is the name of the S3 bucket.
+                                    type: string
+                                  region:
+                                    description: Region is the region where the S3
+                                      bucket is located.
+                                    type: string
+                                required:
+                                - bucket
+                                type: object
+                              s3STS:
+                                description: S3STS defines the S3 object storage configuration
+                                  using short-lived credentials.
+                                properties:
+                                  bucket:
+                                    description: Bucket is the name of the S3 bucket.
+                                    type: string
+                                  region:
+                                    description: Region is the region where the S3
+                                      bucket is located.
+                                    type: string
+                                  roleARN:
+                                    description: RoleARN is the ARN of the IAM role
+                                      to assume for accessing the S3 bucket.
+                                    type: string
+                                required:
+                                - bucket
+                                - roleARN
+                                type: object
+                              tls:
+                                description: TLS configuration for reaching the object
+                                  storage endpoint.
+                                properties:
+                                  caConfigMap:
+                                    description: CAConfigMap is the name of a ConfigMap
+                                      containing a CA certificate (e.g. service-ca.crt).
+                                    properties:
+                                      key:
+                                        description: Key contains the name of the
+                                          key inside the referenced Secret.
+                                        type: string
+                                      name:
+                                        description: SecretName contains the name
+                                          of the Secret containing the referenced
+                                          value.
+                                        type: string
+                                    required:
+                                    - key
+                                    - name
+                                    type: object
+                                  certSecret:
+                                    description: CertSecret is the name of a Secret
+                                      containing a certificate (e.g. tls.crt).
+                                    properties:
+                                      key:
+                                        description: Key contains the name of the
+                                          key inside the referenced Secret.
+                                        type: string
+                                      name:
+                                        description: SecretName contains the name
+                                          of the Secret containing the referenced
+                                          value.
+                                        type: string
+                                    required:
+                                    - key
+                                    - name
+                                    type: object
+                                  keySecret:
+                                    description: KeySecret is the name of a Secret
+                                      containing a private key (e.g. tls.key).
+                                    properties:
+                                      key:
+                                        description: Key contains the name of the
+                                          key inside the referenced Secret.
+                                        type: string
+                                      name:
+                                        description: SecretName contains the name
+                                          of the Secret containing the referenced
+                                          value.
+                                        type: string
+                                    required:
+                                    - key
+                                    - name
+                                    type: object
+                                  minVersion:
+                                    description: MinVersion defines the minimum acceptable
+                                      TLS version.
+                                    type: string
+                                type: object
+                                x-kubernetes-validations:
+                                - message: KeySecret and CertSecret must be set together
+                                  rule: (has(self.keySecret) && has(self.certSecret))
+                                    || (!has(self.keySecret) && !has(self.certSecret))
+                            type: object
+                            x-kubernetes-validations:
+                            - message: Only one or zero storage configurations can
+                                be specified
+                              rule: '[has(self.s3), has(self.s3STS), has(self.s3CCO),
+                                has(self.azure), has(self.azureWIF), has(self.gcs),
+                                has(self.gcsWIF)].filter(x, x).size() <= 1'
+                          schemas:
+                            description: Schemas for reading and writing logs.
+                            items:
+                              description: ObjectStorageSchema defines a schema version
+                                and the date when it will become effective.
+                              properties:
+                                effectiveDate:
+                                  description: |-
+                                    EffectiveDate contains a date in YYYY-MM-DD format which is interpreted in the UTC time zone.
+
+                                    The configuration always needs at least one schema that is currently valid. This means that when creating a new
+                                    LokiStack it is recommended to add a schema with the latest available version and an effective date of "yesterday".
+                                    New schema versions added to the configuration always needs to be placed "in the future", so that Loki can start
+                                    using it once the day rolls over.
+                                  pattern: ^([0-9]{4,})([-]([0-9]{2})){2}$
+                                  type: string
+                                version:
+                                  description: Version for writing and reading logs.
+                                  enum:
+                                  - v11
+                                  - v12
+                                  - v13
+                                  type: string
+                              required:
+                              - effectiveDate
+                              - version
+                              type: object
+                            type: array
+                          size:
+                            description: Size defines one of the support Loki deployment
+                              scale out sizes.
+                            enum:
+                            - 1x.demo
+                            - 1x.pico
+                            - 1x.extra-small
+                            - 1x.small
+                            - 1x.medium
+                            type: string
+                          storageClassName:
+                            description: Storage class name defines the storage class
+                              for ingester/querier PVCs.
+                            type: string
+                        required:
+                        - size
+                        - storageClassName
+                        type: object
+                      operators:
+                        description: Operators defines the operators installation
+                          for the capability.
+                        properties:
+                          install:
+                            description: |-
+                              Install indicates whether the operator(s) used by the capability should be installed via OLM.
+                              When the capability is enabled, the install is set to true, otherwise it is set to false.
+                              This field can be used to install the operator(s) without installing any operands.
+                            type: boolean
+                        type: object
+                    type: object
+                    x-kubernetes-validations:
+                    - message: Object storage configuration is required when logging
+                        is enabled
+                      rule: (!has(self.enabled) || !self.enabled) || (has(self.lokiStack)
+                        && has(self.lokiStack.objectStorage) && [has(self.lokiStack.objectStorage.s3),
+                        has(self.lokiStack.objectStorage.s3STS), has(self.lokiStack.objectStorage.s3CCO),
+                        has(self.lokiStack.objectStorage.azure), has(self.lokiStack.objectStorage.azureWIF),
+                        has(self.lokiStack.objectStorage.gcs), has(self.lokiStack.objectStorage.gcsWIF)].filter(x,
+                        x).size() > 0)
+                    - message: Azure workload identity federation requires subscriptionID
+                        for logging
+                      rule: '!has(self.lokiStack) || !has(self.lokiStack.objectStorage)
+                        || !has(self.lokiStack.objectStorage.azureWIF) || has(self.lokiStack.objectStorage.azureWIF.subscriptionID)'
                   tracing:
                     description: |-
                       Tracing defines the tracing capabilities.
@@ -139,6 +511,11 @@ spec:
                                   container:
                                     description: Container is the name of the Azure
                                       Blob Storage container.
+                                    type: string
+                                  subscriptionID:
+                                    description: |-
+                                      SubscriptionID is the ID of the Azure subscription holding the workload
+                                      identity. Required by logging, ignored by tracing.
                                     type: string
                                   tenantID:
                                     description: TenantID is the tenant ID of the
@@ -429,6 +806,16 @@ spec:
                   type: object
                 type: array
                 x-kubernetes-list-type: atomic
+              logging:
+                description: |-
+                  Logging defines the status of the Logging capability.
+                  The value is in the form of instance namespace/name (version)
+                type: string
+              lokistack:
+                description: |-
+                  LokiStack defines the status of the LokiStack instance.
+                  The value is in the form of instance namespace/name (version)
+                type: string
               opentelemetry:
                 description: |-
                   OpenTelemetry defines the status of the OpenTelemetry capability.

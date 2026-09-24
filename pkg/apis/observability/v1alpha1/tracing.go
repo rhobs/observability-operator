@@ -22,47 +22,12 @@ type TracingStorageSpec struct {
 	// +optional
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Object storage config"
-	ObjectStorageSpec *TracingObjectStorageSpec `json:"objectStorage,omitempty"`
+	ObjectStorageSpec *ObjectStorageSpec `json:"objectStorage,omitempty"`
 }
 
-func (s *TracingStorageSpec) GetObjectStorageSpec() *TracingObjectStorageSpec {
+func (s *TracingStorageSpec) GetObjectStorageSpec() *ObjectStorageSpec {
 	if s != nil {
 		return s.ObjectStorageSpec
-	}
-	return nil
-}
-
-// TracingObjectStorageSpec defines the object storage for the tracing capability.
-// +kubebuilder:validation:XValidation:rule="[has(self.s3), has(self.s3STS), has(self.s3CCO), has(self.azure), has(self.azureWIF), has(self.gcs), has(self.gcsWIF)].filter(x, x).size() <= 1",message="Only one or zero storage configurations can be specified"
-type TracingObjectStorageSpec struct {
-	// S3 defines the S3 object storage configuration.
-	S3 *S3Spec `json:"s3,omitempty"`
-	// S3STS defines the S3 object storage configuration using short-lived credentials.
-	S3STS *S3STSpec `json:"s3STS,omitempty"`
-	// S3CCO defines the S3 object storage configuration using CCO.
-	S3CCO *S3CCOSpec `json:"s3CCO,omitempty"`
-
-	// Azure defines the Azure Blob Storage configuration.
-	Azure *AzureSpec `json:"azure,omitempty"`
-	// AzureWIF defines the Azure Blob Storage configuration using a Workload Identity Federation.
-	AzureWIF *AzureWIFSpec `json:"azureWIF,omitempty"`
-
-	// GCS defines the Google Cloud Storage configuration.
-	GCS *GCSSpec `json:"gcs,omitempty"`
-	// GCSWIF defines the Google Cloud Storage configuration using Workload Identity Federation.
-	GCSWIF *GCSWIFSpec `json:"gcsWIF,omitempty"`
-
-	// TLS configuration for reaching the object storage endpoint.
-	//
-	// +optional
-	// +kubebuilder:validation:Optional
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="TLS Config"
-	TLS *TLSSpec `json:"tls,omitempty"`
-}
-
-func (o *TracingObjectStorageSpec) GetTLS() *TLSSpec {
-	if o != nil {
-		return o.TLS
 	}
 	return nil
 }
