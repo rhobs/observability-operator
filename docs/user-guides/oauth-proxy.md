@@ -440,7 +440,15 @@ kubectl get route -n project-a thanos-querier-authenticated -o jsonpath="{.spec.
 
 You will be prompted to authenticate with your OpenShift credentials. `user1` should be granted access; `user2` and `user3` should be denied.
 
-To validate bearer token access, fetch the ingress certificate chain, generate a short-lived token for the `robot-user` ServiceAccount, and query the Thanos API directly:
+To validate bearer token access, generate a short-lived token for the `robot-user` ServiceAccount and query the Thanos API directly:
+
+```sh
+TOKEN=$(kubectl -n project-a create token robot-user)
+ROUTE=$(kubectl get route -n project-a thanos-querier-authenticated -o jsonpath='{.spec.host}')
+curl -H "Authorization: Bearer ${TOKEN}" "https://${ROUTE}/api/v1/query?query=up" | jq
+```
+
+If your cluster does not use the default self-signed OpenShift ingress certificate (for example, it uses a corporate CA or Let's Encrypt), curl may fail with a certificate verification error. In that case, extract the certificate chain from the server first:
 
 ```sh
 ROUTE=$(kubectl get route -n project-a thanos-querier-authenticated -o jsonpath='{.spec.host}')
