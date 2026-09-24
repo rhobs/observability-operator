@@ -1,11 +1,13 @@
 package operator
 
 import (
+	lokiv1 "github.com/grafana/loki/operator/api/loki/v1"
 	tempov1alpha1 "github.com/grafana/tempo-operator/api/tempo/v1alpha1"
 	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	configv1 "github.com/openshift/api/config/v1"
 	osv1 "github.com/openshift/api/console/v1"
 	operatorv1 "github.com/openshift/api/operator/v1"
+	clfv1 "github.com/openshift/cluster-logging-operator/api/observability/v1"
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	monv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	monitoringv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
@@ -35,6 +37,8 @@ func NewScheme(cfg *OperatorConfiguration) *runtime.Scheme {
 	utilruntime.Must(obsv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(otelv1beta1.AddToScheme(scheme))
 	utilruntime.Must(tempov1alpha1.AddToScheme(scheme))
+	utilruntime.Must(lokiv1.AddToScheme(scheme))
+	utilruntime.Must(clfv1.AddToScheme(scheme))
 
 	if cfg.FeatureGates.OpenShift.Enabled {
 		utilruntime.Must(configv1.Install(scheme))

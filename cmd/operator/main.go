@@ -98,6 +98,8 @@ func main() {
 		openShiftEnabled bool
 		otelCSVName      string
 		tempoCSVName     string
+		lokiCSVName      string
+		loggingCSVName   string
 
 		setupLog = ctrl.Log.WithName("setup")
 	)
@@ -110,6 +112,8 @@ func main() {
 	flag.BoolVar(&openShiftEnabled, "openshift.enabled", false, "Enable OpenShift specific features such as Console Plugins.")
 	flag.StringVar(&otelCSVName, "opentelemetry-csv", "", "OpenTelemetry Operator starting CSV name. This can be used to install a specific OpenTelemetry Operator version. Empty string means the latest version will be installed.")
 	flag.StringVar(&tempoCSVName, "tempo-csv", "", "Tempo Operator starting CSV name. This can be used to install a specific Tempo Operator version. Empty string means the latest version will be installed.")
+	flag.StringVar(&lokiCSVName, "loki-csv", "", "Loki Operator starting CSV name. This can be used to install a specific Loki Operator version. Empty string means the latest version will be installed.")
+	flag.StringVar(&loggingCSVName, "cluster-logging-csv", "", "Cluster Logging Operator starting CSV name. This can be used to install a specific Cluster Logging Operator version. Empty string means the latest version will be installed.")
 
 	opts := zap.Options{
 		Development: true,
@@ -183,9 +187,11 @@ func main() {
 			operator.WithThanosQuerierImage(imgMap["thanos"]),
 			operator.WithUIPluginImages(imgMap),
 			operator.WithObservabilityInstaller(operator.ObservabilityInstallerConfiguration{
-				COONamespace:     namespace,
-				OpenTelemetryCSV: otelCSVName,
-				TempoCSV:         tempoCSVName,
+				COONamespace:      namespace,
+				OpenTelemetryCSV:  otelCSVName,
+				TempoCSV:          tempoCSVName,
+				LokiCSV:           lokiCSVName,
+				ClusterLoggingCSV: loggingCSVName,
 			}),
 			operator.WithFeatureGates(operator.FeatureGates{
 				OpenShift: operator.OpenShiftFeatureGates{
