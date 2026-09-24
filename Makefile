@@ -313,14 +313,32 @@ kind-cluster: $(OPERATOR_SDK)
 deploy: $(OPERATOR_SDK) operator-image operator-push bundle-image bundle-push run-bundle
 
 .PHONY: run-bundle
-run-bundle:
+run-bundle: check-jq
 	kubectl get ns/$(COO_NAMESPACE) 2> /dev/null || kubectl create namespace $(COO_NAMESPACE)
 	$(OPERATOR_SDK) run bundle $(BUNDLE_IMG) --namespace $(COO_NAMESPACE) --install-mode AllNamespaces
+	# SDK sets manual InstallPlan approval, which also affects subscriptions created by COO.
+	kubectl patch -n $(COO_NAMESPACE) \
+		"subscription/$$(./hack/olm/find-bundle-subscription.sh $(COO_NAMESPACE))" \
+		--type merge -p '{"spec":{"installPlanApproval":"Automatic"}}'
 
 .PHONY: undeploy
 undeploy: $(OPERATOR_SDK)
-	$(OPERATOR_SDK) cleanup observability-operator --namespace $(COO_NAMESPACE)
+	$(OPERATOR_SDK) cleanup observability-operator --namespace $(COO_NAMESPACE) --delete-all=false --timeout 5m
 
 .PHONY: clean
 clean: clean-tools
 	rm -rf bundle/ bundle.Dockerfile
+
+.PHONY: run-local
+COO_POD_SELECTOR=-n $(COO_NAMESPACE) -l app.kubernetes.io/name=observability-operator,app.kubernetes.io/component=operator
+run-local: generate-deepcopy
+	kubectl scale -n $(COO_NAMESPACE) --replicas=0 deploy/observability-operator
+	@pods=$$(kubectl get pods $(COO_POD_SELECTOR) -o name) || exit $$?; \
+	if [ -n "$$pods" ]; then \
+		kubectl wait $(COO_POD_SELECTOR) --for=delete pod --timeout=2m; \
+	fi
+	go run ./cmd/operator/... --namespace=$(COO_NAMESPACE) --zap-devel $(RUN_ARGS)
+
+.PHONY: scale-up
+scale-up:
+	kubectl scale -n $(COO_NAMESPACE) --replicas=1 deploy/observability-operator
