@@ -268,28 +268,54 @@ kubectl -n project-a create secret generic thanos-proxy \
   --from-literal=session_secret=$(head -c 32 /dev/urandom | base64)
 ```
 
-Annotate the operator-managed `thanos-querier-example-coo-thanos` ServiceAccount to enable the OAuth redirect flow:
+Annotate the operator-managed ServiceAccount to enable the OAuth redirect flow, annotate the Thanos service to trigger automatic TLS certificate generation, and create a `robot-user` ServiceAccount for bearer token access:
 
-```sh
-kubectl -n project-a annotate serviceaccount thanos-querier-example-coo-thanos \
-  serviceaccounts.openshift.io/oauth-redirectreference.thanos-querier='{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"thanos-querier-authenticated"}}'
+```yaml
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: thanos-querier-example-coo-thanos
+  namespace: project-a
+  annotations:
+    serviceaccounts.openshift.io/oauth-redirectreference.thanos-querier: '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"thanos-querier-authenticated"}}'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: thanos-querier-example-coo-thanos
+  namespace: project-a
+  annotations:
+    service.alpha.openshift.io/serving-cert-secret-name: "thanos-tls"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: robot-user
+  namespace: project-a
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: view-robot-user
+  namespace: project-a
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+- kind: ServiceAccount
+  name: robot-user
+  namespace: project-a
 ```
 
-Annotate the Thanos service to trigger automatic TLS certificate generation by the OpenShift serving-cert operator:
+Or run
 
 ```sh
-kubectl -n project-a annotate service thanos-querier-example-coo-thanos \
-  service.alpha.openshift.io/serving-cert-secret-name="thanos-tls"
+kubectl apply -f docs/user-guides/oauth-proxy/manifests/02a-annotations-project-a.yaml --server-side
 ```
 
-Create a `robot-user` ServiceAccount for bearer token access and grant it view permissions:
-
-```sh
-kubectl -n project-a create serviceaccount robot-user
-kubectl -n project-a create rolebinding view-robot-user \
-  --clusterrole=view \
-  --serviceaccount=project-a:robot-user
-```
+**NOTE:** The `--server-side` flag is required because the ServiceAccount and Service are managed by the Observability Operator.
 
 #### Inject the OAuth Proxy sidecar
 
@@ -414,12 +440,13 @@ kubectl get route -n project-a thanos-querier-authenticated -o jsonpath="{.spec.
 
 You will be prompted to authenticate with your OpenShift credentials. `user1` should be granted access; `user2` and `user3` should be denied.
 
-To validate bearer token access, generate a short-lived token for the `robot-user` ServiceAccount and query the Thanos API directly:
+To validate bearer token access, extract the ingress CA certificate, generate a short-lived token for the `robot-user` ServiceAccount, and query the Thanos API directly:
 
 ```sh
+kubectl get secret -n openshift-ingress-operator router-ca -o jsonpath='{.data.tls\.crt}' | base64 -d > /tmp/ingress-ca.crt
 TOKEN=$(kubectl -n project-a create token robot-user)
 ROUTE=$(kubectl get route -n project-a thanos-querier-authenticated -o jsonpath='{.spec.host}')
-curl -k -H "Authorization: Bearer ${TOKEN}" "https://${ROUTE}/api/v1/query?query=up" | jq
+curl --cacert /tmp/ingress-ca.crt -H "Authorization: Bearer ${TOKEN}" "https://${ROUTE}/api/v1/query?query=up" | jq
 ```
 
 ### Setting up project-b
@@ -439,15 +466,38 @@ kubectl apply -f docs/user-guides/oauth-proxy/manifests/05-project-b.yaml
 
 #### Configure OAuth Proxy
 
+Create the session secret:
+
 ```sh
 kubectl -n project-b create secret generic thanos-proxy \
   --from-literal=session_secret=$(head -c 32 /dev/urandom | base64)
+```
 
-kubectl -n project-b annotate serviceaccount thanos-querier-example-coo-thanos \
-  serviceaccounts.openshift.io/oauth-redirectreference.thanos-querier='{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"thanos-querier-authenticated"}}'
+Annotate the operator-managed ServiceAccount and Service:
 
-kubectl -n project-b annotate service thanos-querier-example-coo-thanos \
-  service.alpha.openshift.io/serving-cert-secret-name="thanos-tls"
+```yaml
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: thanos-querier-example-coo-thanos
+  namespace: project-b
+  annotations:
+    serviceaccounts.openshift.io/oauth-redirectreference.thanos-querier: '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"thanos-querier-authenticated"}}'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: thanos-querier-example-coo-thanos
+  namespace: project-b
+  annotations:
+    service.alpha.openshift.io/serving-cert-secret-name: "thanos-tls"
+```
+
+Or run
+
+```sh
+kubectl apply -f docs/user-guides/oauth-proxy/manifests/05a-annotations-project-b.yaml --server-side
 ```
 
 #### Inject the OAuth Proxy sidecar
@@ -492,15 +542,38 @@ kubectl apply -f docs/user-guides/oauth-proxy/manifests/08-project-c.yaml
 
 #### Configure OAuth Proxy
 
+Create the session secret:
+
 ```sh
 kubectl -n project-c create secret generic thanos-proxy \
   --from-literal=session_secret=$(head -c 32 /dev/urandom | base64)
+```
 
-kubectl -n project-c annotate serviceaccount thanos-querier-example-coo-thanos \
-  serviceaccounts.openshift.io/oauth-redirectreference.thanos-querier='{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"thanos-querier-authenticated"}}'
+Annotate the operator-managed ServiceAccount and Service:
 
-kubectl -n project-c annotate service thanos-querier-example-coo-thanos \
-  service.alpha.openshift.io/serving-cert-secret-name="thanos-tls"
+```yaml
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: thanos-querier-example-coo-thanos
+  namespace: project-c
+  annotations:
+    serviceaccounts.openshift.io/oauth-redirectreference.thanos-querier: '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"thanos-querier-authenticated"}}'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: thanos-querier-example-coo-thanos
+  namespace: project-c
+  annotations:
+    service.alpha.openshift.io/serving-cert-secret-name: "thanos-tls"
+```
+
+Or run
+
+```sh
+kubectl apply -f docs/user-guides/oauth-proxy/manifests/08a-annotations-project-c.yaml --server-side
 ```
 
 #### Inject the OAuth Proxy sidecar
