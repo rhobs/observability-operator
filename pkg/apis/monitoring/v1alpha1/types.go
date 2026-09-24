@@ -17,6 +17,8 @@ import (
 // +kubebuilder:resource
 // +kubebuilder:subresource:status
 // +kubebuilder:metadata:annotations="observability.openshift.io/api-support=GeneralAvailability"
+// +kubebuilder:validation:XValidation:rule="size(self.metadata.name) <= 63",message="MonitoringStack name must be no more than 63 characters"
+// +kubebuilder:validation:XValidation:rule="self.metadata.name.matches('^[a-z0-9]([-a-z0-9]*[a-z0-9])?$')",message="MonitoringStack name must consist of lowercase alphanumeric characters or '-', and must start and end with an alphanumeric character"
 type MonitoringStack struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -334,6 +336,8 @@ type NamespaceSelector struct {
 // +kubebuilder:resource
 // +kubebuilder:subresource:status
 // +kubebuilder:metadata:annotations="observability.openshift.io/api-support=TechPreview"
+// +kubebuilder:validation:XValidation:rule="size(self.metadata.name) <= 63",message="ThanosQuerier name must be no more than 63 characters"
+// +kubebuilder:validation:XValidation:rule="self.metadata.name.matches('^[a-z0-9]([-a-z0-9]*[a-z0-9])?$')",message="ThanosQuerier name must consist of lowercase alphanumeric characters or '-', and must start and end with an alphanumeric character"
 type ThanosQuerier struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
