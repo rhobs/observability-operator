@@ -61,6 +61,6 @@ monitoring
     │               ├── config.stderr
     │               ├── flags.json
     │               └── flags.stderr
-    ├── operants.yaml
+    ├── operands.yaml
     └── operator.yaml
 ```

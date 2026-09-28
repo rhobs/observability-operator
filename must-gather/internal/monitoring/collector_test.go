@@ -102,10 +102,10 @@ func TestCollectWritesOperandAndOperatorFiles(t *testing.T) {
 	assert.NilError(t, err)
 
 	base := filepath.Join(tmp, "monitoring", "observability-operator")
-	// operants.yaml contains both managed-by and part-of results, separated by a YAML doc marker.
-	fileContains(t, filepath.Join(base, "operants.yaml"), "operand-managed")
-	fileContains(t, filepath.Join(base, "operants.yaml"), "operand-partof")
-	fileContains(t, filepath.Join(base, "operants.yaml"), "---")
+	// operands.yaml contains both managed-by and part-of results, separated by a YAML doc marker.
+	fileContains(t, filepath.Join(base, "operands.yaml"), "operand-managed")
+	fileContains(t, filepath.Join(base, "operands.yaml"), "operand-partof")
+	fileContains(t, filepath.Join(base, "operands.yaml"), "---")
 	fileContains(t, filepath.Join(base, "operator.yaml"), "operator-0")
 }
 

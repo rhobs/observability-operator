@@ -109,8 +109,8 @@ func (m *Collector) gatherOperands(ctx context.Context) {
 		}
 		operands = append(operands, data...)
 	}
-	if err := m.destDir.Add("operants.yaml").WriteFile(operands); err != nil {
-		m.logger.Warn("Failed to write operants.yaml: %v", err)
+	if err := m.destDir.Add("operands.yaml").WriteFile(operands); err != nil {
+		m.logger.Warn("Failed to write operands.yaml: %v", err)
 	}
 
 	// Operator pods.
