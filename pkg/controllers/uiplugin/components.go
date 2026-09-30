@@ -333,6 +333,9 @@ func newDeployment(info UIPluginInfo, namespace string, config *uiv1alpha1.Deplo
 	if len(info.TLSCiphers) > 0 {
 		pluginArgs = append(pluginArgs, fmt.Sprintf("-tls-cipher-suites=%s", strings.Join(info.TLSCiphers, ",")))
 	}
+	if len(info.TLSCurves) > 0 {
+		pluginArgs = append(pluginArgs, fmt.Sprintf("-tls-curves=%s", strings.Join(info.TLSCurves, ",")))
+	}
 
 	volumes := []corev1.Volume{
 		{
@@ -554,6 +557,9 @@ func newKorrel8rDeployment(name string, namespace string, info UIPluginInfo) *ap
 	}
 	if len(info.TLSCiphers) > 0 {
 		command = append(command, fmt.Sprintf("--tls-cipher-suites=%s", strings.Join(info.TLSCiphers, ",")))
+	}
+	if len(info.TLSCurves) > 0 {
+		command = append(command, fmt.Sprintf("--tls-curves=%s", strings.Join(info.TLSCurves, ",")))
 	}
 
 	volumes := []corev1.Volume{

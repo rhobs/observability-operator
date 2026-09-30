@@ -60,6 +60,7 @@ func TestNewDeploymentTLSArgs(t *testing.T) {
 		name          string
 		tlsMinVersion string
 		tlsCiphers    []string
+		tlsCurves     []string
 		extraArgs     []string
 		expectArgs    []string
 		notExpectArgs []string
@@ -74,12 +75,24 @@ func TestNewDeploymentTLSArgs(t *testing.T) {
 			},
 		},
 		{
+			name:          "TLS profile with min version, ciphers, and curves",
+			tlsMinVersion: "VersionTLS12",
+			tlsCiphers:    []string{"TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384"},
+			tlsCurves:     []string{"P-256", "P-384"},
+			expectArgs: []string{
+				"-tls-min-version=VersionTLS12",
+				"-tls-cipher-suites=TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384",
+				"-tls-curves=P-256,P-384",
+			},
+		},
+		{
 			name:          "no TLS profile",
 			tlsMinVersion: "",
 			tlsCiphers:    nil,
 			notExpectArgs: []string{
 				"-tls-min-version=",
 				"-tls-cipher-suites=",
+				"-tls-curves=",
 			},
 		},
 		{
@@ -91,18 +104,30 @@ func TestNewDeploymentTLSArgs(t *testing.T) {
 			},
 			notExpectArgs: []string{
 				"-tls-cipher-suites=",
+				"-tls-curves=",
+			},
+		},
+		{
+			name:          "TLS curves only",
+			tlsCurves:     []string{"P-256"},
+			expectArgs: []string{
+				"-tls-curves=P-256",
+			},
+			notExpectArgs: []string{
+				"-tls-min-version=",
+				"-tls-cipher-suites=",
 			},
 		},
 		{
 			name:          "TLS args appear after extra args",
 			tlsMinVersion: "VersionTLS12",
 			tlsCiphers:    []string{"TLS_AES_128_GCM_SHA256"},
-			extraArgs:     []string{"-plugin-config-path=/etc/plugin/config/config.yaml"},
 			expectArgs: []string{
 				"-plugin-config-path=/etc/plugin/config/config.yaml",
 				"-tls-min-version=VersionTLS12",
 				"-tls-cipher-suites=TLS_AES_128_GCM_SHA256",
 			},
+			extraArgs: []string{"-plugin-config-path=/etc/plugin/config/config.yaml"},
 		},
 	}
 
@@ -114,6 +139,7 @@ func TestNewDeploymentTLSArgs(t *testing.T) {
 				ExtraArgs:     tc.extraArgs,
 				TLSMinVersion: tc.tlsMinVersion,
 				TLSCiphers:    tc.tlsCiphers,
+				TLSCurves:     tc.tlsCurves,
 			}
 
 			deploy := newDeployment(info, "test-ns", nil)
@@ -147,6 +173,7 @@ func TestNewKorrel8rDeploymentTLSArgs(t *testing.T) {
 		name          string
 		tlsMinVersion string
 		tlsCiphers    []string
+		tlsCurves     []string
 		expectArgs    []string
 		notExpectArgs []string
 	}{
@@ -160,12 +187,24 @@ func TestNewKorrel8rDeploymentTLSArgs(t *testing.T) {
 			},
 		},
 		{
+			name:          "TLS profile with min version, ciphers, and curves",
+			tlsMinVersion: "VersionTLS12",
+			tlsCiphers:    []string{"TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384"},
+			tlsCurves:     []string{"P-256", "P-384"},
+			expectArgs: []string{
+				"--tls-min-version=VersionTLS12",
+				"--tls-cipher-suites=TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384",
+				"--tls-curves=P-256,P-384",
+			},
+		},
+		{
 			name:          "no TLS profile",
 			tlsMinVersion: "",
 			tlsCiphers:    nil,
 			notExpectArgs: []string{
 				"--tls-min-version=",
 				"--tls-cipher-suites=",
+				"--tls-curves=",
 			},
 		},
 		{
@@ -177,6 +216,7 @@ func TestNewKorrel8rDeploymentTLSArgs(t *testing.T) {
 			},
 			notExpectArgs: []string{
 				"--tls-cipher-suites=",
+				"--tls-curves=",
 			},
 		},
 		{
@@ -188,6 +228,18 @@ func TestNewKorrel8rDeploymentTLSArgs(t *testing.T) {
 			},
 			notExpectArgs: []string{
 				"--tls-min-version=",
+				"--tls-curves=",
+			},
+		},
+		{
+			name:          "TLS curves only",
+			tlsCurves:     []string{"P-256"},
+			expectArgs: []string{
+				"--tls-curves=P-256",
+			},
+			notExpectArgs: []string{
+				"--tls-min-version=",
+				"--tls-cipher-suites=",
 			},
 		},
 	}
@@ -199,6 +251,7 @@ func TestNewKorrel8rDeploymentTLSArgs(t *testing.T) {
 				Korrel8rImage: "korrel8r:latest",
 				TLSMinVersion: tc.tlsMinVersion,
 				TLSCiphers:    tc.tlsCiphers,
+				TLSCurves:     tc.tlsCurves,
 			}
 
 			deploy := newKorrel8rDeployment("korrel8r", "test-ns", info)

@@ -117,12 +117,14 @@ func newHealthAnalyzerDeployment(namespace string,
 		"--tls-cert-file=/etc/tls/private/tls.crt",
 		"--tls-private-key-file=/etc/tls/private/tls.key",
 	}
+	if pluginInfo.TLSMinVersion != "" {
+		args = append(args, fmt.Sprintf("--tls-min-version=%s", pluginInfo.TLSMinVersion))
+	}
 	if len(pluginInfo.TLSCiphers) > 0 {
 		args = append(args, fmt.Sprintf("--tls-cipher-suites=%s", strings.Join(pluginInfo.TLSCiphers, ",")))
 	}
-
-	if pluginInfo.TLSMinVersion != "" {
-		args = append(args, fmt.Sprintf("--tls-min-version=%s", pluginInfo.TLSMinVersion))
+	if len(pluginInfo.TLSCurves) > 0 {
+		args = append(args, fmt.Sprintf("--tls-curves=%s", strings.Join(pluginInfo.TLSCurves, ",")))
 	}
 
 	deploy := &appsv1.Deployment{
