@@ -26,8 +26,8 @@ import (
 )
 
 var (
-	//go:embed traces_minio.yaml
-	minioManifests string
+	//go:embed traces_seaweedfs.yaml
+	seaweedfsManifests string
 	//go:embed traces_telemetrygen.yaml
 	telemetrygenManifest string
 	//go:embed traces_verify.yaml
@@ -62,7 +62,7 @@ func testObservabilityInstallerTracing(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	for _, doc := range strings.Split(minioManifests, "---") {
+	for _, doc := range strings.Split(seaweedfsManifests, "---") {
 		if strings.TrimSpace(doc) == "" {
 			continue
 		}
@@ -81,7 +81,7 @@ func testObservabilityInstallerTracing(t *testing.T) {
 
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "minio",
+			Name:      "seaweedfs",
 			Namespace: operandNamespace.Name,
 		},
 		Data: map[string][]byte{
@@ -108,11 +108,11 @@ func testObservabilityInstallerTracing(t *testing.T) {
 						ObjectStorageSpec: &obsv1alpha1.TracingObjectStorageSpec{
 							S3: &obsv1alpha1.S3Spec{
 								Bucket:      "tempo",
-								Endpoint:    "http://minio.minio.svc:9000",
+								Endpoint:    "http://seaweedfs.seaweedfs.svc:8333",
 								AccessKeyID: "tempo",
 								AccessKeySecret: obsv1alpha1.SecretKeySelector{
 									Key:  "access_key_secret",
-									Name: "minio",
+									Name: "seaweedfs",
 								},
 							},
 						},
