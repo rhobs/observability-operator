@@ -274,8 +274,8 @@ github.com/onsi/ginkgo/v2 v2.32.0 h1:Hw7s2pVrQo/8Yz5N77qdnpHaoc+c6cC9WIV1Jce+J6E
 github.com/onsi/ginkgo/v2 v2.32.0/go.mod h1:+aXOY+vzZ5mu2iI2HpTZUPmM//oQfsNFX6gU9kNcA44=
 github.com/onsi/gomega v1.42.0 h1:CJby8u36xb7v34W78F8WKvqTQP7PCMIPB78IVDB73l4=
 github.com/onsi/gomega v1.42.0/go.mod h1:M/Uqpu/8qTjtzCLUA2zJHX9Iilrau25x1PdoSRbWh5A=
-github.com/open-telemetry/opentelemetry-operator/apis v0.157.0 h1:IEjPgVeG+Z+fjR5URox/v0AyZBhCW6GukRqOyJS8N/s=
-github.com/open-telemetry/opentelemetry-operator/apis v0.157.0/go.mod h1:4p95F2c41NbILsORGK9oE5Pufmp5b1uA0szR2ELzWKc=
+github.com/open-telemetry/opentelemetry-operator/apis v0.159.0 h1:ZIo6cLkUxP5vHOLWTTymS2JCp6q9pJXH7Gpg5v7+ZCM=
+github.com/open-telemetry/opentelemetry-operator/apis v0.159.0/go.mod h1:2yjGKDo/JjSXips/Yq+RR9ShR4EySsiFZcF+n/P/SyA=
 github.com/opencontainers/go-digest v1.0.0 h1:apOUWs51W5PlhuyGyz9FCeeBIOUDA/6nW8Oi/yOhh5U=
 github.com/opencontainers/go-digest v1.0.0/go.mod h1:0JzlMkj0TRzQZfJkVvzbP0HBR3IKzErnv2BNG4W4MAM=
 github.com/openshift/api v0.0.0-20260511191110-9b69e5fa27e9 h1:yb8ul1HPFYhO04yp0D8T/qSySZnKv210f4nE//i/Bdg=
