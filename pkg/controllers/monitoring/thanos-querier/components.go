@@ -2,6 +2,7 @@ package thanos_querier
 
 import (
 	"fmt"
+	"strings"
 
 	monv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -42,14 +43,25 @@ func newHttpConfConfigMap(name string, thanos *msoapi.ThanosQuerier) *corev1.Con
 	}
 	if thanos.Spec.WebTLSConfig != nil {
 		httpConf.Data = map[string]string{
-			"http.conf": `
-tls_server_config:
-  cert_file: /etc/thanos/tls-assets/web-cert-secret/` + thanos.Spec.WebTLSConfig.Certificate.Key + `
-  key_file: /etc/thanos/tls-assets/web-key-secret/` + thanos.Spec.WebTLSConfig.PrivateKey.Key,
+			"http.conf": tlsServerConfig(thanos.Spec.WebTLSConfig),
 		}
 	}
 
 	return httpConf
+}
+
+func tlsServerConfig(tlsConfig *msoapi.WebTLSConfig) string {
+	var b strings.Builder
+	b.WriteString("\ntls_server_config:\n")
+	b.WriteString("  cert_file: /etc/thanos/tls-assets/web-cert-secret/" + tlsConfig.Certificate.Key + "\n")
+	b.WriteString("  key_file: /etc/thanos/tls-assets/web-key-secret/" + tlsConfig.PrivateKey.Key)
+	if tlsConfig.MinVersion != "" {
+		b.WriteString("\n  min_version: " + tlsConfig.MinVersion)
+	}
+	if tlsConfig.MaxVersion != "" {
+		b.WriteString("\n  max_version: " + tlsConfig.MaxVersion)
+	}
+	return b.String()
 }
 
 func newThanosQuerierDeployment(

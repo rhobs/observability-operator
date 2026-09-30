@@ -1,6 +1,7 @@
 package monitoringstack
 
 import (
+	"strings"
 	"testing"
 
 	monv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
@@ -114,6 +115,65 @@ func TestNewPrometheusSetsThanosSidecarResources(t *testing.T) {
 
 	assert.DeepEqual(t, thanosResources, prom.Spec.Thanos.Resources)
 	assert.DeepEqual(t, promResources, prom.Spec.Resources)
+}
+
+func TestWebTLSConfigSetsMinAndMaxVersion(t *testing.T) {
+	tls := &stack.WebTLSConfig{
+		PrivateKey: stack.SecretKeySelector{
+			Name: "prometheus-tls",
+			Key:  "key.pem",
+		},
+		Certificate: stack.SecretKeySelector{
+			Name: "prometheus-tls",
+			Key:  "cert.pem",
+		},
+		CertificateAuthority: stack.SecretKeySelector{
+			Name: "prometheus-tls",
+			Key:  "ca.pem",
+		},
+		MinVersion: "TLS13",
+		MaxVersion: "TLS13",
+	}
+
+	ms := &stack.MonitoringStack{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "ns",
+		},
+		Spec: stack.MonitoringStackSpec{
+			PrometheusConfig: &stack.PrometheusConfig{
+				WebTLSConfig: tls,
+			},
+			AlertmanagerConfig: stack.AlertmanagerConfig{
+				WebTLSConfig: tls,
+			},
+		},
+	}
+
+	prom := newPrometheus(ms, "test-prometheus", "test-scrape",
+		ThanosConfiguration{}, PrometheusConfiguration{})
+	assert.Assert(t, prom.Spec.Web != nil)
+	assert.Assert(t, prom.Spec.Web.TLSConfig != nil)
+	assert.Equal(t, "TLS13", *prom.Spec.Web.TLSConfig.MinVersion)
+	assert.Equal(t, "TLS13", *prom.Spec.Web.TLSConfig.MaxVersion)
+
+	am := newAlertmanager(ms, "test-alertmanager", AlertmanagerConfiguration{})
+	assert.Assert(t, am.Spec.Web != nil)
+	assert.Assert(t, am.Spec.Web.TLSConfig != nil)
+	assert.Equal(t, "TLS13", *am.Spec.Web.TLSConfig.MinVersion)
+	assert.Equal(t, "TLS13", *am.Spec.Web.TLSConfig.MaxVersion)
+
+	assert.Assert(t, prom.Spec.Alerting != nil)
+	assert.Assert(t, len(prom.Spec.Alerting.Alertmanagers) > 0)
+	amEndpointTLS := prom.Spec.Alerting.Alertmanagers[0].TLSConfig
+	assert.Assert(t, amEndpointTLS != nil)
+	assert.Equal(t, monv1.TLSVersion13, *amEndpointTLS.MinVersion)
+	assert.Equal(t, monv1.TLSVersion13, *amEndpointTLS.MaxVersion)
+
+	scrape := newAdditionalScrapeConfigsSecret(ms, "scrape")
+	scrapeCfg := scrape.StringData[AdditionalScrapeConfigsSelfScrapeKey]
+	assert.Assert(t, strings.Contains(scrapeCfg, "min_version: TLS13"))
+	assert.Assert(t, strings.Contains(scrapeCfg, "max_version: TLS13"))
 }
 
 func TestNewAdditionalScrapeConfigsSecret(t *testing.T) {

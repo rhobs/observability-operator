@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"reflect"
+	"strings"
 
 	monv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -225,22 +226,7 @@ func newPrometheus(
 
 		prometheus.Spec.CommonPrometheusFields.Web = &monv1.PrometheusWebSpec{
 			WebConfigFileFields: monv1.WebConfigFileFields{
-				TLSConfig: &monv1.WebTLSConfig{
-					KeySecret: corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: tlsConfig.PrivateKey.Name,
-						},
-						Key: tlsConfig.PrivateKey.Key,
-					},
-					Cert: monv1.SecretOrConfigMap{
-						Secret: &corev1.SecretKeySelector{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: tlsConfig.Certificate.Name,
-							},
-							Key: tlsConfig.Certificate.Key,
-						},
-					},
-				},
+				TLSConfig: webTLSConfig(tlsConfig),
 			},
 		}
 		// Add a CA secret to use later for the self-scraping job
@@ -263,7 +249,8 @@ func newPrometheus(
 			},
 		}
 		if ms.Spec.AlertmanagerConfig.WebTLSConfig != nil {
-			caSecret := ms.Spec.AlertmanagerConfig.WebTLSConfig.CertificateAuthority
+			tlsConfig := ms.Spec.AlertmanagerConfig.WebTLSConfig
+			caSecret := tlsConfig.CertificateAuthority
 
 			prometheus.Spec.Secrets = append(prometheus.Spec.Secrets, caSecret.Name)
 
@@ -275,6 +262,12 @@ func newPrometheus(
 				TLSFilesConfig: monv1.TLSFilesConfig{
 					CAFile: filepath.Join(prometheusSecretsMountPoint, caSecret.Name, caSecret.Key),
 				},
+			}
+			if tlsConfig.MinVersion != "" {
+				prometheus.Spec.Alerting.Alertmanagers[0].TLSConfig.MinVersion = ptr.To(monv1.TLSVersion(tlsConfig.MinVersion))
+			}
+			if tlsConfig.MaxVersion != "" {
+				prometheus.Spec.Alerting.Alertmanagers[0].TLSConfig.MaxVersion = ptr.To(monv1.TLSVersion(tlsConfig.MaxVersion))
 			}
 		}
 	}
@@ -407,27 +400,33 @@ func newThanosSidecarService(ms *stack.MonitoringStack) *corev1.Service {
 
 func newAdditionalScrapeConfigsSecret(ms *stack.MonitoringStack, name string) *corev1.Secret {
 	var (
-		prometheusScheme     = "http"
-		prometheusCAFile     string
-		prometheusServerName string
+		prometheusScheme      = "http"
+		prometheusCAFile      string
+		prometheusServerName  string
+		prometheusTLSVersions string
 
-		alertmanagerScheme     = "http"
-		alertmanagerCAFile     string
-		alertmanagerServerName string
+		alertmanagerScheme      = "http"
+		alertmanagerCAFile      string
+		alertmanagerServerName  string
+		alertmanagerTLSVersions string
 	)
 
 	if ms.Spec.PrometheusConfig.WebTLSConfig != nil {
-		promCASecret := ms.Spec.PrometheusConfig.WebTLSConfig.CertificateAuthority
+		promTLS := ms.Spec.PrometheusConfig.WebTLSConfig
+		promCASecret := promTLS.CertificateAuthority
 		prometheusScheme = "https"
 		prometheusCAFile = filepath.Join(prometheusSecretsMountPoint, promCASecret.Name, promCASecret.Key)
 		prometheusServerName = fmt.Sprintf("%s-prometheus", ms.Name)
+		prometheusTLSVersions = scrapeTLSVersionYAML(promTLS.MinVersion, promTLS.MaxVersion)
 	}
 
 	if ms.Spec.AlertmanagerConfig.WebTLSConfig != nil {
-		amCASecret := ms.Spec.AlertmanagerConfig.WebTLSConfig.CertificateAuthority
+		amTLS := ms.Spec.AlertmanagerConfig.WebTLSConfig
+		amCASecret := amTLS.CertificateAuthority
 		alertmanagerScheme = "https"
 		alertmanagerCAFile = filepath.Join(prometheusSecretsMountPoint, amCASecret.Name, amCASecret.Key)
 		alertmanagerServerName = fmt.Sprintf("%s-alertmanager", ms.Name)
+		alertmanagerTLSVersions = scrapeTLSVersionYAML(amTLS.MinVersion, amTLS.MaxVersion)
 	}
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
@@ -444,7 +443,7 @@ func newAdditionalScrapeConfigsSecret(ms *stack.MonitoringStack, name string) *c
   scheme: %s
   tls_config:
     ca_file: %q
-    server_name: %q
+    server_name: %q%s
   relabel_configs:
   - action: keep
     source_labels:
@@ -480,7 +479,7 @@ func newAdditionalScrapeConfigsSecret(ms *stack.MonitoringStack, name string) *c
   scheme: %s
   tls_config:
     ca_file: %q
-    server_name: %q
+    server_name: %q%s
   relabel_configs:
   - source_labels:
     - __meta_kubernetes_service_label_app_kubernetes_io_name
@@ -530,16 +529,62 @@ func newAdditionalScrapeConfigsSecret(ms *stack.MonitoringStack, name string) *c
 				prometheusScheme,
 				prometheusCAFile,
 				prometheusServerName,
+				prometheusTLSVersions,
 				fmt.Sprintf("%s-prometheus", ms.Name),
 				ms.Namespace,
 				alertmanagerScheme,
 				alertmanagerCAFile,
 				alertmanagerServerName,
+				alertmanagerTLSVersions,
 				fmt.Sprintf("%s-alertmanager", ms.Name),
 				ms.Namespace,
 			),
 		},
 	}
+}
+
+// scrapeTLSVersionYAML returns optional min_version/max_version lines for scrape tls_config.
+func scrapeTLSVersionYAML(minVersion, maxVersion string) string {
+	var b strings.Builder
+	if minVersion != "" {
+		b.WriteString("\n    min_version: ")
+		b.WriteString(minVersion)
+	}
+	if maxVersion != "" {
+		b.WriteString("\n    max_version: ")
+		b.WriteString(maxVersion)
+	}
+	return b.String()
+}
+
+// webTLSConfig maps MonitoringStack WebTLSConfig to the prometheus-operator WebTLSConfig.
+func webTLSConfig(tlsConfig *stack.WebTLSConfig) *monv1.WebTLSConfig {
+	if tlsConfig == nil {
+		return nil
+	}
+	cfg := &monv1.WebTLSConfig{
+		KeySecret: corev1.SecretKeySelector{
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: tlsConfig.PrivateKey.Name,
+			},
+			Key: tlsConfig.PrivateKey.Key,
+		},
+		Cert: monv1.SecretOrConfigMap{
+			Secret: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: tlsConfig.Certificate.Name,
+				},
+				Key: tlsConfig.Certificate.Key,
+			},
+		},
+	}
+	if tlsConfig.MinVersion != "" {
+		cfg.MinVersion = ptr.To(tlsConfig.MinVersion)
+	}
+	if tlsConfig.MaxVersion != "" {
+		cfg.MaxVersion = ptr.To(tlsConfig.MaxVersion)
+	}
+	return cfg
 }
 
 func newPrometheusPDB(ms *stack.MonitoringStack) *policyv1.PodDisruptionBudget {

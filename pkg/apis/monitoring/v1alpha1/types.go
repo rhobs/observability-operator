@@ -417,6 +417,7 @@ type SecretKeySelector struct {
 }
 
 // WebTLSConfig contains configuration to enable TLS on web endpoints.
+// +kubebuilder:validation:XValidation:rule="!(has(self.minVersion) && has(self.maxVersion)) || self.minVersion <= self.maxVersion",message="minVersion must be less than or equal to maxVersion"
 type WebTLSConfig struct {
 	// Reference to the TLS private key for the web server.
 	// +kubebuilder:validation:Required
@@ -427,4 +428,12 @@ type WebTLSConfig struct {
 	// Reference to the root Certificate Authority used to verify the web server's certificate.
 	// +kubebuilder:validation:Required
 	CertificateAuthority SecretKeySelector `json:"certificateAuthority"`
+	// Minimum TLS version that is acceptable.
+	// +optional
+	// +kubebuilder:validation:Enum=TLS10;TLS11;TLS12;TLS13
+	MinVersion string `json:"minVersion,omitempty"`
+	// Maximum TLS version that is acceptable.
+	// +optional
+	// +kubebuilder:validation:Enum=TLS10;TLS11;TLS12;TLS13
+	MaxVersion string `json:"maxVersion,omitempty"`
 }

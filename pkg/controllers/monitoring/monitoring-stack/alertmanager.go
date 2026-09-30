@@ -84,22 +84,7 @@ func newAlertmanager(
 		tlsConfig := ms.Spec.AlertmanagerConfig.WebTLSConfig
 		am.Spec.Web = &monv1.AlertmanagerWebSpec{
 			WebConfigFileFields: monv1.WebConfigFileFields{
-				TLSConfig: &monv1.WebTLSConfig{
-					KeySecret: corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: tlsConfig.PrivateKey.Name,
-						},
-						Key: tlsConfig.PrivateKey.Key,
-					},
-					Cert: monv1.SecretOrConfigMap{
-						Secret: &corev1.SecretKeySelector{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: tlsConfig.Certificate.Name,
-							},
-							Key: tlsConfig.Certificate.Key,
-						},
-					},
-				},
+				TLSConfig: webTLSConfig(tlsConfig),
 			},
 		}
 	}

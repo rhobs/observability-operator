@@ -433,6 +433,24 @@ Configure TLS options for the Alertmanager web server.
           Reference to the TLS private key for the web server.<br/>
         </td>
         <td>true</td>
+      </tr><tr>
+        <td><b>maxVersion</b></td>
+        <td>enum</td>
+        <td>
+          Maximum TLS version that is acceptable.<br/>
+          <br/>
+            <i>Enum</i>: TLS10, TLS11, TLS12, TLS13<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>minVersion</b></td>
+        <td>enum</td>
+        <td>
+          Minimum TLS version that is acceptable.<br/>
+          <br/>
+            <i>Enum</i>: TLS10, TLS11, TLS12, TLS13<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -3479,6 +3497,24 @@ Configure TLS options for the Prometheus web server.
           Reference to the TLS private key for the web server.<br/>
         </td>
         <td>true</td>
+      </tr><tr>
+        <td><b>maxVersion</b></td>
+        <td>enum</td>
+        <td>
+          Maximum TLS version that is acceptable.<br/>
+          <br/>
+            <i>Enum</i>: TLS10, TLS11, TLS12, TLS13<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>minVersion</b></td>
+        <td>enum</td>
+        <td>
+          Minimum TLS version that is acceptable.<br/>
+          <br/>
+            <i>Enum</i>: TLS10, TLS11, TLS12, TLS13<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -4209,6 +4245,24 @@ webTLSConfig configures the TLS options for the Thanos web server.
           Reference to the TLS private key for the web server.<br/>
         </td>
         <td>true</td>
+      </tr><tr>
+        <td><b>maxVersion</b></td>
+        <td>enum</td>
+        <td>
+          Maximum TLS version that is acceptable.<br/>
+          <br/>
+            <i>Enum</i>: TLS10, TLS11, TLS12, TLS13<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>minVersion</b></td>
+        <td>enum</td>
+        <td>
+          Minimum TLS version that is acceptable.<br/>
+          <br/>
+            <i>Enum</i>: TLS10, TLS11, TLS12, TLS13<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 

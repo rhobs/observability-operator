@@ -185,6 +185,22 @@ spec:
                         - key
                         - name
                         type: object
+                      maxVersion:
+                        description: Maximum TLS version that is acceptable.
+                        enum:
+                        - TLS10
+                        - TLS11
+                        - TLS12
+                        - TLS13
+                        type: string
+                      minVersion:
+                        description: Minimum TLS version that is acceptable.
+                        enum:
+                        - TLS10
+                        - TLS11
+                        - TLS12
+                        - TLS13
+                        type: string
                       privateKey:
                         description: Reference to the TLS private key for the web
                           server.
@@ -208,6 +224,10 @@ spec:
                     - certificateAuthority
                     - privateKey
                     type: object
+                    x-kubernetes-validations:
+                    - message: minVersion must be less than or equal to maxVersion
+                      rule: '!(has(self.minVersion) && has(self.maxVersion)) || self.minVersion
+                        <= self.maxVersion'
                 type: object
               createClusterRoleBindings:
                 default: CreateClusterRoleBindings
@@ -1728,6 +1748,22 @@ spec:
                         - key
                         - name
                         type: object
+                      maxVersion:
+                        description: Maximum TLS version that is acceptable.
+                        enum:
+                        - TLS10
+                        - TLS11
+                        - TLS12
+                        - TLS13
+                        type: string
+                      minVersion:
+                        description: Minimum TLS version that is acceptable.
+                        enum:
+                        - TLS10
+                        - TLS11
+                        - TLS12
+                        - TLS13
+                        type: string
                       privateKey:
                         description: Reference to the TLS private key for the web
                           server.
@@ -1751,6 +1787,10 @@ spec:
                     - certificateAuthority
                     - privateKey
                     type: object
+                    x-kubernetes-validations:
+                    - message: minVersion must be less than or equal to maxVersion
+                      rule: '!(has(self.minVersion) && has(self.maxVersion)) || self.minVersion
+                        <= self.maxVersion'
                 type: object
               resourceSelector:
                 description: |-
