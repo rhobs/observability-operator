@@ -12,6 +12,9 @@ import (
 	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	obsv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/observability/v1alpha1"
 )
@@ -28,7 +31,7 @@ type templateOptions struct {
 	TempoName   string
 }
 
-func otelCollector(instance *obsv1alpha1.ObservabilityInstaller) (*otelv1beta1.OpenTelemetryCollector, error) {
+func otelCollector(instance *obsv1alpha1.ObservabilityInstaller) (client.Object, error) {
 	w := bytes.NewBuffer(nil)
 	err := collectorConfigTemplate.Execute(w, templateOptions{Namespace: instance.Namespace, TempoName: tempoName(instance.Name), TempoTenant: tenantName})
 	if err != nil {
@@ -50,7 +53,7 @@ func otelCollector(instance *obsv1alpha1.ObservabilityInstaller) (*otelv1beta1.O
 		return nil, err
 	}
 
-	return &otelv1beta1.OpenTelemetryCollector{
+	collector := &otelv1beta1.OpenTelemetryCollector{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "OpenTelemetryCollector",
 			APIVersion: otelv1beta1.GroupVersion.String(),
@@ -60,12 +63,30 @@ func otelCollector(instance *obsv1alpha1.ObservabilityInstaller) (*otelv1beta1.O
 			Namespace: instance.Namespace,
 		},
 		Spec: otelv1beta1.OpenTelemetryCollectorSpec{
-			Config: *cfg,
-			// Fixes updater failed to patch: OpenTelemetryCollector.opentelemetry.io \"otel-tracing\" is invalid: [spec.upgradeStrategy: Unsupported value: \"\": supported values: \"automatic\", \"none\", <nil>: Invalid value: \"null\":
+			Config:          *cfg,
 			UpgradeStrategy: otelv1beta1.UpgradeStrategyAutomatic,
 			Mode:            otelv1beta1.ModeDeployment,
 		},
-	}, nil
+	}
+
+	// TODO: Remove this workaround once
+	// https://github.com/open-telemetry/opentelemetry-operator/pull/5695 is
+	// merged and we bump the dependency to the version that includes it.
+	//
+	// Go's encoding/json does not omit zero-value structs even with omitempty,
+	// so unused struct fields like targetAllocator get serialized with their
+	// nested defaults (e.g. targetAllocator.telemetry added in v0.159.0).
+	// Convert to unstructured and strip targetAllocator so the field is never
+	// sent during server-side apply.
+	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(collector)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert OpenTelemetryCollector to unstructured: %w", err)
+	}
+	if spec, ok := data["spec"].(map[string]interface{}); ok {
+		delete(spec, "targetAllocator")
+	}
+
+	return &unstructured.Unstructured{Object: data}, nil
 }
 
 func otelCollectorName(instance string) string {
