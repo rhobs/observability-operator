@@ -8,7 +8,7 @@ require (
 	github.com/goccy/go-yaml v1.19.2
 	github.com/google/go-cmp v0.7.0
 	github.com/grafana/tempo-operator v0.22.0
-	github.com/open-telemetry/opentelemetry-operator/apis v0.158.0
+	github.com/open-telemetry/opentelemetry-operator/apis v0.160.0
 	github.com/openshift/api v0.0.0-20260615110019-261e3a0546f3
 	github.com/openshift/controller-runtime-common v0.0.0-20260428152732-64ee174f5e2e
 	github.com/openshift/library-go v0.0.0-20260615113748-bc9d4056464b
@@ -42,6 +42,8 @@ require (
 	k8s.io/utils v0.0.0-20260707023825-cf1189d6abe3
 	sigs.k8s.io/controller-runtime v0.25.1
 )
+
+require sigs.k8s.io/yaml v1.6.0
 
 require (
 	cel.dev/expr v0.25.1 // indirect
@@ -161,7 +163,6 @@ require (
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v6 v6.4.2 // indirect
-	sigs.k8s.io/yaml v1.6.0 // indirect
 )
 
 replace github.com/rhobs/observability-operator/pkg/apis => ./pkg/apis
