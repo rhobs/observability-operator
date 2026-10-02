@@ -23,12 +23,13 @@ import (
 	"os"
 	"slices"
 
+	"github.com/go-logr/logr"
 	configv1 "github.com/openshift/api/config/v1"
 	openshifttls "github.com/openshift/controller-runtime-common/pkg/tls"
 	obopo "github.com/rhobs/obo-prometheus-operator/pkg/operator"
 	"go.uber.org/zap/zapcore"
+	"k8s.io/apimachinery/pkg/api/meta"
 	k8sflag "k8s.io/component-base/cli/flag"
-	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -89,6 +90,8 @@ func validateImages(images *k8sflag.MapStringString) (map[string]string, error) 
 	return res, nil
 }
 
+var setupLog logr.Logger
+
 func main() {
 	var (
 		namespace        string
@@ -97,16 +100,15 @@ func main() {
 		openShiftEnabled bool
 		otelCSVName      string
 		tempoCSVName     string
-
-		setupLog = ctrl.Log.WithName("setup")
 	)
-	images := k8sflag.NewMapStringString(ptr.To(make(map[string]string)))
+	setupLog = ctrl.Log.WithName("setup")
+	images := k8sflag.NewMapStringString(new(map[string]string))
 
 	flag.StringVar(&namespace, "namespace", "default", "The namespace in which the operator runs")
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&healthProbeAddr, "health-probe-bind-address", ":8081", "The address the health probe endpoint binds to.")
 	flag.Var(images, "images", fmt.Sprintf("Full images refs to use for containers managed by the operator. E.g thanos=quay.io/thanos/thanos:v0.33.0. Images used are %v", imagesUsed()))
-	flag.BoolVar(&openShiftEnabled, "openshift.enabled", false, "Enable OpenShift specific features such as Console Plugins.")
+	flag.BoolVar(&openShiftEnabled, "openshift.enabled", false, "Enable OpenShift specific features such as Console Plugins. If unset, this is auto-detected from the cluster.")
 	flag.StringVar(&otelCSVName, "opentelemetry-csv", "", "OpenTelemetry Operator starting CSV name. This can be used to install a specific OpenTelemetry Operator version. Empty string means the latest version will be installed.")
 	flag.StringVar(&tempoCSVName, "tempo-csv", "", "Tempo Operator starting CSV name. This can be used to install a specific Tempo Operator version. Empty string means the latest version will be installed.")
 
@@ -118,13 +120,6 @@ func main() {
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
-
-	setupLog.Info("running with arguments",
-		"namespace", namespace,
-		"metrics-bind-address", metricsAddr,
-		"images", images,
-		"openshift.enabled", openShiftEnabled,
-	)
 
 	imgMap, err := validateImages(images)
 	if err != nil {
@@ -139,30 +134,40 @@ func main() {
 	ctx, cancel := context.WithCancel(signalCtx)
 	defer cancel()
 
-	var initialTLSProfileSpec configv1.TLSProfileSpec
-	var openshiftVersion string
+	// Are we using OpenShift?
+	newOpenShiftClient := func() (client.Client, error) {
+		cfg, err := ctrl.GetConfig()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get Kubernetes config: %w", err)
+		}
+		c, err := client.New(cfg, client.Options{Scheme: operator.NewOpenShiftScheme()})
+		if err != nil {
+			return nil, fmt.Errorf("failed to create OpenShift client: %w", err)
+		}
+		return c, nil
+	}
+
+	setupLog.Info("running with arguments",
+		"namespace", namespace,
+		"metrics-bind-address", metricsAddr,
+		"images", images,
+	)
+
+	var data openShiftData
+	if openShiftEnabled || !flagWasSet(flag.CommandLine, "openshift.enabled") {
+		// Check for openshift: either it was requested (flag set true) or we need to
+		// auto-detect because the flag was not set.
+		data, openShiftEnabled, err = tryOpenShift(ctx, newOpenShiftClient, openShiftEnabled)
+		if err != nil {
+			setupLog.Error(err, "OpenShift detection failed")
+			os.Exit(1)
+		}
+	}
+	setupLog.Info("OpenShift features", "openshift.enabled", openShiftEnabled)
+
+	tlsOption := func(*operator.OperatorConfiguration) {}
 	if openShiftEnabled {
-		scheme := operator.NewOpenShiftScheme()
-		directClient, err := client.New(ctrl.GetConfigOrDie(), client.Options{Scheme: scheme})
-		if err != nil {
-			setupLog.Error(err, "failed to create client for TLS profile fetch")
-			os.Exit(1)
-		}
-
-		initialTLSProfileSpec, err = openshifttls.FetchAPIServerTLSProfile(ctx, directClient)
-		if err != nil {
-			setupLog.Error(err, "failed to fetch TLS profile from cluster")
-			os.Exit(1)
-		}
-		setupLog.Info("fetched initial TLS profile", "minVersion", initialTLSProfileSpec.MinTLSVersion, "ciphers", initialTLSProfileSpec.Ciphers)
-
-		clusterVersion := &configv1.ClusterVersion{}
-		key := client.ObjectKey{Name: "version"}
-		if err := directClient.Get(ctx, key, clusterVersion); err != nil {
-			setupLog.Error(err, "failed to fetch cluster version")
-			os.Exit(1)
-		}
-		openshiftVersion = clusterVersion.Status.Desired.Version
+		tlsOption = operator.WithTLSProfile(data.TLSProfile)
 	}
 
 	op, err := operator.New(
@@ -184,17 +189,11 @@ func main() {
 			operator.WithFeatureGates(operator.FeatureGates{
 				OpenShift: operator.OpenShiftFeatureGates{
 					Enabled: openShiftEnabled,
-					Version: openshiftVersion,
+					Version: data.Version,
 				},
 			}),
 			operator.WithCancelFunc(cancel),
-
-			func() func(*operator.OperatorConfiguration) {
-				if openShiftEnabled {
-					return operator.WithTLSProfile(initialTLSProfileSpec)
-				}
-				return func(*operator.OperatorConfiguration) {}
-			}(),
+			tlsOption,
 		))
 	if err != nil {
 		setupLog.Error(err, "cannot create a new operator")
@@ -206,4 +205,49 @@ func main() {
 		setupLog.Error(err, "terminating")
 		os.Exit(1)
 	}
+}
+
+type openShiftData struct {
+	TLSProfile configv1.TLSProfileSpec
+	Version    string
+}
+
+type clientFunc func() (client.Client, error)
+
+func tryOpenShift(ctx context.Context, newOpenShiftClient clientFunc, openShiftEnabled bool) (openShiftData, bool, error) {
+	c, err := newOpenShiftClient()
+	var data openShiftData
+	if err == nil {
+		if data.TLSProfile, err = openshifttls.FetchAPIServerTLSProfile(ctx, c); err != nil {
+			err = fmt.Errorf("failed to fetch TLS profile: %w", err)
+		}
+	}
+
+	if err != nil {
+		// Only a no-match error means the OpenShift API group is absent. A NotFound
+		// means the group exists but the object is missing, which is an error.
+		if !openShiftEnabled && meta.IsNoMatchError(err) {
+			setupLog.Info("OpenShift API not found, running in non-OpenShift mode")
+			return openShiftData{}, false, nil
+		}
+		return openShiftData{}, false, err
+	}
+
+	setupLog.Info("fetched TLS profile", "minVersion", data.TLSProfile.MinTLSVersion, "ciphers", data.TLSProfile.Ciphers)
+	clusterVersion := &configv1.ClusterVersion{}
+	if err := c.Get(ctx, client.ObjectKey{Name: "version"}, clusterVersion); err != nil {
+		return openShiftData{}, false, fmt.Errorf("failed to fetch cluster version: %w", err)
+	}
+	data.Version = clusterVersion.Status.Desired.Version
+	return data, true, nil
+}
+
+func flagWasSet(flags *flag.FlagSet, name string) bool {
+	set := false
+	flags.Visit(func(f *flag.Flag) {
+		if f.Name == name {
+			set = true
+		}
+	})
+	return set
 }
