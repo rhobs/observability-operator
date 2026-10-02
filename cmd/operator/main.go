@@ -154,7 +154,7 @@ func main() {
 			setupLog.Error(err, "failed to fetch TLS profile from cluster")
 			os.Exit(1)
 		}
-		setupLog.Info("fetched initial TLS profile", "minVersion", initialTLSProfileSpec.MinTLSVersion, "ciphers", initialTLSProfileSpec.Ciphers)
+		setupLog.Info("fetched initial TLS profile", "minVersion", initialTLSProfileSpec.MinTLSVersion, "ciphers", initialTLSProfileSpec.Ciphers, "groups", initialTLSProfileSpec.Groups)
 
 		clusterVersion := &configv1.ClusterVersion{}
 		key := client.ObjectKey{Name: "version"}

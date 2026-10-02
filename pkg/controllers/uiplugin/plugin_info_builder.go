@@ -35,6 +35,7 @@ type UIPluginInfo struct {
 	AreMonitoringFeatsDisabled bool
 	TLSMinVersion              string
 	TLSCiphers                 []string
+	TLSCurves                  []string
 }
 
 var pluginTypeToConsoleName = map[uiv1alpha1.UIPluginType]string{
@@ -109,6 +110,10 @@ func PluginInfoBuilder(ctx context.Context, k client.Client, dk dynamic.Interfac
 
 	pluginInfo.TLSMinVersion = string(pluginConf.TLSProfile.MinTLSVersion)
 	pluginInfo.TLSCiphers = libgocrypto.OpenSSLToIANACipherSuites(pluginConf.TLSProfile.Ciphers)
+	// Convert TLSGroup slice to string slice
+	for _, group := range pluginConf.TLSProfile.Groups {
+		pluginInfo.TLSCurves = append(pluginInfo.TLSCurves, string(group))
+	}
 
 	return pluginInfo, err
 }
