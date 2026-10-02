@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -102,7 +103,12 @@ func main() {
 	)
 	images := k8sflag.NewMapStringString(ptr.To(make(map[string]string)))
 
-	flag.StringVar(&namespace, "namespace", "default", "The namespace in which the operator runs")
+	defaultNamespace := os.Getenv("NAMESPACE")
+	if defaultNamespace == "" {
+		defaultNamespace = "default"
+	}
+
+	flag.StringVar(&namespace, "namespace", defaultNamespace, "The namespace in which the operator runs")
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&healthProbeAddr, "health-probe-bind-address", ":8081", "The address the health probe endpoint binds to.")
 	flag.Var(images, "images", fmt.Sprintf("Full images refs to use for containers managed by the operator. E.g thanos=quay.io/thanos/thanos:v0.33.0. Images used are %v", imagesUsed()))
@@ -118,6 +124,11 @@ func main() {
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+
+	if namespace == "" {
+		setupLog.Error(errors.New("no namespace specified"), "set --namespace flag or NAMESPACE environment variable")
+		os.Exit(1)
+	}
 
 	setupLog.Info("running with arguments",
 		"namespace", namespace,
@@ -177,7 +188,7 @@ func main() {
 			operator.WithThanosQuerierImage(imgMap["thanos"]),
 			operator.WithUIPluginImages(imgMap),
 			operator.WithObservabilityInstaller(operator.ObservabilityInstallerConfiguration{
-				COONamespace:     os.Getenv("NAMESPACE"),
+				COONamespace:     namespace,
 				OpenTelemetryCSV: otelCSVName,
 				TempoCSV:         tempoCSVName,
 			}),
