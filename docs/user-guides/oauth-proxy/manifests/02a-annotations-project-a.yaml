@@ -1,0 +1,46 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: thanos-querier-example-coo-thanos
+  namespace: project-a
+  annotations:
+    serviceaccounts.openshift.io/oauth-redirectreference.thanos-querier: '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"thanos-querier-authenticated"}}'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: thanos-querier-example-coo-thanos
+  namespace: project-a
+  annotations:
+    service.alpha.openshift.io/serving-cert-secret-name: "thanos-tls"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: robot-user
+  namespace: project-a
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: robot-user
+  namespace: project-a
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: view-robot-user
+  namespace: project-a
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: robot-user
+subjects:
+- kind: ServiceAccount
+  name: robot-user
+  namespace: project-a
