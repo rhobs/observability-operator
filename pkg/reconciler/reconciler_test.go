@@ -1,13 +1,17 @@
 package reconciler
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestClientObjectApplyConfig_MarshalJSON(t *testing.T) {
@@ -98,4 +102,43 @@ func TestClientObjectApplyConfig_Getters(t *testing.T) {
 	require.Equal(t, "test-ns", *ac.GetNamespace())
 	require.Equal(t, "ConfigMap", *ac.GetKind())
 	require.Equal(t, "v1", *ac.GetAPIVersion())
+}
+
+func TestGuardedDeleter(t *testing.T) {
+	scheme := runtime.NewScheme()
+	require.NoError(t, corev1.AddToScheme(scheme))
+
+	newCM := func(labels map[string]string) *corev1.ConfigMap {
+		return &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{Name: "shared", Namespace: "ns", Labels: labels},
+		}
+	}
+	target := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "shared", Namespace: "ns"}}
+
+	tests := []struct {
+		name       string
+		existing   client.Object
+		wantExists bool
+	}{
+		{name: "owned is deleted", existing: newCM(map[string]string{"owner": "coo"}), wantExists: false},
+		{name: "unlabelled is preserved", existing: newCM(nil), wantExists: true},
+		{name: "foreign is preserved", existing: newCM(map[string]string{"owner": "someone"}), wantExists: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(tt.existing).Build()
+			err := NewGuardedDeleter(target, "owner", "coo").Reconcile(context.Background(), c, scheme)
+			require.NoError(t, err)
+
+			got := &corev1.ConfigMap{}
+			getErr := c.Get(context.Background(), client.ObjectKeyFromObject(target), got)
+			require.Equal(t, tt.wantExists, getErr == nil)
+		})
+	}
+
+	t.Run("missing object is a no-op", func(t *testing.T) {
+		c := fake.NewClientBuilder().WithScheme(scheme).Build()
+		err := NewGuardedDeleter(target, "owner", "coo").Reconcile(context.Background(), c, scheme)
+		require.NoError(t, err)
+	})
 }

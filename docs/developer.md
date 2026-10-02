@@ -99,21 +99,9 @@ easiest way to use deploy prometheus operator is to run the
 and `prometheus-operator`,  and then scale the `observability-operator`
 deployment to 0, so that the operator can be  run out of cluster using `go run`
 
-### Create the development Operator Bundle
-
-The command below builds the operator + OLM bundle and pushes them to the
-local-registry running in Kind cluster:
-
-```sh
-make operator-image bundle-image operator-push bundle-push  \
-    IMAGE_BASE="local-registry:30000/observability-operator" \
-    VERSION=0.0.0-dev  \
-    PUSH_OPTIONS=--tls-verify=false
-```
-
 ### Deploy the development Operator Bundle
 
-Use the `deploy` Makefile target to deploy the operator bundle:
+Use the `deploy` Makefile target to build and push images and run the operator bundle:
 
 ```sh
 make deploy \
@@ -121,6 +109,9 @@ make deploy \
     VERSION=0.0.0-dev \
     PUSH_OPTIONS=--tls-verify=false
 ```
+
+If the images are already built and pushed, use `make run-bundle` with the same
+`IMG_BASE` and `VERSION` to install the bundle without rebuilding them.
 
 To remove the deployed operator:
 
@@ -130,19 +121,15 @@ make undeploy
 
 ### Run the Operator from your local machine
 
-Scale down the operator currently deployed in cluster:
+Use `run-local` to scale down the deployed operator and run it on your host
+using your current kubeconfig. It generates deepcopy code before starting:
 
 ```sh
-kubectl scale --replicas=0 -n operators deployment/observability-operator
+make run-local RUN_ARGS=--zap-log-level=100
 ```
 
-Start the operator locally:
-
-```sh
-# replace ~/.kube/config with your own KUBECONFIG path if different.
-go run ./cmd/operator/... --zap-devel  --zap-log-level=100 --kubeconfig ~/.kube/config 2>&1 |
-  tee tmp/operator.log
-```
+Set `COO_NAMESPACE` if the operator is deployed outside the default namespace.
+To restore the in-cluster operator, scale its deployment back to one replica.
 
 # Contribution guidelines
 

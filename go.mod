@@ -44,6 +44,11 @@ require (
 )
 
 require (
+	github.com/grafana/loki/operator/api/loki v0.0.0-20260904122201-70263306afd8
+	github.com/openshift/cluster-logging-operator/api/observability v0.0.0-20260903184057-316206e291a8
+)
+
+require (
 	cel.dev/expr v0.25.1 // indirect
 	github.com/PaesslerAG/gval v1.2.4 // indirect
 	github.com/PaesslerAG/jsonpath v0.1.2-0.20240726212847-3a740cf7976f // indirect
@@ -165,3 +170,5 @@ require (
 )
 
 replace github.com/rhobs/observability-operator/pkg/apis => ./pkg/apis
+
+replace github.com/grafana/loki/operator/api/loki => github.com/openshift/loki/operator/api/loki v0.0.0-20260806163046-9fddb063f589

@@ -150,16 +150,35 @@ rules:
   - application
   - audit
   - infrastructure
-  - network
   verbs:
+  - create
   - get
 - apiGroups:
   - loki.grafana.com
   resources:
   - lokistacks
   verbs:
+  - create
+  - delete
   - get
   - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - loki.grafana.com
+  resources:
+  - lokistacks/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - loki.grafana.com
+  resources:
+  - network
+  verbs:
+  - get
 - apiGroups:
   - machineconfiguration.openshift.io
   resources:
@@ -260,6 +279,7 @@ rules:
 - apiGroups:
   - observability.openshift.io
   resources:
+  - clusterlogforwarders
   - observabilityinstallers
   - uiplugins
   verbs:
@@ -269,6 +289,14 @@ rules:
   - list
   - patch
   - update
+  - watch
+- apiGroups:
+  - observability.openshift.io
+  resources:
+  - clusterlogforwarders/status
+  verbs:
+  - get
+  - list
   - watch
 - apiGroups:
   - observability.openshift.io
@@ -392,6 +420,16 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resourceNames:
+  - collect-application-logs
+  - collect-infrastructure-logs
+  resources:
+  - clusterroles
+  verbs:
+  - bind
+  - get
 - apiGroups:
   - security.openshift.io
   resourceNames:
