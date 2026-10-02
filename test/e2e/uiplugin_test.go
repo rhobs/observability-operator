@@ -46,6 +46,8 @@ func TestUIPlugin(t *testing.T) {
 }
 
 func troubleshootingPanelUIPlugin(t *testing.T) {
+	f.SkipIfClusterVersionBelow(t, "4.19")
+
 	f.DumpOnFailure(t, f.DebugNamespaces(uiPluginInstallNS))
 
 	tp := newTroubleshootingPanelUIPlugin(t)
