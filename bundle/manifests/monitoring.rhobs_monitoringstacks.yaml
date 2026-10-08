@@ -1997,6 +1997,12 @@ spec:
             - conditions
             type: object
         type: object
+        x-kubernetes-validations:
+        - message: MonitoringStack name must be no more than 63 characters
+          rule: size(self.metadata.name) <= 63
+        - message: MonitoringStack name must consist of lowercase alphanumeric characters
+            or '-', and must start and end with an alphanumeric character
+          rule: self.metadata.name.matches('^[a-z0-9]([-a-z0-9]*[a-z0-9])?$')
     served: true
     storage: true
     subresources:
