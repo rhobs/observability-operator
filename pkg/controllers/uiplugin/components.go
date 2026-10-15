@@ -68,11 +68,35 @@ func IsVersionAheadOrEqual(currentVersion, version string) bool {
 func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPluginInfo, clusterVersion string, logger logr.Logger) []reconciler.Reconciler {
 	namespace := pluginInfo.ResourceNamespace
 
+	korrel8rEnabled := plugin.Spec.Type == uiv1alpha1.TypeTroubleshootingPanel && pluginInfo.Korrel8rImage != ""
+
+	monitoringConfig := plugin.Spec.Monitoring
+	healthAnalyzerEnabled := plugin.Spec.Type == uiv1alpha1.TypeMonitoring &&
+		monitoringConfig != nil &&
+		monitoringConfig.ClusterHealthAnalyzer != nil &&
+		monitoringConfig.ClusterHealthAnalyzer.Enabled &&
+		pluginInfo.HealthAnalyzerImage != ""
+	incidentsEnabled := plugin.Spec.Type == uiv1alpha1.TypeMonitoring &&
+		monitoringConfig != nil &&
+		monitoringConfig.Incidents != nil &&
+		monitoringConfig.Incidents.Enabled &&
+		pluginInfo.HealthAnalyzerImage != ""
+	deployHealthAnalyzer := incidentsEnabled || healthAnalyzerEnabled
+	persesEnabled := plugin.Spec.Type == uiv1alpha1.TypeMonitoring &&
+		monitoringConfig != nil &&
+		monitoringConfig.Perses != nil &&
+		monitoringConfig.Perses.Enabled
+
 	components := []reconciler.Reconciler{
 		reconciler.NewUpdater(newServiceAccount(pluginInfo.Name, namespace), plugin),
+	}
+	// Reconcile policies before their selected workloads so new pods are
+	// governed from their creation.
+	components = append(components, pluginNetworkPolicyReconcilers(plugin, pluginInfo, namespace, korrel8rEnabled, deployHealthAnalyzer, persesEnabled)...)
+	components = append(components,
 		reconciler.NewUpdater(newDeployment(pluginInfo, namespace, plugin.Spec.Deployment), plugin),
 		reconciler.NewUpdater(newService(pluginInfo, namespace), plugin),
-	}
+	)
 
 	if IsVersionAheadOrEqual(clusterVersion, "v4.19") {
 		components = append(components, reconciler.NewUpdater(newConsolePlugin(pluginInfo, namespace), plugin))
@@ -106,7 +130,7 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 		}
 	}
 
-	if plugin.Spec.Type == uiv1alpha1.TypeTroubleshootingPanel && pluginInfo.Korrel8rImage != "" {
+	if korrel8rEnabled {
 		components = append(components, reconciler.NewUpdater(newKorrel8rService(korrel8rName, namespace), plugin))
 		korrel8rCm, err := newKorrel8rConfigMap(korrel8rName, namespace, pluginInfo)
 		if err == nil && korrel8rCm != nil {
@@ -118,19 +142,7 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 	// Only add monitoring-specific components for monitoring plugins to prevent conflicts
 	// with other plugin types that shouldn't manage these resources
 	if plugin.Spec.Type == uiv1alpha1.TypeMonitoring {
-		monitoringConfig := plugin.Spec.Monitoring
 		serviceAccountName := plugin.Name + serviceAccountSuffix
-		incidentsEnabled := monitoringConfig != nil &&
-			monitoringConfig.Incidents != nil &&
-			monitoringConfig.Incidents.Enabled &&
-			pluginInfo.HealthAnalyzerImage != ""
-
-		healthAnalyzerEnabled := monitoringConfig != nil &&
-			monitoringConfig.ClusterHealthAnalyzer != nil &&
-			monitoringConfig.ClusterHealthAnalyzer.Enabled &&
-			pluginInfo.HealthAnalyzerImage != ""
-
-		deployHealthAnalyzer := incidentsEnabled || healthAnalyzerEnabled
 
 		components = append(components,
 			reconciler.NewOptionalUpdater(componentsHealthClusterRole("components-health-view"), plugin, deployHealthAnalyzer),
@@ -151,7 +163,6 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 		)
 
 		persesServiceAccountName := "perses" + serviceAccountSuffix
-		persesEnabled := monitoringConfig != nil && monitoringConfig.Perses != nil && monitoringConfig.Perses.Enabled
 		components = append(components,
 			reconciler.NewOptionalUpdater(newServiceAccount("perses", namespace), plugin, persesEnabled),
 			reconciler.NewOptionalUpdater(newClusterRoleBinding(namespace, persesServiceAccountName, "system:auth-delegator", persesServiceAccountName+"-system-auth-delegator"), plugin, persesEnabled),
