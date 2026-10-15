@@ -23,6 +23,7 @@ import (
 	"github.com/go-logr/logr"
 	monv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
 	v1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -100,6 +101,7 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 	// child status changes. The only exception is Prometheus resources, where we want to
 	// be notified about changes in their status.
 	generationChanged := builder.WithPredicates(predicate.GenerationChangedPredicate{})
+	resourceVersionChanged := builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&stack.MonitoringStack{}).
@@ -109,6 +111,7 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 		Owns(&v1.ServiceAccount{}, generationChanged).
 		Owns(&rbacv1.Role{}, generationChanged).
 		Owns(&rbacv1.RoleBinding{}, generationChanged).
+		Owns(&networkingv1.NetworkPolicy{}, resourceVersionChanged).
 		Owns(&monv1.ServiceMonitor{}, generationChanged).
 		Owns(&policyv1.PodDisruptionBudget{}, generationChanged).
 		Complete(rm)

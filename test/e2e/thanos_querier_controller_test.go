@@ -83,6 +83,11 @@ func singleStackWithSidecar(t *testing.T) {
 	f.GetResourceWithRetry(t, name, tq.Namespace, &thanosService)
 
 	f.AssertDeploymentReady(name, tq.Namespace, framework.WithTimeout(5*time.Minute))(t)
+	assertPermissiveNetworkPolicy(t, name+"-network-policy", tq.Namespace, map[string]string{
+		"app.kubernetes.io/instance":   name,
+		"app.kubernetes.io/part-of":    "ThanosQuerier",
+		"app.kubernetes.io/managed-by": "observability-operator",
+	})
 
 	var lastErr error
 	if err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
@@ -181,6 +186,11 @@ func singleStackWithSidecarTLS(t *testing.T) {
 	}); wait.Interrupted(err) {
 		t.Fatal("timeout waiting for port-forward")
 	}
+	assertPermissiveNetworkPolicy(t, querierName+"-network-policy", tq.Namespace, map[string]string{
+		"app.kubernetes.io/instance":   querierName,
+		"app.kubernetes.io/part-of":    "ThanosQuerier",
+		"app.kubernetes.io/managed-by": "observability-operator",
+	})
 
 	promClient, err := framework.NewTLSPrometheusClient("https://localhost:10902", thanosCerts[1], querierName)
 	if err != nil {

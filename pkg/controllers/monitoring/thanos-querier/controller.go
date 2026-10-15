@@ -21,6 +21,7 @@ import (
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -122,13 +123,15 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 		return err
 	}
 
-	p := predicate.GenerationChangedPredicate{}
+	generationChanged := builder.WithPredicates(predicate.GenerationChangedPredicate{})
+	resourceVersionChanged := builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&msoapi.ThanosQuerier{}).
-		Owns(&appsv1.Deployment{}).WithEventFilter(p).
-		Owns(&corev1.ServiceAccount{}).WithEventFilter(p).
-		Owns(&corev1.Service{}).WithEventFilter(p).
-		Owns(&corev1.ConfigMap{}).WithEventFilter(p).
+		For(&msoapi.ThanosQuerier{}, generationChanged).
+		Owns(&appsv1.Deployment{}, generationChanged).
+		Owns(&corev1.ServiceAccount{}, generationChanged).
+		Owns(&corev1.Service{}, generationChanged).
+		Owns(&networkingv1.NetworkPolicy{}, resourceVersionChanged).
+		Owns(&corev1.ConfigMap{}, generationChanged).
 		Watches(
 			&msoapi.MonitoringStack{},
 			handler.EnqueueRequestsFromMapFunc(rm.findQueriersForMonitoringStack),

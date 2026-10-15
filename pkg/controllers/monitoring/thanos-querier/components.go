@@ -6,6 +6,7 @@ import (
 	monv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
@@ -22,11 +23,16 @@ func thanosComponentReconcilers(
 	name := "thanos-querier-" + thanos.Name
 	return []reconciler.Reconciler{
 		reconciler.NewUpdater(newServiceAccount(name, thanos.Namespace), thanos),
+		reconciler.NewNetworkPolicyUpdater(newNetworkPolicy(name, thanos.Namespace), thanos),
 		reconciler.NewUpdater(newThanosQuerierDeployment(name, thanos, sidecarUrls, thanosCfg, tlsHashes), thanos),
 		reconciler.NewUpdater(newService(name, thanos.Namespace), thanos),
 		reconciler.NewUpdater(newServiceMonitor(name, thanos.Namespace, thanos), thanos),
 		reconciler.NewOptionalUpdater(newHttpConfConfigMap(name, thanos), thanos, thanos.Spec.WebTLSConfig != nil),
 	}
+}
+
+func newNetworkPolicy(name string, namespace string) *networkingv1.NetworkPolicy {
+	return reconciler.NewAllowAllNetworkPolicy(name+"-network-policy", namespace, componentLabels(name))
 }
 
 func newHttpConfConfigMap(name string, thanos *msoapi.ThanosQuerier) *corev1.ConfigMap {

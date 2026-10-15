@@ -18,6 +18,7 @@ import (
 	"golang.org/x/exp/slices"
 	"gotest.tools/v3/assert"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -138,6 +139,12 @@ func TestMonitoringStackController(t *testing.T) {
 	}, {
 		name:     "Assert OTLP receiver flag is set when enabled in CR",
 		scenario: assertDefaultOTLPFlagIsSet,
+	}, {
+		name:     "Workload NetworkPolicies are created with permissive defaults",
+		scenario: monitoringStackNetworkPoliciesAreCreated,
+	}, {
+		name:     "Workload NetworkPolicies are restored after mutation and deletion",
+		scenario: monitoringStackNetworkPoliciesReconcile,
 	}, {
 		name:     "ClusterRoleBinding NOT created with NoClusterRoleBindings policy",
 		scenario: assertNoClusterRoleBindingWithPolicy,
@@ -1036,6 +1043,107 @@ func assertDefaultOTLPFlagIsSet(t *testing.T) {
 	assert.NilError(t, err, "failed to create a monitoring stack")
 
 	f.AssertStatefulSetContainerHasArg(t, "prometheus-"+ms.Name, e2eTestNamespace, "prometheus", "--web.enable-otlp-receiver")(t)
+}
+
+func monitoringStackNetworkPoliciesAreCreated(t *testing.T) {
+	stackName := "network-policy-created"
+	ms := newMonitoringStack(t, stackName)
+	ms.Spec.PrometheusConfig = &stack.PrometheusConfig{Replicas: ptr.To(int32(1))}
+	ms.Spec.AlertmanagerConfig.Replicas = ptr.To(int32(1))
+
+	err := f.K8sClient.Create(context.Background(), ms)
+	assert.NilError(t, err, "failed to create a monitoring stack")
+
+	assertPermissiveNetworkPolicy(t, ms.Name+"-prometheus-network-policy", ms.Namespace, monitoringStackPodLabels("prometheus", ms.Name))
+	assertPermissiveNetworkPolicy(t, ms.Name+"-alertmanager-network-policy", ms.Namespace, monitoringStackPodLabels("alertmanager", ms.Name))
+
+	f.AssertStatefulsetReady("prometheus-"+stackName, e2eTestNamespace, framework.WithTimeout(5*time.Minute))(t)
+	f.AssertStatefulsetReady("alertmanager-"+stackName, e2eTestNamespace, framework.WithTimeout(5*time.Minute))(t)
+}
+
+func monitoringStackNetworkPoliciesReconcile(t *testing.T) {
+	stackName := "network-policy-reconcile"
+	ms := newMonitoringStack(t, stackName)
+	ms.Spec.PrometheusConfig = &stack.PrometheusConfig{Replicas: ptr.To(int32(1))}
+	ms.Spec.AlertmanagerConfig.Replicas = ptr.To(int32(1))
+
+	err := f.K8sClient.Create(context.Background(), ms)
+	assert.NilError(t, err, "failed to create a monitoring stack")
+
+	promNPName := ms.Name + "-prometheus-network-policy"
+	alertNPName := ms.Name + "-alertmanager-network-policy"
+	promSelector := monitoringStackPodLabels("prometheus", ms.Name)
+	alertSelector := monitoringStackPodLabels("alertmanager", ms.Name)
+
+	assertPermissiveNetworkPolicy(t, promNPName, ms.Namespace, promSelector)
+	assertPermissiveNetworkPolicy(t, alertNPName, ms.Namespace, alertSelector)
+
+	mutated := &networkingv1.NetworkPolicy{}
+	f.GetResourceWithRetry(t, promNPName, ms.Namespace, mutated)
+	delete(mutated.Labels, "app.kubernetes.io/managed-by")
+	err = f.K8sClient.Update(context.Background(), mutated)
+	assert.NilError(t, err, "failed to remove the managed-by label from the prometheus network policy")
+
+	assertPermissiveNetworkPolicy(t, promNPName, ms.Namespace, promSelector)
+
+	alertNP := &networkingv1.NetworkPolicy{}
+	f.GetResourceWithRetry(t, alertNPName, ms.Namespace, alertNP)
+	err = f.K8sClient.Delete(context.Background(), alertNP)
+	assert.NilError(t, err, "failed to delete the alertmanager network policy")
+
+	assertPermissiveNetworkPolicy(t, alertNPName, ms.Namespace, alertSelector)
+
+	f.AssertStatefulsetReady("prometheus-"+stackName, e2eTestNamespace, framework.WithTimeout(5*time.Minute))(t)
+	f.AssertStatefulsetReady("alertmanager-"+stackName, e2eTestNamespace, framework.WithTimeout(5*time.Minute))(t)
+}
+
+func monitoringStackPodLabels(component, stackName string) map[string]string {
+	return map[string]string{
+		"app.kubernetes.io/component": component,
+		"app.kubernetes.io/part-of":   stackName,
+	}
+}
+
+func assertPermissiveNetworkPolicy(t *testing.T, name, namespace string, selector map[string]string) {
+	t.Helper()
+
+	key := types.NamespacedName{Name: name, Namespace: namespace}
+	var lastErr error
+	if err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
+		policy := &networkingv1.NetworkPolicy{}
+		if err := f.K8sClient.Get(context.Background(), key, policy); err != nil {
+			lastErr = err
+			return false, nil
+		}
+
+		if diff := cmp.Diff(selector, policy.Spec.PodSelector.MatchLabels); diff != "" {
+			lastErr = fmt.Errorf("unexpected pod selector (-want +got):\n%s", diff)
+			return false, nil
+		}
+
+		if diff := cmp.Diff([]networkingv1.PolicyType{networkingv1.PolicyTypeIngress, networkingv1.PolicyTypeEgress}, policy.Spec.PolicyTypes); diff != "" {
+			lastErr = fmt.Errorf("unexpected policy types (-want +got):\n%s", diff)
+			return false, nil
+		}
+
+		if diff := cmp.Diff([]networkingv1.NetworkPolicyIngressRule{{}}, policy.Spec.Ingress); diff != "" {
+			lastErr = fmt.Errorf("unexpected ingress rules (-want +got):\n%s", diff)
+			return false, nil
+		}
+
+		if diff := cmp.Diff([]networkingv1.NetworkPolicyEgressRule{{}}, policy.Spec.Egress); diff != "" {
+			lastErr = fmt.Errorf("unexpected egress rules (-want +got):\n%s", diff)
+			return false, nil
+		}
+		if policy.Labels["app.kubernetes.io/managed-by"] != "observability-operator" {
+			lastErr = fmt.Errorf("unexpected managed-by label %q", policy.Labels["app.kubernetes.io/managed-by"])
+			return false, nil
+		}
+
+		return true, nil
+	}); err != nil {
+		t.Fatalf("network policy %s/%s was not reconciled: %v", namespace, name, lastErr)
+	}
 }
 
 // Update this json when a new Prometheus field is set by MonitoringStack
