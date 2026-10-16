@@ -43,15 +43,35 @@ type UIPluginType string
 const (
 	// TypeDashboards deploys the Dashboards Dynamic Plugin for OpenShift Console.
 	TypeDashboards UIPluginType = "Dashboards"
-	// DistributedTracing deploys the Distributed Tracing Dynamic Plugin for the OpenShift Console
+
+	// TypeDistributedTracing deploys the Distributed Tracing Dynamic Plugin for the OpenShift Console
 	TypeDistributedTracing UIPluginType = "DistributedTracing"
-	// TroubleshootingPanel deploys the Troubleshooting Panel Dynamic Plugin for the OpenShift Console
+
+	// TypeTroubleshootingPanel deploys the Troubleshooting Panel Dynamic Plugin for the OpenShift Console
 	TypeTroubleshootingPanel UIPluginType = "TroubleshootingPanel"
-	// Monitoring deploys the Monitoring Plugin for the OpenShift Console
+
+	// TypeMonitoring deploys the Monitoring Plugin for the OpenShift Console
 	TypeMonitoring UIPluginType = "Monitoring"
 
 	// TypeLogging deploys the Logging View Plugin for OpenShift Console.
 	TypeLogging UIPluginType = "Logging"
+)
+
+const (
+	// DashboardsPluginName is the required name for the Dashboards Plugin resource.
+	DashboardsPluginName = "dashboards"
+
+	// DistributedTracingPluginName is the required name for the DistributedTracing Plugin resource.
+	DistributedTracingPluginName = "distributed-tracing"
+
+	// TroubleshootingPanelPluginName is the required name for the TroubleshootingPanel Plugin resource.
+	TroubleshootingPanelPluginName = "troubleshooting-panel"
+
+	// MonitoringPluginName is the required name for the Monitoring Plugin resource.
+	MonitoringPluginName = "monitoring"
+
+	// LoggingPluginName is the required name for the Logging Plugin resource.
+	LoggingPluginName = "logging"
 )
 
 // DeploymentConfig contains options allowing the customization of the deployment hosting the UI Plugin.

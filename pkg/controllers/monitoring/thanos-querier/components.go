@@ -122,7 +122,8 @@ func newThanosQuerierDeployment(
 										"ALL",
 									},
 								},
-								RunAsNonRoot: ptr.To(true),
+								RunAsNonRoot:           ptr.To(true),
+								ReadOnlyRootFilesystem: ptr.To(true),
 								SeccompProfile: &corev1.SeccompProfile{
 									Type: corev1.SeccompProfileTypeRuntimeDefault,
 								},

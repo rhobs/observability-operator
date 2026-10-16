@@ -27,6 +27,7 @@ spec:
         image: quay.io/openshift-observability-ui/perses-operator:v0.4.0
         securityContext:
           allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
           capabilities:
             drop:
               - "ALL"

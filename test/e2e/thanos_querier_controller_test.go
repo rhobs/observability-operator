@@ -24,6 +24,7 @@ import (
 )
 
 func TestThanosQuerierController(t *testing.T) {
+	f.DumpOnFailure(t, f.DebugNamespaces(e2eTestNamespace))
 	assertCRDExists(t, "thanosqueriers.monitoring.rhobs")
 
 	ts := []testCase{

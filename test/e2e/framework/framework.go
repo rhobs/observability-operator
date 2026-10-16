@@ -260,6 +260,41 @@ func (f *Framework) CleanUp(t *testing.T, cleanupFunc func()) {
 	})
 }
 
+// DebugFunc is a diagnostic function invoked when a test fails.
+// Implementations should use t.Logf to emit relevant state.
+type DebugFunc func(t *testing.T)
+
+// DumpOnFailure registers a t.Cleanup that runs the given debug functions
+// when the test fails. It can be called multiple times to add more debug
+// functions as resources become available during the test.
+//
+// Cleanups run in LIFO order, so call DumpOnFailure before registering
+// resource deletions via CleanUp to ensure debug info is captured while
+// the resources still exist.
+func (f *Framework) DumpOnFailure(t *testing.T, fns ...DebugFunc) {
+	t.Helper()
+	t.Cleanup(func() {
+		if !t.Failed() {
+			return
+		}
+		t.Logf("# Diagnostics for %s (FAILED)", t.Name())
+		for _, fn := range fns {
+			fn(t)
+		}
+	})
+}
+
+// DebugNamespaces returns a DebugFunc that dumps deployments, pods, and events
+// for the given namespaces.
+func (f *Framework) DebugNamespaces(namespaces ...string) DebugFunc {
+	return func(t *testing.T) {
+		t.Helper()
+		for _, ns := range namespaces {
+			f.dumpNamespace(t, ns)
+		}
+	}
+}
+
 // SkipIfClusterVersionBelow skips the test if the cluster version is below
 // minVersion. The minVersion string should be a semver-compatible version
 // (e.g. "4.19" or "v4.19").
@@ -299,60 +334,58 @@ func (f *Framework) SkipIfClusterVersionBelow(t *testing.T, minVersion string) {
 	}
 }
 
-// DumpNamespaceDebug logs deployments (with conditions), pods (with container
-// statuses), and events for the given namespace. Useful as a t.Cleanup or
-// on-failure diagnostic helper.
-func (f *Framework) DumpNamespaceDebug(t *testing.T, namespace string) {
+func (f *Framework) dumpNamespace(t *testing.T, namespace string) {
 	t.Helper()
 	ctx := context.WithoutCancel(t.Context())
 
-	t.Log("=== BEGIN DEBUG DUMP ===")
-	defer t.Log("=== END DEBUG DUMP ===")
+	t.Logf("=== BEGIN NAMESPACE DEBUG DUMP ===")
+	t.Logf("* Namespace: %s", namespace)
+	defer t.Log("=== END NAMESPACE DEBUG DUMP ===")
 
+	t.Log("\n## Deployments\n")
 	var deployments appsv1.DeploymentList
 	if err := f.K8sClient.List(ctx, &deployments, client.InNamespace(namespace)); err != nil {
-		t.Logf("Failed to list deployments in %s: %v", namespace, err)
+		t.Logf("Failed to list deployments: %v", err)
 	} else {
-		t.Logf("Deployments in namespace %s: %d", namespace, len(deployments.Items))
 		for _, d := range deployments.Items {
-			t.Logf("  Deployment: name=%s replicas=%d readyReplicas=%d availableReplicas=%d",
+			t.Logf("* Deployment: name=%s replicas=%d readyReplicas=%d availableReplicas=%d",
 				d.Name, ptr.Deref(d.Spec.Replicas, 0), d.Status.ReadyReplicas, d.Status.AvailableReplicas)
 			for _, c := range d.Status.Conditions {
-				t.Logf("    condition: type=%s status=%s reason=%s message=%s",
+				t.Logf("  * condition: type=%s status=%s reason=%s message=%s",
 					c.Type, c.Status, c.Reason, c.Message)
 			}
 		}
 	}
 
+	t.Log("\n## Pods\n")
 	var pods corev1.PodList
 	if err := f.K8sClient.List(ctx, &pods, client.InNamespace(namespace)); err != nil {
-		t.Logf("Failed to list pods in %s: %v", namespace, err)
+		t.Logf("Failed to list pods: %v", err)
 	} else {
-		t.Logf("Pods in namespace %s: %d", namespace, len(pods.Items))
 		for _, p := range pods.Items {
-			t.Logf("  Pod: name=%s phase=%s", p.Name, p.Status.Phase)
+			t.Logf("* Pod: name=%s phase=%s", p.Name, p.Status.Phase)
 			for _, cs := range p.Status.ContainerStatuses {
 				switch {
 				case cs.State.Running != nil:
-					t.Logf("    container=%s ready=%v restarts=%d state=Running", cs.Name, cs.Ready, cs.RestartCount)
+					t.Logf("  * container=%s ready=%v restarts=%d state=Running", cs.Name, cs.Ready, cs.RestartCount)
 				case cs.State.Waiting != nil:
-					t.Logf("    container=%s ready=%v restarts=%d state=Waiting reason=%s message=%s",
+					t.Logf("  * container=%s ready=%v restarts=%d state=Waiting reason=%s message=%s",
 						cs.Name, cs.Ready, cs.RestartCount, cs.State.Waiting.Reason, cs.State.Waiting.Message)
 				case cs.State.Terminated != nil:
-					t.Logf("    container=%s ready=%v restarts=%d state=Terminated reason=%s exitCode=%d",
+					t.Logf("  * container=%s ready=%v restarts=%d state=Terminated reason=%s exitCode=%d",
 						cs.Name, cs.Ready, cs.RestartCount, cs.State.Terminated.Reason, cs.State.Terminated.ExitCode)
 				}
 			}
 		}
 	}
 
+	t.Log("\n## Events\n")
 	var events corev1.EventList
 	if err := f.K8sClient.List(ctx, &events, client.InNamespace(namespace)); err != nil {
-		t.Logf("Failed to list events in %s: %v", namespace, err)
+		t.Logf("Failed to list events: %v", err)
 	} else {
-		t.Logf("Events in namespace %s: %d", namespace, len(events.Items))
 		for _, e := range events.Items {
-			t.Logf("  Event: involvedObject=%s/%s reason=%s message=%s type=%s count=%d",
+			t.Logf("* Event: involvedObject=%s/%s reason=%s message=%s type=%s count=%d",
 				e.InvolvedObject.Kind, e.InvolvedObject.Name, e.Reason, e.Message, e.Type, e.Count)
 		}
 	}
