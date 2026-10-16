@@ -155,6 +155,11 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, err
 	}
 
+	if querier.DeletionTimestamp != nil {
+		logger.Info("ThanosQuerier is being deleted, skipping reconciliation")
+		return ctrl.Result{}, nil
+	}
+
 	sidecarServices, err := rm.findSidecarServices(ctx, querier)
 	if client.IgnoreNotFound(err) != nil {
 		// we encountered an error other then NotFound, don't try to delete
