@@ -1,12 +1,19 @@
 package uiplugin
 
 import (
+	"context"
+	"sort"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 	"gotest.tools/v3/assert"
@@ -165,62 +172,129 @@ func TestPersesOperatorPodSelector(t *testing.T) {
 	}, persesOperatorPodSelector())
 }
 
-func TestPluginNetworkPolicyReconcilers(t *testing.T) {
+func TestPluginNetworkPolicyReconcilers_ReconcileExpectedPolicies(t *testing.T) {
 	testCases := []struct {
 		name                  string
+		pluginName            string
 		pluginType            uiv1alpha1.UIPluginType
-		monitoringConfig      *uiv1alpha1.MonitoringConfig
 		korrel8rEnabled       bool
 		healthAnalyzerEnabled bool
 		persesEnabled         bool
-		expectedPolicies      int
+		expectedPolicyNames   []string
 	}{
 		{
-			name:             "troubleshooting with korrel8r enabled",
-			pluginType:       uiv1alpha1.TypeTroubleshootingPanel,
-			korrel8rEnabled:  true,
-			expectedPolicies: 2,
+			name:                "troubleshooting with korrel8r enabled",
+			pluginName:          "troubleshooting-panel",
+			pluginType:          uiv1alpha1.TypeTroubleshootingPanel,
+			korrel8rEnabled:     true,
+			expectedPolicyNames: []string{"korrel8r-network-policy", "troubleshooting-panel-network-policy"},
 		},
 		{
-			name:             "troubleshooting with korrel8r disabled",
-			pluginType:       uiv1alpha1.TypeTroubleshootingPanel,
-			korrel8rEnabled:  false,
-			expectedPolicies: 2,
+			name:                "troubleshooting with korrel8r disabled",
+			pluginName:          "troubleshooting-panel",
+			pluginType:          uiv1alpha1.TypeTroubleshootingPanel,
+			korrel8rEnabled:     false,
+			expectedPolicyNames: []string{"troubleshooting-panel-network-policy"},
 		},
 		{
 			name:                  "monitoring with optional workloads enabled",
+			pluginName:            "monitoring",
 			pluginType:            uiv1alpha1.TypeMonitoring,
 			healthAnalyzerEnabled: true,
 			persesEnabled:         true,
-			expectedPolicies:      3,
+			expectedPolicyNames:   []string{"health-analyzer-network-policy", "monitoring-network-policy", "perses-network-policy"},
 		},
 		{
-			name:                  "monitoring with optional workloads disabled",
-			pluginType:            uiv1alpha1.TypeMonitoring,
-			healthAnalyzerEnabled: false,
-			persesEnabled:         false,
-			expectedPolicies:      3,
+			name:                "monitoring with optional workloads disabled",
+			pluginName:          "monitoring",
+			pluginType:          uiv1alpha1.TypeMonitoring,
+			expectedPolicyNames: []string{"monitoring-network-policy"},
 		},
 		{
-			name:             "logging",
-			pluginType:       uiv1alpha1.TypeLogging,
-			expectedPolicies: 1,
+			name:                "logging backend policy",
+			pluginName:          "logging",
+			pluginType:          uiv1alpha1.TypeLogging,
+			expectedPolicyNames: []string{"logging-network-policy"},
+		},
+		{
+			name:                "distributed tracing backend policy",
+			pluginName:          "distributed-tracing",
+			pluginType:          uiv1alpha1.TypeDistributedTracing,
+			expectedPolicyNames: []string{"distributed-tracing-network-policy"},
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			plugin := &uiv1alpha1.UIPlugin{
-				ObjectMeta: metav1.ObjectMeta{Name: "plugin"},
+				ObjectMeta: metav1.ObjectMeta{Name: tc.pluginName, UID: types.UID("plugin-uid")},
 				Spec: uiv1alpha1.UIPluginSpec{
-					Type:       tc.pluginType,
-					Monitoring: tc.monitoringConfig,
+					Type: tc.pluginType,
 				},
 			}
+			client := newNetworkPolicyRecordingClient()
 
-			reconcilers := pluginNetworkPolicyReconcilers(plugin, UIPluginInfo{Name: "plugin"}, "openshift-operators", tc.korrel8rEnabled, tc.healthAnalyzerEnabled, tc.persesEnabled)
+			reconcilers := pluginNetworkPolicyReconcilers(plugin, UIPluginInfo{Name: tc.pluginName}, "openshift-operators", tc.korrel8rEnabled, tc.healthAnalyzerEnabled, tc.persesEnabled)
+			for _, reconciler := range reconcilers {
+				assert.NilError(t, reconciler.Reconcile(context.Background(), client, networkPolicyTestScheme(t)))
+			}
 
-			assert.Equal(t, tc.expectedPolicies, len(reconcilers))
+			assert.DeepEqual(t, tc.expectedPolicyNames, client.policyNames())
 		})
 	}
+}
+
+type networkPolicyRecordingClient struct {
+	client.Client
+	policies map[client.ObjectKey]*networkingv1.NetworkPolicy
+}
+
+func newNetworkPolicyRecordingClient() *networkPolicyRecordingClient {
+	return &networkPolicyRecordingClient{policies: map[client.ObjectKey]*networkingv1.NetworkPolicy{}}
+}
+
+func (c *networkPolicyRecordingClient) Get(_ context.Context, key client.ObjectKey, obj client.Object, _ ...client.GetOption) error {
+	policy, ok := c.policies[key]
+	if !ok {
+		return apierrors.NewNotFound(schema.GroupResource{Group: networkingv1.GroupName, Resource: "networkpolicies"}, key.Name)
+	}
+
+	target := obj.(*networkingv1.NetworkPolicy)
+	*target = *policy.DeepCopy()
+	return nil
+}
+
+func (c *networkPolicyRecordingClient) Create(_ context.Context, obj client.Object, _ ...client.CreateOption) error {
+	policy := obj.(*networkingv1.NetworkPolicy)
+	key := client.ObjectKeyFromObject(policy)
+	if _, ok := c.policies[key]; ok {
+		return apierrors.NewAlreadyExists(schema.GroupResource{Group: networkingv1.GroupName, Resource: "networkpolicies"}, policy.Name)
+	}
+
+	policy.UID = types.UID("policy-" + policy.Name)
+	policy.ResourceVersion = "1"
+	c.policies[key] = policy.DeepCopy()
+	return nil
+}
+
+func (c *networkPolicyRecordingClient) Apply(_ context.Context, _ runtime.ApplyConfiguration, _ ...client.ApplyOption) error {
+	return nil
+}
+
+func (c *networkPolicyRecordingClient) policyNames() []string {
+	names := make([]string, 0, len(c.policies))
+	for _, policy := range c.policies {
+		names = append(names, policy.Name)
+	}
+
+	sort.Strings(names)
+	return names
+}
+
+func networkPolicyTestScheme(t *testing.T) *runtime.Scheme {
+	t.Helper()
+	scheme := runtime.NewScheme()
+	assert.NilError(t, networkingv1.AddToScheme(scheme))
+	assert.NilError(t, uiv1alpha1.AddToScheme(scheme))
+	return scheme
 }
