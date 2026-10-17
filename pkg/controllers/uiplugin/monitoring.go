@@ -19,6 +19,9 @@ import (
 const (
 	persesServiceName   = "perses"
 	PersesUserFSGroupID = int64(65534)
+
+	persesCASourceDir  = "/ca"
+	persesTLSSourceDir = "/tls"
 )
 
 /*
@@ -238,7 +241,8 @@ func newPerses(namespace string, persesImage string) *persesv1alpha2.Perses {
 			Config: persesv1alpha2.PersesConfig{
 				Config: persesconfig.Config{
 					Security: persesconfig.Security{
-						EnableAuth: true,
+						EnableAuth:                   true,
+						SecretFileAllowedDirectories: []string{persesCASourceDir, persesTLSSourceDir},
 						Authorization: persesconfig.AuthorizationConfig{
 							Provider: persesconfig.AuthorizationProvider{
 								Kubernetes: persesconfig.KubernetesAuthorizationProvider{
