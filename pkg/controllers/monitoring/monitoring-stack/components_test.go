@@ -14,6 +14,42 @@ import (
 	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 )
 
+func TestToEnableFeatures(t *testing.T) {
+	tt := []struct {
+		name     string
+		input    []string
+		expected []monv1.EnableFeature
+	}{
+		{
+			name:     "nil input returns nil",
+			input:    nil,
+			expected: nil,
+		},
+		{
+			name:     "empty input returns nil",
+			input:    []string{},
+			expected: nil,
+		},
+		{
+			name:     "single feature",
+			input:    []string{"exemplar-storage"},
+			expected: []monv1.EnableFeature{"exemplar-storage"},
+		},
+		{
+			name:     "multiple features",
+			input:    []string{"exemplar-storage", "otlp-write-receiver"},
+			expected: []monv1.EnableFeature{"exemplar-storage", "otlp-write-receiver"},
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			actual := toEnableFeatures(tc.input)
+			assert.DeepEqual(t, tc.expected, actual)
+		})
+	}
+}
+
 func TestStorageSpec(t *testing.T) {
 	validPVCSpec := &corev1.PersistentVolumeClaimSpec{
 		AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
