@@ -1,0 +1,86 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: seaweedfs
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app.kubernetes.io/name: seaweedfs
+  name: seaweedfs
+  namespace: seaweedfs
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: seaweedfs
+  namespace: seaweedfs
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: seaweedfs
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: seaweedfs
+    spec:
+      containers:
+        - args:
+            - mini
+            - -dir=/data
+            - -webdav=false
+            - -s3.port.iceberg=0
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              value: tempo
+            - name: AWS_SECRET_ACCESS_KEY
+              value: supersecret
+            - name: S3_BUCKET
+              value: tempo
+          image: chrislusf/seaweedfs:4.29
+          name: seaweedfs
+          ports:
+            - containerPort: 8333
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /data
+              name: storage
+      volumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: seaweedfs
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: seaweedfs
+  namespace: seaweedfs
+spec:
+  ports:
+    - port: 8333
+      protocol: TCP
+      targetPort: 8333
+  selector:
+    app.kubernetes.io/name: seaweedfs
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: seaweedfs-test
+  namespace: seaweedfs
+stringData:
+  endpoint: http://seaweedfs.seaweedfs.svc:8333
+  bucket: tempo
+  access_key_id: tempo
+  access_key_secret: supersecret
+type: Opaque
