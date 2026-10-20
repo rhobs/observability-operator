@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thanos-operator
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/name: thanos-operator
+    app.kubernetes.io/part-of: observability-operator
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: controller
+      app.kubernetes.io/name: thanos-operator
+      app.kubernetes.io/part-of: observability-operator
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: thanos-operator
+      labels:
+        app.kubernetes.io/component: controller
+        app.kubernetes.io/name: thanos-operator
+        app.kubernetes.io/part-of: observability-operator
+    spec:
+      containers:
+      - name: thanos-operator
+        image: quay.io/thanos/thanos-operator:main-2026-07-02-e6d1790
+        args:
+        - --leader-elect
+        - --health-probe-bind-address=:8081
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - "ALL"
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+      serviceAccountName: thanos-operator
