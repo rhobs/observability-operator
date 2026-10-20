@@ -12,7 +12,7 @@ spec:
   - name: cluster-observability-rhel9-operator
     from:
       kind: DockerImage
-      name: observability-operator:1.5.2
+      name: observability-operator:1.5.4
   - name: obo-prometheus-operator-prometheus-config-reloader-rhel9
     from:
       kind: DockerImage
