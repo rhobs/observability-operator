@@ -19,9 +19,10 @@ Outputs (all regenerated from scratch, so the result is deterministic):
   bundle-art/metadata/annotations.yaml         (downstream package + channels)
   bundle-art/tests/                            (copied scorecard config)
   bundle-art/manifests/cluster-observability-operator.clusterserviceversion.yaml
-  bundle-art/image-references
-  bundle-art/art.yaml
-  bundle-art/cluster-observability-operator.package.yaml
+   bundle-art/image-references
+   bundle-art/art.yaml
+   bundle-art/cluster-observability-operator.package.yaml
+   Dockerfile.art (VERSION build argument from VERSION)
 
 The operand image pullspecs below are NOT present in the upstream CSV; they must
 be kept in sync with cmd/operator/main.go (defaultImages) and the vendored
@@ -29,6 +30,7 @@ prometheus-operator defaults (prometheus/alertmanager/thanos). Each `art`
 (distgit) name must match the corresponding ART image config in ocp-build-data.
 """
 import os
+import re
 import shutil
 import sys
 
@@ -37,6 +39,8 @@ import yaml
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(REPO_ROOT, "bundle")
 DST = os.path.join(REPO_ROOT, "bundle-art")
+VERSION_FILE = os.path.join(REPO_ROOT, "VERSION")
+ART_DOCKERFILE = os.path.join(REPO_ROOT, "Dockerfile.art")
 PKG = "cluster-observability-operator"
 DEFAULT_CHANNEL = "stable"
 CHANNELS = ["stable", "fast"]
@@ -348,6 +352,24 @@ def write_annotations(path):
         f.write("\n".join(lines) + "\n")
 
 
+def sync_art_dockerfile_version():
+    """Set Dockerfile.art's VERSION build argument from the VERSION file."""
+    with open(VERSION_FILE) as f:
+        version = f.read().strip()
+    if not version or "\n" in version:
+        sys.exit(f"error: {VERSION_FILE} must contain exactly one version")
+
+    with open(ART_DOCKERFILE) as f:
+        dockerfile = f.read()
+    dockerfile, count = re.subn(
+        r"^ARG VERSION=.*$", f"ARG VERSION={version}", dockerfile, flags=re.MULTILINE
+    )
+    if count != 1:
+        sys.exit(f"error: expected exactly one ARG VERSION in {ART_DOCKERFILE}")
+    with open(ART_DOCKERFILE, "w") as f:
+        f.write(dockerfile)
+
+
 def main():
     src_csv = os.path.join(SRC, "manifests", "observability-operator.clusterserviceversion.yaml")
     if not os.path.exists(src_csv):
@@ -371,6 +393,7 @@ def main():
     write_image_references(os.path.join(DST, "image-references"), version)
     write_art_yaml(os.path.join(DST, "art.yaml"), version)
     write_package_yaml(os.path.join(DST, f"{PKG}.package.yaml"), version)
+    sync_art_dockerfile_version()
 
     print(f"rendered {os.path.relpath(DST, REPO_ROOT)} for version {version}")
 
