@@ -33,7 +33,8 @@ USER 65532:65532
 
 ENTRYPOINT ["/manager"]
 
-ARG VERSION=v1.5.2
+# Kept in sync with VERSION by hack/render-art-bundle.py.
+ARG VERSION=1.5.4
 LABEL com.redhat.component="coo-operator" \
     name="cluster-observability-operator/cluster-observability-rhel9-operator" \
     cpe="cpe:/a:redhat:cluster_observability_operator:1.5::el9" \
