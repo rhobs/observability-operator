@@ -19,25 +19,27 @@ import (
 type networkPolicyReconciler struct {
 	resource      *networkingv1.NetworkPolicy
 	resourceOwner metav1.Object
+	apiReader     client.Reader
 	present       bool
 }
 
 // NewNetworkPolicyUpdater reconciles a policy without adopting an existing policy
 // unless its controller reference identifies the requested owner, including UID.
-func NewNetworkPolicyUpdater(resource *networkingv1.NetworkPolicy, owner metav1.Object) Reconciler {
-	return NewOptionalNetworkPolicyUpdater(resource, owner, true)
+func NewNetworkPolicyUpdater(resource *networkingv1.NetworkPolicy, owner metav1.Object, apiReader client.Reader) Reconciler {
+	return NewOptionalNetworkPolicyUpdater(resource, owner, apiReader, true)
 }
 
 // NewNetworkPolicyDeleter deletes only a policy controlled by the requested owner.
 // A missing policy is already reconciled; an ownership collision is an error.
-func NewNetworkPolicyDeleter(resource *networkingv1.NetworkPolicy, owner metav1.Object) Reconciler {
-	return NewOptionalNetworkPolicyUpdater(resource, owner, false)
+func NewNetworkPolicyDeleter(resource *networkingv1.NetworkPolicy, owner metav1.Object, apiReader client.Reader) Reconciler {
+	return NewOptionalNetworkPolicyUpdater(resource, owner, apiReader, false)
 }
 
 // NewOptionalNetworkPolicyUpdater ensures an owned policy is present or absent.
 // Unlike NewOptionalUpdater, both paths check existing controller ownership.
-func NewOptionalNetworkPolicyUpdater(resource *networkingv1.NetworkPolicy, owner metav1.Object, present bool) Reconciler {
-	return networkPolicyReconciler{resource: resource, resourceOwner: owner, present: present}
+// apiReader must bypass the cache to find policies missing the managed-by label.
+func NewOptionalNetworkPolicyUpdater(resource *networkingv1.NetworkPolicy, owner metav1.Object, apiReader client.Reader, present bool) Reconciler {
+	return networkPolicyReconciler{resource: resource, resourceOwner: owner, apiReader: apiReader, present: present}
 }
 
 func (r networkPolicyReconciler) Reconcile(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
@@ -59,19 +61,30 @@ func (r networkPolicyReconciler) Reconcile(ctx context.Context, c client.Client,
 	desired.Labels["app.kubernetes.io/name"] = networkPolicyNameLabelValue(desired.Name)
 
 	current := &networkingv1.NetworkPolicy{}
-	if err := c.Get(ctx, key, current); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return fmt.Errorf("NetworkPolicy %s: failed to get: %w", key, err)
-		}
-		if !r.present {
-			return nil
-		}
+	err := c.Get(ctx, key, current)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("NetworkPolicy %s: failed to get: %w", key, err)
+	}
+	if apierrors.IsNotFound(err) && r.present {
 		// SSA is an upsert: applying after a NotFound could adopt a foreign
 		// policy created concurrently. Reserve the name with an atomic Create
 		// first, then use SSA to manage the policy we just created.
 		current = desired.DeepCopy()
-		if err := c.Create(ctx, current, client.FieldOwner("observability-operator")); err != nil {
+		err = c.Create(ctx, current, client.FieldOwner("observability-operator"))
+		if err != nil && !apierrors.IsAlreadyExists(err) {
 			return fmt.Errorf("NetworkPolicy %s: failed to create: %w", key, err)
+		}
+	}
+	if err != nil {
+		// A policy leaving the cache's label selector produces a delete event,
+		// but still exists on the API server. Read it directly after an
+		// AlreadyExists, or before treating a cache miss as a completed deletion.
+		current = &networkingv1.NetworkPolicy{}
+		if err := r.apiReader.Get(ctx, key, current); err != nil {
+			if !r.present && apierrors.IsNotFound(err) {
+				return nil
+			}
+			return fmt.Errorf("NetworkPolicy %s: failed to get uncached: %w", key, err)
 		}
 	}
 	// Also check the Create response in case admission changed the owner.

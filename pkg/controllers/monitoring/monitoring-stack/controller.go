@@ -39,6 +39,7 @@ import (
 
 type resourceManager struct {
 	k8sClient    client.Client
+	apiReader    client.Reader
 	scheme       *runtime.Scheme
 	logger       logr.Logger
 	prometheus   PrometheusConfiguration
@@ -89,6 +90,7 @@ const finalizerName = "monitoring.observability.openshift.io/finalizer"
 func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 	rm := &resourceManager{
 		k8sClient:    mgr.GetClient(),
+		apiReader:    mgr.GetAPIReader(),
 		scheme:       mgr.GetScheme(),
 		logger:       ctrl.Log.WithName("observability-operator"),
 		thanos:       opts.Thanos,
@@ -175,6 +177,7 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		rm.thanos,
 		rm.prometheus,
 		rm.alertmanager,
+		rm.apiReader,
 	)
 	for _, reconciler := range reconcilers {
 		err := reconciler.Reconcile(ctx, rm.k8sClient, rm.scheme)

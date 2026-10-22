@@ -234,7 +234,7 @@ func TestPluginNetworkPolicyReconcilers_ReconcileExpectedPolicies(t *testing.T) 
 			}
 			client := newNetworkPolicyRecordingClient()
 
-			reconcilers := pluginNetworkPolicyReconcilers(plugin, UIPluginInfo{Name: tc.pluginName}, "openshift-operators", tc.korrel8rEnabled, tc.healthAnalyzerEnabled, tc.persesEnabled)
+			reconcilers := pluginNetworkPolicyReconcilers(plugin, UIPluginInfo{Name: tc.pluginName}, "openshift-operators", client, tc.korrel8rEnabled, tc.healthAnalyzerEnabled, tc.persesEnabled)
 			for _, reconciler := range reconcilers {
 				assert.NilError(t, reconciler.Reconcile(context.Background(), client, networkPolicyTestScheme(t)))
 			}

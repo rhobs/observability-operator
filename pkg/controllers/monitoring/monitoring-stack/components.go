@@ -13,6 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 	"github.com/rhobs/observability-operator/pkg/reconciler"
@@ -48,6 +49,7 @@ func stackComponentReconcilers(
 	thanos ThanosConfiguration,
 	prometheus PrometheusConfiguration,
 	alertmanager AlertmanagerConfiguration,
+	apiReader client.Reader,
 ) []reconciler.Reconciler {
 	prometheusName := ms.Name + "-prometheus"
 	alertmanagerName := ms.Name + "-alertmanager"
@@ -73,8 +75,8 @@ func stackComponentReconcilers(
 
 		// NetworkPolicies are reconciled before their selected workloads so new
 		// operand pods are governed from their creation.
-		reconciler.NewNetworkPolicyUpdater(newPrometheusNetworkPolicy(ms), ms),
-		reconciler.NewOptionalNetworkPolicyUpdater(newAlertmanagerNetworkPolicy(ms), ms, deployAlertmanager),
+		reconciler.NewNetworkPolicyUpdater(newPrometheusNetworkPolicy(ms), ms, apiReader),
+		reconciler.NewOptionalNetworkPolicyUpdater(newAlertmanagerNetworkPolicy(ms), ms, apiReader, deployAlertmanager),
 
 		// Prometheus Deployment
 		reconciler.NewUpdater(newPrometheus(ms, prometheusName,

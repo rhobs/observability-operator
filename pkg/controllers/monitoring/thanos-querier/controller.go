@@ -41,9 +41,10 @@ import (
 
 type resourceManager struct {
 	client.Client
-	scheme *runtime.Scheme
-	logger logr.Logger
-	thanos ThanosConfiguration
+	apiReader client.Reader
+	scheme    *runtime.Scheme
+	logger    logr.Logger
+	thanos    ThanosConfiguration
 }
 
 type ThanosConfiguration struct {
@@ -84,10 +85,11 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 	logger := ctrl.Log.WithName("thanos-querier")
 
 	rm := &resourceManager{
-		Client: mgr.GetClient(),
-		scheme: mgr.GetScheme(),
-		logger: logger,
-		thanos: opts.Thanos,
+		Client:    mgr.GetClient(),
+		apiReader: mgr.GetAPIReader(),
+		scheme:    mgr.GetScheme(),
+		logger:    logger,
+		thanos:    opts.Thanos,
 	}
 
 	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &msoapi.ThanosQuerier{}, thanosTLSPrivateKeySecretNameField, func(rawObj client.Object) []string {
@@ -181,7 +183,7 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		}
 	}
 
-	reconcilers := thanosComponentReconcilers(querier, sidecarServices, rm.thanos, tlsHashes)
+	reconcilers := thanosComponentReconcilers(querier, sidecarServices, rm.thanos, tlsHashes, rm.apiReader)
 	for _, reconciler := range reconcilers {
 		err := reconciler.Reconcile(ctx, rm, rm.scheme)
 		// handle creation / updation errors that can happen due to a stale cache by

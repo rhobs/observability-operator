@@ -21,6 +21,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 	"github.com/rhobs/observability-operator/pkg/reconciler"
@@ -65,7 +66,7 @@ func IsVersionAheadOrEqual(currentVersion, version string) bool {
 	return semver.Compare(currentVersion, canonicalMinVersion) >= 0
 }
 
-func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPluginInfo, clusterVersion string, logger logr.Logger) []reconciler.Reconciler {
+func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPluginInfo, clusterVersion string, logger logr.Logger, apiReader client.Reader) []reconciler.Reconciler {
 	namespace := pluginInfo.ResourceNamespace
 
 	korrel8rEnabled := plugin.Spec.Type == uiv1alpha1.TypeTroubleshootingPanel && pluginInfo.Korrel8rImage != ""
@@ -92,7 +93,7 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 	}
 	// Reconcile policies before their selected workloads so new pods are
 	// governed from their creation.
-	components = append(components, pluginNetworkPolicyReconcilers(plugin, pluginInfo, namespace, korrel8rEnabled, deployHealthAnalyzer, persesEnabled)...)
+	components = append(components, pluginNetworkPolicyReconcilers(plugin, pluginInfo, namespace, apiReader, korrel8rEnabled, deployHealthAnalyzer, persesEnabled)...)
 	components = append(components,
 		reconciler.NewUpdater(newDeployment(pluginInfo, namespace, plugin.Spec.Deployment), plugin),
 		reconciler.NewUpdater(newService(pluginInfo, namespace), plugin),

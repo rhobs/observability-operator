@@ -5,6 +5,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 	"github.com/rhobs/observability-operator/pkg/reconciler"
@@ -30,19 +31,19 @@ const (
 	healthAnalyzerPort              int32 = 8443
 )
 
-func pluginNetworkPolicyReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPluginInfo, namespace string, korrel8rEnabled, healthAnalyzerEnabled, persesEnabled bool) []reconciler.Reconciler {
+func pluginNetworkPolicyReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPluginInfo, namespace string, apiReader client.Reader, korrel8rEnabled, healthAnalyzerEnabled, persesEnabled bool) []reconciler.Reconciler {
 	components := []reconciler.Reconciler{
-		reconciler.NewNetworkPolicyUpdater(newPluginBackendNetworkPolicy(pluginInfo.Name, plugin.Spec.Type, namespace), plugin),
+		reconciler.NewNetworkPolicyUpdater(newPluginBackendNetworkPolicy(pluginInfo.Name, plugin.Spec.Type, namespace), plugin, apiReader),
 	}
 
 	if plugin.Spec.Type == uiv1alpha1.TypeTroubleshootingPanel {
-		components = append(components, reconciler.NewOptionalNetworkPolicyUpdater(newKorrel8rNetworkPolicy(namespace), plugin, korrel8rEnabled))
+		components = append(components, reconciler.NewOptionalNetworkPolicyUpdater(newKorrel8rNetworkPolicy(namespace), plugin, apiReader, korrel8rEnabled))
 	}
 
 	if plugin.Spec.Type == uiv1alpha1.TypeMonitoring {
 		components = append(components,
-			reconciler.NewOptionalNetworkPolicyUpdater(newHealthAnalyzerNetworkPolicy(namespace), plugin, healthAnalyzerEnabled),
-			reconciler.NewOptionalNetworkPolicyUpdater(newPersesNetworkPolicy(namespace), plugin, persesEnabled),
+			reconciler.NewOptionalNetworkPolicyUpdater(newHealthAnalyzerNetworkPolicy(namespace), plugin, apiReader, healthAnalyzerEnabled),
+			reconciler.NewOptionalNetworkPolicyUpdater(newPersesNetworkPolicy(namespace), plugin, apiReader, persesEnabled),
 		)
 	}
 

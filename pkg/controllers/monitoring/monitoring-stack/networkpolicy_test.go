@@ -45,7 +45,7 @@ func TestStackComponentReconcilers_ReconcileNetworkPolicies(t *testing.T) {
 	scheme := testMonitoringStackScheme(t)
 	rec := newRecordingClient()
 
-	for _, r := range stackComponentReconcilers(ms, ThanosConfiguration{}, PrometheusConfiguration{}, AlertmanagerConfiguration{}) {
+	for _, r := range stackComponentReconcilers(ms, ThanosConfiguration{}, PrometheusConfiguration{}, AlertmanagerConfiguration{}, rec) {
 		require.NoError(t, r.Reconcile(context.Background(), rec, scheme))
 	}
 
@@ -70,13 +70,13 @@ func TestStackComponentReconcilers_DeletesAlertmanagerNetworkPolicyWhenDisabled(
 	scheme := testMonitoringStackScheme(t)
 	rec := newRecordingClient()
 
-	for _, r := range stackComponentReconcilers(ms, ThanosConfiguration{}, PrometheusConfiguration{}, AlertmanagerConfiguration{}) {
+	for _, r := range stackComponentReconcilers(ms, ThanosConfiguration{}, PrometheusConfiguration{}, AlertmanagerConfiguration{}, rec) {
 		require.NoError(t, r.Reconcile(context.Background(), rec, scheme))
 	}
 
 	disabled := ms.DeepCopy()
 	disabled.Spec.AlertmanagerConfig.Disabled = true
-	for _, r := range stackComponentReconcilers(disabled, ThanosConfiguration{}, PrometheusConfiguration{}, AlertmanagerConfiguration{}) {
+	for _, r := range stackComponentReconcilers(disabled, ThanosConfiguration{}, PrometheusConfiguration{}, AlertmanagerConfiguration{}, rec) {
 		require.NoError(t, r.Reconcile(context.Background(), rec, scheme))
 	}
 

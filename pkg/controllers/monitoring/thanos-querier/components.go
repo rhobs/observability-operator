@@ -9,6 +9,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	msoapi "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 	"github.com/rhobs/observability-operator/pkg/reconciler"
@@ -19,11 +20,12 @@ func thanosComponentReconcilers(
 	sidecarUrls []string,
 	thanosCfg ThanosConfiguration,
 	tlsHashes map[string]string,
+	apiReader client.Reader,
 ) []reconciler.Reconciler {
 	name := "thanos-querier-" + thanos.Name
 	return []reconciler.Reconciler{
 		reconciler.NewUpdater(newServiceAccount(name, thanos.Namespace), thanos),
-		reconciler.NewNetworkPolicyUpdater(newNetworkPolicy(name, thanos.Namespace), thanos),
+		reconciler.NewNetworkPolicyUpdater(newNetworkPolicy(name, thanos.Namespace), thanos, apiReader),
 		reconciler.NewUpdater(newThanosQuerierDeployment(name, thanos, sidecarUrls, thanosCfg, tlsHashes), thanos),
 		reconciler.NewUpdater(newService(name, thanos.Namespace), thanos),
 		reconciler.NewUpdater(newServiceMonitor(name, thanos.Namespace, thanos), thanos),

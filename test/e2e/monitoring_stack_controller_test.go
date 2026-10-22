@@ -1081,10 +1081,15 @@ func monitoringStackNetworkPoliciesReconcile(t *testing.T) {
 	mutated := &networkingv1.NetworkPolicy{}
 	f.GetResourceWithRetry(t, promNPName, ms.Namespace, mutated)
 	delete(mutated.Labels, "app.kubernetes.io/managed-by")
+	mutated.Spec.Ingress = nil
+	mutated.Spec.Egress = nil
 	err = f.K8sClient.Update(context.Background(), mutated)
-	assert.NilError(t, err, "failed to remove the managed-by label from the prometheus network policy")
+	assert.NilError(t, err, "failed to change the prometheus network policy and remove its managed-by label")
 
 	assertPermissiveNetworkPolicy(t, promNPName, ms.Namespace, promSelector)
+	reconciled := &networkingv1.NetworkPolicy{}
+	f.GetResourceWithRetry(t, promNPName, ms.Namespace, reconciled)
+	assert.Equal(t, mutated.UID, reconciled.UID, "network policy must be repaired without being recreated")
 
 	alertNP := &networkingv1.NetworkPolicy{}
 	f.GetResourceWithRetry(t, alertNPName, ms.Namespace, alertNP)
