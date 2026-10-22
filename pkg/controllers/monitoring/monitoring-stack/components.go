@@ -7,11 +7,13 @@ import (
 
 	monv1 "github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	stack "github.com/rhobs/observability-operator/pkg/apis/monitoring/v1alpha1"
 	"github.com/rhobs/observability-operator/pkg/reconciler"
@@ -47,6 +49,7 @@ func stackComponentReconcilers(
 	thanos ThanosConfiguration,
 	prometheus PrometheusConfiguration,
 	alertmanager AlertmanagerConfiguration,
+	apiReader client.Reader,
 ) []reconciler.Reconciler {
 	prometheusName := ms.Name + "-prometheus"
 	alertmanagerName := ms.Name + "-alertmanager"
@@ -70,6 +73,11 @@ func stackComponentReconcilers(
 		reconciler.NewOptionalUpdater(newClusterRoleBinding(ms, alertmanagerName), ms, deployAlertmanager && createCRB),
 		reconciler.NewOptionalUpdater(newRoleBindingForClusterRole(ms, alertmanagerName), ms, deployAlertmanager && !createCRB),
 
+		// NetworkPolicies are reconciled before their selected workloads so new
+		// operand pods are governed from their creation.
+		reconciler.NewNetworkPolicyUpdater(newPrometheusNetworkPolicy(ms), ms, apiReader),
+		reconciler.NewOptionalNetworkPolicyUpdater(newAlertmanagerNetworkPolicy(ms), ms, apiReader, deployAlertmanager),
+
 		// Prometheus Deployment
 		reconciler.NewUpdater(newPrometheus(ms, prometheusName,
 			additionalScrapeConfigsSecretName,
@@ -85,6 +93,16 @@ func stackComponentReconcilers(
 		reconciler.NewOptionalUpdater(newAlertmanagerService(ms), ms, deployAlertmanager),
 		reconciler.NewOptionalUpdater(newAlertmanagerPDB(ms), ms, deployAlertmanager && *ms.Spec.AlertmanagerConfig.Replicas > 1),
 	}
+}
+
+func newPrometheusNetworkPolicy(ms *stack.MonitoringStack) *networkingv1.NetworkPolicy {
+	name := ms.Name + "-prometheus-network-policy"
+	return reconciler.NewAllowAllNetworkPolicy(name, ms.Namespace, podLabels("prometheus", ms.Name))
+}
+
+func newAlertmanagerNetworkPolicy(ms *stack.MonitoringStack) *networkingv1.NetworkPolicy {
+	name := ms.Name + "-alertmanager-network-policy"
+	return reconciler.NewAllowAllNetworkPolicy(name, ms.Namespace, podLabels("alertmanager", ms.Name))
 }
 
 func newPrometheusClusterRole(rbacResourceName string, rbacVerbs []string) *rbacv1.ClusterRole {
