@@ -206,10 +206,14 @@ def transform_csv(path, version):
         {"name": rel, "image": pull} for (_art, rel, pull) in image_table(version)
     ]
 
-    # perses-operator: TLS profile args
+    # perses-operator: TLS profile args + default perses base image
     perses = find_container(find_deployment(csv, "perses-operator"), "perses-operator")
     perses.setdefault("args", [])
-    perses["args"] += ["--tls-cluster-profile", "--tls-configure-operands"]
+    perses["args"] += [
+        "--tls-cluster-profile",
+        "--tls-configure-operands",
+        f"--perses-default-base-image={PERSES}",
+    ]
 
     # obo-prometheus-operator: config-reloader via RELATED_IMAGE env
     po = find_container(find_deployment(csv, "obo-prometheus-operator"), "prometheus-operator")
