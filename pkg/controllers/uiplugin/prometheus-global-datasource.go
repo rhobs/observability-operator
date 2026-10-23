@@ -1,10 +1,10 @@
 package uiplugin
 
 import (
-	specCommon "github.com/perses/spec/go/common"
-	dsSpec "github.com/perses/spec/go/datasource"
-	pluginSpec "github.com/perses/spec/go/plugin"
 	persesv1alpha2 "github.com/rhobs/perses-operator/api/v1alpha2"
+	specCommon "github.com/rhobs/perses-spec/go/common"
+	dsSpec "github.com/rhobs/perses-spec/go/datasource"
+	pluginSpec "github.com/rhobs/perses-spec/go/plugin"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 )
