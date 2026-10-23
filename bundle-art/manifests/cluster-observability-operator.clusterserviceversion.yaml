@@ -1275,6 +1275,7 @@ spec:
                 args:
                 - --tls-cluster-profile
                 - --tls-configure-operands
+                - --perses-default-base-image=quay.io/openshift-observability-ui/perses:v0.54.0
               serviceAccountName: perses-operator
               tolerations:
               - effect: NoSchedule
