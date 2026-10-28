@@ -9,6 +9,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -25,8 +26,8 @@ type expectedNetworkPolicyIngressRule struct {
 }
 
 type expectedNetworkPolicyPeer struct {
-	namespacePolicyGroup string
-	podSelector          map[string]string
+	namespaceSelector *metav1.LabelSelector
+	podSelector       map[string]string
 }
 
 func TestNetworkPolicyBuilders(t *testing.T) {
@@ -46,7 +47,7 @@ func TestNetworkPolicyBuilders(t *testing.T) {
 			expectedPodSelector: componentLabels("monitoring"),
 			expectedIngress: []expectedNetworkPolicyIngressRule{{
 				from: []expectedNetworkPolicyPeer{
-					{namespacePolicyGroup: "console"},
+					{namespaceSelector: &metav1.LabelSelector{MatchLabels: map[string]string{"kubernetes.io/metadata.name": "openshift-console"}}},
 				},
 				ports: []int32{9443, 9444, 9445},
 			}},
@@ -58,7 +59,7 @@ func TestNetworkPolicyBuilders(t *testing.T) {
 			expectedPodSelector: componentLabels("logging"),
 			expectedIngress: []expectedNetworkPolicyIngressRule{{
 				from: []expectedNetworkPolicyPeer{
-					{namespacePolicyGroup: "console"},
+					{namespaceSelector: &metav1.LabelSelector{MatchLabels: map[string]string{"kubernetes.io/metadata.name": "openshift-console"}}},
 				},
 				ports: []int32{9443},
 			}},
@@ -70,7 +71,7 @@ func TestNetworkPolicyBuilders(t *testing.T) {
 			expectedPodSelector: componentLabels(korrel8rName),
 			expectedIngress: []expectedNetworkPolicyIngressRule{{
 				from: []expectedNetworkPolicyPeer{
-					{namespacePolicyGroup: "console"},
+					{namespaceSelector: &metav1.LabelSelector{MatchLabels: map[string]string{"kubernetes.io/metadata.name": "openshift-console"}}},
 				},
 				ports: []int32{9443},
 			}},
@@ -85,7 +86,7 @@ func TestNetworkPolicyBuilders(t *testing.T) {
 			},
 			expectedIngress: []expectedNetworkPolicyIngressRule{{
 				from: []expectedNetworkPolicyPeer{
-					{namespacePolicyGroup: "console"},
+					{namespaceSelector: &metav1.LabelSelector{MatchLabels: map[string]string{"kubernetes.io/metadata.name": "openshift-console"}}},
 					{podSelector: map[string]string{
 						"app.kubernetes.io/name":      "perses-operator",
 						"app.kubernetes.io/component": "controller",
@@ -102,7 +103,13 @@ func TestNetworkPolicyBuilders(t *testing.T) {
 			expectedPodSelector: componentLabels(healthAnalyzerWorkloadName),
 			expectedIngress: []expectedNetworkPolicyIngressRule{{
 				from: []expectedNetworkPolicyPeer{
-					{namespacePolicyGroup: "monitoring"},
+					{namespaceSelector: &metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{{
+							Key:      "kubernetes.io/metadata.name",
+							Operator: metav1.LabelSelectorOpIn,
+							Values:   []string{"openshift-monitoring", "openshift-user-workload-monitoring"},
+						}},
+					}},
 				},
 				ports: []int32{8443},
 			}},
@@ -134,13 +141,7 @@ func assertNetworkPolicyIngressRules(t *testing.T, expectedRules []expectedNetwo
 
 		for j, expectedPeer := range expectedRule.from {
 			actualPeer := ingressRule.From[j]
-			peer := networkingv1.NetworkPolicyPeer{}
-
-			if expectedPeer.namespacePolicyGroup != "" {
-				peer.NamespaceSelector = &metav1.LabelSelector{
-					MatchLabels: map[string]string{"network.openshift.io/policy-group": expectedPeer.namespacePolicyGroup},
-				}
-			}
+			peer := networkingv1.NetworkPolicyPeer{NamespaceSelector: expectedPeer.namespaceSelector}
 
 			if expectedPeer.podSelector != nil {
 				peer.PodSelector = &metav1.LabelSelector{MatchLabels: expectedPeer.podSelector}
@@ -155,6 +156,58 @@ func assertNetworkPolicyIngressRules(t *testing.T, expectedRules []expectedNetwo
 
 			assert.DeepEqual(t, networkingv1.NetworkPolicyPort{Protocol: &tcpProtocol, Port: &tcpPort}, ingressRule.Ports[j])
 		}
+	}
+}
+
+func TestNetworkPolicyNamespaceSelectors(t *testing.T) {
+	testCases := []struct {
+		name              string
+		policy            *networkingv1.NetworkPolicy
+		allowedNamespaces map[string]bool
+	}{
+		{
+			name:              "plugin backend",
+			policy:            newPluginBackendNetworkPolicy("logging", uiv1alpha1.TypeLogging, "operator"),
+			allowedNamespaces: map[string]bool{"openshift-console": true},
+		},
+		{
+			name:              "monitoring plugin backend",
+			policy:            newPluginBackendNetworkPolicy("monitoring", uiv1alpha1.TypeMonitoring, "operator"),
+			allowedNamespaces: map[string]bool{"openshift-console": true},
+		},
+		{
+			name:              "korrel8r",
+			policy:            newKorrel8rNetworkPolicy("operator"),
+			allowedNamespaces: map[string]bool{"openshift-console": true},
+		},
+		{
+			name:              "perses",
+			policy:            newPersesNetworkPolicy("operator"),
+			allowedNamespaces: map[string]bool{"openshift-console": true},
+		},
+		{
+			name:              "health analyzer",
+			policy:            newHealthAnalyzerNetworkPolicy("operator"),
+			allowedNamespaces: map[string]bool{"openshift-monitoring": true, "openshift-user-workload-monitoring": true},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			selector, err := metav1.LabelSelectorAsSelector(tc.policy.Spec.Ingress[0].From[0].NamespaceSelector)
+			assert.NilError(t, err)
+			for _, namespace := range []string{"openshift-console", "openshift-monitoring", "openshift-user-workload-monitoring", "unrelated"} {
+				// The policy-group label must not affect whether a namespace matches.
+				for _, group := range []string{"", "console", "monitoring"} {
+					namespaceLabels := labels.Set{"kubernetes.io/metadata.name": namespace}
+					if group != "" {
+						namespaceLabels["network.openshift.io/policy-group"] = group
+					}
+					assert.Equal(t, tc.allowedNamespaces[namespace], selector.Matches(namespaceLabels), "namespace %s, policy group %q", namespace, group)
+				}
+			}
+			assert.Equal(t, false, selector.Matches(labels.Set{}))
+		})
 	}
 }
 

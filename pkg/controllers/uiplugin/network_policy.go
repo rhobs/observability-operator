@@ -20,15 +20,8 @@ const (
 	persesOperatorComponentLabel = "controller"
 	persesOperatorPartOfLabel    = "observability-operator"
 
-	// The OpenShift console operator's namespace manifest sets the console policy
-	// group on openshift-console. The cluster monitoring operator's namespace
-	// manifest sets the monitoring policy group on openshift-monitoring and
-	// openshift-user-workload-monitoring.
-	// https://github.com/openshift/console-operator/blob/main/manifests/02-namespace.yaml
-	// https://github.com/openshift/cluster-monitoring-operator/blob/main/manifests/0000_50_cluster-monitoring-operator_01-namespace.yaml
-	namespacePolicyGroupLabel = "network.openshift.io/policy-group"
-	consolePolicyGroup        = "console"
-	monitoringPolicyGroup     = "monitoring"
+	consoleNamespace                = "openshift-console"
+	userWorkloadMonitoringNamespace = "openshift-user-workload-monitoring"
 
 	pluginBackendPort               int32 = 9443
 	monitoringAlertmanagerProxyPort int32 = 9444
@@ -86,7 +79,7 @@ func newPluginBackendNetworkPolicy(pluginName string, pluginType uiv1alpha1.UIPl
 			Ingress: []networkingv1.NetworkPolicyIngressRule{{
 				From: []networkingv1.NetworkPolicyPeer{{
 					NamespaceSelector: &metav1.LabelSelector{
-						MatchLabels: map[string]string{namespacePolicyGroupLabel: consolePolicyGroup},
+						MatchLabels: map[string]string{corev1.LabelMetadataName: consoleNamespace},
 					},
 				}},
 				Ports: ports,
@@ -110,7 +103,7 @@ func newKorrel8rNetworkPolicy(namespace string) *networkingv1.NetworkPolicy {
 			Ingress: []networkingv1.NetworkPolicyIngressRule{{
 				From: []networkingv1.NetworkPolicyPeer{{
 					NamespaceSelector: &metav1.LabelSelector{
-						MatchLabels: map[string]string{namespacePolicyGroupLabel: consolePolicyGroup},
+						MatchLabels: map[string]string{corev1.LabelMetadataName: consoleNamespace},
 					},
 				}},
 				Ports: []networkingv1.NetworkPolicyPort{{
@@ -136,7 +129,11 @@ func newHealthAnalyzerNetworkPolicy(namespace string) *networkingv1.NetworkPolic
 			Ingress: []networkingv1.NetworkPolicyIngressRule{{
 				From: []networkingv1.NetworkPolicyPeer{{
 					NamespaceSelector: &metav1.LabelSelector{
-						MatchLabels: map[string]string{namespacePolicyGroupLabel: monitoringPolicyGroup},
+						MatchExpressions: []metav1.LabelSelectorRequirement{{
+							Key:      corev1.LabelMetadataName,
+							Operator: metav1.LabelSelectorOpIn,
+							Values:   []string{reconciler.OpenshiftMonitoringNamespace, userWorkloadMonitoringNamespace},
+						}},
 					},
 				}},
 				Ports: []networkingv1.NetworkPolicyPort{{
@@ -166,7 +163,7 @@ func newPersesNetworkPolicy(namespace string) *networkingv1.NetworkPolicy {
 			Ingress: []networkingv1.NetworkPolicyIngressRule{{
 				From: []networkingv1.NetworkPolicyPeer{
 					{NamespaceSelector: &metav1.LabelSelector{
-						MatchLabels: map[string]string{namespacePolicyGroupLabel: consolePolicyGroup},
+						MatchLabels: map[string]string{corev1.LabelMetadataName: consoleNamespace},
 					}},
 					// A pod selector without a namespace selector matches only this namespace.
 					{PodSelector: &metav1.LabelSelector{MatchLabels: map[string]string{
