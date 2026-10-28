@@ -36,11 +36,10 @@ func pluginNetworkPolicyReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPl
 		reconciler.NewNetworkPolicyUpdater(newPluginBackendNetworkPolicy(pluginInfo.Name, plugin.Spec.Type, namespace), plugin, apiReader),
 	}
 
-	if plugin.Spec.Type == uiv1alpha1.TypeTroubleshootingPanel {
+	switch plugin.Spec.Type {
+	case uiv1alpha1.TypeTroubleshootingPanel:
 		components = append(components, reconciler.NewOptionalNetworkPolicyUpdater(newKorrel8rNetworkPolicy(namespace), plugin, apiReader, korrel8rEnabled))
-	}
-
-	if plugin.Spec.Type == uiv1alpha1.TypeMonitoring {
+	case uiv1alpha1.TypeMonitoring:
 		components = append(components,
 			reconciler.NewOptionalNetworkPolicyUpdater(newHealthAnalyzerNetworkPolicy(namespace), plugin, apiReader, healthAnalyzerEnabled),
 			reconciler.NewOptionalNetworkPolicyUpdater(newPersesNetworkPolicy(namespace), plugin, apiReader, persesEnabled),

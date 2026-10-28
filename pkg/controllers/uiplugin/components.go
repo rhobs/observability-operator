@@ -91,8 +91,8 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 	components := []reconciler.Reconciler{
 		reconciler.NewUpdater(newServiceAccount(pluginInfo.Name, namespace), plugin),
 	}
-	// Reconcile policies before their selected workloads so new pods are
-	// governed from their creation.
+	// Reconcile policies before their selected workloads. This is only client side best effort ordering.
+	// We do not wait on policies status updates. The default deny policy in OpenShift catches workload before policy orderings.
 	components = append(components, pluginNetworkPolicyReconcilers(plugin, pluginInfo, namespace, apiReader, korrel8rEnabled, deployHealthAnalyzer, persesEnabled)...)
 	components = append(components,
 		reconciler.NewUpdater(newDeployment(pluginInfo, namespace, plugin.Spec.Deployment), plugin),

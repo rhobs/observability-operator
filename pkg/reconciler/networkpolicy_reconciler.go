@@ -75,7 +75,7 @@ func (r networkPolicyReconciler) Reconcile(ctx context.Context, c client.Client,
 			return fmt.Errorf("NetworkPolicy %s: failed to create: %w", key, err)
 		}
 	}
-	if err != nil {
+	if apierrors.IsNotFound(err) || apierrors.IsAlreadyExists(err) {
 		// A policy leaving the cache's label selector produces a delete event,
 		// but still exists on the API server. Read it directly after an
 		// AlreadyExists, or before treating a cache miss as a completed deletion.
