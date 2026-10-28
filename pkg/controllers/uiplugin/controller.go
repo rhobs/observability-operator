@@ -14,6 +14,7 @@ import (
 	persesv1alpha2 "github.com/rhobs/perses-operator/api/v1alpha2"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -103,7 +104,8 @@ const (
 //+kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch
 //+kubebuilder:rbac:groups=policy,resources=poddisruptionbudgets,verbs=get;list;watch
 //+kubebuilder:rbac:groups=storage.k8s.io,resources=storageclasses;volumeattachments,verbs=get;list;watch
-//+kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies;ingresses,verbs=get;list;watch
+//+kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch
 //+kubebuilder:rbac:groups=loki.grafana.com,resources=application;infrastructure;audit;network,verbs=get
 //+kubebuilder:rbac:groups=monitoring.coreos.com,resources=prometheuses/api,resourceNames=k8s,verbs=get;create;update
 //+kubebuilder:rbac:groups=monitoring.coreos.com,resources=alertmanagers/api,resourceNames=main,verbs=get;list
@@ -140,12 +142,14 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 	}
 
 	generationChanged := builder.WithPredicates(predicate.GenerationChangedPredicate{})
+	resourceVersionChanged := builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})
 
 	ctrlBuilder := ctrl.NewControllerManagedBy(mgr).
 		For(&uiv1alpha1.UIPlugin{}).
 		Owns(&appsv1.Deployment{}, generationChanged).
 		Owns(&v1.Service{}, generationChanged).
 		Owns(&v1.ServiceAccount{}, generationChanged).
+		Owns(&networkingv1.NetworkPolicy{}, resourceVersionChanged).
 		Owns(&rbacv1.Role{}, generationChanged).
 		Owns(&rbacv1.RoleBinding{}, generationChanged).
 		Owns(&persesv1alpha2.Perses{}, generationChanged).
@@ -257,7 +261,7 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	pluginInfo, pluginInfoErr := PluginInfoBuilder(ctx, rm.k8sClient, rm.k8sDynamicClient, plugin, rm.pluginConf, compatibilityInfo, rm.clusterVersion, rm.logger)
 
 	if pluginInfo != nil {
-		reconcilers := pluginComponentReconcilers(plugin, *pluginInfo, rm.clusterVersion, rm.logger)
+		reconcilers := pluginComponentReconcilers(plugin, *pluginInfo, rm.clusterVersion, rm.logger, rm.apiReader)
 		for _, reconciler := range reconcilers {
 			err := reconciler.Reconcile(ctx, rm.k8sClient, rm.scheme)
 			// handle creation / updation errors that can happen due to a stale cache by

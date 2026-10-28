@@ -13,7 +13,6 @@ import (
 	operatorv1 "github.com/openshift/api/operator/v1"
 	openshifttls "github.com/openshift/controller-runtime-common/pkg/tls"
 	v1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -300,12 +299,6 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 			// stack
 			&v1.Service{}: cache.ByObject{
 				Label: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": ctrlutil.OpName}),
-			},
-			// NetworkPolicies must remain visible when their managed-by label is
-			// removed or their spec is changed out of band, so their owning
-			// controller can restore the desired state.
-			&networkingv1.NetworkPolicy{}: cache.ByObject{
-				Label: labels.Everything(),
 			},
 		},
 	}

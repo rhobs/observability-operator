@@ -60,7 +60,7 @@ func TestNetworkPolicyUpdater(t *testing.T) {
 				},
 			})
 
-			r := NewNetworkPolicyUpdater(desired, owner)
+			r := NewNetworkPolicyUpdater(desired, owner, base)
 			require.NoError(t, r.Reconcile(ctx, c, scheme))
 			require.Equal(t, 1, applies)
 			if existing {
@@ -92,6 +92,80 @@ func TestNetworkPolicyUpdater(t *testing.T) {
 	}
 }
 
+func TestNetworkPolicyCacheMiss(t *testing.T) {
+	tt := []struct {
+		name      string
+		existing  bool
+		present   bool
+		managedBy string
+		wantCalls []string
+	}{
+		{"create missing policy", false, true, "", []string{"create", "apply"}},
+		{"restore removed label", true, true, "", []string{"create", "get uncached", "apply"}},
+		{"restore changed label", true, true, "someone-else", []string{"create", "get uncached", "apply"}},
+		{"stale cache", true, true, "observability-operator", []string{"create", "get uncached", "apply"}},
+		{"delete unlabeled policy", true, false, "", []string{"get uncached", "delete"}},
+		{"delete missing policy", false, false, "", []string{"get uncached"}},
+	}
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+			scheme, owner, desired := networkPolicyTestObjects(t)
+			var objects []client.Object
+			if tc.existing {
+				current := ownedTestNetworkPolicy(t, scheme, owner, desired)
+				current.Spec.Ingress = nil
+				current.Spec.Egress = nil
+				current.Labels = map[string]string{"user-label": "preserved"}
+				if tc.managedBy != "" {
+					current.Labels["app.kubernetes.io/managed-by"] = tc.managedBy
+				}
+				objects = append(objects, current)
+			}
+			base := networkPolicyTestClient(t, scheme, objects...)
+			var calls []string
+			apiReader := interceptor.NewClient(base, interceptor.Funcs{
+				Get: func(ctx context.Context, c client.WithWatch, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+					calls = append(calls, "get uncached")
+					return c.Get(ctx, key, obj, opts...)
+				},
+			})
+			c := interceptor.NewClient(networkPolicyCacheMissClient(base), interceptor.Funcs{
+				Create: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
+					calls = append(calls, "create")
+					return c.Create(ctx, obj, opts...)
+				},
+				Apply: func(ctx context.Context, c client.WithWatch, obj runtime.ApplyConfiguration, opts ...client.ApplyOption) error {
+					calls = append(calls, "apply")
+					return c.Apply(ctx, obj, opts...)
+				},
+				Delete: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.DeleteOption) error {
+					calls = append(calls, "delete")
+					return c.Delete(ctx, obj, opts...)
+				},
+			})
+
+			err := NewOptionalNetworkPolicyUpdater(desired, owner, apiReader, tc.present).Reconcile(ctx, c, scheme)
+			require.NoError(t, err)
+			require.Equal(t, tc.wantCalls, calls)
+			actual := &networkingv1.NetworkPolicy{}
+			err = base.Get(ctx, client.ObjectKeyFromObject(desired), actual)
+			if !tc.present {
+				require.True(t, apierrors.IsNotFound(err), "%v", err)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, desired.Spec, actual.Spec)
+			require.Equal(t, "observability-operator", actual.Labels["app.kubernetes.io/managed-by"])
+			require.Equal(t, owner.UID, metav1.GetControllerOf(actual).UID)
+			if tc.existing {
+				require.Equal(t, types.UID("original-policy"), actual.UID, "repair must not recreate the policy")
+				require.Equal(t, "preserved", actual.Labels["user-label"])
+			}
+		})
+	}
+}
+
 func TestNetworkPolicyOwnershipCollisions(t *testing.T) {
 	for _, tc := range []struct {
 		name   string
@@ -111,37 +185,52 @@ func TestNetworkPolicyOwnershipCollisions(t *testing.T) {
 		{"foreign owner kind with same UID", func(p *networkingv1.NetworkPolicy) { p.OwnerReferences[0].Kind = "Secret" }},
 		{"foreign owner group with same UID", func(p *networkingv1.NetworkPolicy) { p.OwnerReferences[0].APIVersion = "foreign.example/v1" }},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
-			for _, present := range []bool{true, false} {
-				scheme, owner, desired := networkPolicyTestObjects(t)
-				current := ownedTestNetworkPolicy(t, scheme, owner, desired)
-				tc.mutate(current)
-				base := networkPolicyTestClient(t, scheme, current)
-				var writes int
-				c := interceptor.NewClient(base, interceptor.Funcs{
-					Create: func(context.Context, client.WithWatch, client.Object, ...client.CreateOption) error {
-						writes++
-						return nil
-					},
-					Apply: func(context.Context, client.WithWatch, runtime.ApplyConfiguration, ...client.ApplyOption) error {
-						writes++
-						return nil
-					},
-					Delete: func(context.Context, client.WithWatch, client.Object, ...client.DeleteOption) error {
-						writes++
-						return nil
-					},
-				})
-				before := &networkingv1.NetworkPolicy{}
-				require.NoError(t, base.Get(context.Background(), client.ObjectKeyFromObject(current), before))
-				err := NewOptionalNetworkPolicyUpdater(desired, owner, present).Reconcile(context.Background(), c, scheme)
-				require.ErrorContains(t, err, "ownership conflict")
-				require.Zero(t, writes)
-				after := &networkingv1.NetworkPolicy{}
-				require.NoError(t, base.Get(context.Background(), client.ObjectKeyFromObject(current), after))
-				require.Equal(t, before, after)
+		for _, cacheMiss := range []bool{false, true} {
+			name := tc.name
+			if cacheMiss {
+				name += " with cache miss"
 			}
-		})
+			t.Run(name, func(t *testing.T) {
+				for _, present := range []bool{true, false} {
+					scheme, owner, desired := networkPolicyTestObjects(t)
+					current := ownedTestNetworkPolicy(t, scheme, owner, desired)
+					tc.mutate(current)
+					base := networkPolicyTestClient(t, scheme, current)
+					cached := base
+					if cacheMiss {
+						cached = networkPolicyCacheMissClient(base)
+					}
+					var creates, writes int
+					c := interceptor.NewClient(cached, interceptor.Funcs{
+						Create: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
+							creates++
+							return c.Create(ctx, obj, opts...)
+						},
+						Apply: func(context.Context, client.WithWatch, runtime.ApplyConfiguration, ...client.ApplyOption) error {
+							writes++
+							return nil
+						},
+						Delete: func(context.Context, client.WithWatch, client.Object, ...client.DeleteOption) error {
+							writes++
+							return nil
+						},
+					})
+					before := &networkingv1.NetworkPolicy{}
+					require.NoError(t, base.Get(context.Background(), client.ObjectKeyFromObject(current), before))
+					err := NewOptionalNetworkPolicyUpdater(desired, owner, base, present).Reconcile(context.Background(), c, scheme)
+					require.ErrorContains(t, err, "ownership conflict")
+					require.Zero(t, writes)
+					if cacheMiss && present {
+						require.Equal(t, 1, creates)
+					} else {
+						require.Zero(t, creates)
+					}
+					after := &networkingv1.NetworkPolicy{}
+					require.NoError(t, base.Get(context.Background(), client.ObjectKeyFromObject(current), after))
+					require.Equal(t, before, after)
+				}
+			})
+		}
 	}
 }
 
@@ -162,9 +251,9 @@ func TestNetworkPolicySafeDeletion(t *testing.T) {
 				return c.Delete(ctx, obj, opts...)
 			},
 		})
-		r := NewNetworkPolicyDeleter(desired, owner)
+		r := NewNetworkPolicyDeleter(desired, owner, base)
 		if optional {
-			r = NewOptionalNetworkPolicyUpdater(desired, owner, false)
+			r = NewOptionalNetworkPolicyUpdater(desired, owner, base, false)
 		}
 		require.NoError(t, r.Reconcile(ctx, c, scheme))
 		require.Equal(t, 1, deletes)
@@ -172,7 +261,7 @@ func TestNetworkPolicySafeDeletion(t *testing.T) {
 		require.NoError(t, r.Reconcile(ctx, c, scheme), "missing policy must be a no-op")
 		require.Equal(t, 1, deletes)
 		// Re-enable the component after its policy was removed.
-		require.NoError(t, NewOptionalNetworkPolicyUpdater(desired, owner, true).Reconcile(ctx, c, scheme))
+		require.NoError(t, NewOptionalNetworkPolicyUpdater(desired, owner, base, true).Reconcile(ctx, c, scheme))
 		require.NoError(t, base.Get(ctx, client.ObjectKeyFromObject(desired), &networkingv1.NetworkPolicy{}))
 	}
 }
@@ -193,8 +282,8 @@ func TestNetworkPolicyConcurrentCreationCollision(t *testing.T) {
 			return nil
 		},
 	})
-	err := NewNetworkPolicyUpdater(desired, owner).Reconcile(ctx, c, scheme)
-	require.True(t, apierrors.IsAlreadyExists(err), "%v", err)
+	err := NewNetworkPolicyUpdater(desired, owner, base).Reconcile(ctx, c, scheme)
+	require.ErrorContains(t, err, "ownership conflict")
 	current := &networkingv1.NetworkPolicy{}
 	require.NoError(t, base.Get(ctx, client.ObjectKeyFromObject(desired), current))
 	require.Empty(t, current.OwnerReferences)
@@ -224,7 +313,7 @@ func TestNetworkPolicyConcurrentOwnershipChange(t *testing.T) {
 				return c.Delete(ctx, obj, opts...)
 			},
 		})
-		err := NewOptionalNetworkPolicyUpdater(desired, owner, present).Reconcile(ctx, c, scheme)
+		err := NewOptionalNetworkPolicyUpdater(desired, owner, base, present).Reconcile(ctx, c, scheme)
 		require.True(t, apierrors.IsConflict(err), "%v", err)
 		after := &networkingv1.NetworkPolicy{}
 		require.NoError(t, base.Get(ctx, client.ObjectKeyFromObject(desired), after))
@@ -256,7 +345,7 @@ func TestNetworkPolicyConcurrentReplacement(t *testing.T) {
 				return c.Delete(ctx, obj, opts...)
 			},
 		})
-		err := NewOptionalNetworkPolicyUpdater(desired, owner, present).Reconcile(ctx, c, scheme)
+		err := NewOptionalNetworkPolicyUpdater(desired, owner, base, present).Reconcile(ctx, c, scheme)
 		require.True(t, apierrors.IsConflict(err), "%v", err)
 		after := &networkingv1.NetworkPolicy{}
 		require.NoError(t, base.Get(ctx, client.ObjectKeyFromObject(desired), after))
@@ -277,7 +366,7 @@ func TestNetworkPolicyAdmissionOwnerChange(t *testing.T) {
 			return nil
 		},
 	})
-	err := NewNetworkPolicyUpdater(desired, owner).Reconcile(context.Background(), c, scheme)
+	err := NewNetworkPolicyUpdater(desired, owner, base).Reconcile(context.Background(), c, scheme)
 	require.ErrorContains(t, err, "ownership conflict")
 	current := &networkingv1.NetworkPolicy{}
 	require.NoError(t, base.Get(context.Background(), client.ObjectKeyFromObject(desired), current))
@@ -315,13 +404,54 @@ func TestNetworkPolicyAPIErrors(t *testing.T) {
 				}
 			}
 			present := operation != "delete" && operation != "delete-not-found"
-			err := NewOptionalNetworkPolicyUpdater(desired, owner, present).Reconcile(context.Background(), interceptor.NewClient(base, funcs), scheme)
+			err := NewOptionalNetworkPolicyUpdater(desired, owner, base, present).Reconcile(context.Background(), interceptor.NewClient(base, funcs), scheme)
 			if operation == "delete-not-found" {
 				require.NoError(t, err)
 			} else {
 				require.ErrorIs(t, err, failure)
 				require.True(t, apierrors.IsForbidden(err))
 			}
+		})
+	}
+}
+
+func TestNetworkPolicyUncachedReadErrors(t *testing.T) {
+	tt := []struct {
+		name     string
+		present  bool
+		notFound bool
+	}{
+		{"update forbidden", true, false},
+		{"deleted after create conflict", true, true},
+		{"delete forbidden", false, false},
+		{"delete not found", false, true},
+	}
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			scheme, owner, desired := networkPolicyTestObjects(t)
+			current := ownedTestNetworkPolicy(t, scheme, owner, desired)
+			base := networkPolicyTestClient(t, scheme, current)
+			before := &networkingv1.NetworkPolicy{}
+			require.NoError(t, base.Get(context.Background(), client.ObjectKeyFromObject(desired), before))
+			gr := schema.GroupResource{Group: networkingv1.GroupName, Resource: "networkpolicies"}
+			failure := apierrors.NewForbidden(gr, desired.Name, errors.New("denied"))
+			if tc.notFound {
+				failure = apierrors.NewNotFound(gr, desired.Name)
+			}
+			apiReader := interceptor.NewClient(base, interceptor.Funcs{
+				Get: func(context.Context, client.WithWatch, client.ObjectKey, client.Object, ...client.GetOption) error {
+					return failure
+				},
+			})
+			err := NewOptionalNetworkPolicyUpdater(desired, owner, apiReader, tc.present).Reconcile(context.Background(), networkPolicyCacheMissClient(base), scheme)
+			if !tc.present && tc.notFound {
+				require.NoError(t, err)
+			} else {
+				require.ErrorIs(t, err, failure)
+			}
+			actual := &networkingv1.NetworkPolicy{}
+			require.NoError(t, base.Get(context.Background(), client.ObjectKeyFromObject(desired), actual))
+			require.Equal(t, before, actual, "failed live reads must not modify or delete the policy")
 		})
 	}
 }
@@ -340,7 +470,7 @@ func TestNetworkPolicyOwnerScope(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			c := networkPolicyTestClient(t, scheme)
-			err := NewNetworkPolicyUpdater(desired, tc.owner).Reconcile(context.Background(), c, scheme)
+			err := NewNetworkPolicyUpdater(desired, tc.owner, c).Reconcile(context.Background(), c, scheme)
 			if tc.wantError != "" {
 				require.ErrorContains(t, err, tc.wantError)
 				require.True(t, apierrors.IsNotFound(c.Get(context.Background(), client.ObjectKeyFromObject(desired), &networkingv1.NetworkPolicy{})))
@@ -368,7 +498,7 @@ func TestNetworkPolicyNameLabelValue(t *testing.T) {
 			policy.Name = tc.value
 			client := networkPolicyTestClient(t, scheme)
 
-			require.NoError(t, NewNetworkPolicyUpdater(policy, owner).Reconcile(context.Background(), client, scheme))
+			require.NoError(t, NewNetworkPolicyUpdater(policy, owner, client).Reconcile(context.Background(), client, scheme))
 
 			actual := &networkingv1.NetworkPolicy{}
 			require.NoError(t, client.Get(context.Background(), clientObjectKey(policy), actual))
@@ -413,6 +543,14 @@ func decodeAppliedNetworkPolicy(t *testing.T, obj runtime.ApplyConfiguration) *n
 	policy := &networkingv1.NetworkPolicy{}
 	require.NoError(t, json.Unmarshal(raw, policy))
 	return policy
+}
+
+func networkPolicyCacheMissClient(base client.WithWatch) client.WithWatch {
+	return interceptor.NewClient(base, interceptor.Funcs{
+		Get: func(_ context.Context, _ client.WithWatch, key client.ObjectKey, _ client.Object, _ ...client.GetOption) error {
+			return apierrors.NewNotFound(schema.GroupResource{Group: networkingv1.GroupName, Resource: "networkpolicies"}, key.Name)
+		},
+	})
 }
 
 func networkPolicyTestClient(t *testing.T, scheme *runtime.Scheme, objects ...client.Object) client.WithWatch {

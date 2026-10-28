@@ -21,6 +21,7 @@ import (
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -40,9 +41,10 @@ import (
 
 type resourceManager struct {
 	client.Client
-	scheme *runtime.Scheme
-	logger logr.Logger
-	thanos ThanosConfiguration
+	apiReader client.Reader
+	scheme    *runtime.Scheme
+	logger    logr.Logger
+	thanos    ThanosConfiguration
 }
 
 type ThanosConfiguration struct {
@@ -83,10 +85,11 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 	logger := ctrl.Log.WithName("thanos-querier")
 
 	rm := &resourceManager{
-		Client: mgr.GetClient(),
-		scheme: mgr.GetScheme(),
-		logger: logger,
-		thanos: opts.Thanos,
+		Client:    mgr.GetClient(),
+		apiReader: mgr.GetAPIReader(),
+		scheme:    mgr.GetScheme(),
+		logger:    logger,
+		thanos:    opts.Thanos,
 	}
 
 	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &msoapi.ThanosQuerier{}, thanosTLSPrivateKeySecretNameField, func(rawObj client.Object) []string {
@@ -122,13 +125,15 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 		return err
 	}
 
-	p := predicate.GenerationChangedPredicate{}
+	generationChanged := builder.WithPredicates(predicate.GenerationChangedPredicate{})
+	resourceVersionChanged := builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&msoapi.ThanosQuerier{}).
-		Owns(&appsv1.Deployment{}).WithEventFilter(p).
-		Owns(&corev1.ServiceAccount{}).WithEventFilter(p).
-		Owns(&corev1.Service{}).WithEventFilter(p).
-		Owns(&corev1.ConfigMap{}).WithEventFilter(p).
+		For(&msoapi.ThanosQuerier{}, generationChanged).
+		Owns(&appsv1.Deployment{}, generationChanged).
+		Owns(&corev1.ServiceAccount{}, generationChanged).
+		Owns(&corev1.Service{}, generationChanged).
+		Owns(&networkingv1.NetworkPolicy{}, resourceVersionChanged).
+		Owns(&corev1.ConfigMap{}, generationChanged).
 		Watches(
 			&msoapi.MonitoringStack{},
 			handler.EnqueueRequestsFromMapFunc(rm.findQueriersForMonitoringStack),
@@ -178,7 +183,7 @@ func (rm resourceManager) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		}
 	}
 
-	reconcilers := thanosComponentReconcilers(querier, sidecarServices, rm.thanos, tlsHashes)
+	reconcilers := thanosComponentReconcilers(querier, sidecarServices, rm.thanos, tlsHashes, rm.apiReader)
 	for _, reconciler := range reconcilers {
 		err := reconciler.Reconcile(ctx, rm, rm.scheme)
 		// handle creation / updation errors that can happen due to a stale cache by
