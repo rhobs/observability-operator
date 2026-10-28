@@ -46,9 +46,9 @@ func TestNetworkPolicyBuilders(t *testing.T) {
 			expectedPodSelector: componentLabels("monitoring"),
 			expectedIngress: []expectedNetworkPolicyIngressRule{{
 				from: []expectedNetworkPolicyPeer{
-					{namespacePolicyGroup: consolePolicyGroup},
+					{namespacePolicyGroup: "console"},
 				},
-				ports: []int32{pluginBackendPort, monitoringAlertmanagerProxyPort, monitoringThanosQueryProxyPort},
+				ports: []int32{9443, 9444, 9445},
 			}},
 		},
 		{
@@ -58,9 +58,9 @@ func TestNetworkPolicyBuilders(t *testing.T) {
 			expectedPodSelector: componentLabels("logging"),
 			expectedIngress: []expectedNetworkPolicyIngressRule{{
 				from: []expectedNetworkPolicyPeer{
-					{namespacePolicyGroup: consolePolicyGroup},
+					{namespacePolicyGroup: "console"},
 				},
-				ports: []int32{pluginBackendPort},
+				ports: []int32{9443},
 			}},
 		},
 		{
@@ -70,26 +70,29 @@ func TestNetworkPolicyBuilders(t *testing.T) {
 			expectedPodSelector: componentLabels(korrel8rName),
 			expectedIngress: []expectedNetworkPolicyIngressRule{{
 				from: []expectedNetworkPolicyPeer{
-					{namespacePolicyGroup: consolePolicyGroup},
+					{namespacePolicyGroup: "console"},
 				},
-				ports: []int32{korrel8rPort},
+				ports: []int32{9443},
 			}},
 		},
 		{
-			name:                "perses allows console and perses operator controller pods",
-			policy:              newPersesNetworkPolicy(namespace),
-			expectedName:        "perses-network-policy",
-			expectedPodSelector: persesWorkloadSelector(),
+			name:         "perses allows console and perses operator controller pods",
+			policy:       newPersesNetworkPolicy(namespace),
+			expectedName: "perses-network-policy",
+			expectedPodSelector: map[string]string{
+				"app.kubernetes.io/instance":   "perses",
+				"app.kubernetes.io/managed-by": "perses-operator",
+			},
 			expectedIngress: []expectedNetworkPolicyIngressRule{{
 				from: []expectedNetworkPolicyPeer{
-					{namespacePolicyGroup: consolePolicyGroup},
+					{namespacePolicyGroup: "console"},
 					{podSelector: map[string]string{
 						"app.kubernetes.io/name":      "perses-operator",
 						"app.kubernetes.io/component": "controller",
 						"app.kubernetes.io/part-of":   "observability-operator",
 					}},
 				},
-				ports: []int32{persesPort},
+				ports: []int32{8080},
 			}},
 		},
 		{
@@ -99,17 +102,20 @@ func TestNetworkPolicyBuilders(t *testing.T) {
 			expectedPodSelector: componentLabels(healthAnalyzerWorkloadName),
 			expectedIngress: []expectedNetworkPolicyIngressRule{{
 				from: []expectedNetworkPolicyPeer{
-					{namespacePolicyGroup: monitoringPolicyGroup},
+					{namespacePolicyGroup: "monitoring"},
 				},
-				ports: []int32{healthAnalyzerPort},
+				ports: []int32{8443},
 			}},
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, networkingv1.SchemeGroupVersion.String(), tc.policy.APIVersion)
+			assert.Equal(t, "NetworkPolicy", tc.policy.Kind)
 			assert.Equal(t, tc.expectedName, tc.policy.Name)
-			assert.DeepEqual(t, tc.expectedPodSelector, tc.policy.Spec.PodSelector.MatchLabels)
+			assert.Equal(t, namespace, tc.policy.Namespace)
+			assert.DeepEqual(t, metav1.LabelSelector{MatchLabels: tc.expectedPodSelector}, tc.policy.Spec.PodSelector)
 			assert.DeepEqual(t, []networkingv1.PolicyType{networkingv1.PolicyTypeIngress, networkingv1.PolicyTypeEgress}, tc.policy.Spec.PolicyTypes)
 			assert.DeepEqual(t, []networkingv1.NetworkPolicyEgressRule{{}}, tc.policy.Spec.Egress)
 			assertNetworkPolicyIngressRules(t, tc.expectedIngress, tc.policy.Spec.Ingress)
@@ -128,22 +134,18 @@ func assertNetworkPolicyIngressRules(t *testing.T, expectedRules []expectedNetwo
 
 		for j, expectedPeer := range expectedRule.from {
 			actualPeer := ingressRule.From[j]
+			peer := networkingv1.NetworkPolicyPeer{}
 
 			if expectedPeer.namespacePolicyGroup != "" {
-				expectedNamespaceSelector := &metav1.LabelSelector{
-					MatchLabels: map[string]string{namespacePolicyGroupLabel: expectedPeer.namespacePolicyGroup},
+				peer.NamespaceSelector = &metav1.LabelSelector{
+					MatchLabels: map[string]string{"network.openshift.io/policy-group": expectedPeer.namespacePolicyGroup},
 				}
-				assert.DeepEqual(t, expectedNamespaceSelector, actualPeer.NamespaceSelector)
-			} else {
-				assert.Assert(t, actualPeer.NamespaceSelector == nil)
 			}
 
 			if expectedPeer.podSelector != nil {
-				expectedPodSelector := &metav1.LabelSelector{MatchLabels: expectedPeer.podSelector}
-				assert.DeepEqual(t, expectedPodSelector, actualPeer.PodSelector)
-			} else {
-				assert.Assert(t, actualPeer.PodSelector == nil)
+				peer.PodSelector = &metav1.LabelSelector{MatchLabels: expectedPeer.podSelector}
 			}
+			assert.DeepEqual(t, peer, actualPeer)
 		}
 
 		assert.Equal(t, len(expectedRule.ports), len(ingressRule.Ports))
@@ -151,25 +153,9 @@ func assertNetworkPolicyIngressRules(t *testing.T, expectedRules []expectedNetwo
 			tcpProtocol := corev1.ProtocolTCP
 			tcpPort := intstr.FromInt32(expectedPort)
 
-			assert.DeepEqual(t, &tcpProtocol, ingressRule.Ports[j].Protocol)
-			assert.DeepEqual(t, &tcpPort, ingressRule.Ports[j].Port)
+			assert.DeepEqual(t, networkingv1.NetworkPolicyPort{Protocol: &tcpProtocol, Port: &tcpPort}, ingressRule.Ports[j])
 		}
 	}
-}
-
-func TestPersesWorkloadSelector(t *testing.T) {
-	assert.DeepEqual(t, map[string]string{
-		"app.kubernetes.io/instance":   "perses",
-		"app.kubernetes.io/managed-by": "perses-operator",
-	}, persesWorkloadSelector())
-}
-
-func TestPersesOperatorPodSelector(t *testing.T) {
-	assert.DeepEqual(t, map[string]string{
-		"app.kubernetes.io/name":      "perses-operator",
-		"app.kubernetes.io/component": "controller",
-		"app.kubernetes.io/part-of":   "observability-operator",
-	}, persesOperatorPodSelector())
 }
 
 func TestPluginNetworkPolicyReconcilers_ReconcileExpectedPolicies(t *testing.T) {

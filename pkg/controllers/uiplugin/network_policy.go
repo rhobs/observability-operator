@@ -5,6 +5,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
@@ -19,6 +20,12 @@ const (
 	persesOperatorComponentLabel = "controller"
 	persesOperatorPartOfLabel    = "observability-operator"
 
+	// The OpenShift console operator's namespace manifest sets the console policy
+	// group on openshift-console. The cluster monitoring operator's namespace
+	// manifest sets the monitoring policy group on openshift-monitoring and
+	// openshift-user-workload-monitoring.
+	// https://github.com/openshift/console-operator/blob/main/manifests/02-namespace.yaml
+	// https://github.com/openshift/cluster-monitoring-operator/blob/main/manifests/0000_50_cluster-monitoring-operator_01-namespace.yaml
 	namespacePolicyGroupLabel = "network.openshift.io/policy-group"
 	consolePolicyGroup        = "console"
 	monitoringPolicyGroup     = "monitoring"
@@ -50,116 +57,130 @@ func pluginNetworkPolicyReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPl
 }
 
 func newPluginBackendNetworkPolicy(pluginName string, pluginType uiv1alpha1.UIPluginType, namespace string) *networkingv1.NetworkPolicy {
-	ports := []int32{pluginBackendPort}
+	ports := []networkingv1.NetworkPolicyPort{{
+		Protocol: ptr.To(corev1.ProtocolTCP),
+		Port:     ptr.To(intstr.FromInt32(pluginBackendPort)),
+	}}
 	if pluginType == uiv1alpha1.TypeMonitoring {
-		ports = append(ports, monitoringAlertmanagerProxyPort, monitoringThanosQueryProxyPort)
+		ports = append(ports,
+			networkingv1.NetworkPolicyPort{
+				Protocol: ptr.To(corev1.ProtocolTCP),
+				Port:     ptr.To(intstr.FromInt32(monitoringAlertmanagerProxyPort)),
+			},
+			networkingv1.NetworkPolicyPort{
+				Protocol: ptr.To(corev1.ProtocolTCP),
+				Port:     ptr.To(intstr.FromInt32(monitoringThanosQueryProxyPort)),
+			},
+		)
 	}
 
-	return newPolicyGroupRestrictedIngressNetworkPolicy(
-		pluginName+networkPolicyNameSuffix,
-		namespace,
-		componentLabels(pluginName),
-		consolePolicyGroup,
-		ports...,
-	)
+	return &networkingv1.NetworkPolicy{
+		TypeMeta: metav1.TypeMeta{APIVersion: networkingv1.SchemeGroupVersion.String(), Kind: "NetworkPolicy"},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      pluginName + networkPolicyNameSuffix,
+			Namespace: namespace,
+		},
+		Spec: networkingv1.NetworkPolicySpec{
+			PodSelector: metav1.LabelSelector{MatchLabels: componentLabels(pluginName)},
+			PolicyTypes: []networkingv1.PolicyType{networkingv1.PolicyTypeIngress, networkingv1.PolicyTypeEgress},
+			Ingress: []networkingv1.NetworkPolicyIngressRule{{
+				From: []networkingv1.NetworkPolicyPeer{{
+					NamespaceSelector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{namespacePolicyGroupLabel: consolePolicyGroup},
+					},
+				}},
+				Ports: ports,
+			}},
+			// An empty egress rule allows all outbound traffic.
+			Egress: []networkingv1.NetworkPolicyEgressRule{{}},
+		},
+	}
 }
 
 func newKorrel8rNetworkPolicy(namespace string) *networkingv1.NetworkPolicy {
-	return newPolicyGroupRestrictedIngressNetworkPolicy(
-		korrel8rName+networkPolicyNameSuffix,
-		namespace,
-		componentLabels(korrel8rName),
-		consolePolicyGroup,
-		korrel8rPort,
-	)
+	return &networkingv1.NetworkPolicy{
+		TypeMeta: metav1.TypeMeta{APIVersion: networkingv1.SchemeGroupVersion.String(), Kind: "NetworkPolicy"},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      korrel8rName + networkPolicyNameSuffix,
+			Namespace: namespace,
+		},
+		Spec: networkingv1.NetworkPolicySpec{
+			PodSelector: metav1.LabelSelector{MatchLabels: componentLabels(korrel8rName)},
+			PolicyTypes: []networkingv1.PolicyType{networkingv1.PolicyTypeIngress, networkingv1.PolicyTypeEgress},
+			Ingress: []networkingv1.NetworkPolicyIngressRule{{
+				From: []networkingv1.NetworkPolicyPeer{{
+					NamespaceSelector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{namespacePolicyGroupLabel: consolePolicyGroup},
+					},
+				}},
+				Ports: []networkingv1.NetworkPolicyPort{{
+					Protocol: ptr.To(corev1.ProtocolTCP),
+					Port:     ptr.To(intstr.FromInt32(korrel8rPort)),
+				}},
+			}},
+			Egress: []networkingv1.NetworkPolicyEgressRule{{}},
+		},
+	}
 }
 
 func newHealthAnalyzerNetworkPolicy(namespace string) *networkingv1.NetworkPolicy {
-	return newPolicyGroupRestrictedIngressNetworkPolicy(
-		healthAnalyzerWorkloadName+networkPolicyNameSuffix,
-		namespace,
-		componentLabels(healthAnalyzerWorkloadName),
-		monitoringPolicyGroup,
-		healthAnalyzerPort,
-	)
+	return &networkingv1.NetworkPolicy{
+		TypeMeta: metav1.TypeMeta{APIVersion: networkingv1.SchemeGroupVersion.String(), Kind: "NetworkPolicy"},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      healthAnalyzerWorkloadName + networkPolicyNameSuffix,
+			Namespace: namespace,
+		},
+		Spec: networkingv1.NetworkPolicySpec{
+			PodSelector: metav1.LabelSelector{MatchLabels: componentLabels(healthAnalyzerWorkloadName)},
+			PolicyTypes: []networkingv1.PolicyType{networkingv1.PolicyTypeIngress, networkingv1.PolicyTypeEgress},
+			Ingress: []networkingv1.NetworkPolicyIngressRule{{
+				From: []networkingv1.NetworkPolicyPeer{{
+					NamespaceSelector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{namespacePolicyGroupLabel: monitoringPolicyGroup},
+					},
+				}},
+				Ports: []networkingv1.NetworkPolicyPort{{
+					Protocol: ptr.To(corev1.ProtocolTCP),
+					Port:     ptr.To(intstr.FromInt32(healthAnalyzerPort)),
+				}},
+			}},
+			Egress: []networkingv1.NetworkPolicyEgressRule{{}},
+		},
+	}
 }
 
 func newPersesNetworkPolicy(namespace string) *networkingv1.NetworkPolicy {
-	return newRestrictedIngressNetworkPolicy(
-		persesServiceName+networkPolicyNameSuffix,
-		namespace,
-		persesWorkloadSelector(),
-		[]networkingv1.NetworkPolicyPeer{
-			newNamespacePolicyGroupPeer(consolePolicyGroup),
-			newPodSelectorPeer(persesOperatorPodSelector()),
+	return &networkingv1.NetworkPolicy{
+		TypeMeta: metav1.TypeMeta{APIVersion: networkingv1.SchemeGroupVersion.String(), Kind: "NetworkPolicy"},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      persesServiceName + networkPolicyNameSuffix,
+			Namespace: namespace,
 		},
-		[]int32{persesPort},
-	)
-}
-
-func newPolicyGroupRestrictedIngressNetworkPolicy(name, namespace string, podSelector map[string]string, sourcePolicyGroup string, ports ...int32) *networkingv1.NetworkPolicy {
-	return newRestrictedIngressNetworkPolicy(
-		name,
-		namespace,
-		podSelector,
-		[]networkingv1.NetworkPolicyPeer{newNamespacePolicyGroupPeer(sourcePolicyGroup)},
-		ports,
-	)
-}
-
-func newRestrictedIngressNetworkPolicy(name, namespace string, podSelector map[string]string, peers []networkingv1.NetworkPolicyPeer, ports []int32) *networkingv1.NetworkPolicy {
-	networkPolicy := reconciler.NewAllowAllNetworkPolicy(name, namespace, podSelector)
-
-	networkPolicy.Spec.Ingress = []networkingv1.NetworkPolicyIngressRule{{
-		From:  peers,
-		Ports: newTCPNetworkPolicyPorts(ports...),
-	}}
-
-	return networkPolicy
-}
-
-func newNamespacePolicyGroupPeer(policyGroup string) networkingv1.NetworkPolicyPeer {
-	return networkingv1.NetworkPolicyPeer{
-		NamespaceSelector: &metav1.LabelSelector{
-			MatchLabels: map[string]string{namespacePolicyGroupLabel: policyGroup},
+		Spec: networkingv1.NetworkPolicySpec{
+			// LabelsForPerses in rhobs/perses-operator sets these labels on Perses pods.
+			PodSelector: metav1.LabelSelector{MatchLabels: map[string]string{
+				"app.kubernetes.io/instance":   persesServiceName,
+				"app.kubernetes.io/managed-by": persesOperatorManagedByLabel,
+			}},
+			PolicyTypes: []networkingv1.PolicyType{networkingv1.PolicyTypeIngress, networkingv1.PolicyTypeEgress},
+			Ingress: []networkingv1.NetworkPolicyIngressRule{{
+				From: []networkingv1.NetworkPolicyPeer{
+					{NamespaceSelector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{namespacePolicyGroupLabel: consolePolicyGroup},
+					}},
+					// A pod selector without a namespace selector matches only this namespace.
+					{PodSelector: &metav1.LabelSelector{MatchLabels: map[string]string{
+						"app.kubernetes.io/name":      persesOperatorNameLabel,
+						"app.kubernetes.io/component": persesOperatorComponentLabel,
+						"app.kubernetes.io/part-of":   persesOperatorPartOfLabel,
+					}}},
+				},
+				Ports: []networkingv1.NetworkPolicyPort{{
+					Protocol: ptr.To(corev1.ProtocolTCP),
+					Port:     ptr.To(intstr.FromInt32(persesPort)),
+				}},
+			}},
+			Egress: []networkingv1.NetworkPolicyEgressRule{{}},
 		},
-	}
-}
-
-func newPodSelectorPeer(labels map[string]string) networkingv1.NetworkPolicyPeer {
-	return networkingv1.NetworkPolicyPeer{
-		PodSelector: &metav1.LabelSelector{MatchLabels: labels},
-	}
-}
-
-func newTCPNetworkPolicyPorts(ports ...int32) []networkingv1.NetworkPolicyPort {
-	networkPolicyPorts := make([]networkingv1.NetworkPolicyPort, 0, len(ports))
-	for _, port := range ports {
-		tcpProtocol := corev1.ProtocolTCP
-		tcpPort := intstr.FromInt32(port)
-		networkPolicyPorts = append(networkPolicyPorts, networkingv1.NetworkPolicyPort{
-			Protocol: &tcpProtocol,
-			Port:     &tcpPort,
-		})
-	}
-
-	return networkPolicyPorts
-}
-
-// persesWorkloadSelector matches generated Perses pods from rhobs/perses-operator.
-// The operator always sets app.kubernetes.io/instance and app.kubernetes.io/managed-by
-// in common.LabelsForPerses() and reuses that map for Deployment/StatefulSet pod selectors.
-func persesWorkloadSelector() map[string]string {
-	return map[string]string{
-		"app.kubernetes.io/instance":   persesServiceName,
-		"app.kubernetes.io/managed-by": persesOperatorManagedByLabel,
-	}
-}
-
-func persesOperatorPodSelector() map[string]string {
-	return map[string]string{
-		"app.kubernetes.io/name":      persesOperatorNameLabel,
-		"app.kubernetes.io/component": persesOperatorComponentLabel,
-		"app.kubernetes.io/part-of":   persesOperatorPartOfLabel,
 	}
 }
