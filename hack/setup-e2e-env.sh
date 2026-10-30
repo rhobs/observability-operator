@@ -190,7 +190,45 @@ validate_prerequisites() {
         ok "Skipping /etc/hosts check (CI mode)"
     fi
 
+    # On Linux, kind nodes share the host's inotify limits.
+    # Distro defaults are often too low and pods (e.g. kube-proxy) crash with "too many open files".
+    if $SETUP_CLUSTER && [[ $(uname -s) == Linux ]]; then
+        check_inotify_limits || fail=1
+    fi
+
     return $fail
+}
+
+# Minimum inotify limits required for a multi-node kind cluster. See:
+# https://kind.sigs.k8s.io/docs/user/known-issues/#pod-errors-due-to-too-many-open-files
+declare -r MIN_INOTIFY_INSTANCES=512
+declare -r MIN_INOTIFY_WATCHES=524288
+
+check_inotify_limits() {
+    local instances watches sufficient=true
+    instances=$(sysctl -n fs.inotify.max_user_instances 2>/dev/null || echo 0)
+    watches=$(sysctl -n fs.inotify.max_user_watches 2>/dev/null || echo 0)
+
+    [[ "$instances" -ge "$MIN_INOTIFY_INSTANCES" ]] || sufficient=false
+    [[ "$watches" -ge "$MIN_INOTIFY_WATCHES" ]] || sufficient=false
+
+    if $sufficient; then
+        ok "inotify limits are sufficient (instances=$instances, watches=$watches)"
+        return 0
+    fi
+
+    warn "inotify limits are too low for a multi-node kind cluster"
+    warn "  fs.inotify.max_user_instances = $instances (need >= $MIN_INOTIFY_INSTANCES)"
+    warn "  fs.inotify.max_user_watches   = $watches (need >= $MIN_INOTIFY_WATCHES)"
+    info "Without this, pods such as kube-proxy crash with 'too many open files'."
+    info "Raise the limits now:"
+    echo "    ❯ sudo sysctl fs.inotify.max_user_instances=$MIN_INOTIFY_INSTANCES fs.inotify.max_user_watches=$MIN_INOTIFY_WATCHES"
+    info "And persist them across reboots:"
+    echo "    ❯ sudo tee /etc/sysctl.d/99-kind-inotify.conf <<'EOF'"
+    echo "      fs.inotify.max_user_instances = $MIN_INOTIFY_INSTANCES"
+    echo "      fs.inotify.max_user_watches = $MIN_INOTIFY_WATCHES"
+    echo "      EOF"
+    return 1
 }
 
 install_kind() {
@@ -248,8 +286,6 @@ install_kubectl() {
 
     ok "kubectl installed to $bin_path/kubectl"
 }
-
-
 
 install_extra_packages() {
     if [[ ${#EXTRA_PACKAGES[@]} -eq 0 ]]; then
@@ -317,6 +353,37 @@ install_extra_packages() {
     done
 }
 
+# kind_run_prefix echoes a command prefix that runs kind inside a transient
+# systemd user scope with cgroup delegation. A rootless container provider
+# (rootless podman or docker) needs this, otherwise kind fails with: requires
+# setting systemd property "Delegate=yes". It is a harmless no-op for rootful
+# providers, where kind only talks to a daemon and container cgroups are not
+# managed under this user scope. It echoes nothing when no systemd user manager
+# is available (e.g. CI), so those environments run kind directly.
+kind_run_prefix() {
+    command -v systemd-run >/dev/null 2>&1 || return 0
+    systemctl --user show-environment >/dev/null 2>&1 || return 0
+    systemd-run --user --scope -p Delegate=yes -- true >/dev/null 2>&1 || return 0
+    echo "systemd-run --user --scope -p Delegate=yes"
+}
+
+# Re-list on each attempt so pods that complete while we wait are no longer
+# required to have a Ready condition (short-lived Job pods may never be Ready).
+wait_for_ready_pods() {
+    local deadline=$((SECONDS + 300)) ready
+
+    while ((SECONDS < deadline)); do
+        ready=$(kubectl get pods --all-namespaces --field-selector='status.phase!=Succeeded' \
+            --request-timeout=10s \
+            -o custom-columns='READY:.status.conditions[?(@.type=="Ready")].status' --no-headers) || die "Failed to list pods"
+        if [[ -n "$ready" ]] && ! grep -qvx 'True' <<< "$ready"; then
+            return 0
+        fi
+        sleep 2
+    done
+    die "Pods failed to become ready"
+}
+
 setup_cluster() {
     if ! $SETUP_CLUSTER; then
         info "Skipping cluster setup"
@@ -337,7 +404,12 @@ setup_cluster() {
         info "Creating kind cluster '$CLUSTER_NAME' with image '$KIND_IMAGE'"
         mkdir -p "$PROJECT_ROOT_DIR/tmp/logs"
 
-        kind create cluster \
+        local run_prefix
+        run_prefix="$(kind_run_prefix)"
+        [[ -n "$run_prefix" ]] &&
+            info "Running kind in a delegated systemd scope (required for rootless providers)"
+
+        $run_prefix kind create cluster \
             --name "$CLUSTER_NAME" \
             --image "$KIND_IMAGE" \
             --config "$SCRIPT_DIR/kind/config.yaml" \
@@ -347,7 +419,11 @@ setup_cluster() {
 
     info "Waiting for cluster to be ready..."
     kubectl wait --for=condition=Ready nodes --all --timeout=300s
-    kubectl wait --for=condition=Ready pods --all --all-namespaces --timeout=300s
+
+    # Wait for all non-completed pods to be ready.
+    info "Waiting for all pods to be ready..."
+    wait_for_ready_pods
+    info "All pods are ready."
 
     # export $KUBECONFIG so its available for other steps
     if [ ! -z ${GITHUB_ACTIONS+x} ]; then
@@ -390,6 +466,13 @@ setup_olm() {
     local operator_sdk="$PROJECT_ROOT_DIR/tmp/bin/operator-sdk"
     if [[ ! -x "$operator_sdk" ]]; then
         die "operator-sdk not found in tmp/bin - run 'make tools' first"
+    fi
+
+    if kubectl get deployment olm-operator -n olm >/dev/null 2>&1; then
+        info "OLM is already installed; checking its status"
+        "$operator_sdk" olm status
+        ok "OLM is ready"
+        return 0
     fi
 
     # Pin to OLM v0.28.0 because v0.29.0 fails on Kind
@@ -502,7 +585,7 @@ main() {
         create_monitoring_crds
 
         header "Waiting for cluster to stabilize..."
-        kubectl wait --for=condition=Ready pods --all --all-namespaces --timeout=300s
+        wait_for_ready_pods
         line 50
     fi
 
