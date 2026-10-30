@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -82,6 +84,10 @@ type Deleter struct {
 
 func (r Deleter) Reconcile(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 	if err := c.Delete(ctx, r.resource); client.IgnoreNotFound(err) != nil {
+		if meta.IsNoMatchError(err) {
+			// CRD not installed, treat as successful cleanup
+			return nil
+		}
 		return fmt.Errorf("%s/%s (%s): deleter failed to delete: %w",
 			r.resource.GetNamespace(), r.resource.GetName(),
 			r.resource.GetObjectKind().GroupVersionKind().String(), err)
@@ -91,6 +97,38 @@ func (r Deleter) Reconcile(ctx context.Context, c client.Client, scheme *runtime
 
 func NewDeleter(r client.Object) Deleter {
 	return Deleter{resource: r}
+}
+
+// GuardedDeleter deletes a resource only if the live object carries the given
+// label value. It is used for shared, well-known-named resources (such as
+// console UIPlugins) so COO removes only the ones it created and never deletes a
+// manually created resource that happens to share the name.
+type GuardedDeleter struct {
+	resource   client.Object
+	labelKey   string
+	labelValue string
+}
+
+func (r GuardedDeleter) Reconcile(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
+	live := r.resource.DeepCopyObject().(client.Object)
+	if err := c.Get(ctx, client.ObjectKeyFromObject(r.resource), live); err != nil {
+		if apierrors.IsNotFound(err) || meta.IsNoMatchError(err) {
+			return nil
+		}
+		return fmt.Errorf("%s/%s (%s): guarded deleter failed to get: %w",
+			r.resource.GetNamespace(), r.resource.GetName(),
+			r.resource.GetObjectKind().GroupVersionKind().String(), err)
+	}
+	if live.GetLabels()[r.labelKey] != r.labelValue {
+		// Not owned by COO; leave it untouched.
+		return nil
+	}
+	return Deleter{resource: r.resource}.Reconcile(ctx, c, scheme)
+}
+
+// NewGuardedDeleter deletes r only if its live labels[labelKey] == labelValue.
+func NewGuardedDeleter(r client.Object, labelKey, labelValue string) GuardedDeleter {
+	return GuardedDeleter{resource: r, labelKey: labelKey, labelValue: labelValue}
 }
 
 // NewOptionalUpdater ensures that a resource is present or absent depending on the `cond` value (true: present).

@@ -6,15 +6,16 @@ import (
 
 const (
 	ResourceLabel = "app.kubernetes.io/managed-by"
+	PartOfLabel   = "app.kubernetes.io/part-of"
 	OpName        = "observability-operator"
 )
 
 func AddCommonLabels(obj client.Object, name string) client.Object {
 	labels := obj.GetLabels()
 	want := map[string]string{
-		"app.kubernetes.io/part-of": name,
-		"app.kubernetes.io/name":    obj.GetName(),
-		ResourceLabel:               OpName,
+		PartOfLabel:              name,
+		"app.kubernetes.io/name": obj.GetName(),
+		ResourceLabel:            OpName,
 	}
 	if labels == nil {
 		obj.SetLabels(want)
