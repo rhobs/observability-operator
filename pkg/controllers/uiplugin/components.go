@@ -12,8 +12,6 @@ import (
 
 	"github.com/go-logr/logr"
 	osv1 "github.com/openshift/api/console/v1"
-	osRhobsv1 "github.com/rhobs/openshift-api/console/v1"
-	osv1alpha1 "github.com/rhobs/openshift-api/console/v1alpha1"
 	"golang.org/x/mod/semver"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -66,7 +64,7 @@ func IsVersionAheadOrEqual(currentVersion, version string) bool {
 	return semver.Compare(currentVersion, canonicalMinVersion) >= 0
 }
 
-func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPluginInfo, clusterVersion string, logger logr.Logger, apiReader client.Reader) []reconciler.Reconciler {
+func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPluginInfo, logger logr.Logger, apiReader client.Reader) []reconciler.Reconciler {
 	namespace := pluginInfo.ResourceNamespace
 
 	korrel8rEnabled := plugin.Spec.Type == uiv1alpha1.TypeTroubleshootingPanel && pluginInfo.Korrel8rImage != ""
@@ -99,13 +97,7 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 		reconciler.NewUpdater(newService(pluginInfo, namespace), plugin),
 	)
 
-	if IsVersionAheadOrEqual(clusterVersion, "v4.19") {
-		components = append(components, reconciler.NewUpdater(newConsolePlugin(pluginInfo, namespace), plugin))
-	} else if IsVersionAheadOrEqual(clusterVersion, "v4.17") {
-		components = append(components, reconciler.NewUpdater(newRhobsConsolePlugin(pluginInfo, namespace), plugin))
-	} else {
-		components = append(components, reconciler.NewUpdater(newLegacyConsolePlugin(pluginInfo, namespace), plugin))
-	}
+	components = append(components, reconciler.NewUpdater(newConsolePlugin(pluginInfo, namespace), plugin))
 
 	if pluginInfo.Role != nil {
 		components = append(components, reconciler.NewUpdater(newRole(pluginInfo), plugin))
@@ -236,64 +228,6 @@ func newRole(info UIPluginInfo) *rbacv1.Role {
 
 func newRoleBinding(info UIPluginInfo) *rbacv1.RoleBinding {
 	return info.RoleBinding
-}
-
-func newLegacyConsolePlugin(info UIPluginInfo, namespace string) *osv1alpha1.ConsolePlugin {
-	proxies := make([]osv1alpha1.ConsolePluginProxy, len(info.Proxies))
-	for i, p := range info.Proxies {
-		proxies[i] = p.ToV1Alpha1()
-	}
-
-	return &osv1alpha1.ConsolePlugin{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: osv1alpha1.SchemeGroupVersion.String(),
-			Kind:       "ConsolePlugin",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: info.ConsoleName,
-		},
-		Spec: osv1alpha1.ConsolePluginSpec{
-			DisplayName: info.DisplayName,
-			Service: osv1alpha1.ConsolePluginService{
-				Name:      info.Name,
-				Namespace: namespace,
-				Port:      port,
-				BasePath:  "/",
-			},
-			Proxy: proxies,
-		},
-	}
-}
-
-func newRhobsConsolePlugin(info UIPluginInfo, namespace string) *osRhobsv1.ConsolePlugin {
-	proxies := make([]osRhobsv1.ConsolePluginProxy, len(info.Proxies))
-	for i, p := range info.Proxies {
-		proxies[i] = p.ToRhobsV1()
-	}
-
-	return &osRhobsv1.ConsolePlugin{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: osRhobsv1.SchemeGroupVersion.String(),
-			Kind:       "ConsolePlugin",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: info.ConsoleName,
-		},
-		Spec: osRhobsv1.ConsolePluginSpec{
-			DisplayName: info.DisplayName,
-			Backend: osRhobsv1.ConsolePluginBackend{
-				Type: osRhobsv1.Service,
-				Service: &osRhobsv1.ConsolePluginService{
-					Name:      info.Name,
-					Namespace: namespace,
-					Port:      port,
-					BasePath:  "/",
-				},
-			},
-			Proxy: proxies,
-			I18n:  osRhobsv1.ConsolePluginI18n{LoadType: osRhobsv1.Preload},
-		},
-	}
 }
 
 func newConsolePlugin(info UIPluginInfo, namespace string) *osv1.ConsolePlugin {

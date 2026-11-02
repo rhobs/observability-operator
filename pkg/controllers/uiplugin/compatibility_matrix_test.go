@@ -124,7 +124,7 @@ func TestLookupImageAndFeatures(t *testing.T) {
 			pluginType:     uiv1alpha1.TypeDistributedTracing,
 			clusterVersion: "4.10",
 			expectedKey:    "",
-			expectedErr:    fmt.Errorf("dynamic plugins not supported before 4.11"),
+			expectedErr:    fmt.Errorf("dynamic plugins not supported before 4.21"),
 			supportLevel:   "",
 		},
 	} {
