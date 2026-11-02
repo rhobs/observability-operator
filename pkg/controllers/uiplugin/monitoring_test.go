@@ -1,7 +1,6 @@
 package uiplugin
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 
@@ -288,14 +287,14 @@ func containsPerses(pluginInfo *UIPluginInfo) bool {
 const healthAnalyzerImage = "quay.io/health-analyzer-foo-test:123"
 const persesImage = "quay.io/perses-foo-test:123"
 
-func getPluginInfo(plugin *uiv1alpha1.UIPlugin, features []string, clusterVersion string) (*UIPluginInfo, error) {
+func getPluginInfo(plugin *uiv1alpha1.UIPlugin, features []string) (*UIPluginInfo, error) {
 	const (
 		namespace = "openshift-operators"
 		name      = "monitoring"
 		image     = "quay.io/monitoring-foo-test:123"
 	)
 
-	return createMonitoringPluginInfo(plugin, namespace, name, image, features, clusterVersion, healthAnalyzerImage, persesImage)
+	return createMonitoringPluginInfo(plugin, namespace, name, image, features, healthAnalyzerImage, persesImage)
 }
 
 func TestCreateMonitoringPluginInfo(t *testing.T) {
@@ -307,13 +306,12 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 	}
 
 	type testCase struct {
-		name                  string
-		pluginConfig          *uiv1alpha1.UIPlugin
-		proxies               proxiesStatus
-		featureFlags          featureFlagsStatus
-		components            expectedComponents
-		expectedErrorMessage  string
-		clusterVersionsToTest []string
+		name                 string
+		pluginConfig         *uiv1alpha1.UIPlugin
+		proxies              proxiesStatus
+		featureFlags         featureFlagsStatus
+		components           expectedComponents
+		expectedErrorMessage string
 	}
 
 	testCfgs := []testCase{
@@ -335,27 +333,6 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 				persesImage:           true,
 				clusterHealthAnalyzer: true,
 			},
-			clusterVersionsToTest: []string{"v4.19"},
-		},
-		{
-			name:         "All monitoring configurations",
-			pluginConfig: pluginConfigAll,
-			proxies: proxiesStatus{
-				alertmanager: true,
-				thanos:       true,
-				perses:       true,
-			},
-			featureFlags: featureFlagsStatus{
-				acmAlerting:           true,
-				perses:                true,
-				clusterHealthAnalyzer: false, // Differs for v4.18
-				incidents:             false,
-			},
-			components: expectedComponents{
-				persesImage:           true,
-				clusterHealthAnalyzer: false, // Differs for v4.18
-			},
-			clusterVersionsToTest: []string{"v4.18"},
 		},
 		{
 			name:         "ACM configuration only",
@@ -375,7 +352,6 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 				persesImage:           false,
 				clusterHealthAnalyzer: false,
 			},
-			clusterVersionsToTest: []string{"v4.19", "v4.18"},
 		},
 		{
 			name:         "Perses configuration only",
@@ -395,7 +371,6 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 				persesImage:           true,
 				clusterHealthAnalyzer: false,
 			},
-			clusterVersionsToTest: []string{"v4.19", "v4.18"},
 		},
 		{
 			name:         "Perses default namespace and name",
@@ -415,13 +390,6 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 				persesImage:           true,
 				clusterHealthAnalyzer: false,
 			},
-			clusterVersionsToTest: []string{"v4.19", "v4.18"},
-		},
-		{
-			name:                  "Incidents configuration only",
-			pluginConfig:          pluginConfigIncidents,
-			expectedErrorMessage:  "all uiplugin monitoring configurations are invalid or not supported in this cluster version",
-			clusterVersionsToTest: []string{"v4.18"},
 		},
 		{
 			name:         "Incidents configuration only",
@@ -441,7 +409,6 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 				persesImage:           false,
 				clusterHealthAnalyzer: true,
 			},
-			clusterVersionsToTest: []string{"v4.19"},
 		},
 		{
 			name:         "ClusterHealthAnalyzer configuration only",
@@ -461,40 +428,37 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 				persesImage:           false,
 				clusterHealthAnalyzer: true,
 			},
-			clusterVersionsToTest: []string{"v4.19"},
 		},
 	}
 
 	for _, tc := range testCfgs {
-		for _, cv := range tc.clusterVersionsToTest {
-			t.Run(tc.name+"_"+cv, func(t *testing.T) {
-				pluginInfo, err := getPluginInfo(tc.pluginConfig, featuresForTest, cv)
+		t.Run(tc.name, func(t *testing.T) {
+			pluginInfo, err := getPluginInfo(tc.pluginConfig, featuresForTest)
 
-				if tc.expectedErrorMessage != "" {
-					assert.ErrorContains(t, err, tc.expectedErrorMessage, "Expected an error for invalid configuration")
-					return
-				}
+			if tc.expectedErrorMessage != "" {
+				assert.ErrorContains(t, err, tc.expectedErrorMessage, "Expected an error for invalid configuration")
+				return
+			}
 
-				assert.NilError(t, err, "getPluginInfo returned an unexpected error")
-				if err != nil {
-					return
-				}
+			assert.NilError(t, err, "getPluginInfo returned an unexpected error")
+			if err != nil {
+				return
+			}
 
-				actualProxies := containsProxy(pluginInfo)
-				assert.Equal(t, actualProxies.alertmanager, tc.proxies.alertmanager, "Alertmanager proxy mismatch")
-				assert.Equal(t, actualProxies.thanos, tc.proxies.thanos, "Thanos proxy mismatch")
-				assert.Equal(t, actualProxies.perses, tc.proxies.perses, "Perses proxy mismatch")
+			actualProxies := containsProxy(pluginInfo)
+			assert.Equal(t, actualProxies.alertmanager, tc.proxies.alertmanager, "Alertmanager proxy mismatch")
+			assert.Equal(t, actualProxies.thanos, tc.proxies.thanos, "Thanos proxy mismatch")
+			assert.Equal(t, actualProxies.perses, tc.proxies.perses, "Perses proxy mismatch")
 
-				actualFlags := containsFeatureFlag(pluginInfo)
-				assert.Equal(t, actualFlags.acmAlerting, tc.featureFlags.acmAlerting, "ACM alerting flag mismatch")
-				assert.Equal(t, actualFlags.perses, tc.featureFlags.perses, "Perses flag mismatch")
-				assert.Equal(t, actualFlags.clusterHealthAnalyzer, tc.featureFlags.clusterHealthAnalyzer, "Incidents flag mismatch")
-				assert.Equal(t, actualFlags.incidents, tc.featureFlags.incidents, "Incidents flag mismatch")
+			actualFlags := containsFeatureFlag(pluginInfo)
+			assert.Equal(t, actualFlags.acmAlerting, tc.featureFlags.acmAlerting, "ACM alerting flag mismatch")
+			assert.Equal(t, actualFlags.perses, tc.featureFlags.perses, "Perses flag mismatch")
+			assert.Equal(t, actualFlags.clusterHealthAnalyzer, tc.featureFlags.clusterHealthAnalyzer, "Incidents flag mismatch")
+			assert.Equal(t, actualFlags.incidents, tc.featureFlags.incidents, "Incidents flag mismatch")
 
-				assert.Equal(t, containsHealthAnalyzer(pluginInfo), tc.components.clusterHealthAnalyzer, "Health analyzer mismatch")
-				assert.Equal(t, containsPerses(pluginInfo), tc.components.persesImage, "Perses image mismatch")
-			})
-		}
+			assert.Equal(t, containsHealthAnalyzer(pluginInfo), tc.components.clusterHealthAnalyzer, "Health analyzer mismatch")
+			assert.Equal(t, containsPerses(pluginInfo), tc.components.persesImage, "Perses image mismatch")
+		})
 	}
 
 	type invalidConfigTestCase struct {
@@ -521,44 +485,10 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 		},
 	}
 
-	clusterVersionsToTest := []string{"v4.19", "v4.18"} // This variable is used for negative tests
-
-	for _, cv := range clusterVersionsToTest {
-		t.Run(fmt.Sprintf("NegativeTests_ClusterVersion_%s", cv), func(t *testing.T) {
-			for _, tc := range negativeTestCfgs {
-				t.Run(tc.name, func(t *testing.T) {
-					_, err := getPluginInfo(tc.pluginConfig, featuresForTest, cv)
-					assert.Assert(t, err != nil, "Expected an error for invalid configuration")
-				})
-			}
+	for _, tc := range negativeTestCfgs {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := getPluginInfo(tc.pluginConfig, featuresForTest)
+			assert.Assert(t, err != nil, "Expected an error for invalid configuration")
 		})
 	}
-
-	t.Run("Test validateIncidentsConfig() with valid and invalid clusterVersion formats", func(t *testing.T) {
-		// should not throw an error because all these are valid formats for clusterVersion
-		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "v4.21.0-0.nightly-2024-06-06-064349") == true)
-		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "4.21.0-0.nightly-2024-06-06-064349") == true)
-		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "v4.21") == true)
-		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "v4.21.0") == true)
-		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "4.21.0") == true)
-
-		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "v4.20.0-0.nightly-2024-06-06-064349") == true)
-		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "4.20.0-0.nightly-2024-06-06-064349") == true)
-		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "v4.20") == true)
-		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "v4.20.0") == true)
-		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "4.20.0") == true)
-
-		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "v4.19.0-0.nightly-2024-06-06-064349") == true)
-		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "4.19.0-0.nightly-2024-06-06-064349") == true)
-		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "v4.19") == true)
-		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "v4.19.0") == true)
-		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "4.19.0") == true)
-
-		// should be invalid clusterVersion because UIPlugin incident feature is supported in OCP v4.19+
-		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "v4.18.0-0.nightly-2024-06-06-064349") == false)
-		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "4.18.0-0.nightly-2024-06-06-064349") == false)
-		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "v4.18") == false)
-		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "v4.18.0") == false)
-		assert.Assert(t, validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, "4.18.0") == false)
-	})
 }
