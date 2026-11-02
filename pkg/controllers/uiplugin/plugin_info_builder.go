@@ -51,7 +51,7 @@ func ConsoleNameForType(pluginType uiv1alpha1.UIPluginType) string {
 	return pluginTypeToConsoleName[pluginType]
 }
 
-func PluginInfoBuilder(ctx context.Context, k client.Client, dk dynamic.Interface, plugin *uiv1alpha1.UIPlugin, pluginConf UIPluginsConfiguration, compatibilityInfo CompatibilityEntry, clusterVersion string, logger logr.Logger) (*UIPluginInfo, error) {
+func PluginInfoBuilder(ctx context.Context, k client.Client, dk dynamic.Interface, plugin *uiv1alpha1.UIPlugin, pluginConf UIPluginsConfiguration, compatibilityInfo CompatibilityEntry, logger logr.Logger) (*UIPluginInfo, error) {
 	image := pluginConf.Images[compatibilityInfo.ImageKey]
 	if image == "" {
 		return nil, fmt.Errorf("no image provided for plugin type %s with key %s", plugin.Spec.Type, compatibilityInfo.ImageKey)
@@ -64,7 +64,7 @@ func PluginInfoBuilder(ctx context.Context, k client.Client, dk dynamic.Interfac
 
 	switch plugin.Spec.Type {
 	case uiv1alpha1.TypeTroubleshootingPanel:
-		pluginInfo, err = createTroubleshootingPanelPluginInfo(plugin, namespace, plugin.Name, image, []string{}, clusterVersion, logger)
+		pluginInfo, err = createTroubleshootingPanelPluginInfo(plugin, namespace, plugin.Name, image, []string{})
 		if err != nil {
 			return nil, err
 		}
@@ -98,7 +98,7 @@ func PluginInfoBuilder(ctx context.Context, k client.Client, dk dynamic.Interfac
 		}
 
 	case uiv1alpha1.TypeMonitoring:
-		pluginInfo, err = createMonitoringPluginInfo(plugin, namespace, plugin.Name, image, compatibilityInfo.Features, clusterVersion, pluginConf.Images["health-analyzer"], pluginConf.Images["perses"])
+		pluginInfo, err = createMonitoringPluginInfo(plugin, namespace, plugin.Name, image, compatibilityInfo.Features, pluginConf.Images["health-analyzer"], pluginConf.Images["perses"])
 		if err != nil {
 			return nil, err
 		}

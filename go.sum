@@ -347,8 +347,6 @@ github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.93.1-rhobs1 h1:k
 github.com/rhobs/obo-prometheus-operator/pkg/apis/monitoring v0.93.1-rhobs1/go.mod h1:ynpxidv4ejYwUMR/FZhKomqUME7Peva7i9ogB4PHoGA=
 github.com/rhobs/obo-prometheus-operator/pkg/client v0.93.1-rhobs1 h1:AsVUzdRI1Xm0J0+Anz5er5qYL3GOXFNpmZSRhZc4YTg=
 github.com/rhobs/obo-prometheus-operator/pkg/client v0.93.1-rhobs1/go.mod h1:/n/vLYH9QL9+L5wdAadr9QdhDNXasH1W1+jY4Rwq4QQ=
-github.com/rhobs/openshift-api v0.0.0-20260512142436-2e89e902a420 h1:7e9fFgSnTQH6mOUK9ne8eueLoDe0qFdxPZn0yYD3T4Y=
-github.com/rhobs/openshift-api v0.0.0-20260512142436-2e89e902a420/go.mod h1:W0V3SoeXIKmaTN3pqMKDiLZ23rc9viuqYenk9+89N+o=
 github.com/rhobs/perses v0.0.0-20261021131516-8d275c09af11 h1:EFs+e4zD+VNhY+/EduBexs5RjHuNaBrONAva/XCR5b0=
 github.com/rhobs/perses v0.0.0-20261021131516-8d275c09af11/go.mod h1:6TyFwN5lW3gvMwkhIiN+b6Kr1sYnEixAi6XOPVmDloE=
 github.com/rhobs/perses-operator v0.4.1-0.20261023095932-54e5e38d5273 h1:v60As3RZuKelS7AtV/MCoF4TCOn3K9iG5Hg9ItVJ7ug=

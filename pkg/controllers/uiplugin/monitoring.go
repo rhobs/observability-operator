@@ -6,7 +6,6 @@ import (
 
 	persesv1alpha2 "github.com/rhobs/perses-operator/api/v1alpha2"
 	persesconfig "github.com/rhobs/perses/pkg/model/api/config"
-	"golang.org/x/mod/semver"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,7 +25,6 @@ const (
 /*
 Requirements for ACM enablement
 1. UIPlugin configuration requires acm.enabled, acm.thanosQuerier.Url, and acm.alertmanager.Url
-2. OpenShift Container Platform requirement: v4.14+
 */
 func validateACMConfig(config *uiv1alpha1.MonitoringConfig) bool {
 	enabled := config.ACM != nil && config.ACM.Enabled
@@ -47,29 +45,13 @@ func validatePersesConfig(config *uiv1alpha1.MonitoringConfig) bool {
 	return config.Perses != nil && config.Perses.Enabled
 }
 
-func validateHealthanalyzerConfig(config *uiv1alpha1.MonitoringConfig, clusterVersion string) bool {
-	enabled := config.ClusterHealthAnalyzer != nil &&
+func validateHealthanalyzerConfig(config *uiv1alpha1.MonitoringConfig) bool {
+	return config.ClusterHealthAnalyzer != nil &&
 		config.ClusterHealthAnalyzer.Enabled
-
-	if !strings.HasPrefix(clusterVersion, "v") {
-		clusterVersion = "v" + clusterVersion
-	}
-	canonicalClusterVersion := fmt.Sprintf("%s-0", semver.Canonical(clusterVersion))
-	minClusterVersionMet := semver.Compare(canonicalClusterVersion, "v4.19.0-0") >= 0
-
-	return enabled && minClusterVersionMet
 }
 
-func validateIncidentsConfig(config *uiv1alpha1.MonitoringConfig, clusterVersion string) bool {
-	enabled := config.Incidents != nil && config.Incidents.Enabled
-
-	if !strings.HasPrefix(clusterVersion, "v") {
-		clusterVersion = "v" + clusterVersion
-	}
-	canonicalClusterVersion := fmt.Sprintf("%s-0", semver.Canonical(clusterVersion))
-	minClusterVersionMet := semver.Compare(canonicalClusterVersion, "v4.19.0-0") >= 0
-
-	return enabled && minClusterVersionMet
+func validateIncidentsConfig(config *uiv1alpha1.MonitoringConfig) bool {
+	return config.Incidents != nil && config.Incidents.Enabled
 }
 
 func addFeatureFlags(plugin *UIPluginInfo, features []string) {
@@ -133,7 +115,7 @@ func addAcmAlertingProxy(pluginInfo *UIPluginInfo, name string, namespace string
 	)
 }
 
-func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string, clusterVersion string, healthAnalyzerImage string, persesImage string) (*UIPluginInfo, error) {
+func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, image string, features []string, healthAnalyzerImage string, persesImage string) (*UIPluginInfo, error) {
 	config := plugin.Spec.Monitoring
 	if config == nil {
 		return nil, fmt.Errorf("monitoring configuration can not be empty for plugin type %s", plugin.Spec.Type)
@@ -142,8 +124,8 @@ func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, im
 	// Validate feature configuration and cluster conditions support enablement
 	isValidAcmConfig := validateACMConfig(config)
 	isValidPersesConfig := validatePersesConfig(config)
-	isValidIncidentsConfig := validateIncidentsConfig(config, clusterVersion)
-	isValidHealthAnalyzerConfig := validateHealthanalyzerConfig(config, clusterVersion)
+	isValidIncidentsConfig := validateIncidentsConfig(config)
+	isValidHealthAnalyzerConfig := validateHealthanalyzerConfig(config)
 
 	atLeastOneValidConfig := isValidAcmConfig || isValidPersesConfig || isValidIncidentsConfig || isValidHealthAnalyzerConfig
 
