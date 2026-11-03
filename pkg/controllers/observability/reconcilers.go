@@ -52,9 +52,14 @@ func operatorReconcilers(requirements []capability.OperatorRequirement, status o
 		packageNames := append([]string{requirement.Subscription.Spec.Package}, requirement.EquivalentPackages...)
 		if requirement.Desired {
 			if status.ShouldInstall(packageNames) {
-				// Subscriptions are shared across all ObservabilityInstallers. Their
-				// lifecycle is controlled by the aggregated requirements below, not
-				// by garbage collection of any individual installer.
+				// Subscriptions are shared across all ObservabilityInstallers, so
+				// they carry no owner reference. An owner reference to one installer
+				// would let garbage collection uninstall an operator still needed by
+				// another installer, and a controller reference can record only one
+				// owner. (Owner references also cannot cross namespaces, so on
+				// earlier releases most Subscriptions were already unowned.) The
+				// operator lifecycle is controlled by the requirements aggregated
+				// over all installers instead.
 				install = append(install, reconciler.NewUnmanagedCreateUpdateReconciler(requirement.Subscription))
 			}
 			continue

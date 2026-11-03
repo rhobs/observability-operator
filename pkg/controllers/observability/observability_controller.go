@@ -302,7 +302,9 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 
 	ctrl, err := ctrl.NewControllerManagedBy(mgr).
 		For(&obsv1alpha1.ObservabilityInstaller{}).
-		Owns(&olmv1alpha1.Subscription{}).
+		// Subscriptions are shared and carry no owner reference; any change,
+		// including to a non-COO subscription, can affect every installer.
+		Watches(&olmv1alpha1.Subscription{}, handler.EnqueueRequestsFromMapFunc(controller.triggerReconcile)).
 		Owns(&corev1.Secret{}).
 		Owns(&corev1.Namespace{}).
 		Owns(&uiv1alpha1.UIPlugin{}).

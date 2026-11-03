@@ -255,7 +255,7 @@ spec:
                                 type: object
                               s3CCO:
                                 description: S3CCO defines the S3 object storage configuration
-                                  using CCO.
+                                  using the Cloud Credential Operator.
                                 properties:
                                   bucket:
                                     description: Bucket is the name of the S3 bucket.
@@ -342,8 +342,9 @@ spec:
                                     - name
                                     type: object
                                   minVersion:
-                                    description: MinVersion defines the minimum acceptable
-                                      TLS version.
+                                    description: |-
+                                      MinVersion defines the minimum acceptable TLS version. It is not supported for
+                                      all capabilities; setting it for an unsupported capability causes reconciliation to fail.
                                     type: string
                                 type: object
                                 x-kubernetes-validations:
@@ -631,7 +632,7 @@ spec:
                                 type: object
                               s3CCO:
                                 description: S3CCO defines the S3 object storage configuration
-                                  using CCO.
+                                  using the Cloud Credential Operator.
                                 properties:
                                   bucket:
                                     description: Bucket is the name of the S3 bucket.
@@ -718,8 +719,9 @@ spec:
                                     - name
                                     type: object
                                   minVersion:
-                                    description: MinVersion defines the minimum acceptable
-                                      TLS version.
+                                    description: |-
+                                      MinVersion defines the minimum acceptable TLS version. It is not supported for
+                                      all capabilities; setting it for an unsupported capability causes reconciliation to fail.
                                     type: string
                                 type: object
                                 x-kubernetes-validations:
