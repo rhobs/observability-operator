@@ -76,12 +76,9 @@ func otelCollectorName(instance string) string {
 
 // legacyOTelCollectorRBACInventory returns cluster-scoped RBAC objects with names
 // containing <instance> but not <namespace>. This is to clean up legacy objects.
-// The names now include instance name and namespace for uniqueness.
-//
-// A legacy name can coincide with the current name of a different installer,
-// for example installer "obs" in namespace "ns1" and installer "ns1-obs" both
-// map to "coo-otelcol-ns1-obs-components". Only objects labelled as part of
-// this instance are returned, so cleanup cannot delete live RBAC.
+// Current names encode both namespace and instance name. Only objects labelled
+// as part of this instance are returned, so cleanup cannot delete live RBAC
+// if a legacy name coincides with another installer's current name.
 func legacyOTelCollectorRBACInventory(ctx context.Context, reader client.Reader, instance *obsv1alpha1.ObservabilityInstaller) []client.Object {
 	var owned []client.Object
 	for _, object := range legacyOTelCollectorRBACNames(instance.Name) {
@@ -108,8 +105,14 @@ func legacyOTelCollectorRBACNames(instance string) []client.Object {
 	}
 }
 
+// Length-prefixing the namespace makes the pair unambiguous even when either
+// component contains hyphens.
+func otelCollectorRBACName(instance *obsv1alpha1.ObservabilityInstaller, suffix string) string {
+	return fmt.Sprintf("coo-otelcol-%d-%s-%s-%s", len(instance.Namespace), instance.Namespace, instance.Name, suffix)
+}
+
 func otelCollectorComponentsRBAC(instance *obsv1alpha1.ObservabilityInstaller) (*rbacv1.ClusterRole, *rbacv1.ClusterRoleBinding) {
-	name := fmt.Sprintf("coo-otelcol-%s-%s-components", instance.Namespace, instance.Name)
+	name := otelCollectorRBACName(instance, "components")
 	role := &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ClusterRole",
@@ -157,7 +160,7 @@ func otelCollectorComponentsRBAC(instance *obsv1alpha1.ObservabilityInstaller) (
 }
 
 func otelCollectorTempoRBAC(instance *obsv1alpha1.ObservabilityInstaller) (*rbacv1.ClusterRole, *rbacv1.ClusterRoleBinding) {
-	name := fmt.Sprintf("coo-otelcol-%s-%s-tempo", instance.Namespace, instance.Name)
+	name := otelCollectorRBACName(instance, "tempo")
 	role := &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ClusterRole",

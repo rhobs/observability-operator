@@ -282,7 +282,7 @@ func TestLoggingCollectorRBAC(t *testing.T) {
 	require.NotNil(t, role)
 	require.Len(t, bindings, 3)
 
-	assert.Equal(t, "coo-test-ns-test-logging", role.Name)
+	assert.Equal(t, "coo-7-test-ns-test-logging", role.Name)
 	require.Len(t, role.Rules, 1)
 	assert.Equal(t, []string{"loki.grafana.com"}, role.Rules[0].APIGroups)
 	assert.Equal(t, []string{"application", "audit", "infrastructure"}, role.Rules[0].Resources)
@@ -292,9 +292,9 @@ func TestLoggingCollectorRBAC(t *testing.T) {
 		name    string
 		roleRef string
 	}{
-		{name: "coo-test-ns-test-logging", roleRef: "coo-test-ns-test-logging"},
-		{name: "coo-test-ns-test-logging-collect-application", roleRef: "collect-application-logs"},
-		{name: "coo-test-ns-test-logging-collect-infrastructure", roleRef: "collect-infrastructure-logs"},
+		{name: "coo-7-test-ns-test-logging", roleRef: "coo-7-test-ns-test-logging"},
+		{name: "coo-7-test-ns-test-logging-collect-application", roleRef: "collect-application-logs"},
+		{name: "coo-7-test-ns-test-logging-collect-infrastructure", roleRef: "collect-infrastructure-logs"},
 	}
 	for i, want := range wantBindings {
 		assert.Equal(t, want.name, bindings[i].Name)
@@ -302,6 +302,18 @@ func TestLoggingCollectorRBAC(t *testing.T) {
 		require.Len(t, bindings[i].Subjects, 1)
 		assert.Equal(t, "test-logging-collector", bindings[i].Subjects[0].Name)
 		assert.Equal(t, "test-ns", bindings[i].Subjects[0].Namespace)
+	}
+}
+
+func TestLoggingCollectorRBACNamesDoNotCollide(t *testing.T) {
+	first := &obsv1alpha1.ObservabilityInstaller{ObjectMeta: metav1.ObjectMeta{Namespace: "a-b", Name: "c"}}
+	second := &obsv1alpha1.ObservabilityInstaller{ObjectMeta: metav1.ObjectMeta{Namespace: "a", Name: "b-c"}}
+
+	firstRole, firstBindings := loggingCollectorRBAC(first)
+	secondRole, secondBindings := loggingCollectorRBAC(second)
+	assert.NotEqual(t, firstRole.Name, secondRole.Name)
+	for i := range firstBindings {
+		assert.NotEqual(t, firstBindings[i].Name, secondBindings[i].Name)
 	}
 }
 

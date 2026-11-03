@@ -107,7 +107,9 @@ func loggingServiceAccount(instance *obsv1alpha1.ObservabilityInstaller) *corev1
 }
 
 func loggingCollectorRBAC(instance *obsv1alpha1.ObservabilityInstaller) (*rbacv1.ClusterRole, []*rbacv1.ClusterRoleBinding) {
-	name := fmt.Sprintf("coo-%s-%s-logging", instance.Namespace, instance.Name)
+	// Length-prefix the namespace so hyphens cannot make distinct namespace/name
+	// pairs collide in cluster-scoped RBAC names.
+	name := fmt.Sprintf("coo-%d-%s-%s-logging", len(instance.Namespace), instance.Namespace, instance.Name)
 
 	role := &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
