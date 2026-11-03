@@ -36,41 +36,9 @@ type ListFunction func(ctx context.Context, list client.ObjectList, opts ...clie
 var compatibilityMatrix = []CompatibilityEntry{
 	{
 		PluginType:        uiv1alpha1.TypeTroubleshootingPanel,
-		MinClusterVersion: "v4.19",
-		MaxClusterVersion: "v4.22",
-		ImageKey:          "ui-troubleshooting-panel-pf6",
-		SupportLevel:      GeneralAvailability,
-		Features:          []string{},
-	},
-	{
-		PluginType:        uiv1alpha1.TypeTroubleshootingPanel,
 		MinClusterVersion: "v4.22",
 		MaxClusterVersion: "",
 		ImageKey:          "ui-troubleshooting-panel",
-		SupportLevel:      GeneralAvailability,
-		Features:          []string{},
-	},
-	{
-		PluginType:        uiv1alpha1.TypeDistributedTracing,
-		MinClusterVersion: "v4.11",
-		MaxClusterVersion: "v4.15",
-		ImageKey:          "ui-distributed-tracing-pf4",
-		SupportLevel:      GeneralAvailability,
-		Features:          []string{},
-	},
-	{
-		PluginType:        uiv1alpha1.TypeDistributedTracing,
-		MinClusterVersion: "v4.15",
-		MaxClusterVersion: "v4.19",
-		ImageKey:          "ui-distributed-tracing-pf5",
-		SupportLevel:      GeneralAvailability,
-		Features:          []string{},
-	},
-	{
-		PluginType:        uiv1alpha1.TypeDistributedTracing,
-		MinClusterVersion: "v4.19",
-		MaxClusterVersion: "v4.22",
-		ImageKey:          "ui-distributed-tracing-pf6",
 		SupportLevel:      GeneralAvailability,
 		Features:          []string{},
 	},
@@ -84,88 +52,11 @@ var compatibilityMatrix = []CompatibilityEntry{
 	},
 	{
 		PluginType:        uiv1alpha1.TypeLogging,
-		MinClusterVersion: "v4.11",
-		MaxClusterVersion: "v4.12",
-		ImageKey:          "ui-logging-pf4",
-		SupportLevel:      GeneralAvailability,
-		Features:          []string{},
-	},
-	{
-		PluginType:        uiv1alpha1.TypeLogging,
-		MinClusterVersion: "v4.12",
-		MaxClusterVersion: "v4.13",
-		ImageKey:          "ui-logging-pf4",
-		SupportLevel:      GeneralAvailability,
-		Features: []string{
-			"dev-console",
-		},
-	},
-	{
-		PluginType:        uiv1alpha1.TypeLogging,
-		MinClusterVersion: "v4.13",
-		MaxClusterVersion: "v4.14",
-		ImageKey:          "ui-logging-pf4",
-		SupportLevel:      GeneralAvailability,
-		Features: []string{
-			"dev-console",
-			"alerts",
-		},
-	},
-	{
-		PluginType:        uiv1alpha1.TypeLogging,
-		MinClusterVersion: "v4.14",
-		MaxClusterVersion: "v4.15",
-		ImageKey:          "ui-logging-pf4",
-		SupportLevel:      GeneralAvailability,
-		Features: []string{
-			"dev-console",
-			"alerts",
-			"dev-alerts",
-		},
-	},
-	{
-		PluginType:        uiv1alpha1.TypeLogging,
-		MinClusterVersion: "v4.15",
-		MaxClusterVersion: "v4.22",
-		ImageKey:          "ui-logging-pf5",
-		SupportLevel:      GeneralAvailability,
-		Features: []string{
-			"dev-console",
-			"alerts",
-			"dev-alerts",
-		},
-	},
-	{
-		PluginType:        uiv1alpha1.TypeLogging,
 		MinClusterVersion: "v4.22",
 		MaxClusterVersion: "",
 		ImageKey:          "ui-logging",
 		SupportLevel:      GeneralAvailability,
-		Features: []string{
-			"dev-console",
-			"alerts",
-			"dev-alerts",
-		},
-	},
-	{
-		PluginType:        uiv1alpha1.TypeMonitoring,
-		MinClusterVersion: "v4.15",
-		MaxClusterVersion: "v4.19",
-		ImageKey:          "ui-monitoring-pf5",
-		SupportLevel:      GeneralAvailability,
-		// feature flags for monitoring are dynamically injected
-		// based on the cluster version and and UIPlugin CR configurations
-		Features: []string{},
-	},
-	{
-		PluginType:        uiv1alpha1.TypeMonitoring,
-		MinClusterVersion: "v4.19",
-		MaxClusterVersion: "v4.22",
-		ImageKey:          "ui-monitoring-pf6",
-		SupportLevel:      GeneralAvailability,
-		// feature flags for monitoring are dynamically injected
-		// based on the cluster version and and UIPlugin CR configurations
-		Features: []string{},
+		Features:          []string{},
 	},
 	{
 		PluginType:        uiv1alpha1.TypeMonitoring,
@@ -184,9 +75,9 @@ func lookupImageAndFeatures(pluginType uiv1alpha1.UIPluginType, clusterVersion s
 		clusterVersion = "v" + clusterVersion
 	}
 
-	// No console plugins are supported before 4.11
-	if semver.Compare(clusterVersion, "v4.11") < 0 {
-		return CompatibilityEntry{}, fmt.Errorf("dynamic plugins not supported before 4.11")
+	// No console plugins are supported before 4.21
+	if semver.Compare(clusterVersion, "v4.21") < 0 {
+		return CompatibilityEntry{}, fmt.Errorf("dynamic plugins not supported before 4.21")
 	}
 
 	for _, entry := range compatibilityMatrix {
