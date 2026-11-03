@@ -109,8 +109,14 @@ func TestGetReconcilers(t *testing.T) {
 			mockClient: func() *MockClient {
 				mockClient := &MockClient{}
 				mockClient.On("Get", context.Background(), mock.Anything, mock.IsType(&olmv1alpha1.Subscription{}), mock.Anything).Return(nil)
-				mockClient.On("Get", context.Background(), mock.Anything, mock.IsType(&corev1.Secret{}), mock.Anything).Return(nil)
-				mockClient.On("Get", context.Background(), mock.Anything, mock.IsType(&corev1.ConfigMap{}), mock.Anything).Return(nil)
+				mockClient.On("Get", context.Background(), mock.Anything, mock.IsType(&corev1.Secret{}), mock.Anything).
+					Run(func(args mock.Arguments) {
+						args.Get(2).(*corev1.Secret).Data = map[string][]byte{"key": []byte("secret")}
+					}).Return(nil)
+				mockClient.On("Get", context.Background(), mock.Anything, mock.IsType(&corev1.ConfigMap{}), mock.Anything).
+					Run(func(args mock.Arguments) {
+						args.Get(2).(*corev1.ConfigMap).Data = map[string]string{"ca.crt": "test CA"}
+					}).Return(nil)
 				mockClient.On("Apply", context.Background(), mock.Anything, mock.Anything).Return(nil)
 				expectLoggingDeletes(mockClient)
 				return mockClient

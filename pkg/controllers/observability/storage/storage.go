@@ -83,7 +83,11 @@ func Materialize(ctx context.Context, reader client.Reader, namespace string, sp
 		if err := reader.Get(ctx, client.ObjectKey{Namespace: namespace, Name: ref.Name}, secret); err != nil {
 			return nil, fmt.Errorf("get %s %s: %w", description, ref.Name, err)
 		}
-		return secret.Data[ref.Key], nil
+		value, ok := secret.Data[ref.Key]
+		if !ok {
+			return nil, fmt.Errorf("%s %s missing key %q", description, ref.Name, ref.Key)
+		}
+		return value, nil
 	}
 
 	var tlsSecret *corev1.Secret
@@ -94,10 +98,14 @@ func Materialize(ctx context.Context, reader client.Reader, namespace string, sp
 			if err := reader.Get(ctx, client.ObjectKey{Namespace: namespace, Name: tls.CAConfigMap.Name}, configMap); err != nil {
 				return nil, fmt.Errorf("get object storage CA configmap %s: %w", tls.CAConfigMap.Name, err)
 			}
+			ca, ok := configMap.Data[tls.CAConfigMap.Key]
+			if !ok {
+				return nil, fmt.Errorf("object storage CA configmap %s missing key %q", tls.CAConfigMap.Name, tls.CAConfigMap.Key)
+			}
 			resources.ObjectStorageCA = &corev1.ConfigMap{
 				TypeMeta:   metav1.TypeMeta{Kind: "ConfigMap", APIVersion: corev1.SchemeGroupVersion.String()},
 				ObjectMeta: metav1.ObjectMeta{Name: names.CAConfigMap, Namespace: namespace},
-				Data:       map[string]string{"service-ca.crt": configMap.Data[tls.CAConfigMap.Key]},
+				Data:       map[string]string{"service-ca.crt": ca},
 			}
 		}
 		ensureTLSSecret := func() *corev1.Secret {

@@ -57,6 +57,24 @@ func TestMaterializeS3(t *testing.T) {
 	require.Equal(t, []byte("secret"), resources.ObjectStorage.Data["access_key_secret"])
 }
 
+func TestMaterializeMissingSourceKeys(t *testing.T) {
+	scheme := runtime.NewScheme()
+	require.NoError(t, corev1.AddToScheme(scheme))
+	reader := fake.NewClientBuilder().WithScheme(scheme).WithObjects(
+		&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "source", Namespace: "test"}},
+		&corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "ca", Namespace: "test"}},
+	).Build()
+	s3 := &obsv1alpha1.S3Spec{AccessKeySecret: obsv1alpha1.SecretKeySelector{Name: "source", Key: "missing-secret-key"}}
+
+	_, err := Materialize(context.Background(), reader, "test", &obsv1alpha1.ObjectStorageSpec{S3: s3}, Names{Secret: "target"}, TempoFormat)
+	require.ErrorContains(t, err, "missing-secret-key")
+
+	_, err = Materialize(context.Background(), reader, "test", &obsv1alpha1.ObjectStorageSpec{
+		TLS: &obsv1alpha1.TLSSpec{CAConfigMap: &obsv1alpha1.ConfigMapKeySelector{Name: "ca", Key: "missing-ca-key"}},
+	}, Names{Secret: "target", CAConfigMap: "target-ca"}, TempoFormat)
+	require.ErrorContains(t, err, "missing-ca-key")
+}
+
 func TestMaterializeFormatKeys(t *testing.T) {
 	scheme := runtime.NewScheme()
 	require.NoError(t, corev1.AddToScheme(scheme))
