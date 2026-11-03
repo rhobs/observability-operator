@@ -1,7 +1,8 @@
-package observability
+package tracing
 
 import (
 	"bytes"
+	"context"
 	"embed"
 	"encoding/json"
 	"fmt"
@@ -12,6 +13,7 @@ import (
 	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	obsv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/observability/v1alpha1"
 )
@@ -72,8 +74,45 @@ func otelCollectorName(instance string) string {
 	return instance
 }
 
+// legacyOTelCollectorRBACInventory returns cluster-scoped RBAC objects with names
+// containing <instance> but not <namespace>. This is to clean up legacy objects.
+// Current names encode both namespace and instance name. Only objects labelled
+// as part of this instance are returned, so cleanup cannot delete live RBAC
+// if a legacy name coincides with another installer's current name.
+func legacyOTelCollectorRBACInventory(ctx context.Context, reader client.Reader, instance *obsv1alpha1.ObservabilityInstaller) []client.Object {
+	var owned []client.Object
+	for _, object := range legacyOTelCollectorRBACNames(instance.Name) {
+		existing := object.DeepCopyObject().(client.Object)
+		// Cleanup is best effort: a read failure simply defers it to a later reconcile.
+		if err := reader.Get(ctx, client.ObjectKeyFromObject(object), existing); err != nil {
+			continue
+		}
+		if existing.GetLabels()["app.kubernetes.io/part-of"] == instance.Name {
+			owned = append(owned, object)
+		}
+	}
+	return owned
+}
+
+func legacyOTelCollectorRBACNames(instance string) []client.Object {
+	componentsName := fmt.Sprintf("coo-otelcol-%s-components", instance)
+	tempoName := fmt.Sprintf("coo-otelcol-%s-tempo", instance)
+	return []client.Object{
+		&rbacv1.ClusterRole{TypeMeta: metav1.TypeMeta{Kind: "ClusterRole", APIVersion: rbacv1.SchemeGroupVersion.String()}, ObjectMeta: metav1.ObjectMeta{Name: componentsName}},
+		&rbacv1.ClusterRoleBinding{TypeMeta: metav1.TypeMeta{Kind: "ClusterRoleBinding", APIVersion: rbacv1.SchemeGroupVersion.String()}, ObjectMeta: metav1.ObjectMeta{Name: componentsName}},
+		&rbacv1.ClusterRole{TypeMeta: metav1.TypeMeta{Kind: "ClusterRole", APIVersion: rbacv1.SchemeGroupVersion.String()}, ObjectMeta: metav1.ObjectMeta{Name: tempoName}},
+		&rbacv1.ClusterRoleBinding{TypeMeta: metav1.TypeMeta{Kind: "ClusterRoleBinding", APIVersion: rbacv1.SchemeGroupVersion.String()}, ObjectMeta: metav1.ObjectMeta{Name: tempoName}},
+	}
+}
+
+// Length-prefixing the namespace makes the pair unambiguous even when either
+// component contains hyphens.
+func otelCollectorRBACName(instance *obsv1alpha1.ObservabilityInstaller, suffix string) string {
+	return fmt.Sprintf("coo-otelcol-%d-%s-%s-%s", len(instance.Namespace), instance.Namespace, instance.Name, suffix)
+}
+
 func otelCollectorComponentsRBAC(instance *obsv1alpha1.ObservabilityInstaller) (*rbacv1.ClusterRole, *rbacv1.ClusterRoleBinding) {
-	name := fmt.Sprintf("coo-otelcol-%s-components", instance.Name)
+	name := otelCollectorRBACName(instance, "components")
 	role := &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ClusterRole",
@@ -121,7 +160,7 @@ func otelCollectorComponentsRBAC(instance *obsv1alpha1.ObservabilityInstaller) (
 }
 
 func otelCollectorTempoRBAC(instance *obsv1alpha1.ObservabilityInstaller) (*rbacv1.ClusterRole, *rbacv1.ClusterRoleBinding) {
-	name := fmt.Sprintf("coo-otelcol-%s-tempo", instance.Name)
+	name := otelCollectorRBACName(instance, "tempo")
 	role := &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ClusterRole",
