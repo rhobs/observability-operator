@@ -84,10 +84,6 @@ type Deleter struct {
 
 func (r Deleter) Reconcile(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 	if err := c.Delete(ctx, r.resource); client.IgnoreNotFound(err) != nil {
-		if meta.IsNoMatchError(err) {
-			// CRD not installed, treat as successful cleanup
-			return nil
-		}
 		return fmt.Errorf("%s/%s (%s): deleter failed to delete: %w",
 			r.resource.GetNamespace(), r.resource.GetName(),
 			r.resource.GetObjectKind().GroupVersionKind().String(), err)
@@ -97,6 +93,23 @@ func (r Deleter) Reconcile(ctx context.Context, c client.Client, scheme *runtime
 
 func NewDeleter(r client.Object) Deleter {
 	return Deleter{resource: r}
+}
+
+// MissingCRDDeleter treats a missing resource kind as successful cleanup.
+// Optional operand CRDs can disappear when their operator is uninstalled;
+// unlike Deleter, this lets reconciliation continue after that happens.
+type MissingCRDDeleter struct{ Deleter }
+
+func (r MissingCRDDeleter) Reconcile(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
+	err := r.Deleter.Reconcile(ctx, c, scheme)
+	if meta.IsNoMatchError(err) {
+		return nil
+	}
+	return err
+}
+
+func NewMissingCRDDeleter(r client.Object) MissingCRDDeleter {
+	return MissingCRDDeleter{Deleter: NewDeleter(r)}
 }
 
 // GuardedDeleter deletes a resource only if the live object carries the given

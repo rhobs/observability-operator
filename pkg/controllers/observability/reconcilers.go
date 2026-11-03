@@ -128,7 +128,7 @@ func deleterFor(obj client.Object) reconciler.Reconciler {
 	if _, ok := obj.(*uiv1alpha1.UIPlugin); ok {
 		return reconciler.NewGuardedDeleter(obj, util.PartOfLabel, util.OpName)
 	}
-	return reconciler.NewDeleter(obj)
+	return reconciler.NewMissingCRDDeleter(obj)
 }
 
 func gvkNameIdentifier(obj client.Object) string {
