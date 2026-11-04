@@ -8,11 +8,11 @@
 updates:
   - file: "manifests/cluster-observability-operator.clusterserviceversion.yaml" # relative to this file
     update_list:
-      - search: "olm.skipRange: '>=0.1.0 <1.5.4'"
-        replace: "olm.skipRange: '>=0.1.0 <1.5.4'"
-      - search: "version: 1.5.4"
-        replace: "version: 1.5.4"
-      - search: "name: cluster-observability-operator.v1.5.4"
-        replace: "name: cluster-observability-operator.v1.5.4"
-      - search: "replaces: cluster-observability-operator.v1.5.3"
-        replace: "replaces: cluster-observability-operator.v1.5.3"
+      - search: "olm.skipRange: '>=0.1.0 <1.5.5'"
+        replace: "olm.skipRange: '>=0.1.0 <1.5.5'"
+      - search: "version: 1.5.5"
+        replace: "version: 1.5.5"
+      - search: "name: cluster-observability-operator.v1.5.5"
+        replace: "name: cluster-observability-operator.v1.5.5"
+      - search: "replaces: cluster-observability-operator.v1.5.4"
+        replace: "replaces: cluster-observability-operator.v1.5.4"
