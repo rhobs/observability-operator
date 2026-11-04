@@ -88,9 +88,7 @@ patches:
                 requests:
                   cpu: 5m
                   memory: 150Mi
-                limits:
-                  cpu: 100m
-                  memory: 500Mi
+                limits: {}
               terminationMessagePolicy: FallbackToLogsOnError
           securityContext:
             runAsNonRoot: true
