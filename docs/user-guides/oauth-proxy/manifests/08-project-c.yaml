@@ -1,0 +1,146 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: project-c
+  labels:
+    monitoring.rhobs/stack: project-c
+    project: project-c
+---
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: deny-by-default
+  namespace: project-c
+spec:
+  podSelector: {}
+  ingress: []
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-from-openshift-ingress
+  namespace: project-c
+spec:
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          policy-group.network.openshift.io/ingress: ""
+  podSelector: {}
+  policyTypes:
+  - Ingress
+---
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: allow-same-namespace
+  namespace: project-c
+spec:
+  podSelector: {}
+  ingress:
+  - from:
+    - podSelector: {}
+---
+apiVersion: monitoring.rhobs/v1alpha1
+kind: MonitoringStack
+metadata:
+  name: example-coo-monitoring-stack
+  namespace: project-c
+  labels:
+    discover: multi-ns
+spec:
+  logLevel: debug
+  retention: 1d
+  resourceSelector:
+    matchLabels:
+      k8s-app: prometheus-coo-example-monitor
+  namespaceSelector:
+    matchLabels:
+      monitoring.rhobs/stack: project-c
+---
+apiVersion: monitoring.rhobs/v1alpha1
+kind: ThanosQuerier
+metadata:
+  name: example-coo-thanos
+  namespace: project-c
+spec:
+  namespaceSelector:
+    matchNames:
+    - project-b
+    - project-c
+  selector:
+    matchLabels:
+      discover: multi-ns
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: prometheus-coo-example-app
+  name: prometheus-coo-example-app
+  namespace: project-c
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus-coo-example-app
+  template:
+    metadata:
+      labels:
+        app: prometheus-coo-example-app
+    spec:
+      containers:
+      - image: ghcr.io/rhobs/prometheus-example-app:0.4.2
+        imagePullPolicy: IfNotPresent
+        name: prometheus-coo-example-app
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: prometheus-coo-example-app
+  name: prometheus-coo-example-app
+  namespace: project-c
+spec:
+  ports:
+  - port: 8080
+    protocol: TCP
+    targetPort: 8080
+    name: web
+  selector:
+    app: prometheus-coo-example-app
+  type: ClusterIP
+---
+apiVersion: monitoring.rhobs/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    k8s-app: prometheus-coo-example-monitor
+  name: prometheus-coo-example-monitor
+  namespace: project-c
+spec:
+  endpoints:
+  - interval: 30s
+    port: web
+    scheme: http
+  selector:
+    matchLabels:
+      app: prometheus-coo-example-app
+---
+apiVersion: monitoring.rhobs/v1
+kind: PrometheusRule
+metadata:
+  name: example-alert
+  namespace: project-c
+  labels:
+    k8s-app: prometheus-coo-example-monitor
+spec:
+  groups:
+  - name: example
+    rules:
+    - alert: VersionAlert
+      for: 1m
+      expr: version{job="prometheus-coo-example-app"} > 0
+      labels:
+        severity: warning
