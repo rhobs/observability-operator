@@ -42,8 +42,8 @@ metadata:
     categories: Monitoring, Observability
     certified: 'false'
     console.openshift.io/operator-monitoring-default: 'true'
-    containerImage: observability-operator:1.5.2
-    createdAt: '2026-08-18T07:59:48Z'
+    containerImage: observability-operator:1.6.0
+    createdAt: '2026-11-05T09:09:36Z'
     description: A Go based Kubernetes operator to setup and manage highly available Monitoring Stack using Prometheus, Alertmanager and Thanos Querier.
     operatorframework.io/cluster-monitoring: 'true'
     operatorframework.io/suggested-namespace: openshift-cluster-observability-operator
@@ -70,8 +70,8 @@ metadata:
     features.operators.openshift.io/csi: 'false'
     support: Cluster Observability (https://issues.redhat.com/projects/COO/)
     operators.openshift.io/valid-subscription: '["OpenShift Kubernetes Engine", "OpenShift Container Platform", "OpenShift Platform Plus"]'
-    olm.skipRange: '>=0.1.0 <1.5.2'
-  name: cluster-observability-operator.v1.5.2
+    olm.skipRange: '>=0.1.0 <1.6.0'
+  name: cluster-observability-operator.v1.6.0
   namespace: placeholder
   labels:
     operatorframework.io/arch.amd64: supported
@@ -322,7 +322,6 @@ spec:
           - security.openshift.io
           resourceNames:
           - nonroot-v2
-          - nonroot
           resources:
           - securitycontextconstraints
           verbs:
@@ -720,7 +719,6 @@ spec:
         - apiGroups:
           - security.openshift.io
           resourceNames:
-          - nonroot
           - nonroot-v2
           resources:
           - securitycontextconstraints
@@ -782,6 +780,14 @@ spec:
           - list
           - patch
           - update
+          - watch
+        - apiGroups:
+          - ''
+          resources:
+          - pods
+          verbs:
+          - get
+          - list
           - watch
         - apiGroups:
           - apps
@@ -1081,7 +1087,7 @@ spec:
       - label:
           app.kubernetes.io/component: operator
           app.kubernetes.io/name: observability-operator
-          app.kubernetes.io/version: 1.5.2
+          app.kubernetes.io/version: 1.6.0
         name: observability-operator
         spec:
           replicas: 1
@@ -1095,7 +1101,7 @@ spec:
               labels:
                 app.kubernetes.io/component: operator
                 app.kubernetes.io/name: observability-operator
-                app.kubernetes.io/version: 1.5.2
+                app.kubernetes.io/version: 1.6.0
             spec:
               affinity:
                 nodeAffinity:
@@ -1171,7 +1177,7 @@ spec:
                   value: quay.io/korrel8r/korrel8r:0.11.1
                 - name: RELATED_IMAGE_CLUSTER_HEALTH_ANALYZER
                   value: quay.io/openshiftanalytics/cluster-health-analyzer:v1.1.1
-                image: observability-operator:1.5.2
+                image: observability-operator:1.6.0
                 imagePullPolicy: Always
                 livenessProbe:
                   httpGet:
@@ -1194,6 +1200,7 @@ spec:
                   capabilities:
                     drop:
                     - ALL
+                  readOnlyRootFilesystem: true
                 volumeMounts:
                 - mountPath: /etc/tls/private
                   name: observability-operator-tls
@@ -1242,7 +1249,7 @@ spec:
                         operator: Exists
                     weight: 1
               containers:
-              - image: quay.io/openshift-observability-ui/perses-operator:v0.4.0
+              - image: quay.io/openshift-observability-ui/perses-operator:v0.5.0
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -1268,6 +1275,7 @@ spec:
                   capabilities:
                     drop:
                     - ALL
+                  readOnlyRootFilesystem: true
                 volumeMounts:
                 - mountPath: /ca
                   name: openshift-service-ca
@@ -1314,7 +1322,7 @@ spec:
   maturity: alpha
   provider:
     name: Red Hat
-  version: 1.5.2
+  version: 1.6.0
   webhookdefinitions:
   - admissionReviewVersions:
     - v1
@@ -1375,7 +1383,7 @@ spec:
     webhookPath: /admission-prometheusrules/validate
   relatedImages:
   - name: cluster-observability-operator
-    image: observability-operator:1.5.2
+    image: observability-operator:1.6.0
   - name: prometheus-config-reloader
     image: quay.io/rhobs/obo-prometheus-config-reloader:v0.93.1-rhobs1
   - name: alertmanager
@@ -1422,4 +1430,3 @@ spec:
     image: quay.io/openshift-observability-ui/perses:v0.54.0
   - name: perses-operator
     image: quay.io/openshift-observability-ui/perses-operator:v0.4.0
-  replaces: cluster-observability-operator.v1.5.1
