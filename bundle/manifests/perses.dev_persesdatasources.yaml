@@ -7,6 +7,16 @@ metadata:
   creationTimestamp: null
   name: persesdatasources.perses.dev
 spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: perses-operator-conversion-webhook
+          namespace: system
+          path: /convert
+      conversionReviewVersions:
+      - v1
   group: perses.dev
   names:
     kind: PersesDatasource
