@@ -249,7 +249,6 @@ spec:
               type:
                 description: Type defines the UI plugin.
                 enum:
-                - Dashboards
                 - TroubleshootingPanel
                 - DistributedTracing
                 - Logging
@@ -340,8 +339,6 @@ spec:
             'troubleshooting-panel'
         - message: UIPlugin name must be 'distributed-tracing' if type is DistributedTracing
           rule: self.spec.type != 'DistributedTracing' || self.metadata.name == 'distributed-tracing'
-        - message: UIPlugin name must be 'dashboards' if type is Dashboards
-          rule: self.spec.type != 'Dashboards' || self.metadata.name == 'dashboards'
         - message: UIPlugin name must be 'monitoring' if type is Monitoring
           rule: self.spec.type != 'Monitoring' || self.metadata.name == 'monitoring'
     served: true

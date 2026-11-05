@@ -235,11 +235,12 @@ spec:
                         properties:
                           registry:
                             description: 'Registry is optional. If not provided, it
-                              means the default registry: "perses.dev".'
+                              means the default registry is: "perses.dev".'
                             type: string
                           version:
-                            description: Version is optional. If not provided, it
-                              means the latest version available in the Perses instance.
+                            description: |-
+                              Version is optional. If not provided, it means the latest version available in the Perses instance.
+                              Version needs to follow the semantic versioning format (e.g., "1.0.0" or "v1.0.0")
                             type: string
                         type: object
                       spec:
@@ -582,6 +583,18 @@ spec:
                             || has(self.__namespace__)
                     type: object
                 type: object
+                x-kubernetes-validations:
+                - message: kubernetesAuth and oauth are mutually exclusive; both cannot
+                    be enabled simultaneously
+                  rule: '!(has(self.kubernetesAuth) && has(self.kubernetesAuth.enable)
+                    && self.kubernetesAuth.enable == true && has(self.oauth))'
+                - message: kubernetesAuth and basicAuth are mutually exclusive; both
+                    cannot be enabled simultaneously
+                  rule: '!(has(self.kubernetesAuth) && has(self.kubernetesAuth.enable)
+                    && self.kubernetesAuth.enable == true && has(self.basicAuth))'
+                - message: oauth and basicAuth are mutually exclusive; both cannot
+                    be enabled simultaneously
+                  rule: '!(has(self.basicAuth) && has(self.oauth))'
               config:
                 description: config specifies the Perses datasource configuration
                 properties:
@@ -609,11 +622,12 @@ spec:
                         properties:
                           registry:
                             description: 'Registry is optional. If not provided, it
-                              means the default registry: "perses.dev".'
+                              means the default registry is: "perses.dev".'
                             type: string
                           version:
-                            description: Version is optional. If not provided, it
-                              means the latest version available in the Perses instance.
+                            description: |-
+                              Version is optional. If not provided, it means the latest version available in the Perses instance.
+                              Version needs to follow the semantic versioning format (e.g., "1.0.0" or "v1.0.0")
                             type: string
                         type: object
                       spec:
