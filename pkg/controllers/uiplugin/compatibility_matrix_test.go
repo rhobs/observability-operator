@@ -91,6 +91,13 @@ func TestLookupImageAndFeatures(t *testing.T) {
 			supportLevel:     GeneralAvailability,
 		},
 		{
+			pluginType:       uiv1alpha1.TypeLogging,
+			clusterVersion:   "4.23.0",
+			expectedKey:      "ui-logging",
+			expectedFeatures: []string{},
+			supportLevel:     GeneralAvailability,
+		},
+		{
 			pluginType:     uiv1alpha1.TypeTroubleshootingPanel,
 			clusterVersion: "4.24.0-0.nightly-2024-03-11-200348",
 			expectedKey:    "ui-troubleshooting-panel",

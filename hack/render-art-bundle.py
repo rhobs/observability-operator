@@ -45,35 +45,28 @@ CHANNELS = ["stable", "fast"]
 CONFIG_RELOADER = "quay.io/rhobs/obo-prometheus-config-reloader:v0.93.1-rhobs1"
 ADMISSION_WEBHOOK = "quay.io/rhobs/obo-admission-webhook:v0.93.1-rhobs1"
 PROMETHEUS_OPERATOR = "quay.io/rhobs/obo-prometheus-operator:v0.93.1-rhobs1"
-PERSES_OPERATOR = "quay.io/openshift-observability-ui/perses-operator:v0.4.0"
+PERSES_OPERATOR = "quay.io/openshift-observability-ui/perses-operator:v0.5.0"
 ALERTMANAGER = "quay.io/prometheus/alertmanager:v0.33.1"
 PROMETHEUS = "quay.io/prometheus/prometheus:v3.13.1"
 THANOS = "quay.io/thanos/thanos:v0.42.2"
-PERSES = "quay.io/openshift-observability-ui/perses:v0.54.0"
-UI_DASHBOARDS = "quay.io/openshift-observability-ui/console-dashboards-plugin:v0.4.3"
-UI_TRACING = "quay.io/openshift-observability-ui/distributed-tracing-console-plugin:v1.1.0"
-UI_TRACING_PF5 = "quay.io/openshift-observability-ui/distributed-tracing-console-plugin:v0.4.3"
-UI_TRACING_PF6 = "quay.io/openshift-observability-ui/distributed-tracing-console-plugin:v1.0.3"
-UI_TRACING_PF4 = "quay.io/openshift-observability-ui/distributed-tracing-console-plugin:v0.3.3"
-UI_LOGGING = "quay.io/openshift-observability-ui/logging-view-plugin:v6.2.1"
-UI_LOGGING_PF4 = "quay.io/openshift-observability-ui/logging-view-plugin:v6.0.5"
-UI_LOGGING_PF5 = "quay.io/openshift-observability-ui/logging-view-plugin:v6.1.6"
-UI_TROUBLESHOOTING = "quay.io/openshift-observability-ui/troubleshooting-panel-console-plugin:v1.0.0"
-UI_TROUBLESHOOTING_PF6 = "quay.io/openshift-observability-ui/troubleshooting-panel-console-plugin:v0.4.5"
-UI_MONITORING = "quay.io/openshift-observability-ui/monitoring-console-plugin:v1.0.0"
-UI_MONITORING_PF5 = "quay.io/openshift-observability-ui/monitoring-console-plugin:v0.4.5"
-UI_MONITORING_PF6 = "quay.io/openshift-observability-ui/monitoring-console-plugin:v0.5.4"
+PERSES = "quay.io/openshift-observability-ui/perses:v0.55.0"
+UI_TRACING = "quay.io/openshift-observability-ui/distributed-tracing-console-plugin:v1.2.0"
+UI_LOGGING = "quay.io/openshift-observability-ui/logging-view-plugin:v6.3.0"
+UI_TROUBLESHOOTING = "quay.io/openshift-observability-ui/troubleshooting-panel-console-plugin:v1.1.0"
+UI_MONITORING = "quay.io/openshift-observability-ui/monitoring-console-plugin:v1.1.0"
 KORREL8R = "quay.io/korrel8r/korrel8r:0.11.1"
 HEALTH_ANALYZER = "quay.io/openshiftanalytics/cluster-health-analyzer:v1.1.1"
 
 
 def operator_image(version):
+    """Return the upstream operator image for the bundle version."""
     return f"observability-operator:{version}"
 
 
 # image-references / relatedImages: (art distgit name, relatedImages name, pullspec)
 # Order mirrors render_templates. `operator_image()` is filled in at runtime.
 def image_table(version):
+    """Return ART names, related-image names, and upstream pullspecs."""
     return [
         ("cluster-observability-rhel9-operator", "cluster-observability-operator", operator_image(version)),
         ("obo-prometheus-operator-prometheus-config-reloader-rhel9", "prometheus-config-reloader", CONFIG_RELOADER),
@@ -82,19 +75,10 @@ def image_table(version):
         ("thanos-rhel9", "thanos", THANOS),
         ("obo-prometheus-operator-admission-webhook-rhel9", "prometheus-operator-admission-webhook", ADMISSION_WEBHOOK),
         ("obo-prometheus-rhel9-operator", "prometheus-operator", PROMETHEUS_OPERATOR),
-        ("dashboards-console-plugin-rhel9", "ui-dashboards", UI_DASHBOARDS),
         ("distributed-tracing-console-plugin-rhel9", "ui-tracing", UI_TRACING),
-        ("distributed-tracing-console-plugin-pf5-rhel9", "ui-tracing-pf5", UI_TRACING_PF5),
-        ("distributed-tracing-console-plugin-pf6-rhel9", "ui-tracing-pf6", UI_TRACING_PF6),
-        ("distributed-tracing-console-plugin-pf4-rhel9", "ui-tracing-pf4", UI_TRACING_PF4),
         ("logging-console-plugin-rhel9", "ui-logging", UI_LOGGING),
-        ("logging-console-plugin-pf4-rhel9", "ui-logging-pf4", UI_LOGGING_PF4),
-        ("logging-console-plugin-pf5-rhel9", "ui-logging-pf5", UI_LOGGING_PF5),
         ("troubleshooting-panel-console-plugin-rhel9", "ui-troubleshooting", UI_TROUBLESHOOTING),
-        ("troubleshooting-panel-console-plugin-pf6-rhel9", "ui-troubleshooting-pf6", UI_TROUBLESHOOTING_PF6),
         ("monitoring-console-plugin-rhel9", "ui-monitoring", UI_MONITORING),
-        ("monitoring-console-plugin-pf5-rhel9", "ui-monitoring-pf5", UI_MONITORING_PF5),
-        ("monitoring-console-plugin-pf6-rhel9", "ui-monitoring-pf6", UI_MONITORING_PF6),
         ("korrel8r-rhel9", "korrel8r", KORREL8R),
         ("cluster-health-analyzer-rhel9", "cluster-health-analyzer", HEALTH_ANALYZER),
         ("perses-rhel9", "perses", PERSES),
@@ -108,19 +92,10 @@ OPERATOR_IMAGES = [
     ("RELATED_IMAGE_PROMETHEUS", PROMETHEUS, "prometheus"),
     ("RELATED_IMAGE_THANOS", THANOS, "thanos"),
     ("RELATED_IMAGE_PERSES", PERSES, "perses"),
-    ("RELATED_IMAGE_CONSOLE_DASHBOARDS_PLUGIN", UI_DASHBOARDS, "ui-dashboards"),
     ("RELATED_IMAGE_CONSOLE_DISTRIBUTED_TRACING_PLUGIN", UI_TRACING, "ui-distributed-tracing"),
-    ("RELATED_IMAGE_CONSOLE_DISTRIBUTED_TRACING_PLUGIN_PF6", UI_TRACING_PF6, "ui-distributed-tracing-pf6"),
-    ("RELATED_IMAGE_CONSOLE_DISTRIBUTED_TRACING_PLUGIN_PF5", UI_TRACING_PF5, "ui-distributed-tracing-pf5"),
-    ("RELATED_IMAGE_CONSOLE_DISTRIBUTED_TRACING_PLUGIN_PF4", UI_TRACING_PF4, "ui-distributed-tracing-pf4"),
     ("RELATED_IMAGE_CONSOLE_LOGGING_PLUGIN", UI_LOGGING, "ui-logging"),
-    ("RELATED_IMAGE_CONSOLE_LOGGING_PLUGIN_PF4", UI_LOGGING_PF4, "ui-logging-pf4"),
-    ("RELATED_IMAGE_CONSOLE_LOGGING_PLUGIN_PF5", UI_LOGGING_PF5, "ui-logging-pf5"),
     ("RELATED_IMAGE_CONSOLE_TROUBLESHOOTING_PANEL_PLUGIN", UI_TROUBLESHOOTING, "ui-troubleshooting-panel"),
-    ("RELATED_IMAGE_CONSOLE_TROUBLESHOOTING_PANEL_PLUGIN_PF6", UI_TROUBLESHOOTING_PF6, "ui-troubleshooting-panel-pf6"),
     ("RELATED_IMAGE_CONSOLE_MONITORING_PLUGIN", UI_MONITORING, "ui-monitoring"),
-    ("RELATED_IMAGE_CONSOLE_MONITORING_PLUGIN_PF5", UI_MONITORING_PF5, "ui-monitoring-pf5"),
-    ("RELATED_IMAGE_CONSOLE_MONITORING_PLUGIN_PF6", UI_MONITORING_PF6, "ui-monitoring-pf6"),
     ("RELATED_IMAGE_KORREL8R", KORREL8R, "korrel8r"),
     ("RELATED_IMAGE_CLUSTER_HEALTH_ANALYZER", HEALTH_ANALYZER, "health-analyzer"),
 ]
@@ -145,6 +120,7 @@ ICON = "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0idXVpZC1k
 
 
 def find_deployment(csv, name):
+    """Find a named deployment in the CSV or raise KeyError."""
     for d in csv["spec"]["install"]["spec"]["deployments"]:
         if d["name"] == name:
             return d
@@ -152,6 +128,7 @@ def find_deployment(csv, name):
 
 
 def find_container(dep, name):
+    """Find a named container in a deployment or raise KeyError."""
     for c in dep["spec"]["template"]["spec"]["containers"]:
         if c["name"] == name:
             return c
@@ -159,12 +136,14 @@ def find_container(dep, name):
 
 
 def str_representer(dumper, data):
+    """Preserve multiline YAML strings in block style."""
     if "\n" in data:
         return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
     return dumper.represent_scalar("tag:yaml.org,2002:str", data)
 
 
 def previous_zstream(version):
+    """Return the preceding z-stream, if this version has one."""
     parts = version.split(".")
     if len(parts) == 3 and parts[2].isdigit() and int(parts[2]) > 0:
         parts[2] = str(int(parts[2]) - 1)
@@ -173,6 +152,7 @@ def previous_zstream(version):
 
 
 def transform_csv(path, version):
+    """Apply downstream metadata and image configuration to the copied CSV."""
     with open(path) as f:
         csv = yaml.safe_load(f)
 
@@ -254,6 +234,7 @@ def transform_csv(path, version):
 
 
 def write_image_references(path, version):
+    """Write ART's mapping from image names to upstream pullspecs."""
     lines = [
         "---",
         "# ART bundle image-references (generated by hack/render-art-bundle.py).",
@@ -279,6 +260,7 @@ def write_image_references(path, version):
 
 
 def write_art_yaml(path, version):
+    """Write ART metadata and version-replacement anchors."""
     replaces = previous_zstream(version)
     csv_file = f"manifests/{PKG}.clusterserviceversion.yaml"
     anchors = [
@@ -310,6 +292,7 @@ def write_art_yaml(path, version):
 
 
 def write_package_yaml(path, version):
+    """Write the downstream package and its release channels."""
     lines = [
         "---",
         "# OLM package definition for the downstream (ART) bundle.",
@@ -327,6 +310,7 @@ def write_package_yaml(path, version):
 
 
 def write_annotations(path):
+    """Write the downstream OLM bundle annotations."""
     lines = [
         "annotations:",
         "  # Core bundle annotations.",
@@ -349,6 +333,7 @@ def write_annotations(path):
 
 
 def main():
+    """Render the ART bundle from the generated community bundle."""
     src_csv = os.path.join(SRC, "manifests", "observability-operator.clusterserviceversion.yaml")
     if not os.path.exists(src_csv):
         sys.exit(f"error: {src_csv} not found; run `make bundle` first")

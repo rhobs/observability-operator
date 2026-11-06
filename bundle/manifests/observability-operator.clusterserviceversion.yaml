@@ -43,7 +43,7 @@ metadata:
     certified: "false"
     console.openshift.io/operator-monitoring-default: "true"
     containerImage: observability-operator:1.6.0
-    createdAt: "2026-11-05T09:09:36Z"
+    createdAt: "2026-11-06T10:00:45Z"
     description: A Go based Kubernetes operator to setup and manage highly available
       Monitoring Stack using Prometheus, Alertmanager and Thanos Querier.
     operatorframework.io/cluster-monitoring: "true"
@@ -1281,9 +1281,10 @@ spec:
     conversionCRDs:
     - perses.perses.dev
     - persesdashboards.perses.dev
+    - persesdatasources.perses.dev
     - persesglobaldatasources.perses.dev
     deploymentName: perses-operator
-    generateName: cpersespersesdashboardspersesglobaldatasources.kb.io
+    generateName: cpersespersesdashboardspersesdatasourcespersesglobaldatasources.kb.io
     sideEffects: None
     targetPort: 9443
     type: ConversionWebhook
