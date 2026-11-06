@@ -87,7 +87,14 @@ func TestLookupImageAndFeatures(t *testing.T) {
 			clusterVersion:   "v4.22.0-0.nightly-2024-06-06-064349",
 			expectedKey:      "ui-logging",
 			expectedErr:      nil,
-			expectedFeatures: []string{},
+			expectedFeatures: []string{"dev-console", "alerts", "dev-alerts"},
+			supportLevel:     GeneralAvailability,
+		},
+		{
+			pluginType:       uiv1alpha1.TypeLogging,
+			clusterVersion:   "4.23.0",
+			expectedKey:      "ui-logging",
+			expectedFeatures: []string{"dev-console", "alerts", "dev-alerts"},
 			supportLevel:     GeneralAvailability,
 		},
 		{

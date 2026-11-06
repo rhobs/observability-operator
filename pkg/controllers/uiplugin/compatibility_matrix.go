@@ -56,7 +56,11 @@ var compatibilityMatrix = []CompatibilityEntry{
 		MaxClusterVersion: "",
 		ImageKey:          "ui-logging",
 		SupportLevel:      GeneralAvailability,
-		Features:          []string{},
+		Features: []string{
+			"dev-console",
+			"alerts",
+			"dev-alerts",
+		},
 	},
 	{
 		PluginType:        uiv1alpha1.TypeMonitoring,
