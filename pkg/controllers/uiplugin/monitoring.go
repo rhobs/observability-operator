@@ -121,11 +121,18 @@ func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, im
 		return nil, fmt.Errorf("monitoring configuration can not be empty for plugin type %s", plugin.Spec.Type)
 	}
 
-	// Validate feature configuration and cluster conditions support enablement
-	isValidAcmConfig := validateACMConfig(config)
-	isValidPersesConfig := validatePersesConfig(config)
-	isValidIncidentsConfig := validateIncidentsConfig(config)
-	isValidHealthAnalyzerConfig := validateHealthanalyzerConfig(config)
+	// Determine which optional features can be enabled.
+	isAcmEnabled := validateACMConfig(config)
+	isPersesEnabled := validatePersesConfig(config)
+	isIncidentsEnabled := validateIncidentsConfig(config, clusterVersion)
+	isHealthAnalyzerEnabled := validateHealthanalyzerConfig(config, clusterVersion)
+
+	// A configured feature is valid when disabled or eligible for enablement.
+	isValidAcmConfig := config.ACM != nil && (!config.ACM.Enabled || isAcmEnabled)
+	isValidPersesConfig := config.Perses != nil && (!config.Perses.Enabled || isPersesEnabled)
+	isValidIncidentsConfig := config.Incidents != nil && (!config.Incidents.Enabled || isIncidentsEnabled)
+	isValidHealthAnalyzerConfig := config.ClusterHealthAnalyzer != nil &&
+		(!config.ClusterHealthAnalyzer.Enabled || isHealthAnalyzerEnabled)
 
 	atLeastOneValidConfig := isValidAcmConfig || isValidPersesConfig || isValidIncidentsConfig || isValidHealthAnalyzerConfig
 
@@ -139,16 +146,16 @@ func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, im
 	features = append(features, "mcp-overview")
 
 	//  Add proxies and feature flags
-	if isValidAcmConfig {
+	if isAcmEnabled {
 		addAcmAlertingProxy(pluginInfo, name, namespace, config)
 		features = append(features, "acm-alerting")
 	}
-	if isValidPersesConfig {
+	if isPersesEnabled {
 		addPersesProxy(pluginInfo, namespace)
 		features = append(features, "perses-dashboards")
 		pluginInfo.PersesImage = persesImage
 	}
-	if isValidIncidentsConfig || isValidHealthAnalyzerConfig {
+	if isIncidentsEnabled || isHealthAnalyzerEnabled {
 		pluginInfo.HealthAnalyzerImage = healthAnalyzerImage
 		features = append(features, "cluster-health-analyzer")
 	}
