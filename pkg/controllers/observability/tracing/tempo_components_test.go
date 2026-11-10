@@ -1,4 +1,4 @@
-package observability
+package tracing
 
 import (
 	"testing"
@@ -69,7 +69,7 @@ func TestTempoStack(t *testing.T) {
 					Capabilities: &obsv1alpha1.CapabilitiesSpec{
 						Tracing: &obsv1alpha1.TracingSpec{
 							Storage: &obsv1alpha1.TracingStorageSpec{
-								ObjectStorageSpec: &obsv1alpha1.TracingObjectStorageSpec{
+								ObjectStorageSpec: &obsv1alpha1.ObjectStorageSpec{
 									S3: &obsv1alpha1.S3Spec{
 										Bucket:   "test-bucket",
 										Endpoint: "http://minio:9000",
@@ -91,7 +91,7 @@ func TestTempoStack(t *testing.T) {
 					Capabilities: &obsv1alpha1.CapabilitiesSpec{
 						Tracing: &obsv1alpha1.TracingSpec{
 							Storage: &obsv1alpha1.TracingStorageSpec{
-								ObjectStorageSpec: &obsv1alpha1.TracingObjectStorageSpec{
+								ObjectStorageSpec: &obsv1alpha1.ObjectStorageSpec{
 									S3STS: &obsv1alpha1.S3STSpec{
 										Bucket:  "test-bucket",
 										RoleARN: "arn:aws:iam::123:role/test",
@@ -114,7 +114,7 @@ func TestTempoStack(t *testing.T) {
 					Capabilities: &obsv1alpha1.CapabilitiesSpec{
 						Tracing: &obsv1alpha1.TracingSpec{
 							Storage: &obsv1alpha1.TracingStorageSpec{
-								ObjectStorageSpec: &obsv1alpha1.TracingObjectStorageSpec{
+								ObjectStorageSpec: &obsv1alpha1.ObjectStorageSpec{
 									Azure: &obsv1alpha1.AzureSpec{
 										Container:   "test-container",
 										AccountName: "test-account",
@@ -140,7 +140,7 @@ func TestTempoStack(t *testing.T) {
 					Capabilities: &obsv1alpha1.CapabilitiesSpec{
 						Tracing: &obsv1alpha1.TracingSpec{
 							Storage: &obsv1alpha1.TracingStorageSpec{
-								ObjectStorageSpec: &obsv1alpha1.TracingObjectStorageSpec{
+								ObjectStorageSpec: &obsv1alpha1.ObjectStorageSpec{
 									GCS: &obsv1alpha1.GCSSpec{
 										Bucket: "test-bucket",
 										KeyJSONSecret: obsv1alpha1.SecretKeySelector{
@@ -165,7 +165,7 @@ func TestTempoStack(t *testing.T) {
 					Capabilities: &obsv1alpha1.CapabilitiesSpec{
 						Tracing: &obsv1alpha1.TracingSpec{
 							Storage: &obsv1alpha1.TracingStorageSpec{
-								ObjectStorageSpec: &obsv1alpha1.TracingObjectStorageSpec{
+								ObjectStorageSpec: &obsv1alpha1.ObjectStorageSpec{
 									S3: &obsv1alpha1.S3Spec{
 										Bucket:   "test-bucket",
 										Endpoint: "https://s3.amazonaws.com",
@@ -188,7 +188,7 @@ func TestTempoStack(t *testing.T) {
 					Capabilities: &obsv1alpha1.CapabilitiesSpec{
 						Tracing: &obsv1alpha1.TracingSpec{
 							Storage: &obsv1alpha1.TracingStorageSpec{
-								ObjectStorageSpec: &obsv1alpha1.TracingObjectStorageSpec{
+								ObjectStorageSpec: &obsv1alpha1.ObjectStorageSpec{
 									S3: &obsv1alpha1.S3Spec{
 										Bucket:   "test-bucket",
 										Endpoint: "http://minio:9000",
@@ -218,7 +218,7 @@ func TestTempoStack(t *testing.T) {
 					Capabilities: &obsv1alpha1.CapabilitiesSpec{
 						Tracing: &obsv1alpha1.TracingSpec{
 							Storage: &obsv1alpha1.TracingStorageSpec{
-								ObjectStorageSpec: &obsv1alpha1.TracingObjectStorageSpec{
+								ObjectStorageSpec: &obsv1alpha1.ObjectStorageSpec{
 									S3: &obsv1alpha1.S3Spec{
 										Bucket:   "test-bucket",
 										Endpoint: "http://minio:9000",

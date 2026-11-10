@@ -20,7 +20,7 @@ type createUpdateReconciler struct {
 
 func (r createUpdateReconciler) Reconcile(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 	// If the resource owner is in the same namespace as the resource, or if the resource owner is cluster scoped set the owner reference.
-	if r.resourceOwner.GetNamespace() == r.resource.GetNamespace() || r.resourceOwner.GetNamespace() == "" {
+	if r.resourceOwner != nil && (r.resourceOwner.GetNamespace() == r.resource.GetNamespace() || r.resourceOwner.GetNamespace() == "") {
 		if err := controllerutil.SetControllerReference(r.resourceOwner, r.resource, scheme); err != nil {
 			return fmt.Errorf("%s/%s (%s): updater failed to set owner reference: %w",
 				r.resource.GetNamespace(), r.resource.GetName(),
@@ -37,5 +37,17 @@ func NewCreateUpdateReconciler(resource client.Object, owner metav1.Object) Reco
 	return createUpdateReconciler{
 		resourceOwner: owner,
 		resource:      util.AddCommonLabels(resource, owner.GetName()),
+	}
+}
+
+// NewUnmanagedCreateUpdateReconciler reconciles a resource without attaching
+// it to a particular owner. Use it for resources shared by multiple owners,
+// such as operator Subscriptions used by several ObservabilityInstallers:
+// owning them by one installer would let garbage collection delete them when
+// that installer is deleted. The caller is responsible for deleting the
+// resource once no owner needs it.
+func NewUnmanagedCreateUpdateReconciler(resource client.Object) Reconciler {
+	return createUpdateReconciler{
+		resource: util.AddCommonLabels(resource, util.OpName),
 	}
 }

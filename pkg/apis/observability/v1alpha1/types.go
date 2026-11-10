@@ -115,6 +115,13 @@ func (c *CapabilitiesSpec) GetTracing() *TracingSpec {
 	return nil
 }
 
+func (c *CommonCapabilitiesSpec) GetEnabled() bool {
+	if c != nil {
+		return c.Enabled
+	}
+	return false
+}
+
 // CommonCapabilitiesSpec defines the common capabilities.
 type CommonCapabilitiesSpec struct {
 	// Enabled indicates whether the capability is enabled and whether the operator should deploy an instance.
@@ -144,4 +151,11 @@ type OperatorsSpec struct {
 	// +optional
 	// +kubebuilder:validation:Optional
 	Install *bool `json:"install,omitempty"`
+}
+
+func (s *OperatorsSpec) GetInstall() *bool {
+	if s == nil {
+		return nil
+	}
+	return s.Install
 }
