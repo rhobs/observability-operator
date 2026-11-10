@@ -1181,7 +1181,7 @@ spec:
                         operator: Exists
                     weight: 1
               containers:
-              - image: quay.io/openshift-observability-ui/perses-operator:v0.5.0
+              - image: quay.io/openshift-observability-ui/perses-operator:v0.6.0
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -1281,9 +1281,10 @@ spec:
     conversionCRDs:
     - perses.perses.dev
     - persesdashboards.perses.dev
+    - persesdatasources.perses.dev
     - persesglobaldatasources.perses.dev
     deploymentName: perses-operator
-    generateName: cpersespersesdashboardspersesglobaldatasources.kb.io
+    generateName: cpersespersesdashboardspersesdatasourcespersesglobaldatasources.kb.io
     sideEffects: None
     targetPort: 9443
     type: ConversionWebhook
