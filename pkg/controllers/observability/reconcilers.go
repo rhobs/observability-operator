@@ -2,11 +2,16 @@ package observability
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
+	"time"
 
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	obsv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/observability/v1alpha1"
@@ -26,12 +31,17 @@ type operatorsStatus struct {
 // subscription not managed by COO takes precedence, including a subscription to
 // an equivalent package such as the community build.
 func (s *operatorsStatus) ShouldInstall(packageNames []string) bool {
-	for _, sub := range s.subs {
+	return s.externalSubscription(packageNames) == nil
+}
+
+func (s *operatorsStatus) externalSubscription(packageNames []string) *olmv1alpha1.Subscription {
+	for i := range s.subs {
+		sub := &s.subs[i]
 		if sub.Spec != nil && slices.Contains(packageNames, sub.Spec.Package) && sub.Labels[util.ResourceLabel] != util.OpName {
-			return false
+			return sub
 		}
 	}
-	return true
+	return nil
 }
 
 func (s *operatorsStatus) cooManages(packageName string) *olmv1alpha1.Subscription {
@@ -108,14 +118,60 @@ func getReconcilers(ctx context.Context, k8sReader client.Reader, instance *obsv
 	desiredObjects := map[string]struct{}{}
 	result = appendUpdaters(result, plannedDesiredObjects, instance, desiredObjects)
 
+	var deleting []client.Object
 	for _, obj := range plannedOwnedObjects {
 		if _, desired := desiredObjects[gvkNameIdentifier(obj)]; !desired {
 			result = append(result, deleterFor(obj))
+			deleting = append(deleting, obj)
 		}
 	}
-	// Operators are removed last, once their operands are gone.
+	// A successful Delete only starts deletion. Keep the operator installed (and
+	// the installer's finalizer in place) until operand finalizers are cleared.
+	if len(deleting) > 0 && len(uninstall) > 0 {
+		wait := waitForDeletion{reader: k8sReader, objects: deleting}
+		if instance.DeletionTimestamp != nil {
+			wait.deadline = instance.DeletionTimestamp.Time.Add(operandDeletionTimeout)
+		}
+		result = append(result, wait)
+	}
 	result = append(result, uninstall...)
 	return result, nil
+}
+
+const operandDeletionTimeout = 10 * time.Minute
+
+var (
+	errDeletionPending  = errors.New("waiting for operand deletion")
+	errDeletionTimedOut = errors.New("timed out waiting for operand deletion")
+)
+
+type waitForDeletion struct {
+	reader   client.Reader // bypass the cache: deletion and label changes may not be visible there yet
+	objects  []client.Object
+	deadline time.Time // zero for capability disablement; only installer deletion is bounded
+}
+
+func (w waitForDeletion) Reconcile(ctx context.Context, _ client.Client, _ *runtime.Scheme) error {
+	for _, obj := range w.objects {
+		live := obj.DeepCopyObject().(client.Object)
+		err := w.reader.Get(ctx, client.ObjectKeyFromObject(obj), live)
+		if apierrors.IsNotFound(err) || meta.IsNoMatchError(err) {
+			continue
+		}
+		if err != nil {
+			return err
+		}
+		// The guarded deleter leaves user-created plugins alone; they must not
+		// hold an installer finalizer indefinitely.
+		if _, ok := obj.(*uiv1alpha1.UIPlugin); ok && live.GetLabels()[util.PartOfLabel] != util.OpName {
+			continue
+		}
+		if !w.deadline.IsZero() && !time.Now().Before(w.deadline) {
+			return fmt.Errorf("%w: %s/%s (%s)", errDeletionTimedOut, obj.GetNamespace(), obj.GetName(), obj.GetObjectKind().GroupVersionKind())
+		}
+		return fmt.Errorf("%w: %s/%s (%s)", errDeletionPending, obj.GetNamespace(), obj.GetName(), obj.GetObjectKind().GroupVersionKind())
+	}
+	return nil
 }
 
 func appendUpdaters(result []reconciler.Reconciler, objects []client.Object, instance *obsv1alpha1.ObservabilityInstaller, desired map[string]struct{}) []reconciler.Reconciler {

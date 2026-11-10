@@ -2,7 +2,9 @@ package observability
 
 import (
 	"context"
+	"errors"
 	"testing"
+	"time"
 
 	lokiv1 "github.com/grafana/loki/operator/api/loki/v1"
 	tempov1alpha1 "github.com/grafana/tempo-operator/api/tempo/v1alpha1"
@@ -21,9 +23,11 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	obsv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/observability/v1alpha1"
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
+	"github.com/rhobs/observability-operator/pkg/controllers/observability/capability"
 	"github.com/rhobs/observability-operator/pkg/controllers/util"
 )
 
@@ -45,6 +49,36 @@ func TestOperatorsStatus(t *testing.T) {
 		Spec:       &olmv1alpha1.SubscriptionSpec{Package: "different-package"},
 	}}}
 	require.True(t, misleading.ShouldInstall([]string{"tempo-product"}), "subscription names must not be prefix-matched")
+}
+
+func TestDeletionWithoutOperatorUninstallDoesNotWait(t *testing.T) {
+	instance := &obsv1alpha1.ObservabilityInstaller{ObjectMeta: metav1.ObjectMeta{
+		Name: "installer", Namespace: "test", DeletionTimestamp: &metav1.Time{Time: time.Now()},
+	}}
+	operand := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "operand", Namespace: "test"}}
+	definition := capability.Definition{
+		Plan: func(context.Context, *obsv1alpha1.ObservabilityInstaller, client.Reader) (capability.Plan, error) {
+			return capability.Plan{Owned: []client.Object{operand}}, nil
+		},
+		Shared: func(*obsv1alpha1.ObservabilityInstaller) capability.Plan { return capability.Plan{} },
+	}
+	reconcilers, err := getReconcilers(context.Background(), nil, instance, []capability.Definition{definition}, operatorsStatus{}, nil)
+	require.NoError(t, err)
+	for _, rec := range reconcilers {
+		_, waits := rec.(waitForDeletion)
+		require.False(t, waits)
+	}
+}
+
+func TestWaitForDeletionTimesOut(t *testing.T) {
+	ctx := context.Background()
+	scheme := getScheme()
+	operand := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "operand", Namespace: "test", Finalizers: []string{"stuck"}}}
+	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(operand).Build()
+	wait := waitForDeletion{reader: c, objects: []client.Object{operand}, deadline: time.Now().Add(-time.Second)}
+	require.ErrorIs(t, wait.Reconcile(ctx, c, scheme), errDeletionTimedOut)
+	wait.deadline = time.Time{}
+	require.ErrorIs(t, wait.Reconcile(ctx, c, scheme), errDeletionPending)
 }
 
 func TestManagedOperatorDeleters(t *testing.T) {
@@ -362,12 +396,73 @@ func TestGetReconcilers(t *testing.T) {
 			require.NoError(t, err)
 
 			for _, rec := range reconcilers {
+				// Deletion completion is tested separately with a client that
+				// models objects waiting on their finalizers.
+				if _, ok := rec.(waitForDeletion); ok {
+					continue
+				}
 				err := rec.Reconcile(context.Background(), mockClient, getScheme())
 				require.NoError(t, err)
 			}
 		})
 	}
 
+}
+
+func TestOperatorUninstallWaitsForOperandFinalizer(t *testing.T) {
+	ctx := context.Background()
+	scheme := getScheme()
+	operand := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
+		Name: "operand", Namespace: "test", Finalizers: []string{"operand-operator/finalizer"},
+	}}
+	sub := &olmv1alpha1.Subscription{
+		ObjectMeta: metav1.ObjectMeta{Name: "operator", Namespace: "operators", Labels: map[string]string{util.ResourceLabel: util.OpName}},
+		Spec:       &olmv1alpha1.SubscriptionSpec{Package: "operator"},
+	}
+	k8sClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(operand, sub).Build()
+	instance := &obsv1alpha1.ObservabilityInstaller{ObjectMeta: metav1.ObjectMeta{Name: "installer", Namespace: "test"}}
+	definitions := []capability.Definition{{
+		Plan: func(context.Context, *obsv1alpha1.ObservabilityInstaller, client.Reader) (capability.Plan, error) {
+			return capability.Plan{Owned: []client.Object{operand}}, nil
+		},
+		Shared: func(*obsv1alpha1.ObservabilityInstaller) capability.Plan {
+			return capability.Plan{Operators: capability.DesiredOperators(false, capability.NewOperatorRequirement("operator", capability.OperatorConfig{PackageName: "operator"}))}
+		},
+	}}
+	status := operatorsStatus{subs: []olmv1alpha1.Subscription{*sub}}
+	reconcile := func() error {
+		recs, err := getReconcilers(ctx, k8sClient, instance, definitions, status, []obsv1alpha1.ObservabilityInstaller{*instance})
+		require.NoError(t, err)
+		for _, rec := range recs {
+			if err := rec.Reconcile(ctx, k8sClient, scheme); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	require.ErrorIs(t, reconcile(), errDeletionPending)
+	var live corev1.ConfigMap
+	require.NoError(t, k8sClient.Get(ctx, client.ObjectKeyFromObject(operand), &live))
+	require.NotNil(t, live.DeletionTimestamp, "Delete was accepted but the operand is still finalizing")
+	require.NoError(t, k8sClient.Get(ctx, client.ObjectKeyFromObject(sub), &olmv1alpha1.Subscription{}), "subscription must remain installed")
+
+	live.Finalizers = nil
+	require.NoError(t, k8sClient.Update(ctx, &live))
+	require.NoError(t, reconcile())
+	require.True(t, apierrors.IsNotFound(k8sClient.Get(ctx, client.ObjectKeyFromObject(sub), &olmv1alpha1.Subscription{})))
+}
+
+func TestWaitForDeletionIgnoresUnownedPlugin(t *testing.T) {
+	ctx := context.Background()
+	scheme := getScheme()
+	plugin := &uiv1alpha1.UIPlugin{ObjectMeta: metav1.ObjectMeta{Name: "tracing"}}
+	k8sClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(plugin).Build()
+	wait := waitForDeletion{reader: k8sClient, objects: []client.Object{plugin}}
+	require.NoError(t, wait.Reconcile(ctx, k8sClient, scheme))
+	plugin.Labels = map[string]string{util.PartOfLabel: util.OpName}
+	require.NoError(t, k8sClient.Update(ctx, plugin))
+	require.True(t, errors.Is(wait.Reconcile(ctx, k8sClient, scheme), errDeletionPending))
 }
 
 // expectLoggingDeletes allows deletion of the logging objects, which are removed

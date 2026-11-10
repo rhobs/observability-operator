@@ -2,13 +2,18 @@ package observability
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"reflect"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,24 +22,29 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	obsv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/observability/v1alpha1"
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 	"github.com/rhobs/observability-operator/pkg/controllers/observability/capability"
+	"github.com/rhobs/observability-operator/pkg/controllers/util"
 )
 
 const (
 	finalizerName = "observability.openshift.io/observabilityinstaller"
 
-	conditionReasonError    = "ReconcileError"
-	conditionTypeReconciled = "Reconciled"
+	conditionReasonError          = "ReconcileError"
+	conditionTypeReconciled       = "Reconciled"
+	conditionTypeExternalOperator = "ExternalSubscription"
 )
 
 // RBAC for the ObservabilityInstaller CRD
@@ -52,7 +62,7 @@ const (
 // RBAC for Tempo
 // +kubebuilder:rbac:groups=tempo.grafana.com,resources=tempostacks,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=tempo.grafana.com,resources=tempostacks/status,verbs=get;list;watch
-// +kubebuilder:rbac:groups="",resources=secrets;configmaps,verbs=get;list;watch;create;update;delete;patch
+// +kubebuilder:rbac:groups="",resources=secrets;configmaps;serviceaccounts,verbs=get;list;watch;create;update;delete;patch
 // +kubebuilder:rbac:groups=observability.openshift.io,resources=uiplugins,verbs=get;list;watch;create;update;delete;patch
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles;clusterrolebindings,verbs=list;watch;create;update;delete;patch
 // +kubebuilder:rbac:groups=observability.openshift.io,resources=uiplugins,verbs=get;list;watch;create;update;delete;patch
@@ -109,23 +119,33 @@ func (o observabilityInstallerController) Reconcile(ctx context.Context, request
 
 	subs := &olmv1alpha1.SubscriptionList{}
 	// List all subscriptions to figure out if the operators are already installed
-	err = o.apiReader.List(ctx, subs, &client.ListOptions{})
+	err = o.client.List(ctx, subs)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 	instances := &obsv1alpha1.ObservabilityInstallerList{}
-	if err := o.apiReader.List(ctx, instances); err != nil {
+	if err := o.client.List(ctx, instances); err != nil {
 		return ctrl.Result{}, err
 	}
-	reconcilers, err := getReconcilers(ctx, o.apiReader, instance, o.capabilities, operatorsStatus{
-		subs: subs.Items,
-	}, instances.Items)
+	operatorStatus := operatorsStatus{subs: subs.Items}
+	reconcilers, err := getReconcilers(ctx, o.apiReader, instance, o.capabilities, operatorStatus, instances.Items)
 	if err != nil {
-		o.updateStatus(ctx, instance, err)
+		o.updateStatus(ctx, instance, err, operatorStatus)
 		return ctrl.Result{}, err
 	}
 	for _, reconciler := range reconcilers {
 		reconcileErr := reconciler.Reconcile(ctx, o.client, o.scheme)
+		if errors.Is(reconcileErr, errDeletionPending) {
+			o.updateStatus(ctx, instance, reconcileErr, operatorStatus)
+			return ctrl.Result{RequeueAfter: 2 * time.Second}, nil
+		}
+		if errors.Is(reconcileErr, errDeletionTimedOut) {
+			// Do not hold a deleting installer indefinitely when an operand's
+			// finalizer cannot be cleared by its operator. Continue best-effort
+			// cleanup and allow the installer's finalizer to be removed.
+			o.logger.Info("operand deletion timed out; continuing installer deletion", "err", reconcileErr)
+			continue
+		}
 		// handle creation / update errors that can happen due to a stale cache by
 		// retrying after some time.
 		if apierrors.IsAlreadyExists(reconcileErr) || apierrors.IsConflict(reconcileErr) {
@@ -133,7 +153,7 @@ func (o observabilityInstallerController) Reconcile(ctx context.Context, request
 			return ctrl.Result{RequeueAfter: 2 * time.Second}, nil
 		}
 		if reconcileErr != nil {
-			o.updateStatus(ctx, instance, reconcileErr)
+			o.updateStatus(ctx, instance, reconcileErr, operatorStatus)
 			return ctrl.Result{}, reconcileErr
 		}
 	}
@@ -173,7 +193,7 @@ func (o observabilityInstallerController) Reconcile(ctx context.Context, request
 		}
 	}
 
-	result := o.updateStatus(ctx, instance, nil)
+	result := o.updateStatus(ctx, instance, nil, operatorStatus)
 	if watchRequeueAfter > 0 && (result.RequeueAfter == 0 || watchRequeueAfter < result.RequeueAfter) {
 		result.RequeueAfter = watchRequeueAfter
 	}
@@ -234,7 +254,9 @@ func (o observabilityInstallerController) getInstance(ctx context.Context, req c
 	return &instance, nil
 }
 
-func (o observabilityInstallerController) updateStatus(ctx context.Context, instance *obsv1alpha1.ObservabilityInstaller, reconcileErr error) reconcile.Result {
+func (o observabilityInstallerController) updateStatus(ctx context.Context, instance *obsv1alpha1.ObservabilityInstaller, reconcileErr error, operators operatorsStatus) reconcile.Result {
+	previous := instance.Status.DeepCopy()
+	updateExternalSubscriptionCondition(instance, o.capabilities, operators)
 	var requeueAfter time.Duration
 	var statusErr error
 	for _, capability := range o.capabilities {
@@ -251,8 +273,12 @@ func (o observabilityInstallerController) updateStatus(ctx context.Context, inst
 	}
 
 	if reconcileErr != nil {
+		reason := conditionReasonError
+		if errors.Is(reconcileErr, errDeletionPending) {
+			reason = "OperandDeletionPending"
+		}
 		apimeta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
-			Reason:             conditionReasonError,
+			Reason:             reason,
 			Type:               conditionTypeReconciled,
 			Status:             metav1.ConditionFalse,
 			Message:            reconcileErr.Error(),
@@ -262,6 +288,9 @@ func (o observabilityInstallerController) updateStatus(ctx context.Context, inst
 		apimeta.RemoveStatusCondition(&instance.Status.Conditions, conditionTypeReconciled)
 	}
 
+	if reflect.DeepEqual(previous, &instance.Status) {
+		return ctrl.Result{RequeueAfter: requeueAfter}
+	}
 	err := o.client.Status().Update(ctx, instance)
 	if err != nil {
 		o.logger.Error(err, "failed to update status")
@@ -269,6 +298,52 @@ func (o observabilityInstallerController) updateStatus(ctx context.Context, inst
 	}
 
 	return ctrl.Result{RequeueAfter: requeueAfter}
+}
+
+// updateExternalSubscriptionCondition reports only subscriptions used by this
+// installer, not subscriptions requested by other installers in the cluster.
+func updateExternalSubscriptionCondition(instance *obsv1alpha1.ObservabilityInstaller, definitions []capability.Definition, operators operatorsStatus) {
+	var reused []string
+	for _, definition := range definitions {
+		for _, requirement := range definition.Shared(instance).Operators {
+			if !requirement.Desired {
+				continue
+			}
+			packages := append([]string{requirement.Subscription.Spec.Package}, requirement.EquivalentPackages...)
+			if sub := operators.externalSubscription(packages); sub != nil {
+				reused = append(reused, fmt.Sprintf("%s: %s/%s (package %s)", requirement.Name, sub.Namespace, sub.Name, sub.Spec.Package))
+			}
+		}
+	}
+	if len(reused) == 0 {
+		apimeta.RemoveStatusCondition(&instance.Status.Conditions, conditionTypeExternalOperator)
+		return
+	}
+	slices.Sort(reused)
+	apimeta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
+		Type:               conditionTypeExternalOperator,
+		Status:             metav1.ConditionTrue,
+		Reason:             "ReusingSubscription",
+		Message:            "Using externally managed subscriptions: " + strings.Join(reused, ", "),
+		ObservedGeneration: instance.GetGeneration(),
+	})
+}
+
+// subscriptionChanged filters out the frequent Subscription status updates OLM
+// performs (catalog health, lastUpdated, ...). Without it, every such update of
+// any Subscription in the cluster enqueues every ObservabilityInstaller. Only
+// the parts COO acts on are relevant: the spec, the label marking a
+// subscription as COO-managed, the CSV that uninstall deletes, and deletion.
+func subscriptionChanged(e event.UpdateEvent) bool {
+	oldSub, oldOK := e.ObjectOld.(*olmv1alpha1.Subscription)
+	newSub, newOK := e.ObjectNew.(*olmv1alpha1.Subscription)
+	if !oldOK || !newOK {
+		return true
+	}
+	return !equality.Semantic.DeepEqual(oldSub.Spec, newSub.Spec) ||
+		oldSub.Labels[util.ResourceLabel] != newSub.Labels[util.ResourceLabel] ||
+		oldSub.Status.CurrentCSV != newSub.Status.CurrentCSV ||
+		(oldSub.DeletionTimestamp == nil) != (newSub.DeletionTimestamp == nil)
 }
 
 type Options struct {
@@ -304,7 +379,9 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 		For(&obsv1alpha1.ObservabilityInstaller{}).
 		// Subscriptions are shared and carry no owner reference; any change,
 		// including to a non-COO subscription, can affect every installer.
-		Watches(&olmv1alpha1.Subscription{}, handler.EnqueueRequestsFromMapFunc(controller.triggerReconcile)).
+		Watches(&olmv1alpha1.Subscription{},
+			handler.EnqueueRequestsFromMapFunc(controller.triggerReconcile),
+			builder.WithPredicates(predicate.Funcs{UpdateFunc: subscriptionChanged})).
 		Owns(&corev1.Secret{}).
 		Owns(&corev1.Namespace{}).
 		Owns(&uiv1alpha1.UIPlugin{}).

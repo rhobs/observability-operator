@@ -24,7 +24,10 @@ Capabilities are disabled by default. Their common fields are `enabled` and
 
 Enabling a capability always requests its operators, even when
 `operators.install` is `false`. COO reuses compatible subscriptions managed by
-another component and removes only subscriptions it manages.
+another component and removes only subscriptions it manages. When an installer
+uses an externally managed Subscription, its status has an
+`ExternalSubscription=True` condition (`ReusingSubscription`) naming the
+operator and Subscription. The condition is removed when it no longer uses one.
 
 Disabling a capability removes its owned operands. Operator subscriptions are
 shared across all `ObservabilityInstaller` resources and remain while any
