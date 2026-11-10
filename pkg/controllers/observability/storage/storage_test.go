@@ -111,4 +111,15 @@ func TestMaterializeFormatKeys(t *testing.T) {
 	require.NoError(t, err)
 	require.NotContains(t, tempo.ObjectStorage.Data, "environment")
 
+	// Loki requires an Azure subscription ID for workload identity, Tempo rejects it.
+	azureWIF := &obsv1alpha1.ObjectStorageSpec{AzureWIF: &obsv1alpha1.AzureWIFSpec{
+		Container: "container", AccountName: "account", ClientID: "client", TenantID: "tenant", SubscriptionID: "subscription",
+	}}
+	loki, err = Materialize(context.Background(), reader, "test", azureWIF, Names{Secret: "target"}, LokiFormat)
+	require.NoError(t, err)
+	require.Equal(t, []byte("subscription"), loki.ObjectStorage.Data["subscription_id"])
+
+	tempo, err = Materialize(context.Background(), reader, "test", azureWIF, Names{Secret: "target"}, TempoFormat)
+	require.NoError(t, err)
+	require.NotContains(t, tempo.ObjectStorage.Data, "subscription_id")
 }

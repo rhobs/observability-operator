@@ -83,6 +83,8 @@ type ObservabilityInstallerConfiguration struct {
 	COONamespace      string
 	OpenTelemetryCSV  string
 	TempoCSV          string
+	LokiCSV           string
+	ClusterLoggingCSV string
 }
 
 func WithNamespace(ns string) func(*OperatorConfiguration) {
@@ -391,7 +393,18 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 				// Community build of the same operator.
 				EquivalentPackages: []string{"tempo-operator"},
 			},
-
+			LokiOperator: obsctrl.OperatorInstallConfig{
+				Namespace:   cfg.ObservabilityInstaller.COONamespace,
+				PackageName: "loki-operator",
+				StartingCSV: cfg.ObservabilityInstaller.LokiCSV,
+				Channel:     "stable-6.5",
+			},
+			ClusterLoggingOperator: obsctrl.OperatorInstallConfig{
+				Namespace:   cfg.ObservabilityInstaller.COONamespace,
+				PackageName: "cluster-logging",
+				StartingCSV: cfg.ObservabilityInstaller.ClusterLoggingCSV,
+				Channel:     "stable-6.5",
+			},
 		}); err != nil {
 			return nil, fmt.Errorf("unable to register cluster observability controller: %w", err)
 		}

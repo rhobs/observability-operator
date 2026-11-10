@@ -15,6 +15,8 @@ import (
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="OpenTelemetry",type="string",JSONPath=".status.opentelemetry"
 // +kubebuilder:printcolumn:name="Tempo",type="string",JSONPath=".status.tempo"
+// +kubebuilder:printcolumn:name="LokiStack",type="string",JSONPath=".status.lokistack"
+// +kubebuilder:printcolumn:name="Logging",type="string",JSONPath=".status.logging"
 // +operator-sdk:csv:customresourcedefinitions:displayName="Observability Installer"
 // +operator-sdk:csv:customresourcedefinitions:description="Provides end-to-end observability capabilities with minimal configuration. Simplifies deployment and management of observability components such as tracing."
 // +kubebuilder:metadata:annotations="observability.openshift.io/api-support=TechPreview"
@@ -63,6 +65,15 @@ type ObservabilityInstallerStatus struct {
 	// +optional
 	Tempo string `json:"tempo,omitempty"`
 
+	// LokiStack defines the status of the LokiStack instance.
+	// The value is in the form of instance namespace/name (version)
+	// +optional
+	LokiStack string `json:"lokistack,omitempty"`
+	// Logging defines the status of the Logging capability.
+	// The value is in the form of instance namespace/name (version)
+	// +optional
+	Logging string `json:"logging,omitempty"`
+
 	// Conditions provide status information about the instance.
 	// +listType=atomic
 	// +optional
@@ -90,7 +101,8 @@ type TLSSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors="urn:alm:descriptor:io.kubernetes:Secret",displayName="Certificate Secret"
 	KeySecret *SecretKeySelector `json:"keySecret,omitempty"`
 
-	// MinVersion defines the minimum acceptable TLS version.
+	// MinVersion defines the minimum acceptable TLS version. It is not supported for
+	// all capabilities; setting it for an unsupported capability causes reconciliation to fail.
 	//
 	// +kubebuilder:validation:Optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Min TLS Version"
@@ -106,6 +118,13 @@ type CapabilitiesSpec struct {
 	// +optional
 	// +kubebuilder:validation:Optional
 	Tracing *TracingSpec `json:"tracing,omitempty"`
+
+	// Logging defines the logging capabilities.
+	// The logging capability installs a ClusterLogForwarder to collect application and infrastructure logs,
+	// and a LokiStack instance for log storage and querying.
+	// +optional
+	// +kubebuilder:validation:Optional
+	Logging *LoggingSpec `json:"logging,omitempty"`
 }
 
 func (c *CapabilitiesSpec) GetTracing() *TracingSpec {
@@ -115,11 +134,11 @@ func (c *CapabilitiesSpec) GetTracing() *TracingSpec {
 	return nil
 }
 
-func (c *CommonCapabilitiesSpec) GetEnabled() bool {
+func (c *CapabilitiesSpec) GetLogging() *LoggingSpec {
 	if c != nil {
-		return c.Enabled
+		return c.Logging
 	}
-	return false
+	return nil
 }
 
 // CommonCapabilitiesSpec defines the common capabilities.
@@ -141,6 +160,13 @@ func (c *CommonCapabilitiesSpec) GetOperators() *OperatorsSpec {
 		return c.Operators
 	}
 	return nil
+}
+
+func (c *CommonCapabilitiesSpec) GetEnabled() bool {
+	if c != nil {
+		return c.Enabled
+	}
+	return false
 }
 
 // OperatorsSpec defines the operators installation.

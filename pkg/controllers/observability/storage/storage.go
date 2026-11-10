@@ -156,6 +156,11 @@ func Materialize(ctx context.Context, reader client.Reader, namespace string, sp
 		addAzureEnvironment(credentials.Data, format)
 	case spec.AzureWIF != nil:
 		credentials.Data = map[string][]byte{"container": []byte(spec.AzureWIF.Container), "account_name": []byte(spec.AzureWIF.AccountName), "client_id": []byte(spec.AzureWIF.ClientID), "tenant_id": []byte(spec.AzureWIF.TenantID)}
+		// loki-operator rejects a workload identity secret without a
+		// subscription ID, tempo-operator does not accept the key.
+		if format == LokiFormat {
+			credentials.Data["subscription_id"] = []byte(spec.AzureWIF.SubscriptionID)
+		}
 		if spec.AzureWIF.Audience != "" {
 			credentials.Data["audience"] = []byte(spec.AzureWIF.Audience)
 		}

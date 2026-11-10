@@ -58,6 +58,16 @@ const (
 // +kubebuilder:rbac:groups=observability.openshift.io,resources=uiplugins,verbs=get;list;watch;create;update;delete;patch
 // +kubebuilder:rbac:groups=tempo.grafana.com,resources=application,resourceNames=traces,verbs=create
 
+// RBAC for Loki
+// +kubebuilder:rbac:groups=loki.grafana.com,resources=lokistacks,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=loki.grafana.com,resources=lokistacks/status,verbs=get;list;watch
+// +kubebuilder:rbac:groups=loki.grafana.com,resources=application;audit;infrastructure,verbs=create
+
+// RBAC for ClusterLogForwarder
+// +kubebuilder:rbac:groups=observability.openshift.io,resources=clusterlogforwarders,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=observability.openshift.io,resources=clusterlogforwarders/status,verbs=get;list;watch
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,resourceNames=collect-application-logs;collect-infrastructure-logs,verbs=get;bind
+
 type observabilityInstallerController struct {
 	client client.Client
 	// Use the reader to access config maps which are not cached
@@ -264,6 +274,8 @@ func (o observabilityInstallerController) updateStatus(ctx context.Context, inst
 type Options struct {
 	OpenTelemetryOperator  OperatorInstallConfig
 	TempoOperator          OperatorInstallConfig
+	LokiOperator           OperatorInstallConfig
+	ClusterLoggingOperator OperatorInstallConfig
 }
 
 // OperatorInstallConfig is the OLM configuration accepted by capability constructors.

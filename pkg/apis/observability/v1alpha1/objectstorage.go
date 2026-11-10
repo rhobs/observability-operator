@@ -92,6 +92,10 @@ type AzureWIFSpec struct {
 	// TenantID is the tenant ID of the Azure Active Directory.
 	// +kubebuilder:validation:Required
 	TenantID string `json:"tenantID"`
+	// SubscriptionID is the ID of the Azure subscription holding the workload
+	// identity. Required by logging, ignored by tracing.
+	// +kubebuilder:validation:Optional
+	SubscriptionID string `json:"subscriptionID,omitempty"`
 	// Audience is the optional audience for the Azure Workload Identity Federation.
 	// +kubebuilder:validation:Optional
 	Audience string `json:"audience,omitempty"` // Optional audience for the Azure WIF

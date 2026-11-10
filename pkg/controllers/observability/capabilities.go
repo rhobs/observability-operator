@@ -3,6 +3,7 @@ package observability
 import (
 	obsv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/observability/v1alpha1"
 	"github.com/rhobs/observability-operator/pkg/controllers/observability/capability"
+	"github.com/rhobs/observability-operator/pkg/controllers/observability/logging"
 	"github.com/rhobs/observability-operator/pkg/controllers/observability/tracing"
 )
 
@@ -10,6 +11,7 @@ import (
 func capabilities(opts Options) []capability.Definition {
 	return []capability.Definition{
 		tracing.New(tracing.Options{OpenTelemetryOperator: opts.OpenTelemetryOperator, TempoOperator: opts.TempoOperator}),
+		logging.New(logging.Options{LokiOperator: opts.LokiOperator, ClusterLoggingOperator: opts.ClusterLoggingOperator}),
 	}
 }
 
