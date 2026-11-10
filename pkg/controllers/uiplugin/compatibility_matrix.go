@@ -75,9 +75,9 @@ func lookupImageAndFeatures(pluginType uiv1alpha1.UIPluginType, clusterVersion s
 		clusterVersion = "v" + clusterVersion
 	}
 
-	// No console plugins are supported before 4.21
-	if semver.Compare(clusterVersion, "v4.21") < 0 {
-		return CompatibilityEntry{}, fmt.Errorf("dynamic plugins not supported before 4.21")
+	// No console plugins are supported before 4.22 (pre-releases of 4.22 included)
+	if semver.Compare(clusterVersion, "v4.22.0-0") < 0 {
+		return CompatibilityEntry{}, fmt.Errorf("dynamic plugins in this operator are not supported before 4.22")
 	}
 
 	for _, entry := range compatibilityMatrix {
