@@ -565,4 +565,38 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 			assert.Assert(t, err != nil, "Expected an error for invalid configuration")
 		})
 	}
+
+	t.Run("Test validateIncidentsConfig() with valid and invalid clusterVersion formats", func(t *testing.T) {
+		assertIncidentsSupport := func(version string, supported bool) {
+			t.Helper()
+			enabled, valid := validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, version)
+			assert.Equal(t, enabled, supported, "Incidents enablement mismatch for %s", version)
+			assert.Equal(t, valid, supported, "Incidents validity mismatch for %s", version)
+		}
+
+		assertIncidentsSupport("v4.21.0-0.nightly-2024-06-06-064349", true)
+		assertIncidentsSupport("4.21.0-0.nightly-2024-06-06-064349", true)
+		assertIncidentsSupport("v4.21", true)
+		assertIncidentsSupport("v4.21.0", true)
+		assertIncidentsSupport("4.21.0", true)
+
+		assertIncidentsSupport("v4.20.0-0.nightly-2024-06-06-064349", true)
+		assertIncidentsSupport("4.20.0-0.nightly-2024-06-06-064349", true)
+		assertIncidentsSupport("v4.20", true)
+		assertIncidentsSupport("v4.20.0", true)
+		assertIncidentsSupport("4.20.0", true)
+
+		assertIncidentsSupport("v4.19.0-0.nightly-2024-06-06-064349", true)
+		assertIncidentsSupport("4.19.0-0.nightly-2024-06-06-064349", true)
+		assertIncidentsSupport("v4.19", true)
+		assertIncidentsSupport("v4.19.0", true)
+		assertIncidentsSupport("4.19.0", true)
+
+		// Incidents require OCP v4.19+.
+		assertIncidentsSupport("v4.18.0-0.nightly-2024-06-06-064349", false)
+		assertIncidentsSupport("4.18.0-0.nightly-2024-06-06-064349", false)
+		assertIncidentsSupport("v4.18", false)
+		assertIncidentsSupport("v4.18.0", false)
+		assertIncidentsSupport("4.18.0", false)
+	})
 }

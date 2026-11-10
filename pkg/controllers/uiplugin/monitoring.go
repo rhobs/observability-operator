@@ -26,11 +26,12 @@ const (
 Requirements for ACM enablement
 1. UIPlugin configuration requires acm.enabled, acm.thanosQuerier.Url, and acm.alertmanager.Url
 */
-func validateACMConfig(config *uiv1alpha1.MonitoringConfig) bool {
-	enabled := config.ACM != nil && config.ACM.Enabled
-
-	if !enabled {
-		return false
+func validateACMConfig(config *uiv1alpha1.MonitoringConfig) (enabled, valid bool) {
+	if config.ACM == nil {
+		return false, false
+	}
+	if !config.ACM.Enabled {
+		return false, true
 	}
 
 	// alertManager and thanosQuerier url configurations are required to enable 'acm-alerting'
@@ -38,20 +39,48 @@ func validateACMConfig(config *uiv1alpha1.MonitoringConfig) bool {
 	validThanosQuerierUrl := config.ACM.ThanosQuerier.Url != ""
 	isValidAcmAlertingConfig := validAlertManagerUrl && validThanosQuerierUrl
 
-	return isValidAcmAlertingConfig && enabled
+	return isValidAcmAlertingConfig, isValidAcmAlertingConfig
 }
 
-func validatePersesConfig(config *uiv1alpha1.MonitoringConfig) bool {
-	return config.Perses != nil && config.Perses.Enabled
+func validatePersesConfig(config *uiv1alpha1.MonitoringConfig) (enabled, valid bool) {
+	if config.Perses == nil {
+		return false, false
+	}
+	return config.Perses.Enabled, true
 }
 
-func validateHealthanalyzerConfig(config *uiv1alpha1.MonitoringConfig) bool {
-	return config.ClusterHealthAnalyzer != nil &&
-		config.ClusterHealthAnalyzer.Enabled
+func validateHealthanalyzerConfig(config *uiv1alpha1.MonitoringConfig, clusterVersion string) (enabled, valid bool) {
+	if config.ClusterHealthAnalyzer == nil {
+		return false, false
+	}
+	if !config.ClusterHealthAnalyzer.Enabled {
+		return false, true
+	}
+
+	if !strings.HasPrefix(clusterVersion, "v") {
+		clusterVersion = "v" + clusterVersion
+	}
+	canonicalClusterVersion := fmt.Sprintf("%s-0", semver.Canonical(clusterVersion))
+	minClusterVersionMet := semver.Compare(canonicalClusterVersion, "v4.19.0-0") >= 0
+
+	return minClusterVersionMet, minClusterVersionMet
 }
 
-func validateIncidentsConfig(config *uiv1alpha1.MonitoringConfig) bool {
-	return config.Incidents != nil && config.Incidents.Enabled
+func validateIncidentsConfig(config *uiv1alpha1.MonitoringConfig, clusterVersion string) (enabled, valid bool) {
+	if config.Incidents == nil {
+		return false, false
+	}
+	if !config.Incidents.Enabled {
+		return false, true
+	}
+
+	if !strings.HasPrefix(clusterVersion, "v") {
+		clusterVersion = "v" + clusterVersion
+	}
+	canonicalClusterVersion := fmt.Sprintf("%s-0", semver.Canonical(clusterVersion))
+	minClusterVersionMet := semver.Compare(canonicalClusterVersion, "v4.19.0-0") >= 0
+
+	return minClusterVersionMet, minClusterVersionMet
 }
 
 func addFeatureFlags(plugin *UIPluginInfo, features []string) {
@@ -121,18 +150,11 @@ func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, im
 		return nil, fmt.Errorf("monitoring configuration can not be empty for plugin type %s", plugin.Spec.Type)
 	}
 
-	// Determine which optional features can be enabled.
-	isAcmEnabled := validateACMConfig(config)
-	isPersesEnabled := validatePersesConfig(config)
-	isIncidentsEnabled := validateIncidentsConfig(config, clusterVersion)
-	isHealthAnalyzerEnabled := validateHealthanalyzerConfig(config, clusterVersion)
-
-	// A configured feature is valid when disabled or eligible for enablement.
-	isValidAcmConfig := config.ACM != nil && (!config.ACM.Enabled || isAcmEnabled)
-	isValidPersesConfig := config.Perses != nil && (!config.Perses.Enabled || isPersesEnabled)
-	isValidIncidentsConfig := config.Incidents != nil && (!config.Incidents.Enabled || isIncidentsEnabled)
-	isValidHealthAnalyzerConfig := config.ClusterHealthAnalyzer != nil &&
-		(!config.ClusterHealthAnalyzer.Enabled || isHealthAnalyzerEnabled)
+	// Determine feature enablement and configuration validity.
+	isAcmEnabled, isValidAcmConfig := validateACMConfig(config)
+	isPersesEnabled, isValidPersesConfig := validatePersesConfig(config)
+	isIncidentsEnabled, isValidIncidentsConfig := validateIncidentsConfig(config, clusterVersion)
+	isHealthAnalyzerEnabled, isValidHealthAnalyzerConfig := validateHealthanalyzerConfig(config, clusterVersion)
 
 	atLeastOneValidConfig := isValidAcmConfig || isValidPersesConfig || isValidIncidentsConfig || isValidHealthAnalyzerConfig
 
