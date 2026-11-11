@@ -49,38 +49,18 @@ func validatePersesConfig(config *uiv1alpha1.MonitoringConfig) (enabled, valid b
 	return config.Perses.Enabled, true
 }
 
-func validateHealthanalyzerConfig(config *uiv1alpha1.MonitoringConfig, clusterVersion string) (enabled, valid bool) {
+func validateHealthanalyzerConfig(config *uiv1alpha1.MonitoringConfig) (enabled, valid bool) {
 	if config.ClusterHealthAnalyzer == nil {
 		return false, false
 	}
-	if !config.ClusterHealthAnalyzer.Enabled {
-		return false, true
-	}
-
-	if !strings.HasPrefix(clusterVersion, "v") {
-		clusterVersion = "v" + clusterVersion
-	}
-	canonicalClusterVersion := fmt.Sprintf("%s-0", semver.Canonical(clusterVersion))
-	minClusterVersionMet := semver.Compare(canonicalClusterVersion, "v4.19.0-0") >= 0
-
-	return minClusterVersionMet, minClusterVersionMet
+	return config.ClusterHealthAnalyzer.Enabled, true
 }
 
-func validateIncidentsConfig(config *uiv1alpha1.MonitoringConfig, clusterVersion string) (enabled, valid bool) {
+func validateIncidentsConfig(config *uiv1alpha1.MonitoringConfig) (enabled, valid bool) {
 	if config.Incidents == nil {
 		return false, false
 	}
-	if !config.Incidents.Enabled {
-		return false, true
-	}
-
-	if !strings.HasPrefix(clusterVersion, "v") {
-		clusterVersion = "v" + clusterVersion
-	}
-	canonicalClusterVersion := fmt.Sprintf("%s-0", semver.Canonical(clusterVersion))
-	minClusterVersionMet := semver.Compare(canonicalClusterVersion, "v4.19.0-0") >= 0
-
-	return minClusterVersionMet, minClusterVersionMet
+	return config.Incidents.Enabled, true
 }
 
 func addFeatureFlags(plugin *UIPluginInfo, features []string) {
@@ -153,8 +133,8 @@ func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, im
 	// Determine feature enablement and configuration validity.
 	isAcmEnabled, isValidAcmConfig := validateACMConfig(config)
 	isPersesEnabled, isValidPersesConfig := validatePersesConfig(config)
-	isIncidentsEnabled, isValidIncidentsConfig := validateIncidentsConfig(config, clusterVersion)
-	isHealthAnalyzerEnabled, isValidHealthAnalyzerConfig := validateHealthanalyzerConfig(config, clusterVersion)
+	isIncidentsEnabled, isValidIncidentsConfig := validateIncidentsConfig(config)
+	isHealthAnalyzerEnabled, isValidHealthAnalyzerConfig := validateHealthanalyzerConfig(config)
 
 	atLeastOneValidConfig := isValidAcmConfig || isValidPersesConfig || isValidIncidentsConfig || isValidHealthAnalyzerConfig
 

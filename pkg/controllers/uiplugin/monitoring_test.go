@@ -345,33 +345,31 @@ func TestCreateMonitoringPluginInfoDisabledFeatures(t *testing.T) {
 	}
 
 	for _, tc := range tt {
-		for _, cv := range []string{"v4.18", "v4.19"} {
-			t.Run(tc.name+"_"+cv, func(t *testing.T) {
-				plugin := &uiv1alpha1.UIPlugin{
-					Spec: uiv1alpha1.UIPluginSpec{
-						Type:       uiv1alpha1.TypeMonitoring,
-						Monitoring: tc.config,
-					},
-				}
+		t.Run(tc.name, func(t *testing.T) {
+			plugin := &uiv1alpha1.UIPlugin{
+				Spec: uiv1alpha1.UIPluginSpec{
+					Type:       uiv1alpha1.TypeMonitoring,
+					Monitoring: tc.config,
+				},
+			}
 
-				pluginInfo, err := getPluginInfo(plugin, nil, cv)
-				assert.NilError(t, err)
-				assert.Assert(t, pluginInfo != nil)
-				assert.Equal(t, pluginInfo.AreMonitoringFeatsDisabled, false)
-				assert.Equal(t, pluginInfo.Image, "quay.io/monitoring-foo-test:123")
-				assert.Equal(t, pluginInfo.PersesImage, "")
-				assert.Equal(t, pluginInfo.HealthAnalyzerImage, "")
-				assert.Equal(t, containsFeatureFlag(pluginInfo), featureFlagsStatus{})
-				assert.Equal(t, containsProxy(pluginInfo), proxiesStatus{})
-				assert.Equal(t, len(pluginInfo.Proxies), 1)
-				assert.Equal(t, pluginInfo.Proxies[0].Alias, "backend")
-				assert.DeepEqual(t, pluginInfo.ExtraArgs, []string{
-					"-config-path=/opt/app-root/config",
-					"-static-path=/opt/app-root/web/dist",
-					"-features=mcp-overview",
-				})
+			pluginInfo, err := getPluginInfo(plugin, nil)
+			assert.NilError(t, err)
+			assert.Assert(t, pluginInfo != nil)
+			assert.Equal(t, pluginInfo.AreMonitoringFeatsDisabled, false)
+			assert.Equal(t, pluginInfo.Image, "quay.io/monitoring-foo-test:123")
+			assert.Equal(t, pluginInfo.PersesImage, "")
+			assert.Equal(t, pluginInfo.HealthAnalyzerImage, "")
+			assert.Equal(t, containsFeatureFlag(pluginInfo), featureFlagsStatus{})
+			assert.Equal(t, containsProxy(pluginInfo), proxiesStatus{})
+			assert.Equal(t, len(pluginInfo.Proxies), 1)
+			assert.Equal(t, pluginInfo.Proxies[0].Alias, "backend")
+			assert.DeepEqual(t, pluginInfo.ExtraArgs, []string{
+				"-config-path=/opt/app-root/config",
+				"-static-path=/opt/app-root/web/dist",
+				"-features=mcp-overview",
 			})
-		}
+		})
 	}
 }
 
@@ -565,38 +563,4 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 			assert.Assert(t, err != nil, "Expected an error for invalid configuration")
 		})
 	}
-
-	t.Run("Test validateIncidentsConfig() with valid and invalid clusterVersion formats", func(t *testing.T) {
-		assertIncidentsSupport := func(version string, supported bool) {
-			t.Helper()
-			enabled, valid := validateIncidentsConfig(pluginConfigIncidents.Spec.Monitoring, version)
-			assert.Equal(t, enabled, supported, "Incidents enablement mismatch for %s", version)
-			assert.Equal(t, valid, supported, "Incidents validity mismatch for %s", version)
-		}
-
-		assertIncidentsSupport("v4.21.0-0.nightly-2024-06-06-064349", true)
-		assertIncidentsSupport("4.21.0-0.nightly-2024-06-06-064349", true)
-		assertIncidentsSupport("v4.21", true)
-		assertIncidentsSupport("v4.21.0", true)
-		assertIncidentsSupport("4.21.0", true)
-
-		assertIncidentsSupport("v4.20.0-0.nightly-2024-06-06-064349", true)
-		assertIncidentsSupport("4.20.0-0.nightly-2024-06-06-064349", true)
-		assertIncidentsSupport("v4.20", true)
-		assertIncidentsSupport("v4.20.0", true)
-		assertIncidentsSupport("4.20.0", true)
-
-		assertIncidentsSupport("v4.19.0-0.nightly-2024-06-06-064349", true)
-		assertIncidentsSupport("4.19.0-0.nightly-2024-06-06-064349", true)
-		assertIncidentsSupport("v4.19", true)
-		assertIncidentsSupport("v4.19.0", true)
-		assertIncidentsSupport("4.19.0", true)
-
-		// Incidents require OCP v4.19+.
-		assertIncidentsSupport("v4.18.0-0.nightly-2024-06-06-064349", false)
-		assertIncidentsSupport("4.18.0-0.nightly-2024-06-06-064349", false)
-		assertIncidentsSupport("v4.18", false)
-		assertIncidentsSupport("v4.18.0", false)
-		assertIncidentsSupport("4.18.0", false)
-	})
 }
