@@ -64,8 +64,8 @@ spec:
   - name: perses-rhel9
     from:
       kind: DockerImage
-      name: quay.io/openshift-observability-ui/perses:v0.55.0
+      name: quay.io/openshift-observability-ui/perses:v0.55.1
   - name: perses-rhel9-operator
     from:
       kind: DockerImage
-      name: quay.io/openshift-observability-ui/perses-operator:v0.5.0
+      name: quay.io/openshift-observability-ui/perses-operator:v0.6.1

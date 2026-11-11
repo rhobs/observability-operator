@@ -1137,7 +1137,7 @@ spec:
                 - name: RELATED_IMAGE_THANOS
                   value: quay.io/thanos/thanos:v0.42.2
                 - name: RELATED_IMAGE_PERSES
-                  value: quay.io/openshift-observability-ui/perses:v0.55.0
+                  value: quay.io/openshift-observability-ui/perses:v0.55.1
                 - name: RELATED_IMAGE_CONSOLE_DISTRIBUTED_TRACING_PLUGIN
                   value: quay.io/openshift-observability-ui/distributed-tracing-console-plugin:v1.2.0
                 - name: RELATED_IMAGE_CONSOLE_LOGGING_PLUGIN
@@ -1222,7 +1222,7 @@ spec:
                         operator: Exists
                     weight: 1
               containers:
-              - image: quay.io/openshift-observability-ui/perses-operator:v0.5.0
+              - image: quay.io/openshift-observability-ui/perses-operator:v0.6.1
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -1383,6 +1383,6 @@ spec:
   - name: cluster-health-analyzer
     image: quay.io/openshiftanalytics/cluster-health-analyzer:v1.1.1
   - name: perses
-    image: quay.io/openshift-observability-ui/perses:v0.55.0
+    image: quay.io/openshift-observability-ui/perses:v0.55.1
   - name: perses-operator
-    image: quay.io/openshift-observability-ui/perses-operator:v0.5.0
+    image: quay.io/openshift-observability-ui/perses-operator:v0.6.1
