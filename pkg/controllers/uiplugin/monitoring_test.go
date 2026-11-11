@@ -131,6 +131,7 @@ var pluginConfigThanos = &uiv1alpha1.UIPlugin{
 		Type: "monitoring",
 		Monitoring: &uiv1alpha1.MonitoringConfig{
 			ACM: &uiv1alpha1.AdvancedClusterManagementReference{
+				Enabled: true,
 				ThanosQuerier: uiv1alpha1.ThanosQuerierReference{
 					Url: "https://rbac-query-proxy.open-cluster-management-observability.svc:8443",
 				},
@@ -151,6 +152,7 @@ var pluginConfigAlertmanager = &uiv1alpha1.UIPlugin{
 		Type: "monitoring",
 		Monitoring: &uiv1alpha1.MonitoringConfig{
 			ACM: &uiv1alpha1.AdvancedClusterManagementReference{
+				Enabled: true,
 				Alertmanager: uiv1alpha1.AlertmanagerReference{
 					Url: "https://alertmanager.open-cluster-management-observability.svc:9095",
 				},
@@ -295,6 +297,80 @@ func getPluginInfo(plugin *uiv1alpha1.UIPlugin, features []string) (*UIPluginInf
 	)
 
 	return createMonitoringPluginInfo(plugin, namespace, name, image, features, healthAnalyzerImage, persesImage)
+}
+
+func TestCreateMonitoringPluginInfoDisabledFeatures(t *testing.T) {
+	tt := []struct {
+		name   string
+		config *uiv1alpha1.MonitoringConfig
+	}{
+		{
+			name: "ACM disabled",
+			config: &uiv1alpha1.MonitoringConfig{
+				ACM: &uiv1alpha1.AdvancedClusterManagementReference{Enabled: false},
+			},
+		},
+		{
+			name:   "Perses disabled",
+			config: pluginConfigPersesEmpty.Spec.Monitoring,
+		},
+		{
+			name: "Incidents disabled",
+			config: &uiv1alpha1.MonitoringConfig{
+				Incidents: &uiv1alpha1.IncidentsReference{Enabled: false},
+			},
+		},
+		{
+			name: "Cluster health analyzer disabled",
+			config: &uiv1alpha1.MonitoringConfig{
+				ClusterHealthAnalyzer: &uiv1alpha1.ClusterHealthAnalyzerReference{Enabled: false},
+			},
+		},
+		{
+			name: "Perses and cluster health analyzer disabled",
+			config: &uiv1alpha1.MonitoringConfig{
+				Perses:                &uiv1alpha1.PersesReference{Enabled: false},
+				ClusterHealthAnalyzer: &uiv1alpha1.ClusterHealthAnalyzerReference{Enabled: false},
+			},
+		},
+		{
+			name: "All optional features disabled",
+			config: &uiv1alpha1.MonitoringConfig{
+				ACM:                   &uiv1alpha1.AdvancedClusterManagementReference{Enabled: false},
+				Perses:                &uiv1alpha1.PersesReference{Enabled: false},
+				Incidents:             &uiv1alpha1.IncidentsReference{Enabled: false},
+				ClusterHealthAnalyzer: &uiv1alpha1.ClusterHealthAnalyzerReference{Enabled: false},
+			},
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			plugin := &uiv1alpha1.UIPlugin{
+				Spec: uiv1alpha1.UIPluginSpec{
+					Type:       uiv1alpha1.TypeMonitoring,
+					Monitoring: tc.config,
+				},
+			}
+
+			pluginInfo, err := getPluginInfo(plugin, nil)
+			assert.NilError(t, err)
+			assert.Assert(t, pluginInfo != nil)
+			assert.Equal(t, pluginInfo.AreMonitoringFeatsDisabled, false)
+			assert.Equal(t, pluginInfo.Image, "quay.io/monitoring-foo-test:123")
+			assert.Equal(t, pluginInfo.PersesImage, "")
+			assert.Equal(t, pluginInfo.HealthAnalyzerImage, "")
+			assert.Equal(t, containsFeatureFlag(pluginInfo), featureFlagsStatus{})
+			assert.Equal(t, containsProxy(pluginInfo), proxiesStatus{})
+			assert.Equal(t, len(pluginInfo.Proxies), 1)
+			assert.Equal(t, pluginInfo.Proxies[0].Alias, "backend")
+			assert.DeepEqual(t, pluginInfo.ExtraArgs, []string{
+				"-config-path=/opt/app-root/config",
+				"-static-path=/opt/app-root/web/dist",
+				"-features=mcp-overview",
+			})
+		})
+	}
 }
 
 func TestCreateMonitoringPluginInfo(t *testing.T) {
@@ -474,10 +550,6 @@ func TestCreateMonitoringPluginInfo(t *testing.T) {
 		{
 			name:         "Missing URL from alertmanager in ACM config",
 			pluginConfig: pluginConfigThanos, // ACM enabled, Thanos URL set, Alertmanager URL missing
-		},
-		{
-			name:         "Missing Perses enabled field when Perses config is present",
-			pluginConfig: pluginConfigPersesEmpty, // PersesReference{}
 		},
 		{
 			name:         "Malformed UIPlugin custom resource (no monitoring sections enabled)",

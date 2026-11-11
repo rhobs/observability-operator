@@ -26,11 +26,12 @@ const (
 Requirements for ACM enablement
 1. UIPlugin configuration requires acm.enabled, acm.thanosQuerier.Url, and acm.alertmanager.Url
 */
-func validateACMConfig(config *uiv1alpha1.MonitoringConfig) bool {
-	enabled := config.ACM != nil && config.ACM.Enabled
-
-	if !enabled {
-		return false
+func validateACMConfig(config *uiv1alpha1.MonitoringConfig) (enabled, valid bool) {
+	if config.ACM == nil {
+		return false, false
+	}
+	if !config.ACM.Enabled {
+		return false, true
 	}
 
 	// alertManager and thanosQuerier url configurations are required to enable 'acm-alerting'
@@ -38,20 +39,28 @@ func validateACMConfig(config *uiv1alpha1.MonitoringConfig) bool {
 	validThanosQuerierUrl := config.ACM.ThanosQuerier.Url != ""
 	isValidAcmAlertingConfig := validAlertManagerUrl && validThanosQuerierUrl
 
-	return isValidAcmAlertingConfig && enabled
+	return isValidAcmAlertingConfig, isValidAcmAlertingConfig
 }
 
-func validatePersesConfig(config *uiv1alpha1.MonitoringConfig) bool {
-	return config.Perses != nil && config.Perses.Enabled
+func validatePersesConfig(config *uiv1alpha1.MonitoringConfig) (enabled, valid bool) {
+	if config.Perses == nil {
+		return false, false
+	}
+	return config.Perses.Enabled, true
 }
 
-func validateHealthanalyzerConfig(config *uiv1alpha1.MonitoringConfig) bool {
-	return config.ClusterHealthAnalyzer != nil &&
-		config.ClusterHealthAnalyzer.Enabled
+func validateHealthanalyzerConfig(config *uiv1alpha1.MonitoringConfig) (enabled, valid bool) {
+	if config.ClusterHealthAnalyzer == nil {
+		return false, false
+	}
+	return config.ClusterHealthAnalyzer.Enabled, true
 }
 
-func validateIncidentsConfig(config *uiv1alpha1.MonitoringConfig) bool {
-	return config.Incidents != nil && config.Incidents.Enabled
+func validateIncidentsConfig(config *uiv1alpha1.MonitoringConfig) (enabled, valid bool) {
+	if config.Incidents == nil {
+		return false, false
+	}
+	return config.Incidents.Enabled, true
 }
 
 func addFeatureFlags(plugin *UIPluginInfo, features []string) {
@@ -121,11 +130,11 @@ func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, im
 		return nil, fmt.Errorf("monitoring configuration can not be empty for plugin type %s", plugin.Spec.Type)
 	}
 
-	// Validate feature configuration and cluster conditions support enablement
-	isValidAcmConfig := validateACMConfig(config)
-	isValidPersesConfig := validatePersesConfig(config)
-	isValidIncidentsConfig := validateIncidentsConfig(config)
-	isValidHealthAnalyzerConfig := validateHealthanalyzerConfig(config)
+	// Determine feature enablement and configuration validity.
+	isAcmEnabled, isValidAcmConfig := validateACMConfig(config)
+	isPersesEnabled, isValidPersesConfig := validatePersesConfig(config)
+	isIncidentsEnabled, isValidIncidentsConfig := validateIncidentsConfig(config)
+	isHealthAnalyzerEnabled, isValidHealthAnalyzerConfig := validateHealthanalyzerConfig(config)
 
 	atLeastOneValidConfig := isValidAcmConfig || isValidPersesConfig || isValidIncidentsConfig || isValidHealthAnalyzerConfig
 
@@ -139,16 +148,16 @@ func createMonitoringPluginInfo(plugin *uiv1alpha1.UIPlugin, namespace, name, im
 	features = append(features, "mcp-overview")
 
 	//  Add proxies and feature flags
-	if isValidAcmConfig {
+	if isAcmEnabled {
 		addAcmAlertingProxy(pluginInfo, name, namespace, config)
 		features = append(features, "acm-alerting")
 	}
-	if isValidPersesConfig {
+	if isPersesEnabled {
 		addPersesProxy(pluginInfo, namespace)
 		features = append(features, "perses-dashboards")
 		pluginInfo.PersesImage = persesImage
 	}
-	if isValidIncidentsConfig || isValidHealthAnalyzerConfig {
+	if isIncidentsEnabled || isHealthAnalyzerEnabled {
 		pluginInfo.HealthAnalyzerImage = healthAnalyzerImage
 		features = append(features, "cluster-health-analyzer")
 	}
