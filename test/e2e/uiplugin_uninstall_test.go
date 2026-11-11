@@ -48,7 +48,7 @@ func TestUIPluginUninstallCleanup(t *testing.T) {
 		t.Skip("Skipping: requires OpenShift cluster")
 	}
 
-	f.SkipIfClusterVersionBelow(t, "4.19")
+	f.SkipIfClusterVersionBelow(t, "4.22")
 
 	assertCRDExists(t, "uiplugins.observability.openshift.io")
 

@@ -26,7 +26,7 @@ const (
 )
 
 func clusterHealthAnalyzer(t *testing.T) {
-	f.SkipIfClusterVersionBelow(t, "4.19")
+	f.SkipIfClusterVersionBelow(t, "4.22")
 
 	err := monv1.AddToScheme(f.K8sClient.Scheme())
 	assert.NilError(t, err, "failed to add monv1 to scheme")
