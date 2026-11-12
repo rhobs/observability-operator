@@ -101,8 +101,8 @@ github.com/felixge/httpsnoop v1.1.0 h1:3YtUj32ZZkqZtt3sZZsClsymw/QDuVfpNhoA31zeO
 github.com/felixge/httpsnoop v1.1.0/go.mod h1:Zqxgdd+1Rkcz8euOqdr7lqgCRJztwr5hp9vDSi5UZCE=
 github.com/fsnotify/fsnotify v1.10.1 h1:b0/UzAf9yR5rhf3RPm9gf3ehBPpf0oZKIjtpKrx59Ho=
 github.com/fsnotify/fsnotify v1.10.1/go.mod h1:TLheqan6HD6GBK6PrDWyDPBaEV8LspOxvPSjC+bVfgo=
-github.com/fxamacker/cbor/v2 v2.9.3 h1:oQBnFATpNdY8gJHTndDDv5Xl4QqNaz51G5LLEPhng3Q=
-github.com/fxamacker/cbor/v2 v2.9.3/go.mod h1:vM4b+DJCtHn+zz7h3FFp/hDAI9WNWCsZj23V5ytsSxQ=
+github.com/fxamacker/cbor/v2 v2.9.6 h1:NHZPxuUjJXQjX9itA785y/5NKSlI4HQ+S7noZsmI7hs=
+github.com/fxamacker/cbor/v2 v2.9.6/go.mod h1:4EaZp6ClVunETjQ4GHmGNzysDK91Lr+r6Yz6tJqzVCw=
 github.com/go-jose/go-jose/v4 v4.1.6 h1:sNRkftxFJxwsILiQukqp5z83QBSmntVwmgRY7AqBDO4=
 github.com/go-jose/go-jose/v4 v4.1.6/go.mod h1:x4oUasVrzR7071A4TnHLGSPpNOm2a21K9Kf04k1rs08=
 github.com/go-kit/kit v0.8.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2as=
@@ -207,8 +207,8 @@ github.com/googleapis/gax-go/v2 v2.22.0 h1:PjIWBpgGIVKGoCXuiCoP64altEJCj3/Ei+kSU
 github.com/googleapis/gax-go/v2 v2.22.0/go.mod h1:irWBbALSr0Sk3qlqb9SyJ1h68WjgeFuiOzI4Rqw5+aY=
 github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674 h1:JeSE6pjso5THxAzdVpqr6/geYxZytqFMBCOtn/ujyeo=
 github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674/go.mod h1:r4w70xmWCQKmi1ONH4KIaBptdivuRPyosB9RmPlGEwA=
-github.com/grafana/loki/operator/api/loki v0.0.0-20260904122201-70263306afd8 h1:jKXJOcRVuCOZ/+yH94+OeO+Cki9wY01pmRsyll338PM=
-github.com/grafana/loki/operator/api/loki v0.0.0-20260904122201-70263306afd8/go.mod h1:OBAgJh0mLYRvziBzBKr4/anrPHqGY9qEfuNXCpnUNi0=
+github.com/grafana/loki/operator/api/loki v0.0.0-20261103095905-0a2213e25d58 h1:GS1rwwnds17HL8kVVoufjfszPZFXgBr1rNsRPU/CZPM=
+github.com/grafana/loki/operator/api/loki v0.0.0-20261103095905-0a2213e25d58/go.mod h1:MJ04ZMev7pO8MTO00caPel6QdKrzisqjlEe4RnFnPUk=
 github.com/grafana/regexp v0.0.0-20250905093917-f7b3be9d1853 h1:cLN4IBkmkYZNnk7EAJ0BHIethd+J6LqxFNw5mSiI2bM=
 github.com/grafana/regexp v0.0.0-20250905093917-f7b3be9d1853/go.mod h1:+JKpmjMGhpgPL+rXZ5nsZieVzvarn86asRlBg4uNGnk=
 github.com/grafana/tempo-operator v0.23.1 h1:uAFR0Nkj3HjiSr/zeEthVX3fqkgag6QnDuSSXaVOtio=
@@ -282,8 +282,8 @@ github.com/opencontainers/go-digest v1.0.0 h1:apOUWs51W5PlhuyGyz9FCeeBIOUDA/6nW8
 github.com/opencontainers/go-digest v1.0.0/go.mod h1:0JzlMkj0TRzQZfJkVvzbP0HBR3IKzErnv2BNG4W4MAM=
 github.com/openshift/api v0.0.0-20260615110019-261e3a0546f3 h1:ywnB6YgTcJlxYpnZ5xMWcvJoiC8eeCJrrolr06KlzeQ=
 github.com/openshift/api v0.0.0-20260615110019-261e3a0546f3/go.mod h1:pyVjK0nZ4sRs4fuQVQ4rubsJdahI1PB94LnQ8sGdvxo=
-github.com/openshift/cluster-logging-operator/api/observability v0.0.0-20261030183231-cdf7005b6900 h1:3ppEJy9CFvX6XGYuqqfBhyF6J7IkkFIoAQlXGTWZTqE=
-github.com/openshift/cluster-logging-operator/api/observability v0.0.0-20261030183231-cdf7005b6900/go.mod h1:iYbyyrn/zt46Tl9lEr30u4ZPRQpDSGjqKrerALwSBXs=
+github.com/openshift/cluster-logging-operator/api/observability v0.0.0-20261112033401-285263c3e6aa h1:GJ+PABJPk3eeYjYRhwSYylxZYOxeakkSFwLW/arXaRQ=
+github.com/openshift/cluster-logging-operator/api/observability v0.0.0-20261112033401-285263c3e6aa/go.mod h1:iYbyyrn/zt46Tl9lEr30u4ZPRQpDSGjqKrerALwSBXs=
 github.com/openshift/controller-runtime-common v0.0.0-20260428152732-64ee174f5e2e h1:k89oIo2EjX0PRSdi1kesktCyWp50SC9WwKurvupvRGs=
 github.com/openshift/controller-runtime-common v0.0.0-20260428152732-64ee174f5e2e/go.mod h1:XGabTMnNbz0M5Oa7IbscZp/jmcc7aHobvOCUWwkzKvM=
 github.com/openshift/library-go v0.0.0-20260615113748-bc9d4056464b h1:fmTTzoHLhRf4QsMKw4cEbnvUeUcgcaNesh5mueWnaVs=

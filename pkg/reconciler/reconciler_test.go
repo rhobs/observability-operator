@@ -8,13 +8,17 @@ import (
 
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
+
+	"github.com/rhobs/observability-operator/pkg/controllers/util"
 )
 
 func TestClientObjectApplyConfig_MarshalJSON(t *testing.T) {
@@ -143,6 +147,42 @@ func TestMissingCRDDeleter(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestManagedDeleterPreservesReplacement(t *testing.T) {
+	ctx := context.Background()
+	scheme := runtime.NewScheme()
+	require.NoError(t, corev1.AddToScheme(scheme))
+	managed := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
+		Name: "operand", Namespace: "test", UID: types.UID("original"),
+		Labels: map[string]string{util.ResourceLabel: util.OpName},
+	}}
+	base := fake.NewClientBuilder().WithScheme(scheme).WithObjects(managed).Build()
+	c := interceptor.NewClient(base, interceptor.Funcs{
+		Delete: func(ctx context.Context, backend client.WithWatch, obj client.Object, opts ...client.DeleteOption) error {
+			// Replace the object after the ownership read, before deletion.
+			if err := backend.Delete(ctx, obj); err != nil {
+				return err
+			}
+			replacement := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
+				Name: obj.GetName(), Namespace: obj.GetNamespace(), UID: types.UID("replacement"),
+			}}
+			if err := backend.Create(ctx, replacement); err != nil {
+				return err
+			}
+			options := &client.DeleteOptions{}
+			options.ApplyOptions(opts)
+			require.NotNil(t, options.Preconditions)
+			require.NotNil(t, options.Preconditions.UID)
+			require.Equal(t, managed.UID, *options.Preconditions.UID)
+			return apierrors.NewConflict(schema.GroupResource{Resource: "configmaps"}, obj.GetName(), errors.New("UID changed"))
+		},
+	})
+	err := NewManagedDeleter(managed).Reconcile(ctx, c, scheme)
+	require.True(t, apierrors.IsConflict(err), "expected UID precondition failure, got %v", err)
+	var replacement corev1.ConfigMap
+	require.NoError(t, base.Get(ctx, client.ObjectKeyFromObject(managed), &replacement))
+	require.Equal(t, types.UID("replacement"), replacement.UID)
 }
 
 func TestGuardedDeleter(t *testing.T) {

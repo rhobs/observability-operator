@@ -70,14 +70,15 @@ func TestDeletionWithoutOperatorUninstallDoesNotWait(t *testing.T) {
 	}
 }
 
-func TestWaitForDeletionTimesOut(t *testing.T) {
+func TestWaitForDeletionKeepsWaiting(t *testing.T) {
 	ctx := context.Background()
 	scheme := getScheme()
-	operand := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "operand", Namespace: "test", Finalizers: []string{"stuck"}}}
+	operand := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
+		Name: "operand", Namespace: "test", Finalizers: []string{"stuck"},
+		Labels: map[string]string{util.ResourceLabel: util.OpName},
+	}}
 	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(operand).Build()
-	wait := waitForDeletion{reader: c, objects: []client.Object{operand}, deadline: time.Now().Add(-time.Second)}
-	require.ErrorIs(t, wait.Reconcile(ctx, c, scheme), errDeletionTimedOut)
-	wait.deadline = time.Time{}
+	wait := waitForDeletion{reader: c, objects: []client.Object{operand}}
 	require.ErrorIs(t, wait.Reconcile(ctx, c, scheme), errDeletionPending)
 }
 
@@ -145,11 +146,15 @@ func TestGetReconcilers(t *testing.T) {
 				mockClient.On("Get", context.Background(), mock.Anything, mock.IsType(&olmv1alpha1.Subscription{}), mock.Anything).Return(nil)
 				mockClient.On("Get", context.Background(), mock.Anything, mock.IsType(&corev1.Secret{}), mock.Anything).
 					Run(func(args mock.Arguments) {
-						args.Get(2).(*corev1.Secret).Data = map[string][]byte{"key": []byte("secret")}
+						secret := args.Get(2).(*corev1.Secret)
+						secret.Data = map[string][]byte{"key": []byte("secret")}
+						secret.SetLabels(map[string]string{util.ResourceLabel: util.OpName})
 					}).Return(nil)
 				mockClient.On("Get", context.Background(), mock.Anything, mock.IsType(&corev1.ConfigMap{}), mock.Anything).
 					Run(func(args mock.Arguments) {
-						args.Get(2).(*corev1.ConfigMap).Data = map[string]string{"ca.crt": "test CA"}
+						configMap := args.Get(2).(*corev1.ConfigMap)
+						configMap.Data = map[string]string{"ca.crt": "test CA"}
+						configMap.SetLabels(map[string]string{util.ResourceLabel: util.OpName})
 					}).Return(nil)
 				mockClient.On("Apply", context.Background(), mock.Anything, mock.Anything).Return(nil)
 				expectLoggingDeletes(mockClient)
@@ -376,6 +381,9 @@ func TestGetReconcilers(t *testing.T) {
 					args.Get(2).(*uiv1alpha1.UIPlugin).SetLabels(map[string]string{util.PartOfLabel: util.OpName})
 				}).Return(nil).Maybe()
 			mockClient.On("Delete", context.Background(), mock.IsType(&corev1.ConfigMap{}), mock.Anything).Return(nil).Maybe()
+			// Managed deleters read the live object before deleting it. The
+			// objects in these tests are absent unless a case sets them up.
+			mockClient.On("Get", context.Background(), mock.Anything, mock.Anything, mock.Anything).Return(notFound).Maybe()
 
 			reconcilers, err := getReconcilers(context.Background(), mockClient, test.instance, capabilities(Options{
 				OpenTelemetryOperator: OperatorInstallConfig{
@@ -414,6 +422,7 @@ func TestOperatorUninstallWaitsForOperandFinalizer(t *testing.T) {
 	scheme := getScheme()
 	operand := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
 		Name: "operand", Namespace: "test", Finalizers: []string{"operand-operator/finalizer"},
+		Labels: map[string]string{util.ResourceLabel: util.OpName},
 	}}
 	sub := &olmv1alpha1.Subscription{
 		ObjectMeta: metav1.ObjectMeta{Name: "operator", Namespace: "operators", Labels: map[string]string{util.ResourceLabel: util.OpName}},

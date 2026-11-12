@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -64,6 +65,36 @@ func NewUpdater(resource client.Object, owner metav1.Object) Updater {
 	return newUpdater(resource, owner, false)
 }
 
+// GuardedUpdater updates a resource only when it is absent or already managed
+// by COO. Shared resources such as console UIPlugins have well-known names, so
+// applying one unconditionally would take ownership of a user-created object
+// with the same name.
+type GuardedUpdater struct {
+	Updater
+}
+
+func NewGuardedUpdater(resource client.Object, owner metav1.Object) GuardedUpdater {
+	return GuardedUpdater{Updater: NewUpdater(resource, owner)}
+}
+
+func (r GuardedUpdater) Reconcile(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
+	live := r.resource.DeepCopyObject().(client.Object)
+	err := c.Get(ctx, client.ObjectKeyFromObject(r.resource), live)
+	if err != nil && !apierrors.IsNotFound(err) && !meta.IsNoMatchError(err) {
+		return fmt.Errorf("%s/%s (%s): guarded updater failed to get: %w",
+			r.resource.GetNamespace(), r.resource.GetName(),
+			r.resource.GetObjectKind().GroupVersionKind().String(), err)
+	}
+	if err == nil && !util.IsOperatorManaged(live) {
+		gvk := r.resource.GetObjectKind().GroupVersionKind()
+		return fmt.Errorf("%s/%s (%s): refusing to adopt unowned resource: %w",
+			r.resource.GetNamespace(), r.resource.GetName(), gvk.String(),
+			apierrors.NewConflict(schema.GroupResource{Group: gvk.Group, Resource: gvk.Kind}, r.resource.GetName(),
+				fmt.Errorf("existing resource is not managed by %s", util.OpName)))
+	}
+	return r.Updater.Reconcile(ctx, c, scheme)
+}
+
 // NewUnmanagedUpdater creates an Updater that does not set a controller reference.
 func NewUnmanagedUpdater(resource client.Object, owner metav1.Object) Updater {
 	return newUpdater(resource, owner, true)
@@ -110,6 +141,38 @@ func (r MissingCRDDeleter) Reconcile(ctx context.Context, c client.Client, schem
 
 func NewMissingCRDDeleter(r client.Object) MissingCRDDeleter {
 	return MissingCRDDeleter{Deleter: NewDeleter(r)}
+}
+
+// ManagedDeleter deletes a resource only when the live object is managed by
+// COO. Operand names are derived from the installer name, so an independently
+// created resource can share a name with the one COO would manage.
+type ManagedDeleter struct {
+	resource client.Object
+}
+
+func NewManagedDeleter(r client.Object) ManagedDeleter {
+	return ManagedDeleter{resource: r}
+}
+
+func (r ManagedDeleter) Reconcile(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
+	live := r.resource.DeepCopyObject().(client.Object)
+	if err := c.Get(ctx, client.ObjectKeyFromObject(r.resource), live); err != nil {
+		if apierrors.IsNotFound(err) || meta.IsNoMatchError(err) {
+			return nil
+		}
+		return fmt.Errorf("%s/%s (%s): managed deleter failed to get: %w",
+			r.resource.GetNamespace(), r.resource.GetName(),
+			r.resource.GetObjectKind().GroupVersionKind().String(), err)
+	}
+	if !util.IsOperatorManaged(live) {
+		return nil
+	}
+	// Do not delete a new object that reused the name after the ownership check.
+	uid := live.GetUID()
+	if err := c.Delete(ctx, live, client.Preconditions{UID: &uid}); client.IgnoreNotFound(err) != nil {
+		return fmt.Errorf("%s/%s: managed deleter failed to delete: %w", live.GetNamespace(), live.GetName(), err)
+	}
+	return nil
 }
 
 // GuardedDeleter deletes a resource only if the live object carries the given

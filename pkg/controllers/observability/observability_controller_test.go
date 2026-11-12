@@ -37,6 +37,7 @@ func TestReconcileKeepsFinalizerUntilOperandsGone(t *testing.T) {
 	}}
 	operand := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
 		Name: "operand", Namespace: "test", Finalizers: []string{"operand-operator/finalizer"},
+		Labels: map[string]string{util.ResourceLabel: util.OpName},
 	}}
 	sub := &olmv1alpha1.Subscription{
 		ObjectMeta: metav1.ObjectMeta{Name: "operator", Namespace: "operators", Labels: map[string]string{util.ResourceLabel: util.OpName}},
@@ -84,15 +85,16 @@ func TestReconcileKeepsFinalizerUntilOperandsGone(t *testing.T) {
 	require.True(t, apierrors.IsNotFound(k8sClient.Get(ctx, client.ObjectKeyFromObject(sub), &olmv1alpha1.Subscription{})))
 }
 
-func TestReconcileDeletionTimeoutReleasesFinalizer(t *testing.T) {
+func TestReconcileDeletionWaitsUntilOperandGone(t *testing.T) {
 	ctx := context.Background()
 	scheme := getScheme()
 	instance := &obsv1alpha1.ObservabilityInstaller{ObjectMeta: metav1.ObjectMeta{
 		Name: "installer", Namespace: "test", Finalizers: []string{finalizerName},
-		DeletionTimestamp: &metav1.Time{Time: time.Now().Add(-operandDeletionTimeout - time.Second)},
+		DeletionTimestamp: &metav1.Time{Time: time.Now().Add(-time.Hour)},
 	}}
 	operand := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
 		Name: "operand", Namespace: "test", Finalizers: []string{"stuck"},
+		Labels: map[string]string{util.ResourceLabel: util.OpName},
 	}}
 	sub := &olmv1alpha1.Subscription{
 		ObjectMeta: metav1.ObjectMeta{Name: "operator", Namespace: "operators", Labels: map[string]string{util.ResourceLabel: util.OpName}},
@@ -113,9 +115,22 @@ func TestReconcileDeletionTimeoutReleasesFinalizer(t *testing.T) {
 			},
 		}},
 	}
-	_, err := controller.Reconcile(ctx, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(instance)})
+	request := ctrl.Request{NamespacedName: client.ObjectKeyFromObject(instance)}
+	result, err := controller.Reconcile(ctx, request)
 	require.NoError(t, err)
-	require.True(t, apierrors.IsNotFound(c.Get(ctx, client.ObjectKeyFromObject(instance), &obsv1alpha1.ObservabilityInstaller{})))
+	require.Equal(t, 2*time.Second, result.RequeueAfter)
+	var live obsv1alpha1.ObservabilityInstaller
+	require.NoError(t, c.Get(ctx, request.NamespacedName, &live))
+	require.Contains(t, live.Finalizers, finalizerName)
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(sub), &olmv1alpha1.Subscription{}))
+	var pending corev1.ConfigMap
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(operand), &pending))
+	require.NotNil(t, pending.DeletionTimestamp)
+	pending.Finalizers = nil
+	require.NoError(t, c.Update(ctx, &pending))
+	_, err = controller.Reconcile(ctx, request)
+	require.NoError(t, err)
+	require.True(t, apierrors.IsNotFound(c.Get(ctx, request.NamespacedName, &live)))
 	require.True(t, apierrors.IsNotFound(c.Get(ctx, client.ObjectKeyFromObject(sub), &olmv1alpha1.Subscription{})))
 }
 

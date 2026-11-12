@@ -139,13 +139,6 @@ func (o observabilityInstallerController) Reconcile(ctx context.Context, request
 			o.updateStatus(ctx, instance, reconcileErr, operatorStatus)
 			return ctrl.Result{RequeueAfter: 2 * time.Second}, nil
 		}
-		if errors.Is(reconcileErr, errDeletionTimedOut) {
-			// Do not hold a deleting installer indefinitely when an operand's
-			// finalizer cannot be cleared by its operator. Continue best-effort
-			// cleanup and allow the installer's finalizer to be removed.
-			o.logger.Info("operand deletion timed out; continuing installer deletion", "err", reconcileErr)
-			continue
-		}
 		// handle creation / update errors that can happen due to a stale cache by
 		// retrying after some time.
 		if apierrors.IsAlreadyExists(reconcileErr) || apierrors.IsConflict(reconcileErr) {

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"slices"
-	"time"
 
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -15,7 +14,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	obsv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/observability/v1alpha1"
-	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
 	"github.com/rhobs/observability-operator/pkg/controllers/observability/capability"
 	"github.com/rhobs/observability-operator/pkg/controllers/util"
 	"github.com/rhobs/observability-operator/pkg/reconciler"
@@ -127,28 +125,51 @@ func getReconcilers(ctx context.Context, k8sReader client.Reader, instance *obsv
 	}
 	// A successful Delete only starts deletion. Keep the operator installed (and
 	// the installer's finalizer in place) until operand finalizers are cleared.
-	if len(deleting) > 0 && len(uninstall) > 0 {
-		wait := waitForDeletion{reader: k8sReader, objects: deleting}
-		if instance.DeletionTimestamp != nil {
-			wait.deadline = instance.DeletionTimestamp.Time.Add(operandDeletionTimeout)
+	// Deleting installers other than the one being reconciled may still own
+	// operands, so their inventory gates uninstall too.
+	if len(uninstall) > 0 {
+		pending, err := otherDeletingInventory(ctx, k8sReader, instance, definitions, instances)
+		if err != nil {
+			return nil, err
 		}
-		result = append(result, wait)
+		waitObjects := append(deleting, pending...)
+		if len(waitObjects) > 0 {
+			result = append(result, waitForDeletion{reader: k8sReader, objects: waitObjects})
+		}
 	}
 	result = append(result, uninstall...)
 	return result, nil
 }
 
-const operandDeletionTimeout = 10 * time.Minute
+// otherDeletingInventory returns the cleanup inventory of installers that are
+// not the one being reconciled but are also being deleted. Their operands may
+// still be finalizing even though they no longer require an operator, so the
+// inventory gates operator uninstall. It is only read, never applied or
+// deleted: each installer reconciles its own operands.
+func otherDeletingInventory(ctx context.Context, k8sReader client.Reader, current *obsv1alpha1.ObservabilityInstaller, definitions []capability.Definition, instances []obsv1alpha1.ObservabilityInstaller) ([]client.Object, error) {
+	currentKey := client.ObjectKeyFromObject(current)
+	var objects []client.Object
+	for i := range instances {
+		other := &instances[i]
+		if other.DeletionTimestamp == nil || client.ObjectKeyFromObject(other) == currentKey {
+			continue
+		}
+		for _, definition := range definitions {
+			plan, err := definition.Plan(ctx, other, k8sReader)
+			if err != nil {
+				return nil, fmt.Errorf("plan %s capability for deleting installer %s: %w", definition.Name, other.Name, err)
+			}
+			objects = append(objects, plan.Owned...)
+		}
+	}
+	return objects, nil
+}
 
-var (
-	errDeletionPending  = errors.New("waiting for operand deletion")
-	errDeletionTimedOut = errors.New("timed out waiting for operand deletion")
-)
+var errDeletionPending = errors.New("waiting for operand deletion")
 
 type waitForDeletion struct {
-	reader   client.Reader // bypass the cache: deletion and label changes may not be visible there yet
-	objects  []client.Object
-	deadline time.Time // zero for capability disablement; only installer deletion is bounded
+	reader  client.Reader // bypass the cache: deletion and label changes may not be visible there yet
+	objects []client.Object
 }
 
 func (w waitForDeletion) Reconcile(ctx context.Context, _ client.Client, _ *runtime.Scheme) error {
@@ -161,13 +182,10 @@ func (w waitForDeletion) Reconcile(ctx context.Context, _ client.Client, _ *runt
 		if err != nil {
 			return err
 		}
-		// The guarded deleter leaves user-created plugins alone; they must not
+		// The guarded deleter leaves user-created resources alone; they must not
 		// hold an installer finalizer indefinitely.
-		if _, ok := obj.(*uiv1alpha1.UIPlugin); ok && live.GetLabels()[util.PartOfLabel] != util.OpName {
+		if !util.IsOperatorManaged(live) {
 			continue
-		}
-		if !w.deadline.IsZero() && !time.Now().Before(w.deadline) {
-			return fmt.Errorf("%w: %s/%s (%s)", errDeletionTimedOut, obj.GetNamespace(), obj.GetName(), obj.GetObjectKind().GroupVersionKind())
 		}
 		return fmt.Errorf("%w: %s/%s (%s)", errDeletionPending, obj.GetNamespace(), obj.GetName(), obj.GetObjectKind().GroupVersionKind())
 	}
@@ -176,20 +194,22 @@ func (w waitForDeletion) Reconcile(ctx context.Context, _ client.Client, _ *runt
 
 func appendUpdaters(result []reconciler.Reconciler, objects []client.Object, instance *obsv1alpha1.ObservabilityInstaller, desired map[string]struct{}) []reconciler.Reconciler {
 	for _, obj := range objects {
-		result = append(result, reconciler.NewUpdater(obj, instance))
+		result = append(result, updaterFor(obj, instance))
 		desired[gvkNameIdentifier(obj)] = struct{}{}
 	}
 	return result
 }
 
-// deleterFor returns the cleanup reconciler for an owned resource. Shared,
-// well-known-named console UIPlugins are deleted only when they carry COO's
-// part-of label, so a manually created plugin with the same name is preserved.
+func updaterFor(obj client.Object, instance *obsv1alpha1.ObservabilityInstaller) reconciler.Reconciler {
+	return reconciler.NewGuardedUpdater(obj, instance)
+}
+
+// deleterFor returns the cleanup reconciler for an owned resource. Deletion is
+// guarded by COO's ownership labels (or an owner reference to an installer) so
+// a manually created resource that happens to share a derived name is
+// preserved.
 func deleterFor(obj client.Object) reconciler.Reconciler {
-	if _, ok := obj.(*uiv1alpha1.UIPlugin); ok {
-		return reconciler.NewGuardedDeleter(obj, util.PartOfLabel, util.OpName)
-	}
-	return reconciler.NewMissingCRDDeleter(obj)
+	return reconciler.NewManagedDeleter(obj)
 }
 
 func gvkNameIdentifier(obj client.Object) string {
