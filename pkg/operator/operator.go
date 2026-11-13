@@ -12,6 +12,7 @@ import (
 	configv1 "github.com/openshift/api/config/v1"
 	operatorv1 "github.com/openshift/api/operator/v1"
 	openshifttls "github.com/openshift/controller-runtime-common/pkg/tls"
+	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -79,9 +80,11 @@ type OperatorConfiguration struct {
 }
 
 type ObservabilityInstallerConfiguration struct {
-	COONamespace     string
-	OpenTelemetryCSV string
-	TempoCSV         string
+	COONamespace      string
+	OpenTelemetryCSV  string
+	TempoCSV          string
+	LokiCSV           string
+	ClusterLoggingCSV string
 }
 
 func WithNamespace(ns string) func(*OperatorConfiguration) {
@@ -308,6 +311,10 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 		cacheOptions.ByObject[&configv1.APIServer{}] = cache.ByObject{
 			Label: labels.Everything(),
 		}
+		// External subscriptions must be visible to the ObservabilityInstaller watch.
+		cacheOptions.ByObject[&olmv1alpha1.Subscription{}] = cache.ByObject{
+			Label: labels.Everything(),
+		}
 	}
 
 	mgr, err := ctrl.NewManager(
@@ -370,18 +377,33 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 
 	if cfg.FeatureGates.OpenShift.Enabled {
 		if err := obsctrl.RegisterWithManager(mgr, obsctrl.Options{
-			COONamespace: cfg.ObservabilityInstaller.COONamespace,
 			OpenTelemetryOperator: obsctrl.OperatorInstallConfig{
 				Namespace:   cfg.ObservabilityInstaller.COONamespace,
 				PackageName: "opentelemetry-product",
 				StartingCSV: cfg.ObservabilityInstaller.OpenTelemetryCSV,
 				Channel:     "stable",
+				// Community build of the same operator.
+				EquivalentPackages: []string{"opentelemetry-operator"},
 			},
 			TempoOperator: obsctrl.OperatorInstallConfig{
 				Namespace:   cfg.ObservabilityInstaller.COONamespace,
 				PackageName: "tempo-product",
 				StartingCSV: cfg.ObservabilityInstaller.TempoCSV,
 				Channel:     "stable",
+				// Community build of the same operator.
+				EquivalentPackages: []string{"tempo-operator"},
+			},
+			LokiOperator: obsctrl.OperatorInstallConfig{
+				Namespace:   cfg.ObservabilityInstaller.COONamespace,
+				PackageName: "loki-operator",
+				StartingCSV: cfg.ObservabilityInstaller.LokiCSV,
+				Channel:     "stable-6.5",
+			},
+			ClusterLoggingOperator: obsctrl.OperatorInstallConfig{
+				Namespace:   cfg.ObservabilityInstaller.COONamespace,
+				PackageName: "cluster-logging",
+				StartingCSV: cfg.ObservabilityInstaller.ClusterLoggingCSV,
+				Channel:     "stable-6.5",
 			},
 		}); err != nil {
 			return nil, fmt.Errorf("unable to register cluster observability controller: %w", err)

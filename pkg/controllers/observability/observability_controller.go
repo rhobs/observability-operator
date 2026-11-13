@@ -2,39 +2,49 @@ package observability
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"sync"
+	"reflect"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
-	tempov1alpha1 "github.com/grafana/tempo-operator/api/tempo/v1alpha1"
-	otelv1beta1 "github.com/open-telemetry/opentelemetry-operator/apis/v1beta1"
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	obsv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/observability/v1alpha1"
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
+	"github.com/rhobs/observability-operator/pkg/controllers/observability/capability"
+	"github.com/rhobs/observability-operator/pkg/controllers/util"
 )
 
 const (
 	finalizerName = "observability.openshift.io/observabilityinstaller"
 
-	conditionReasonError    = "ReconcileError"
-	conditionTypeReconciled = "Reconciled"
+	conditionReasonError          = "ReconcileError"
+	conditionTypeReconciled       = "Reconciled"
+	conditionTypeExternalOperator = "ExternalSubscription"
 )
 
 // RBAC for the ObservabilityInstaller CRD
@@ -52,11 +62,21 @@ const (
 // RBAC for Tempo
 // +kubebuilder:rbac:groups=tempo.grafana.com,resources=tempostacks,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=tempo.grafana.com,resources=tempostacks/status,verbs=get;list;watch
-// +kubebuilder:rbac:groups="",resources=secrets;configmaps,verbs=get;list;watch;create;update;delete;patch
+// +kubebuilder:rbac:groups="",resources=secrets;configmaps;serviceaccounts,verbs=get;list;watch;create;update;delete;patch
 // +kubebuilder:rbac:groups=observability.openshift.io,resources=uiplugins,verbs=get;list;watch;create;update;delete;patch
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles;clusterrolebindings,verbs=list;watch;create;update;delete;patch
 // +kubebuilder:rbac:groups=observability.openshift.io,resources=uiplugins,verbs=get;list;watch;create;update;delete;patch
 // +kubebuilder:rbac:groups=tempo.grafana.com,resources=application,resourceNames=traces,verbs=create
+
+// RBAC for Loki
+// +kubebuilder:rbac:groups=loki.grafana.com,resources=lokistacks,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=loki.grafana.com,resources=lokistacks/status,verbs=get;list;watch
+// +kubebuilder:rbac:groups=loki.grafana.com,resources=application;audit;infrastructure,verbs=create
+
+// RBAC for ClusterLogForwarder
+// +kubebuilder:rbac:groups=observability.openshift.io,resources=clusterlogforwarders,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=observability.openshift.io,resources=clusterlogforwarders/status,verbs=get;list;watch
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,resourceNames=collect-application-logs;collect-infrastructure-logs,verbs=get;bind
 
 type observabilityInstallerController struct {
 	client client.Client
@@ -64,12 +84,11 @@ type observabilityInstallerController struct {
 	apiReader       client.Reader
 	scheme          *runtime.Scheme
 	logger          logr.Logger
-	Options         Options
 	controller      controller.TypedController[reconcile.Request]
 	cache           cache.Cache
 	discoveryClient *discovery.DiscoveryClient
-	watchOTELcol    *sync.Once
-	watchTempo      *sync.Once
+	watches         *watchRegistry
+	capabilities    []capability.Definition
 }
 
 var _ reconcile.TypedReconciler[reconcile.Request] = (*observabilityInstallerController)(nil)
@@ -100,50 +119,54 @@ func (o observabilityInstallerController) Reconcile(ctx context.Context, request
 
 	subs := &olmv1alpha1.SubscriptionList{}
 	// List all subscriptions to figure out if the operators are already installed
-	err = o.apiReader.List(ctx, subs, &client.ListOptions{})
+	err = o.client.List(ctx, subs)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	reconcilers, err := getReconcilers(ctx, o.client, o.apiReader, instance, o.Options, operatorsStatus{
-		cooNamespace: o.Options.COONamespace,
-		subs:         subs.Items,
-	})
+	instances := &obsv1alpha1.ObservabilityInstallerList{}
+	if err := o.client.List(ctx, instances); err != nil {
+		return ctrl.Result{}, err
+	}
+	operatorStatus := operatorsStatus{subs: subs.Items}
+	reconcilers, err := getReconcilers(ctx, o.apiReader, instance, o.capabilities, operatorStatus, instances.Items)
 	if err != nil {
+		o.updateStatus(ctx, instance, err, operatorStatus)
 		return ctrl.Result{}, err
 	}
 	for _, reconciler := range reconcilers {
 		reconcileErr := reconciler.Reconcile(ctx, o.client, o.scheme)
+		if errors.Is(reconcileErr, errDeletionPending) {
+			o.updateStatus(ctx, instance, reconcileErr, operatorStatus)
+			return ctrl.Result{RequeueAfter: 2 * time.Second}, nil
+		}
 		// handle creation / update errors that can happen due to a stale cache by
 		// retrying after some time.
-		if apierrors.IsAlreadyExists(err) || apierrors.IsConflict(err) {
+		if apierrors.IsAlreadyExists(reconcileErr) || apierrors.IsConflict(reconcileErr) {
 			o.logger.V(1).Info("skipping reconcile error", "err", reconcileErr)
 			return ctrl.Result{RequeueAfter: 2 * time.Second}, nil
 		}
 		if reconcileErr != nil {
-			o.logger.Error(reconcileErr, "Failed to reconcile")
-			return o.updateStatus(ctx, instance, err), err
+			o.updateStatus(ctx, instance, reconcileErr, operatorStatus)
+			return ctrl.Result{}, reconcileErr
 		}
 	}
 
-	groups, err := o.discoveryClient.ServerGroups()
-	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to get server groups: %w", err)
+	var watchTypes []client.Object
+	for _, capability := range o.capabilities {
+		watchTypes = append(watchTypes, capability.WatchTypes...)
 	}
-	for _, group := range groups.Groups {
-		if group.Name == "opentelemetry.io" {
-			o.watchOTELcol.Do(func() {
-				if err := o.controller.Watch(source.Kind[client.Object](o.cache, &otelv1beta1.OpenTelemetryCollector{}, handler.EnqueueRequestsFromMapFunc(o.triggerReconcile))); err != nil {
-					o.logger.Error(err, "Failed to watch OpenTelemetryCollector resources")
-				}
-			})
+	var watchRequeueAfter time.Duration
+	// Discovery is costly, only do it while some watches are still unregistered.
+	if o.watches.Pending(watchTypes, o.scheme) {
+		availableKinds, err := o.availableKinds()
+		if err != nil {
+			return ctrl.Result{}, err
 		}
-
-		if group.Name == "tempo.grafana.com" {
-			o.watchTempo.Do(func() {
-				if err := o.controller.Watch(source.Kind[client.Object](o.cache, &tempov1alpha1.TempoStack{}, handler.EnqueueRequestsFromMapFunc(o.triggerReconcile))); err != nil {
-					o.logger.Error(err, "Failed to watch TempoStack resources")
-				}
-			})
+		if err := o.watches.RegisterAvailable(watchTypes, availableKinds, o.scheme, func(object client.Object) error {
+			return o.controller.Watch(source.Kind[client.Object](o.cache, object, handler.EnqueueRequestsFromMapFunc(o.triggerReconcile)))
+		}); err != nil {
+			o.logger.Error(err, "Failed to register capability watch")
+			watchRequeueAfter = 2 * time.Second
 		}
 	}
 
@@ -163,7 +186,32 @@ func (o observabilityInstallerController) Reconcile(ctx context.Context, request
 		}
 	}
 
-	return o.updateStatus(ctx, instance, nil), nil
+	result := o.updateStatus(ctx, instance, nil, operatorStatus)
+	if watchRequeueAfter > 0 && (result.RequeueAfter == 0 || watchRequeueAfter < result.RequeueAfter) {
+		result.RequeueAfter = watchRequeueAfter
+	}
+	return result, nil
+}
+
+// availableKinds returns the kinds served by the API server.
+func (o observabilityInstallerController) availableKinds() (map[schema.GroupVersionKind]bool, error) {
+	_, resourceLists, err := o.discoveryClient.ServerGroupsAndResources()
+	// A partially unavailable aggregated API server must not block discovery of
+	// the groups that did respond.
+	if err != nil && !discovery.IsGroupDiscoveryFailedError(err) {
+		return nil, fmt.Errorf("failed to get server resources: %w", err)
+	}
+	kinds := map[schema.GroupVersionKind]bool{}
+	for _, list := range resourceLists {
+		groupVersion, err := schema.ParseGroupVersion(list.GroupVersion)
+		if err != nil {
+			continue
+		}
+		for _, resource := range list.APIResources {
+			kinds[groupVersion.WithKind(resource.Kind)] = true
+		}
+	}
+	return kinds, nil
 }
 
 func (o observabilityInstallerController) triggerReconcile(ctx context.Context, _ client.Object) []reconcile.Request {
@@ -199,69 +247,107 @@ func (o observabilityInstallerController) getInstance(ctx context.Context, req c
 	return &instance, nil
 }
 
-func (o observabilityInstallerController) updateStatus(ctx context.Context, instance *obsv1alpha1.ObservabilityInstaller, reconcileErr error) reconcile.Result {
-	if instance.Spec.Capabilities != nil {
-		capabilities := instance.Spec.Capabilities
-		if capabilities.Tracing != nil && capabilities.Tracing.Enabled {
-			otelcol := &otelv1beta1.OpenTelemetryCollector{}
-			err := o.client.Get(ctx, types.NamespacedName{
-				Namespace: instance.Namespace,
-				Name:      otelCollectorName(instance.Name),
-			}, otelcol)
-			if err != nil {
-				return ctrl.Result{RequeueAfter: 2 * time.Second}
-			}
-			tempo := &tempov1alpha1.TempoStack{}
-			err = o.client.Get(ctx, types.NamespacedName{
-				Namespace: instance.Namespace,
-				Name:      tempoName(instance.Name),
-			}, tempo)
-			if err != nil {
-				return ctrl.Result{RequeueAfter: 2 * time.Second}
-			}
-
-			instance.Status.Tempo = fmt.Sprintf("%s/%s (%s)", instance.Namespace, tempoName(instance.Name), tempo.Status.TempoVersion)
-			instance.Status.OpenTelemetry = fmt.Sprintf("%s/%s (%s)", instance.Namespace, otelCollectorName(instance.Name), otelcol.Status.Version)
+func (o observabilityInstallerController) updateStatus(ctx context.Context, instance *obsv1alpha1.ObservabilityInstaller, reconcileErr error, operators operatorsStatus) reconcile.Result {
+	previous := instance.Status.DeepCopy()
+	updateExternalSubscriptionCondition(instance, o.capabilities, operators)
+	var requeueAfter time.Duration
+	var statusErr error
+	for _, capability := range o.capabilities {
+		result := capability.UpdateStatus(ctx, instance, o.client)
+		if result.RequeueAfter > 0 && (requeueAfter == 0 || result.RequeueAfter < requeueAfter) {
+			requeueAfter = result.RequeueAfter
 		}
-	} else {
-		instance.Status.Tempo = ""
-		instance.Status.OpenTelemetry = ""
+		if statusErr == nil && result.Err != nil {
+			statusErr = fmt.Errorf("evaluate %s status: %w", capability.Name, result.Err)
+		}
+	}
+	if reconcileErr == nil {
+		reconcileErr = statusErr
 	}
 
 	if reconcileErr != nil {
-		instance.Status.Conditions = []metav1.Condition{
-			{
-				Reason:             conditionReasonError,
-				Type:               conditionTypeReconciled,
-				Status:             metav1.ConditionFalse,
-				Message:            reconcileErr.Error(),
-				LastTransitionTime: metav1.Now(),
-				ObservedGeneration: instance.GetGeneration(),
-			},
+		reason := conditionReasonError
+		if errors.Is(reconcileErr, errDeletionPending) {
+			reason = "OperandDeletionPending"
 		}
+		apimeta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
+			Reason:             reason,
+			Type:               conditionTypeReconciled,
+			Status:             metav1.ConditionFalse,
+			Message:            reconcileErr.Error(),
+			ObservedGeneration: instance.GetGeneration(),
+		})
+	} else {
+		apimeta.RemoveStatusCondition(&instance.Status.Conditions, conditionTypeReconciled)
 	}
 
+	if reflect.DeepEqual(previous, &instance.Status) {
+		return ctrl.Result{RequeueAfter: requeueAfter}
+	}
 	err := o.client.Status().Update(ctx, instance)
 	if err != nil {
 		o.logger.Error(err, "failed to update status")
 		return ctrl.Result{RequeueAfter: 2 * time.Second}
 	}
 
-	return ctrl.Result{}
+	return ctrl.Result{RequeueAfter: requeueAfter}
+}
+
+// updateExternalSubscriptionCondition reports only subscriptions used by this
+// installer, not subscriptions requested by other installers in the cluster.
+func updateExternalSubscriptionCondition(instance *obsv1alpha1.ObservabilityInstaller, definitions []capability.Definition, operators operatorsStatus) {
+	var reused []string
+	for _, definition := range definitions {
+		for _, requirement := range definition.Shared(instance).Operators {
+			if !requirement.Desired {
+				continue
+			}
+			packages := append([]string{requirement.Subscription.Spec.Package}, requirement.EquivalentPackages...)
+			if sub := operators.externalSubscription(packages); sub != nil {
+				reused = append(reused, fmt.Sprintf("%s: %s/%s (package %s)", requirement.Name, sub.Namespace, sub.Name, sub.Spec.Package))
+			}
+		}
+	}
+	if len(reused) == 0 {
+		apimeta.RemoveStatusCondition(&instance.Status.Conditions, conditionTypeExternalOperator)
+		return
+	}
+	slices.Sort(reused)
+	apimeta.SetStatusCondition(&instance.Status.Conditions, metav1.Condition{
+		Type:               conditionTypeExternalOperator,
+		Status:             metav1.ConditionTrue,
+		Reason:             "ReusingSubscription",
+		Message:            "Using externally managed subscriptions: " + strings.Join(reused, ", "),
+		ObservedGeneration: instance.GetGeneration(),
+	})
+}
+
+// subscriptionChanged filters out the frequent Subscription status updates OLM
+// performs (catalog health, lastUpdated, ...). Without it, every such update of
+// any Subscription in the cluster enqueues every ObservabilityInstaller. Only
+// the parts COO acts on are relevant: the spec, the label marking a
+// subscription as COO-managed, the CSV that uninstall deletes, and deletion.
+func subscriptionChanged(e event.UpdateEvent) bool {
+	oldSub, oldOK := e.ObjectOld.(*olmv1alpha1.Subscription)
+	newSub, newOK := e.ObjectNew.(*olmv1alpha1.Subscription)
+	if !oldOK || !newOK {
+		return true
+	}
+	return !equality.Semantic.DeepEqual(oldSub.Spec, newSub.Spec) ||
+		oldSub.Labels[util.ResourceLabel] != newSub.Labels[util.ResourceLabel] ||
+		oldSub.Status.CurrentCSV != newSub.Status.CurrentCSV ||
+		(oldSub.DeletionTimestamp == nil) != (newSub.DeletionTimestamp == nil)
 }
 
 type Options struct {
-	COONamespace          string
-	OpenTelemetryOperator OperatorInstallConfig
-	TempoOperator         OperatorInstallConfig
+	OpenTelemetryOperator  OperatorInstallConfig
+	TempoOperator          OperatorInstallConfig
+	LokiOperator           OperatorInstallConfig
+	ClusterLoggingOperator OperatorInstallConfig
 }
 
-type OperatorInstallConfig struct {
-	Namespace   string
-	PackageName string
-	StartingCSV string
-	Channel     string
-}
+// OperatorInstallConfig is the OLM configuration accepted by capability constructors.
+type OperatorInstallConfig = capability.OperatorConfig
 
 func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 	logger := ctrl.Log.WithName("cluster-observability")
@@ -276,16 +362,19 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 		apiReader:       mgr.GetAPIReader(),
 		scheme:          mgr.GetScheme(),
 		logger:          logger,
-		Options:         opts,
-		watchOTELcol:    &sync.Once{},
-		watchTempo:      &sync.Once{},
+		watches:         newWatchRegistry(),
+		capabilities:    capabilities(opts),
 		discoveryClient: discoveryClient,
 		cache:           mgr.GetCache(),
 	}
 
 	ctrl, err := ctrl.NewControllerManagedBy(mgr).
 		For(&obsv1alpha1.ObservabilityInstaller{}).
-		Owns(&olmv1alpha1.Subscription{}).
+		// Subscriptions are shared and carry no owner reference; any change,
+		// including to a non-COO subscription, can affect every installer.
+		Watches(&olmv1alpha1.Subscription{},
+			handler.EnqueueRequestsFromMapFunc(controller.triggerReconcile),
+			builder.WithPredicates(predicate.Funcs{UpdateFunc: subscriptionChanged})).
 		Owns(&corev1.Secret{}).
 		Owns(&corev1.Namespace{}).
 		Owns(&uiv1alpha1.UIPlugin{}).

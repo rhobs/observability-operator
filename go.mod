@@ -6,9 +6,11 @@ require (
 	github.com/go-logr/logr v1.4.4
 	github.com/goccy/go-yaml v1.19.2
 	github.com/google/go-cmp v0.7.0
+	github.com/grafana/loki/operator/api/loki v0.0.0-20261103095905-0a2213e25d58
 	github.com/grafana/tempo-operator v0.23.1
 	github.com/open-telemetry/opentelemetry-operator/apis v0.162.0
 	github.com/openshift/api v0.0.0-20260615110019-261e3a0546f3
+	github.com/openshift/cluster-logging-operator/api/observability v0.0.0-20261112033401-285263c3e6aa
 	github.com/openshift/controller-runtime-common v0.0.0-20260428152732-64ee174f5e2e
 	github.com/openshift/library-go v0.0.0-20260615113748-bc9d4056464b
 	github.com/operator-framework/api v0.45.0
@@ -62,7 +64,7 @@ require (
 	github.com/evanphx/json-patch/v5 v5.9.11 // indirect
 	github.com/facette/natsort v0.0.0-20181210072756-2cd4dd1e2dcb // indirect
 	github.com/fsnotify/fsnotify v1.10.1 // indirect
-	github.com/fxamacker/cbor/v2 v2.9.3 // indirect
+	github.com/fxamacker/cbor/v2 v2.9.6 // indirect
 	github.com/go-jose/go-jose/v4 v4.1.6 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-logr/zapr v1.3.0 // indirect

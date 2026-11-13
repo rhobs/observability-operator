@@ -2,183 +2,216 @@ package observability
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"strings"
+	"slices"
 
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	obsv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/observability/v1alpha1"
+	"github.com/rhobs/observability-operator/pkg/controllers/observability/capability"
 	"github.com/rhobs/observability-operator/pkg/controllers/util"
 	"github.com/rhobs/observability-operator/pkg/reconciler"
 )
 
 type operatorsStatus struct {
-	cooNamespace string
 	// Subscriptions installed in all namespaces.
-	// The subscription name can be opentelemetry-product or opentelemetry-operator.
+	// A subscription name may include a product-specific suffix.
 	subs []olmv1alpha1.Subscription
 }
 
-// ShouldInstall checks if the operator should be uninstalled.
-// The operator should be installed only if it is not installed
-func (s *operatorsStatus) ShouldInstall(operatorName string) bool {
-	for _, sub := range s.subs {
-		if strings.HasPrefix(sub.Name, operatorName) && sub.Labels[util.ResourceLabel] != util.OpName {
-			return false
-		}
-	}
-	return true
+// ShouldInstall reports whether COO should install the operator. An existing
+// subscription not managed by COO takes precedence, including a subscription to
+// an equivalent package such as the community build.
+func (s *operatorsStatus) ShouldInstall(packageNames []string) bool {
+	return s.externalSubscription(packageNames) == nil
 }
 
-func (s *operatorsStatus) cooManages(operatorName string) *olmv1alpha1.Subscription {
+func (s *operatorsStatus) externalSubscription(packageNames []string) *olmv1alpha1.Subscription {
+	for i := range s.subs {
+		sub := &s.subs[i]
+		if sub.Spec != nil && slices.Contains(packageNames, sub.Spec.Package) && sub.Labels[util.ResourceLabel] != util.OpName {
+			return sub
+		}
+	}
+	return nil
+}
+
+func (s *operatorsStatus) cooManages(packageName string) *olmv1alpha1.Subscription {
 	for _, sub := range s.subs {
-		if strings.HasPrefix(sub.Name, operatorName) && sub.Labels[util.ResourceLabel] == util.OpName {
+		if sub.Spec != nil && sub.Spec.Package == packageName && sub.Labels[util.ResourceLabel] == util.OpName {
 			return &sub
 		}
 	}
 	return nil
 }
 
-// getReconcilers returns a list of reconcilers for the ObservabilityInstaller instance.
-// The subByName is used to check if the operators are already installed, if not, they will be installed.
-// The csvByName is used to uninstall the operators, the name of the CSV contains the version therefore it must be retrieved from the cluster.
-// The CSV is not deleted when the subscription is deleted, so we need to delete it explicitly.
-func getReconcilers(ctx context.Context, k8sClient client.Client, k8sReader client.Reader, instance *obsv1alpha1.ObservabilityInstaller, opts Options, operatorsStatus operatorsStatus) ([]reconciler.Reconciler, error) {
-	var reconcilers []reconciler.Reconciler
-	//var otelOperator client.Object
-	//var tempoOperator client.Object
-	var instanceObjects []client.Object
-	installedObjects := map[string]client.Object{}
-
-	// the OTEL and Tempo operators are rolling release, meaning only the latest released versions are supported.
-	// At the moment there are no compatibility issues between the operands of these two operators, so we can
-	// install them together in any versions.
-
-	otelSubs := subscription(opts.OpenTelemetryOperator)
-	tempoSubs := subscription(opts.TempoOperator)
-
-	// instance objects
-	otelCol, err := otelCollector(instance)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create OpenTelemetryCollector: %w", err)
+// operatorReconcilers returns the reconcilers that install operators and,
+// separately, those that uninstall them. The uninstall reconcilers must run
+// after the operand deleters: removing an operator first would leave nothing to
+// clear the finalizers its operands carry.
+func operatorReconcilers(requirements []capability.OperatorRequirement, status operatorsStatus) (install, uninstall []reconciler.Reconciler) {
+	for _, requirement := range requirements {
+		packageNames := append([]string{requirement.Subscription.Spec.Package}, requirement.EquivalentPackages...)
+		if requirement.Desired {
+			if status.ShouldInstall(packageNames) {
+				// Subscriptions are shared across all ObservabilityInstallers, so
+				// they carry no owner reference. An owner reference to one installer
+				// would let garbage collection uninstall an operator still needed by
+				// another installer, and a controller reference can record only one
+				// owner. (Owner references also cannot cross namespaces, so on
+				// earlier releases most Subscriptions were already unowned.) The
+				// operator lifecycle is controlled by the requirements aggregated
+				// over all installers instead.
+				install = append(install, reconciler.NewUnmanagedCreateUpdateReconciler(requirement.Subscription))
+			}
+			continue
+		}
+		uninstall = append(uninstall, managedOperatorDeleters(requirement.Subscription.Spec.Package, status)...)
 	}
-	instanceObjects = append(instanceObjects, otelCol)
-	otelcolRBAC, otelcolRBACBinding := otelCollectorComponentsRBAC(instance)
-	instanceObjects = append(instanceObjects, otelcolRBAC)
-	instanceObjects = append(instanceObjects, otelcolRBACBinding)
-	instanceObjects = append(instanceObjects, tempoStack(instance))
+	return install, uninstall
+}
 
-	secrets, err := tempoStackSecrets(ctx, k8sClient, k8sReader, *instance)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create TempoStack secret: %w", err)
-	}
-	if secrets.objectStorage != nil {
-		instanceObjects = append(instanceObjects, secrets.objectStorage)
-	}
-	if secrets.objectStorageTLSSecret != nil {
-		instanceObjects = append(instanceObjects, secrets.objectStorageTLSSecret)
-	}
-	if secrets.objectStorageCAConfigMap != nil {
-		instanceObjects = append(instanceObjects, secrets.objectStorageCAConfigMap)
+func managedOperatorDeleters(name string, status operatorsStatus) []reconciler.Reconciler {
+	sub := status.cooManages(name)
+	if sub == nil {
+		return nil
 	}
 
-	otelcolTempoRBAC, otelcolTempoRBACBinding := otelCollectorTempoRBAC(instance)
-	instanceObjects = append(instanceObjects, otelcolTempoRBAC)
-	instanceObjects = append(instanceObjects, otelcolTempoRBACBinding)
-	instanceObjects = append(instanceObjects, uiPlugin())
+	result := []reconciler.Reconciler{reconciler.NewDeleter(sub)}
+	if sub.Status.CurrentCSV != "" {
+		result = append(result, reconciler.NewDeleter(&olmv1alpha1.ClusterServiceVersion{
+			ObjectMeta: metav1.ObjectMeta{Name: sub.Status.CurrentCSV, Namespace: sub.Namespace},
+		}))
+	}
+	return result
+}
 
-	if instance.ObjectMeta.DeletionTimestamp != nil {
-		for _, obj := range instanceObjects {
-			reconcilers = append(reconcilers, reconciler.NewDeleter(obj))
+// getReconcilers returns the reconcilers needed to move an
+// ObservabilityInstaller to its desired state.
+func getReconcilers(ctx context.Context, k8sReader client.Reader, instance *obsv1alpha1.ObservabilityInstaller, definitions []capability.Definition, status operatorsStatus, instances []obsv1alpha1.ObservabilityInstaller) ([]reconciler.Reconciler, error) {
+	shared := aggregateShared(definitions, instances)
+	var plannedDesiredObjects, plannedOwnedObjects []client.Object
+	for _, planner := range definitions {
+		plan, err := planner.Plan(ctx, instance, k8sReader)
+		if err != nil {
+			return nil, fmt.Errorf("plan %s capability: %w", planner.Name, err)
 		}
-		if otelSub := operatorsStatus.cooManages("opentelemetry"); otelSub != nil {
-			reconcilers = append(reconcilers, reconciler.NewDeleter(otelSub))
-			reconcilers = append(reconcilers, reconciler.NewDeleter(
-				&olmv1alpha1.ClusterServiceVersion{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      otelSub.Status.CurrentCSV,
-						Namespace: otelSub.Namespace,
-					},
-				}))
-		}
-		if tempoSub := operatorsStatus.cooManages("tempo"); tempoSub != nil {
-			reconcilers = append(reconcilers, reconciler.NewDeleter(tempoSub))
-			reconcilers = append(reconcilers, reconciler.NewDeleter(
-				&olmv1alpha1.ClusterServiceVersion{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      tempoSub.Status.CurrentCSV,
-						Namespace: tempoSub.Namespace,
-					},
-				}))
-		}
-		return reconcilers, nil
+		plannedDesiredObjects = append(plannedDesiredObjects, plan.Desired...)
+		plannedOwnedObjects = append(plannedOwnedObjects, plan.Owned...)
 	}
 
-	// Install operators and instances
-	if tracing := instance.Spec.GetCapabilities().GetTracing(); tracing != nil && tracing.Enabled {
-		// install operators and instances
-		if operatorsStatus.ShouldInstall("opentelemetry") {
-			reconcilers = append(reconcilers, reconciler.NewCreateUpdateReconciler(otelSubs, instance))
-			installedObjects[gvkNameIdentifier(otelSubs)] = otelSubs
-		}
-		if operatorsStatus.ShouldInstall("tempo") {
-			reconcilers = append(reconcilers, reconciler.NewCreateUpdateReconciler(tempoSubs, instance))
-			installedObjects[gvkNameIdentifier(tempoSubs)] = tempoSubs
-		}
-		for _, obj := range instanceObjects {
-			reconcilers = append(reconcilers, reconciler.NewUpdater(obj, instance))
-			installedObjects[gvkNameIdentifier(obj)] = obj
-		}
+	if instance.DeletionTimestamp != nil {
+		plannedDesiredObjects = nil
 	}
-	// install operators only
-	if tracing := instance.Spec.GetCapabilities().GetTracing(); tracing != nil &&
-		tracing.GetOperators() != nil &&
-		(tracing.GetOperators().Install != nil && *tracing.GetOperators().Install) {
-		// install operators only
-		if operatorsStatus.ShouldInstall("opentelemetry") {
-			reconcilers = append(reconcilers, reconciler.NewCreateUpdateReconciler(otelSubs, instance))
-			installedObjects[gvkNameIdentifier(otelSubs)] = otelSubs
-		}
-		if operatorsStatus.ShouldInstall("tempo") {
-			reconcilers = append(reconcilers, reconciler.NewCreateUpdateReconciler(tempoSubs, instance))
-			installedObjects[gvkNameIdentifier(tempoSubs)] = tempoSubs
-		}
-	}
+	plannedOwnedObjects = append(plannedOwnedObjects, shared.Owned...)
+	plannedDesiredObjects = append(plannedDesiredObjects, shared.Desired...)
+	install, uninstall := operatorReconcilers(shared.Operators, status)
+	result := install
+	desiredObjects := map[string]struct{}{}
+	result = appendUpdaters(result, plannedDesiredObjects, instance, desiredObjects)
 
-	// Delete not created objects.
-	for _, obj := range instanceObjects {
-		if installedObjects[gvkNameIdentifier(obj)] == nil {
-			reconcilers = append(reconcilers, reconciler.NewDeleter(obj))
+	var deleting []client.Object
+	for _, obj := range plannedOwnedObjects {
+		if _, desired := desiredObjects[gvkNameIdentifier(obj)]; !desired {
+			result = append(result, deleterFor(obj))
+			deleting = append(deleting, obj)
 		}
 	}
-	// Delete CSV explicitly because it is not deleted when the subscription is deleted.
-	// This handles the uninstall case when the capability is disabled or the operators installation is disabled.
-	if otelSub := operatorsStatus.cooManages("opentelemetry"); otelSub != nil && installedObjects[gvkNameIdentifier(otelSubs)] == nil {
-		reconcilers = append(reconcilers, reconciler.NewDeleter(otelSub))
-		reconcilers = append(reconcilers, reconciler.NewDeleter(
-			&olmv1alpha1.ClusterServiceVersion{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      otelSub.Status.CurrentCSV,
-					Namespace: otelSub.Namespace,
-				},
-			}))
+	// A successful Delete only starts deletion. Keep the operator installed (and
+	// the installer's finalizer in place) until operand finalizers are cleared.
+	// Deleting installers other than the one being reconciled may still own
+	// operands, so their inventory gates uninstall too.
+	if len(uninstall) > 0 {
+		pending, err := otherDeletingInventory(ctx, k8sReader, instance, definitions, instances)
+		if err != nil {
+			return nil, err
+		}
+		waitObjects := append(deleting, pending...)
+		if len(waitObjects) > 0 {
+			result = append(result, waitForDeletion{reader: k8sReader, objects: waitObjects})
+		}
 	}
-	if tempoSub := operatorsStatus.cooManages("tempo"); tempoSub != nil && installedObjects[gvkNameIdentifier(tempoSubs)] == nil {
-		reconcilers = append(reconcilers, reconciler.NewDeleter(tempoSub))
-		reconcilers = append(reconcilers, reconciler.NewDeleter(
-			&olmv1alpha1.ClusterServiceVersion{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      tempoSub.Status.CurrentCSV,
-					Namespace: tempoSub.Namespace,
-				},
-			}))
-	}
+	result = append(result, uninstall...)
+	return result, nil
+}
 
-	return reconcilers, nil
+// otherDeletingInventory returns the cleanup inventory of installers that are
+// not the one being reconciled but are also being deleted. Their operands may
+// still be finalizing even though they no longer require an operator, so the
+// inventory gates operator uninstall. It is only read, never applied or
+// deleted: each installer reconciles its own operands.
+func otherDeletingInventory(ctx context.Context, k8sReader client.Reader, current *obsv1alpha1.ObservabilityInstaller, definitions []capability.Definition, instances []obsv1alpha1.ObservabilityInstaller) ([]client.Object, error) {
+	currentKey := client.ObjectKeyFromObject(current)
+	var objects []client.Object
+	for i := range instances {
+		other := &instances[i]
+		if other.DeletionTimestamp == nil || client.ObjectKeyFromObject(other) == currentKey {
+			continue
+		}
+		for _, definition := range definitions {
+			plan, err := definition.Plan(ctx, other, k8sReader)
+			if err != nil {
+				return nil, fmt.Errorf("plan %s capability for deleting installer %s: %w", definition.Name, other.Name, err)
+			}
+			objects = append(objects, plan.Owned...)
+		}
+	}
+	return objects, nil
+}
+
+var errDeletionPending = errors.New("waiting for operand deletion")
+
+type waitForDeletion struct {
+	reader  client.Reader // bypass the cache: deletion and label changes may not be visible there yet
+	objects []client.Object
+}
+
+func (w waitForDeletion) Reconcile(ctx context.Context, _ client.Client, _ *runtime.Scheme) error {
+	for _, obj := range w.objects {
+		live := obj.DeepCopyObject().(client.Object)
+		err := w.reader.Get(ctx, client.ObjectKeyFromObject(obj), live)
+		if apierrors.IsNotFound(err) || meta.IsNoMatchError(err) {
+			continue
+		}
+		if err != nil {
+			return err
+		}
+		// The guarded deleter leaves user-created resources alone; they must not
+		// hold an installer finalizer indefinitely.
+		if !util.IsOperatorManaged(live) {
+			continue
+		}
+		return fmt.Errorf("%w: %s/%s (%s)", errDeletionPending, obj.GetNamespace(), obj.GetName(), obj.GetObjectKind().GroupVersionKind())
+	}
+	return nil
+}
+
+func appendUpdaters(result []reconciler.Reconciler, objects []client.Object, instance *obsv1alpha1.ObservabilityInstaller, desired map[string]struct{}) []reconciler.Reconciler {
+	for _, obj := range objects {
+		result = append(result, updaterFor(obj, instance))
+		desired[gvkNameIdentifier(obj)] = struct{}{}
+	}
+	return result
+}
+
+func updaterFor(obj client.Object, instance *obsv1alpha1.ObservabilityInstaller) reconciler.Reconciler {
+	return reconciler.NewGuardedUpdater(obj, instance)
+}
+
+// deleterFor returns the cleanup reconciler for an owned resource. Deletion is
+// guarded by COO's ownership labels (or an owner reference to an installer) so
+// a manually created resource that happens to share a derived name is
+// preserved.
+func deleterFor(obj client.Object) reconciler.Reconciler {
+	return reconciler.NewManagedDeleter(obj)
 }
 
 func gvkNameIdentifier(obj client.Object) string {
-	return fmt.Sprintf("%s/%s", obj.GetObjectKind().GroupVersionKind().String(), obj.GetName())
+	return fmt.Sprintf("%s/%s/%s", obj.GetObjectKind().GroupVersionKind().String(), obj.GetNamespace(), obj.GetName())
 }
