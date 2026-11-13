@@ -837,6 +837,7 @@ func assertPrometheusManagedFields(t *testing.T) {
 		},
 		EnableRemoteWriteReceiver: true,
 		EnableOtlpHttpReceiver:    func(b bool) *bool { return &b }(true),
+		EnableFeatures:            []string{"exemplar-storage"},
 		WebTLSConfig: &stack.WebTLSConfig{
 			Certificate: stack.SecretKeySelector{
 				Name: "prom-test-managedfields-tls-secret",
