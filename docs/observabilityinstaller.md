@@ -54,10 +54,10 @@ spec:
         objectStorage:
           s3:
             bucket: tempo
-            endpoint: http://minio.minio.svc:9000
+            endpoint: https://s3.example.com
             accessKeyID: tempo
             accessKeySecret:
-              name: minio-secret
+              name: s3-credentials
               key: access_key_secret
             region: us-east-1
 ```
@@ -90,10 +90,10 @@ spec:
         objectStorage:
           s3:
             bucket: loki
-            endpoint: http://minio.minio.svc:9000
+            endpoint: https://s3.example.com
             accessKeyID: loki
             accessKeySecret:
-              name: minio-secret
+              name: s3-credentials
               key: access_key_secret
             region: us-east-1
 ```

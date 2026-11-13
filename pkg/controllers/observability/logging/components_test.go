@@ -74,7 +74,7 @@ func TestLokiStack(t *testing.T) {
 								ObjectStorage: &obsv1alpha1.ObjectStorageSpec{
 									S3: &obsv1alpha1.S3Spec{
 										Bucket:   "test-bucket",
-										Endpoint: "http://minio:9000",
+										Endpoint: "http://s3.example.com",
 									},
 								},
 							},
@@ -179,7 +179,7 @@ func TestLokiStack(t *testing.T) {
 								ObjectStorage: &obsv1alpha1.ObjectStorageSpec{
 									S3: &obsv1alpha1.S3Spec{
 										Bucket:   "test-bucket",
-										Endpoint: "http://minio:9000",
+										Endpoint: "https://s3.example.com",
 									},
 									TLS: &obsv1alpha1.TLSSpec{
 										CAConfigMap: &obsv1alpha1.ConfigMapKeySelector{

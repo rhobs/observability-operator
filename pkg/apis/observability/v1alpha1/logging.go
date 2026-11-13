@@ -33,6 +33,7 @@ type LokiStackSpec struct {
 	//
 	// +required
 	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors="urn:alm:descriptor:io.kubernetes:StorageClass",displayName="Storage Class Name"
 	StorageClassName string `json:"storageClassName"`
 
