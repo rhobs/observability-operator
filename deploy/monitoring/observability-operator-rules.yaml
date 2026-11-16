@@ -15,7 +15,7 @@ spec:
     - alert: ClusterObservabilityOperatorReconciliationsFailed
       annotations:
         description: |-
-          {{$value | humanize}}% of reconciliation requests are failing for the '{{ $labels.controller}}' controller.
+          {{$value | humanizePercentage}} of reconciliation requests are failing for the '{{ $labels.controller}}' controller.
 
           Check the logs of the {{$labels.namespace}}/{{$labels.pod}} pod to investigate further.
         summary: Cluster observability operator fails to reconcile resources
