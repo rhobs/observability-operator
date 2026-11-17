@@ -2,6 +2,7 @@ package observability
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	tempov1alpha1 "github.com/grafana/tempo-operator/api/tempo/v1alpha1"
@@ -18,10 +19,46 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
 	obsv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/observability/v1alpha1"
 	uiv1alpha1 "github.com/rhobs/observability-operator/pkg/apis/uiplugin/v1alpha1"
+	"github.com/rhobs/observability-operator/pkg/controllers/observability/capability"
+	"github.com/rhobs/observability-operator/pkg/reconciler"
 )
+
+type uninventoriedInstallerCapability struct{ fakeCapability }
+
+func (uninventoriedInstallerCapability) Desired(context.Context, *obsv1alpha1.ObservabilityInstaller, client.Reader) ([]client.Object, error) {
+	return []client.Object{configMap("test-namespace")}, nil
+}
+
+func TestGetReconcilersRejectsUninventoriedInstallerResource(t *testing.T) {
+	instance := &obsv1alpha1.ObservabilityInstaller{ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test-namespace"}}
+	c := uninventoriedInstallerCapability{fakeCapability{name: "broken"}}
+	reconcilers, err := getReconcilers(context.Background(), fake.NewClientBuilder().WithScheme(getScheme()).Build(),
+		instance, []capability.Capability{c}, operatorsStatus{}, []obsv1alpha1.ObservabilityInstaller{*instance})
+	require.ErrorContains(t, err, "not in its inventory")
+	require.ErrorContains(t, err, "broken")
+	require.Empty(t, reconcilers)
+}
+
+func TestGetReconcilersPreservesSharedInventoryOnPlanningError(t *testing.T) {
+	ctx := context.Background()
+	instance := &obsv1alpha1.ObservabilityInstaller{ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"}}
+	shared := configMap("test")
+	planErr := errors.New("missing credential")
+	c := fake.NewClientBuilder().WithScheme(getScheme()).WithObjects(shared).Build()
+	reconcilers, err := getReconcilers(ctx, c, instance, []capability.Capability{
+		failingDesiredCapability{fakeCapability: fakeCapability{name: "broken", shared: []client.Object{shared}}, err: planErr},
+	}, operatorsStatus{}, []obsv1alpha1.ObservabilityInstaller{*instance})
+	require.ErrorIs(t, err, planErr)
+	for _, rec := range reconcilers {
+		require.NoError(t, rec.Reconcile(ctx, c, getScheme()))
+	}
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(shared), &corev1.ConfigMap{}))
+}
 
 func TestGetReconcilers(t *testing.T) {
 	trueVal := true
@@ -38,6 +75,8 @@ func TestGetReconcilers(t *testing.T) {
 				mockClient := &MockClient{}
 				mockClient.On("Get", context.Background(), mock.Anything, mock.IsType(&olmv1alpha1.Subscription{}), mock.Anything).Return(nil)
 				mockClient.On("Apply", context.Background(), mock.Anything, mock.Anything).Return(nil)
+				mockClient.On("Delete", context.Background(), mock.IsType(&corev1.Secret{}), mock.Anything, mock.Anything).Return(nil)
+				mockClient.On("Delete", context.Background(), mock.IsType(&corev1.ConfigMap{}), mock.Anything, mock.Anything).Return(nil)
 				return mockClient
 			},
 			instance: &obsv1alpha1.ObservabilityInstaller{
@@ -65,6 +104,8 @@ func TestGetReconcilers(t *testing.T) {
 				mockClient.On("Get", context.Background(), mock.Anything, mock.IsType(&corev1.Secret{}), mock.Anything).Return(nil)
 				mockClient.On("Get", context.Background(), mock.Anything, mock.IsType(&corev1.ConfigMap{}), mock.Anything).Return(nil)
 				mockClient.On("Apply", context.Background(), mock.Anything, mock.Anything).Return(nil)
+				mockClient.On("Delete", context.Background(), mock.IsType(&corev1.Secret{}), mock.Anything, mock.Anything).Return(nil)
+				mockClient.On("Delete", context.Background(), mock.IsType(&corev1.ConfigMap{}), mock.Anything, mock.Anything).Return(nil)
 				return mockClient
 			},
 			instance: &obsv1alpha1.ObservabilityInstaller{
@@ -114,6 +155,7 @@ func TestGetReconcilers(t *testing.T) {
 				mockClient.On("Delete", context.Background(), mock.IsType(&rbacv1.ClusterRoleBinding{}), mock.Anything, mock.Anything).Return(nil)
 				mockClient.On("Delete", context.Background(), mock.IsType(&tempov1alpha1.TempoStack{}), mock.Anything, mock.Anything).Return(nil)
 				mockClient.On("Delete", context.Background(), mock.IsType(&corev1.Secret{}), mock.Anything, mock.Anything).Return(nil)
+				mockClient.On("Delete", context.Background(), mock.IsType(&corev1.ConfigMap{}), mock.Anything, mock.Anything).Return(nil)
 				mockClient.On("Delete", context.Background(), mock.IsType(&uiv1alpha1.UIPlugin{}), mock.Anything, mock.Anything).Return(nil)
 				return mockClient
 			},
@@ -148,6 +190,7 @@ func TestGetReconcilers(t *testing.T) {
 				mockClient.On("Delete", context.Background(), mock.IsType(&rbacv1.ClusterRoleBinding{}), mock.Anything, mock.Anything).Return(nil)
 				mockClient.On("Delete", context.Background(), mock.IsType(&tempov1alpha1.TempoStack{}), mock.Anything, mock.Anything).Return(nil)
 				mockClient.On("Delete", context.Background(), mock.IsType(&corev1.Secret{}), mock.Anything, mock.Anything).Return(nil)
+				mockClient.On("Delete", context.Background(), mock.IsType(&corev1.ConfigMap{}), mock.Anything, mock.Anything).Return(nil)
 				mockClient.On("Delete", context.Background(), mock.IsType(&uiv1alpha1.UIPlugin{}), mock.Anything, mock.Anything).Return(nil)
 				return mockClient
 			},
@@ -172,6 +215,8 @@ func TestGetReconcilers(t *testing.T) {
 			mockClient: func() *MockClient {
 				mockClient := &MockClient{}
 				mockClient.On("Apply", context.Background(), mock.Anything, mock.Anything).Return(nil)
+				mockClient.On("Delete", context.Background(), mock.IsType(&corev1.Secret{}), mock.Anything, mock.Anything).Return(nil)
+				mockClient.On("Delete", context.Background(), mock.IsType(&corev1.ConfigMap{}), mock.Anything, mock.Anything).Return(nil)
 				return mockClient
 			},
 			instance: &obsv1alpha1.ObservabilityInstaller{
@@ -195,12 +240,14 @@ func TestGetReconcilers(t *testing.T) {
 						Name:      "opentelemetry-operator",
 						Namespace: "openshift",
 					},
+					Spec: &olmv1alpha1.SubscriptionSpec{Package: "opentelemetry-operator"},
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "tempo-operator",
 						Namespace: "openshift",
 					},
+					Spec: &olmv1alpha1.SubscriptionSpec{Package: "tempo-operator"},
 				},
 			},
 		},
@@ -216,6 +263,7 @@ func TestGetReconcilers(t *testing.T) {
 				mockClient.On("Delete", context.Background(), mock.IsType(&rbacv1.ClusterRoleBinding{}), mock.Anything, mock.Anything).Return(nil)
 				mockClient.On("Delete", context.Background(), mock.IsType(&tempov1alpha1.TempoStack{}), mock.Anything, mock.Anything).Return(nil)
 				mockClient.On("Delete", context.Background(), mock.IsType(&corev1.Secret{}), mock.Anything, mock.Anything).Return(nil)
+				mockClient.On("Delete", context.Background(), mock.IsType(&corev1.ConfigMap{}), mock.Anything, mock.Anything).Return(nil)
 				mockClient.On("Delete", context.Background(), mock.IsType(&uiv1alpha1.UIPlugin{}), mock.Anything, mock.Anything).Return(nil)
 				return mockClient
 			},
@@ -234,23 +282,25 @@ func TestGetReconcilers(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			mockClient := test.mockClient()
 
-			reconcilers, err := getReconcilers(context.Background(), mockClient, mockClient, test.instance, Options{
+			reconcilers, err := getReconcilers(context.Background(), mockClient, test.instance, capabilities(Options{
 				COONamespace: "operators",
 				OpenTelemetryOperator: OperatorInstallConfig{
-					Namespace:   "operators",
-					PackageName: "otel",
-					StartingCSV: "otel",
-					Channel:     "stable",
+					Namespace:          "operators",
+					PackageName:        "otel",
+					StartingCSV:        "otel",
+					Channel:            "stable",
+					EquivalentPackages: []string{"opentelemetry-operator"},
 				},
 				TempoOperator: OperatorInstallConfig{
-					Namespace:   "operators",
-					PackageName: "tempo",
-					StartingCSV: "tempo",
-					Channel:     "stable",
+					Namespace:          "operators",
+					PackageName:        "tempo",
+					StartingCSV:        "tempo",
+					Channel:            "stable",
+					EquivalentPackages: []string{"tempo-operator"},
 				},
-			}, operatorsStatus{
+			}), operatorsStatus{
 				subs: test.installedSubscriptions,
-			})
+			}, []obsv1alpha1.ObservabilityInstaller{*test.instance})
 			require.NoError(t, err)
 
 			for _, rec := range reconcilers {
@@ -260,6 +310,37 @@ func TestGetReconcilers(t *testing.T) {
 		})
 	}
 
+}
+
+func TestMissingCRDDeleter(t *testing.T) {
+	target := &otelv1beta1.OpenTelemetryCollector{ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "test"}}
+	otherErr := errors.New("delete failed")
+	for _, tt := range []struct {
+		name      string
+		deleteErr error
+		wantErr   error
+	}{
+		{name: "missing object"},
+		{name: "missing CRD", deleteErr: &meta.NoKindMatchError{GroupKind: schema.GroupKind{Kind: "OpenTelemetryCollector"}}},
+		{name: "other error", deleteErr: otherErr, wantErr: otherErr},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			c := fake.NewClientBuilder().WithScheme(getScheme()).WithInterceptorFuncs(interceptor.Funcs{
+				Delete: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.DeleteOption) error {
+					if tt.deleteErr != nil {
+						return tt.deleteErr
+					}
+					return c.Delete(ctx, obj, opts...)
+				},
+			}).Build()
+			err := missingCRDDeleter{reconciler.NewDeleter(target)}.Reconcile(context.Background(), c, getScheme())
+			if tt.wantErr == nil {
+				require.NoError(t, err)
+			} else {
+				require.ErrorIs(t, err, tt.wantErr)
+			}
+		})
+	}
 }
 
 func getScheme() *runtime.Scheme {
