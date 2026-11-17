@@ -1,0 +1,409 @@
+---
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: coo-fbc-tests
+spec:
+  description: >-
+    Test one ART COO FBC on one OpenShift version. IntegrationTestScenarios
+    define the OCP-version x test-type matrix; this pipeline does not fan out.
+    Fresh-install and released-to-candidate upgrade runs share the same Tasks,
+    provisioning, candidate verification, and existing COO Go e2e suite.
+    The current test platform is linux/amd64.
+  params:
+    - name: SNAPSHOT
+      type: string
+      description: JSON spec of the FBC Snapshot supplied by Konflux
+    - name: ocp_version
+      default: "4.22"
+      description: OCP minor version of this matrix row
+    - name: test_type
+      default: e2e
+      description: "e2e: fresh installation; upgrade: released operator to candidate"
+    - name: tests_ref
+      default: release-coo-1.5
+      description: Public rhobs/observability-operator commit, tag, or release branch
+    - name: upgrade_from_csv
+      default: ""
+      description: "Upgrade only: starting CSV; empty selects the released stable channel head"
+    - name: stage_registry_secret
+      default: stage-registry-creds
+      description: Tenant dockerconfigjson Secret for stage and any private FBC pulls
+    - name: pipeline_repository
+      default: https://github.com/rhobs/observability-operator.git
+      description: Repository containing this pipeline and its shared Tekton Tasks
+    - name: pipeline_revision
+      default: main
+      description: Match the ITS pipeline resolver revision when pinning or testing a branch
+    - name: cluster_workflow
+      default: hypershift-hostedcluster-workflow
+      description: OpenShift CI provisioning workflow for this OCP matrix row
+    - name: cluster_profile
+      default: aws-konflux-prod
+      description: Approved cluster profile; the default is for shared HyperShift provisioning
+    - name: cluster_releases
+      default: ""
+      description: Optional ci-operator releases JSON; empty uses stable ocp_version
+    - name: provision_timeout
+      default: 90m
+      description: Time allowed for cluster provisioning, excluding tests
+    - name: go_image
+      # The build root from .ci-operator.yaml, pinned to its amd64 image.
+      default: registry.ci.openshift.org/openshift/release@sha256:432f57cac67dec926e16d8dd95f17cbe8046e7a0192a5caba3b90ec91923400d
+      description: Standard CI Go build root with git, gotestsum, and test2json
+    - name: test_timeout
+      default: 60m
+      description: Timeout of the existing COO Go e2e suite
+
+  tasks:
+    # Common: resolve this matrix row before requesting a cluster.
+    - name: resolve-snapshot
+      description: Select the immutable FBC and skip other OCP versions
+      taskRef:
+        resolver: git
+        params:
+          - name: url
+            value: $(params.pipeline_repository)
+          - name: revision
+            value: $(params.pipeline_revision)
+          - name: pathInRepo
+            value: konflux/integration-tests/tasks/resolve-snapshot.yaml
+      params:
+        - name: SNAPSHOT
+          value: $(params.SNAPSHOT)
+        - name: ocp-version
+          value: $(params.ocp_version)
+        - name: test-type
+          value: $(params.test_type)
+        - name: registry-secret
+          value: $(params.stage_registry_secret)
+
+    - name: resolve-release
+      description: Resolve the candidate CSV, bundle, and installation namespace
+      when:
+        - input: $(tasks.resolve-snapshot.results.matches)
+          operator: in
+          values: ["true"]
+      taskRef:
+        resolver: git
+        params:
+          - name: url
+            value: $(params.pipeline_repository)
+          - name: revision
+            value: $(params.pipeline_revision)
+          - name: pathInRepo
+            value: konflux/integration-tests/tasks/resolve-release.yaml
+      params:
+        - name: fbc-image
+          value: $(tasks.resolve-snapshot.results.fbc-image)
+        - name: coo-stream
+          value: $(tasks.resolve-snapshot.results.coo-stream)
+        - name: registry-secret
+          value: $(params.stage_registry_secret)
+
+    - name: prepare-cluster-env
+      description: Prepare the release selector and registry mirrors for this row
+      runAfter: [resolve-release]
+      when:
+        - input: $(tasks.resolve-snapshot.results.matches)
+          operator: in
+          values: ["true"]
+      taskRef:
+        resolver: git
+        params:
+          - name: url
+            value: $(params.pipeline_repository)
+          - name: revision
+            value: $(params.pipeline_revision)
+          - name: pathInRepo
+            value: konflux/integration-tests/tasks/prepare-cluster-env.yaml
+      params:
+        - name: ocp-version
+          value: $(params.ocp_version)
+        - name: workflow
+          value: $(params.cluster_workflow)
+        - name: releases
+          value: $(params.cluster_releases)
+
+    - name: provision-cluster
+      description: Provision a dedicated cluster, never reuse a shared test installation
+      timeout: 2h
+      when:
+        - input: $(tasks.resolve-snapshot.results.matches)
+          operator: in
+          values: ["true"]
+      taskRef:
+        resolver: git
+        params:
+          - name: url
+            value: https://github.com/openshift/konflux-tasks
+          - name: revision
+            value: 2fcd2e481fc42fb3a45bfc51484a45ad3e2af77b
+          - name: pathInRepo
+            value: tasks/provision-ephemeral-cluster/0.1/provision-ephemeral-cluster.yaml
+      params:
+        - name: ownerName
+          value: $(context.pipelineRun.name)
+        - name: ownerUid
+          value: $(context.pipelineRun.uid)
+        - name: workflow
+          value: $(params.cluster_workflow)
+        - name: clusterProfile
+          value: $(params.cluster_profile)
+        - name: timeout
+          value: $(params.provision_timeout)
+        - name: waitForTearDownTimeout
+          value: 4h
+        - name: releases
+          value: $(tasks.prepare-cluster-env.results.releases)
+        - name: env
+          value: $(tasks.prepare-cluster-env.results.env)
+
+    - name: configure-cluster
+      description: Configure stage pulls, digest mirrors, and OpenShift test prerequisites
+      when:
+        - input: $(tasks.resolve-snapshot.results.matches)
+          operator: in
+          values: ["true"]
+      taskRef:
+        resolver: git
+        params:
+          - name: url
+            value: $(params.pipeline_repository)
+          - name: revision
+            value: $(params.pipeline_revision)
+          - name: pathInRepo
+            value: konflux/integration-tests/tasks/configure-cluster.yaml
+      params:
+        - name: credentials-secret
+          value: $(tasks.provision-cluster.results.secretRef)
+        - name: registry-secret
+          value: $(params.stage_registry_secret)
+        - name: operator-namespace
+          value: $(tasks.resolve-release.results.operator-namespace)
+        - name: workflow
+          value: $(params.cluster_workflow)
+
+    # Fresh-install path.
+    - name: install-candidate
+      description: Install the candidate directly from the FBC
+      runAfter: [configure-cluster]
+      when:
+        - input: $(tasks.resolve-snapshot.results.matches)
+          operator: in
+          values: ["true"]
+        - input: $(params.test_type)
+          operator: in
+          values: ["e2e"]
+      taskRef:
+        resolver: git
+        params:
+          - name: url
+            value: $(params.pipeline_repository)
+          - name: revision
+            value: $(params.pipeline_revision)
+          - name: pathInRepo
+            value: konflux/integration-tests/tasks/olm-operator.yaml
+      params:
+        - name: credentials-secret
+          value: $(tasks.provision-cluster.results.secretRef)
+        - name: operator-namespace
+          value: $(tasks.resolve-release.results.operator-namespace)
+        - name: catalog-image
+          value: $(tasks.resolve-snapshot.results.fbc-image)
+        - name: desired-csv
+          value: $(tasks.resolve-release.results.csv-name)
+
+    # Upgrade path: keep the Subscription and existing workloads in place.
+    - name: install-released
+      description: Install the released stable operator, optionally at a pinned baseline CSV
+      runAfter: [configure-cluster]
+      when:
+        - input: $(tasks.resolve-snapshot.results.matches)
+          operator: in
+          values: ["true"]
+        - input: $(params.test_type)
+          operator: in
+          values: ["upgrade"]
+      taskRef:
+        resolver: git
+        params:
+          - name: url
+            value: $(params.pipeline_repository)
+          - name: revision
+            value: $(params.pipeline_revision)
+          - name: pathInRepo
+            value: konflux/integration-tests/tasks/olm-operator.yaml
+      params:
+        - name: credentials-secret
+          value: $(tasks.provision-cluster.results.secretRef)
+        - name: operator-namespace
+          value: $(tasks.resolve-release.results.operator-namespace)
+        - name: catalog-name
+          value: redhat-operators
+        - name: catalog-namespace
+          value: openshift-marketplace
+        - name: desired-csv
+          value: $(params.upgrade_from_csv)
+
+    - name: prepare-upgrade-fixture
+      description: Create a persistent MonitoringStack with the released operator
+      runAfter: [install-released]
+      when:
+        - input: $(tasks.resolve-snapshot.results.matches)
+          operator: in
+          values: ["true"]
+        - input: $(params.test_type)
+          operator: in
+          values: ["upgrade"]
+      taskRef:
+        resolver: git
+        params:
+          - name: url
+            value: $(params.pipeline_repository)
+          - name: revision
+            value: $(params.pipeline_revision)
+          - name: pathInRepo
+            value: konflux/integration-tests/tasks/upgrade-fixture.yaml
+      params:
+        - name: credentials-secret
+          value: $(tasks.provision-cluster.results.secretRef)
+
+    - name: upgrade-to-candidate
+      description: Switch the same Subscription to the FBC and approve its candidate InstallPlan
+      runAfter: [prepare-upgrade-fixture]
+      when:
+        - input: $(tasks.resolve-snapshot.results.matches)
+          operator: in
+          values: ["true"]
+        - input: $(params.test_type)
+          operator: in
+          values: ["upgrade"]
+      taskRef:
+        resolver: git
+        params:
+          - name: url
+            value: $(params.pipeline_repository)
+          - name: revision
+            value: $(params.pipeline_revision)
+          - name: pathInRepo
+            value: konflux/integration-tests/tasks/olm-operator.yaml
+      params:
+        - name: operation
+          value: upgrade
+        - name: credentials-secret
+          value: $(tasks.provision-cluster.results.secretRef)
+        - name: operator-namespace
+          value: $(tasks.resolve-release.results.operator-namespace)
+        - name: catalog-image
+          value: $(tasks.resolve-snapshot.results.fbc-image)
+        - name: desired-csv
+          value: $(tasks.resolve-release.results.csv-name)
+
+    # Common: both paths must reach the exact same candidate.
+    - name: verify-candidate
+      description: Verify the exact candidate CSV, shipped OpenShift flag, and deployments
+      runAfter: [install-candidate, upgrade-to-candidate]
+      when:
+        - input: $(tasks.resolve-snapshot.results.matches)
+          operator: in
+          values: ["true"]
+      taskRef:
+        resolver: git
+        params:
+          - name: url
+            value: $(params.pipeline_repository)
+          - name: revision
+            value: $(params.pipeline_revision)
+          - name: pathInRepo
+            value: konflux/integration-tests/tasks/verify-candidate.yaml
+      params:
+        - name: credentials-secret
+          value: $(tasks.provision-cluster.results.secretRef)
+        - name: operator-namespace
+          value: $(tasks.resolve-release.results.operator-namespace)
+        - name: csv-name
+          value: $(tasks.resolve-release.results.csv-name)
+
+    - name: verify-upgrade-fixture
+      description: Verify the pre-upgrade MonitoringStack and PVCs were preserved
+      runAfter: [verify-candidate]
+      when:
+        - input: $(tasks.resolve-snapshot.results.matches)
+          operator: in
+          values: ["true"]
+        - input: $(params.test_type)
+          operator: in
+          values: ["upgrade"]
+      taskRef:
+        resolver: git
+        params:
+          - name: url
+            value: $(params.pipeline_repository)
+          - name: revision
+            value: $(params.pipeline_revision)
+          - name: pathInRepo
+            value: konflux/integration-tests/tasks/upgrade-fixture.yaml
+      params:
+        - name: operation
+          value: verify
+        - name: credentials-secret
+          value: $(tasks.provision-cluster.results.secretRef)
+
+    - name: run-e2e-tests
+      description: Run the existing COO Go suite on the freshly installed or upgraded candidate
+      runAfter: [verify-candidate, verify-upgrade-fixture]
+      timeout: 90m
+      when:
+        - input: $(tasks.resolve-snapshot.results.matches)
+          operator: in
+          values: ["true"]
+      taskRef:
+        resolver: git
+        params:
+          - name: url
+            value: $(params.pipeline_repository)
+          - name: revision
+            value: $(params.pipeline_revision)
+          - name: pathInRepo
+            value: konflux/integration-tests/tasks/run-e2e.yaml
+      params:
+        - name: credentials-secret
+          value: $(tasks.provision-cluster.results.secretRef)
+        - name: operator-namespace
+          value: $(tasks.resolve-release.results.operator-namespace)
+        - name: tests-ref
+          value: $(params.tests_ref)
+        - name: coo-stream
+          value: $(tasks.resolve-snapshot.results.coo-stream)
+        - name: go-image
+          value: $(params.go_image)
+        - name: test-timeout
+          value: $(params.test_timeout)
+        - name: test-type
+          value: $(params.test_type)
+        - name: csv-name
+          value: $(tasks.resolve-release.results.csv-name)
+
+  finally:
+    - name: cleanup
+      description: Signal teardown even if provisioning failed before returning credentials
+      timeout: 5m
+      when:
+        - input: $(tasks.resolve-snapshot.results.matches)
+          operator: in
+          values: ["true"]
+      taskRef:
+        resolver: git
+        params:
+          - name: url
+            value: $(params.pipeline_repository)
+          - name: revision
+            value: $(params.pipeline_revision)
+          - name: pathInRepo
+            value: konflux/integration-tests/tasks/cleanup.yaml
+      params:
+        - name: run-uid
+          value: $(context.pipelineRun.uid)
+        - name: tenant-namespace
+          value: $(context.pipelineRun.namespace)

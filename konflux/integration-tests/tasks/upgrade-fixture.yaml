@@ -1,0 +1,121 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: coo-upgrade-fixture
+spec:
+  description: >-
+    Keep a persistent MonitoringStack across the in-place upgrade. Verify the
+    same CR/PVCs survive and the new operator reconciles a configuration change.
+    This does not assert uninterrupted availability or historical query data.
+  params:
+    - name: credentials-secret
+    - name: operation
+      default: prepare
+  volumes:
+    - name: credentials
+      secret:
+        secretName: $(params.credentials-secret)
+  steps:
+    - name: fixture
+      image: quay.io/konflux-ci/konflux-test:1.5.2@sha256:c370a7bc6e172cdbab001f1a19f37ebc95f47c3d8fe2d915fa4641132490ead7
+      env:
+        - name: KUBECONFIG
+          value: /credentials/kubeconfig
+        - name: OPERATION
+          value: $(params.operation)
+      volumeMounts:
+        - name: credentials
+          mountPath: /credentials
+          readOnly: true
+      script: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+
+        ns=coo-upgrade-tests
+        diagnostics() {
+          local rc=$?
+          if [[ "$rc" != 0 ]]; then
+            oc -n "$ns" get monitoringstacks.monitoring.rhobs,prometheuses.monitoring.rhobs,statefulset,pods,pvc,events -o wide || true
+          fi
+          exit "$rc"
+        }
+        trap diagnostics EXIT
+        case "$OPERATION" in
+          prepare)
+            oc create namespace "$ns"
+            oc -n "$ns" create -f - <<'EOF'
+        apiVersion: monitoring.rhobs/v1alpha1
+        kind: MonitoringStack
+        metadata:
+          name: upgrade-probe
+        spec:
+          resourceSelector: null
+          retention: 3h
+          prometheusConfig:
+            replicas: 1
+            persistentVolumeClaim:
+              accessModes: [ReadWriteOnce]
+              resources:
+                requests:
+                  storage: 1Gi
+          alertmanagerConfig:
+            disabled: true
+        EOF
+            ;;
+          verify)
+            baseline=$(oc -n "$ns" get configmap coo-upgrade-baseline -o json)
+            expected_stack_uid=$(jq -er '.data["stack-uid"]' <<< "$baseline")
+            expected_pvcs=$(jq -er '.data.pvcs' <<< "$baseline")
+            actual_uid=$(oc -n "$ns" get monitoringstacks.monitoring.rhobs upgrade-probe -o jsonpath='{.metadata.uid}')
+            [[ "$actual_uid" == "$expected_stack_uid" ]] || {
+              echo 'The pre-upgrade MonitoringStack was replaced' >&2
+              exit 1
+            }
+            # Exercise the new controller on the EXISTING resource, rather than
+            # accepting only a stale Available condition from the old release.
+            oc -n "$ns" patch monitoringstacks.monitoring.rhobs upgrade-probe --type=merge \
+              -p '{"spec":{"prometheusConfig":{"externalLabels":{"coo_upgrade_verified":"true"}}}}'
+            for attempt in $(seq 1 120); do
+              stack=$(oc -n "$ns" get monitoringstacks.monitoring.rhobs upgrade-probe -o json)
+              if jq -e '.metadata.generation as $generation |
+                any(.status.conditions[]?; .type == "Reconciled" and
+                  .status == "True" and .observedGeneration == $generation)' <<< "$stack" > /dev/null &&
+                oc -n "$ns" get prometheuses.monitoring.rhobs upgrade-probe -o json |
+                  jq -e '.spec.externalLabels.coo_upgrade_verified == "true"' > /dev/null; then
+                break
+              fi
+              echo "Waiting for the candidate to reconcile the pre-upgrade stack ($attempt/120)"
+              sleep 5
+            done
+            jq -e '.metadata.generation as $generation |
+              any(.status.conditions[]?; .type == "Reconciled" and
+                .status == "True" and .observedGeneration == $generation)' <<< "$stack" > /dev/null
+            oc -n "$ns" get prometheuses.monitoring.rhobs upgrade-probe -o json |
+              jq -e '.spec.externalLabels.coo_upgrade_verified == "true"' > /dev/null
+            ;;
+          *) echo 'operation must be prepare or verify' >&2; exit 1 ;;
+        esac
+
+        oc -n "$ns" wait monitoringstacks.monitoring.rhobs/upgrade-probe --for=condition=Available --timeout=15m
+        oc -n "$ns" rollout status statefulset/prometheus-upgrade-probe --timeout=15m
+        uid=$(oc -n "$ns" get monitoringstacks.monitoring.rhobs upgrade-probe -o jsonpath='{.metadata.uid}')
+        pvcs=$(oc -n "$ns" get pvc -o json |
+          jq -ec 'select((.items | length) > 0 and all(.items[]; .status.phase == "Bound")) |
+            [.items[] | {name: .metadata.name, uid: .metadata.uid, volume: .spec.volumeName}] | sort_by(.name)')
+        if [[ "$OPERATION" == verify ]]; then
+          [[ "$uid" == "$expected_stack_uid" && "$pvcs" == "$expected_pvcs" ]] || {
+            echo 'The MonitoringStack or its persistent storage was replaced during the upgrade' >&2
+            exit 1
+          }
+        else
+          # Store baseline state next to the owned fixture, not in results of a
+          # conditional Task. This also avoids skipped-result dependencies
+          # propagating into the common e2e path when test_type=e2e.
+          jq -n --arg ns "$ns" --arg uid "$uid" --arg pvcs "$pvcs" '{
+            apiVersion: "v1", kind: "ConfigMap",
+            metadata: {name: "coo-upgrade-baseline", namespace: $ns},
+            immutable: true, data: {"stack-uid": $uid, pvcs: $pvcs}
+          }' | oc create -f -
+        fi
+        echo "Upgrade fixture $OPERATION succeeded"

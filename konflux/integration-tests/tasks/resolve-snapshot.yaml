@@ -1,0 +1,99 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: coo-resolve-snapshot
+spec:
+  description: Select one immutable ART FBC and match the OCP version of this ITS row
+  params:
+    - name: SNAPSHOT
+    - name: ocp-version
+    - name: test-type
+    - name: registry-secret
+  results:
+    - name: fbc-image
+    - name: coo-stream
+    - name: matches
+    - name: TEST_OUTPUT
+  volumes:
+    - name: registry
+      secret:
+        secretName: $(params.registry-secret)
+        optional: true
+  steps:
+    - name: resolve
+      image: quay.io/konflux-ci/konflux-test:1.5.2@sha256:c370a7bc6e172cdbab001f1a19f37ebc95f47c3d8fe2d915fa4641132490ead7
+      env:
+        - name: SNAPSHOT
+          value: $(params.SNAPSHOT)
+        - name: OCP_VERSION
+          value: $(params.ocp-version)
+        - name: TEST_TYPE
+          value: $(params.test-type)
+        - name: REGISTRY_AUTH_FILE
+          value: /registry/.dockerconfigjson
+        - name: COMPONENT_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['appstudio.openshift.io/component']
+      volumeMounts:
+        - name: registry
+          mountPath: /registry
+          readOnly: true
+      script: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+
+        printf false > "$(results.matches.path)"
+        case "$TEST_TYPE" in
+          e2e|upgrade) ;;
+          *) echo 'test_type must be e2e or upgrade' >&2; exit 1 ;;
+        esac
+        [[ "$OCP_VERSION" =~ ^[0-9]+\.[0-9]+$ ]] || {
+          echo 'ocp_version must be an OCP minor version, for example 4.22' >&2
+          exit 1
+        }
+        application=$(jq -er '.application' <<< "$SNAPSHOT")
+        [[ "$application" =~ ^fbc-coo-([0-9]+)-([0-9]+)$ ]] || {
+          echo "Expected an fbc-coo-<major>-<minor> application, got $application" >&2
+          exit 1
+        }
+        printf '%s.%s' "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}" > "$(results.coo-stream.path)"
+        fbc=$(jq -er --arg component "$COMPONENT_NAME" '
+          [.components[] | select($component == "" or .name == $component)] |
+          if length == 1 then .[0].containerImage
+          else error("Snapshot must identify exactly one FBC component") end
+        ' <<< "$SNAPSHOT")
+        [[ "$fbc" =~ ^[^[:space:]]+@sha256:[0-9a-f]{64}$ ]] || {
+          echo 'The FBC must be referenced by sha256 digest' >&2
+          exit 1
+        }
+        printf '%s' "$fbc" > "$(results.fbc-image.path)"
+        [[ -s "$REGISTRY_AUTH_FILE" ]] || {
+          echo 'The registry Secret is missing or has no .dockerconfigjson key' >&2
+          exit 1
+        }
+        jq -e '.auths | type == "object"' "$REGISTRY_AUTH_FILE" > /dev/null
+        raw=$(skopeo inspect --retry-times 3 --config --override-os linux --override-arch amd64 "docker://$fbc" |
+          jq -er '.config.Labels["com.redhat.fbc.openshift.version"] // .config.Labels.version')
+        versions=$(jq -ner --arg raw "$raw" '
+          $raw | (if startswith("[") then fromjson[] else . end) | strings |
+          capture("^v?(?<minor>[0-9]+\\.[0-9]+)(\\.[0-9]+.*)?$").minor
+        ')
+        echo "FBC: $fbc"
+        echo "FBC OCP versions: $versions; matrix row: OCP $OCP_VERSION / $TEST_TYPE"
+        result=SUCCESS
+        warnings=0
+        note="Selected FBC for OCP $OCP_VERSION / $TEST_TYPE; functional tests follow"
+        if grep -qxF "$OCP_VERSION" <<< "$versions"; then
+          printf true > "$(results.matches.path)"
+        else
+          result=WARNING
+          warnings=1
+          note="Not tested: this FBC is not for OCP $OCP_VERSION; no cluster was provisioned"
+          echo "$note"
+        fi
+        jq -cn --arg result "$result" --arg note "$note" --argjson warnings "$warnings" \
+          --arg timestamp "$(date -u --iso-8601=seconds)" \
+          '{result: $result, note: $note, timestamp: $timestamp, successes: 0, failures: 0, warnings: $warnings}' \
+          > "$(results.TEST_OUTPUT.path)"
