@@ -16,7 +16,8 @@ declare SETUP_OLM=true
 declare SETUP_REGISTRY=true
 declare VALIDATE_ONLY=false
 declare CLUSTER_NAME="obs-operator"
-declare KIND_VERSION="v0.29.0"
+# v0.33.0 fixes 'kind get clusters' with podman 6 (kind#4231).
+declare KIND_VERSION="v0.33.0"
 declare KIND_IMAGE="kindest/node:v1.33.1"
 declare KUBECONFIG_PATH="$HOME/.kube/kind/obs-operator"
 declare SHOW_USAGE=false
@@ -190,7 +191,43 @@ validate_prerequisites() {
         ok "Skipping /etc/hosts check (CI mode)"
     fi
 
+    # On Linux, kind nodes share the host's inotify limits.
+    # Distro defaults are often too low and pods (e.g. kube-proxy) crash with "too many open files".
+    # Warn rather than abort: the script cannot raise host limits without elevated privileges.
+    if $SETUP_CLUSTER && [[ $(uname -s) == Linux ]]; then
+        check_inotify_limits
+    fi
+
     return $fail
+}
+
+# Minimum inotify limits required for a multi-node kind cluster. See:
+# https://kind.sigs.k8s.io/docs/user/known-issues/#pod-errors-due-to-too-many-open-files
+declare -r MIN_INOTIFY_INSTANCES=512
+declare -r MIN_INOTIFY_WATCHES=524288
+
+check_inotify_limits() {
+    local instances watches sufficient=true
+    instances=$(cat /proc/sys/fs/inotify/max_user_instances 2>/dev/null || echo 0)
+    watches=$(cat /proc/sys/fs/inotify/max_user_watches 2>/dev/null || echo 0)
+
+    [[ "$instances" -ge "$MIN_INOTIFY_INSTANCES" ]] || sufficient=false
+    [[ "$watches" -ge "$MIN_INOTIFY_WATCHES" ]] || sufficient=false
+
+    if $sufficient; then
+        ok "inotify limits are sufficient (instances=$instances, watches=$watches)"
+        return 0
+    fi
+
+    warn "inotify limits are too low for a multi-node kind cluster"
+    warn "  fs.inotify.max_user_instances = $instances (need >= $MIN_INOTIFY_INSTANCES)"
+    warn "  fs.inotify.max_user_watches   = $watches (need >= $MIN_INOTIFY_WATCHES)"
+    warn "Continuing setup, but pods may fail with 'too many open files'."
+    warn "To raise the limits:"
+    echo "    ❯ sudo sysctl fs.inotify.max_user_instances=$MIN_INOTIFY_INSTANCES fs.inotify.max_user_watches=$MIN_INOTIFY_WATCHES"
+    warn "To persist across reboots:"
+    echo "    ❯ echo 'fs.inotify.max_user_instances = $MIN_INOTIFY_INSTANCES' | sudo tee /etc/sysctl.d/99-kind-inotify.conf"
+    echo "    ❯ echo 'fs.inotify.max_user_watches = $MIN_INOTIFY_WATCHES' | sudo tee -a /etc/sysctl.d/99-kind-inotify.conf"
 }
 
 install_kind() {
@@ -248,8 +285,6 @@ install_kubectl() {
 
     ok "kubectl installed to $bin_path/kubectl"
 }
-
-
 
 install_extra_packages() {
     if [[ ${#EXTRA_PACKAGES[@]} -eq 0 ]]; then
@@ -317,6 +352,40 @@ install_extra_packages() {
     done
 }
 
+# Rootless kind needs a delegated user scope. Use one only if it is available;
+# rootful providers and CI can run kind directly.
+declare -a KIND_RUN_PREFIX=()
+kind_run_prefix() {
+    KIND_RUN_PREFIX=()
+    command -v systemd-run >/dev/null 2>&1 || return 0
+    systemctl --user show-environment >/dev/null 2>&1 || return 0
+    systemd-run --user --scope -p Delegate=yes -- true >/dev/null 2>&1 || return 0
+    KIND_RUN_PREFIX=(systemd-run --user --scope -p Delegate=yes)
+}
+
+declare -r POD_READY_TIMEOUT=300
+
+# Re-list so completed Job pods no longer need a Ready condition.
+wait_for_ready_pods() {
+    local deadline=$((SECONDS + POD_READY_TIMEOUT))
+    local pods not_ready="(no pod listing succeeded)"
+
+    while ((SECONDS < deadline)); do
+        if pods=$(kubectl get pods --all-namespaces \
+            --field-selector='status.phase!=Succeeded,status.phase!=Failed' \
+            --request-timeout=10s --no-headers \
+            -o custom-columns='NAMESPACE:.metadata.namespace,NAME:.metadata.name,READY:.status.conditions[?(@.type=="Ready")].status'); then
+            not_ready=$(grep -Ev '[[:space:]]True[[:space:]]*$' <<< "$pods" || true)
+            [[ -z "$not_ready" ]] && return 0
+        fi
+        sleep 2
+    done
+
+    warn "Pods that did not become ready:"
+    echo "$not_ready"
+    die "Timed out after ${POD_READY_TIMEOUT}s waiting for pods to be ready"
+}
+
 setup_cluster() {
     if ! $SETUP_CLUSTER; then
         info "Skipping cluster setup"
@@ -329,15 +398,33 @@ setup_cluster() {
     mkdir -p "$(dirname "$KUBECONFIG_PATH")"
     export KUBECONFIG="$KUBECONFIG_PATH"
 
-    # Check if cluster already exists
-    if kind get clusters | grep -q "^$CLUSTER_NAME$"; then
+    # A failed listing is not the same as an absent cluster.
+    local clusters
+    clusters=$(kind get clusters 2>&1) ||
+        die "'kind get clusters' failed - kind $KIND_VERSION may be incompatible with your container provider:\n$clusters"
+
+    if grep -qx "$CLUSTER_NAME" <<< "$clusters"; then
         info "Kind cluster '$CLUSTER_NAME' already exists"
+
+        # Refresh a missing or stale kubeconfig when reusing a cluster.
+        kind export kubeconfig --name "$CLUSTER_NAME" --kubeconfig "$KUBECONFIG_PATH" ||
+            die "Failed to export kubeconfig for cluster '$CLUSTER_NAME'"
+
+        # Fail fast if an existing cluster is stopped or unreachable.
+        kubectl cluster-info --request-timeout=10s > /dev/null 2>&1 ||
+            die "Cluster '$CLUSTER_NAME' exists but its API is unreachable - run 'kind delete cluster --name $CLUSTER_NAME' and retry"
+
         ok "Using existing cluster"
     else
         info "Creating kind cluster '$CLUSTER_NAME' with image '$KIND_IMAGE'"
         mkdir -p "$PROJECT_ROOT_DIR/tmp/logs"
 
-        kind create cluster \
+        kind_run_prefix
+        ((${#KIND_RUN_PREFIX[@]} > 0)) &&
+            info "Running kind in a delegated systemd scope (required for rootless providers)"
+
+        # ${arr[@]+...} keeps an empty array safe under `set -u` on bash < 4.4
+        ${KIND_RUN_PREFIX[@]+"${KIND_RUN_PREFIX[@]}"} kind create cluster \
             --name "$CLUSTER_NAME" \
             --image "$KIND_IMAGE" \
             --config "$SCRIPT_DIR/kind/config.yaml" \
@@ -347,10 +434,14 @@ setup_cluster() {
 
     info "Waiting for cluster to be ready..."
     kubectl wait --for=condition=Ready nodes --all --timeout=300s
-    kubectl wait --for=condition=Ready pods --all --all-namespaces --timeout=300s
+
+    # Wait for all non-completed pods to be ready.
+    info "Waiting for all pods to be ready..."
+    wait_for_ready_pods
+    info "All pods are ready."
 
     # export $KUBECONFIG so its available for other steps
-    if [ ! -z ${GITHUB_ACTIONS+x} ]; then
+    if [[ -n ${GITHUB_ACTIONS+x} ]]; then
         echo "KUBECONFIG=$KUBECONFIG" >> "$GITHUB_ENV"
     fi
     ok "Kind cluster is ready"
@@ -392,6 +483,14 @@ setup_olm() {
         die "operator-sdk not found in tmp/bin - run 'make tools' first"
     fi
 
+    if kubectl get deployment olm-operator -n olm >/dev/null 2>&1; then
+        info "OLM is already installed; checking its status"
+        "$operator_sdk" olm status ||
+            die "OLM is installed but not healthy - run 'kubectl delete ns olm' and retry"
+        ok "OLM is ready"
+        return 0
+    fi
+
     # Pin to OLM v0.28.0 because v0.29.0 fails on Kind
     "$operator_sdk" olm install --version 0.28.0
 
@@ -410,7 +509,7 @@ setup_registry() {
     kubectl rollout status deployment local-registry -n operators --timeout=300s
     kubectl wait --for=condition=Available deploy local-registry -n operators --timeout=300s
     # add local-registry to /etc/hosts in case we run in a github action
-    if [ ! -z ${GITHUB_ACTIONS+x} ]; then
+    if [[ -n ${GITHUB_ACTIONS+x} ]]; then
         echo "Detected github actions run, adding \"127.0.0.1 local-registry\" to \"/etc/hosts\""
         echo "127.0.0.1 local-registry" | sudo tee -a /etc/hosts
     fi
@@ -441,8 +540,7 @@ create_monitoring_crds() {
 
     header "Installing Monitoring CRDs"
 
-    kubectl create -k "$PROJECT_ROOT_DIR/deploy/crds/kubernetes" || \
-        kubectl replace -k "$PROJECT_ROOT_DIR/deploy/crds/kubernetes"
+    kubectl apply --server-side --force-conflicts -k "$PROJECT_ROOT_DIR/deploy/crds/kubernetes"
 
     kubectl wait --for=condition=Established crds --all --timeout=120s
 
@@ -502,7 +600,7 @@ main() {
         create_monitoring_crds
 
         header "Waiting for cluster to stabilize..."
-        kubectl wait --for=condition=Ready pods --all --all-namespaces --timeout=300s
+        wait_for_ready_pods
         line 50
     fi
 
