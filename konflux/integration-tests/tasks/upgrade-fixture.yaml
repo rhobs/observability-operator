@@ -6,7 +6,7 @@ metadata:
 spec:
   description: >-
     Keep a persistent MonitoringStack across the in-place upgrade. Verify its
-    PVCs survive and the new operator reconciles a configuration change.
+    Prometheus data PVC survives and the new operator reconciles a configuration change.
     This does not assert uninterrupted availability or historical query data.
   params:
     - name: credentials-secret
@@ -64,7 +64,7 @@ spec:
             ;;
           verify)
             baseline=$(oc -n "$ns" get configmap coo-upgrade-baseline -o json)
-            expected_pvcs=$(jq -er '.data.pvcs' <<< "$baseline")
+            expected_pvc=$(jq -er '.data.pvc' <<< "$baseline")
             # Exercise the new controller on the EXISTING resource, rather than
             # accepting only a stale Available condition from the old release.
             oc -n "$ns" patch monitoringstacks.monitoring.rhobs upgrade-probe --type=merge \
@@ -102,22 +102,51 @@ spec:
           sleep 5
         done
         oc -n "$ns" rollout status statefulset/alertmanager-upgrade-probe --timeout=15m
-        pvcs=$(oc -n "$ns" get pvc -o json |
-          jq -ec 'select((.items | length) > 0 and all(.items[]; .status.phase == "Bound")) |
-            [.items[] | {name: .metadata.name, uid: .metadata.uid, volume: .spec.volumeName}] | sort_by(.name)')
+        for workload in prometheus alertmanager; do
+          oc -n "$ns" get "statefulset/$workload-upgrade-probe" -o json |
+            jq -e '.spec.replicas == 1 and .status.readyReplicas == 1' > /dev/null || {
+              echo "Expected one ready $workload replica" >&2
+              exit 1
+            }
+        done
+
+        # The fixture requests one Prometheus replica. Record the PVC actually
+        # mounted at its data directory, rather than unrelated bound PVCs.
+        claim=$(oc -n "$ns" get pod prometheus-upgrade-probe-0 -o json |
+          jq -er '
+            select(.metadata.deletionTimestamp == null and
+              any(.metadata.ownerReferences[]?; .kind == "StatefulSet" and .name == "prometheus-upgrade-probe" and .controller == true) and
+              any(.status.conditions[]?; .type == "Ready" and .status == "True") and
+              any(.status.containerStatuses[]?; .name == "prometheus" and .ready == true)) |
+            . as $pod |
+            [.spec.containers[] | select(.name == "prometheus") |
+              .volumeMounts[]? | select(.mountPath == "/prometheus" and .readOnly != true) | .name as $name |
+              $pod.spec.volumes[] | select(.name == $name) | .persistentVolumeClaim.claimName // empty] |
+            select(length == 1 and (.[0] | type == "string" and length > 0)) | .[0]') || {
+              echo 'The ready Prometheus pod must mount a PVC at /prometheus' >&2
+              exit 1
+            }
+        pvc=$(oc -n "$ns" get pvc "$claim" -o json |
+          jq -ec --arg name "$claim" '
+            select(.metadata.name == $name and .status.phase == "Bound" and
+              (.metadata.uid // "") != "" and (.spec.volumeName // "") != "") |
+            {name: .metadata.name, uid: .metadata.uid, volume: .spec.volumeName}') || {
+              echo "The Prometheus data PVC $claim must be bound" >&2
+              exit 1
+            }
         if [[ "$OPERATION" == verify ]]; then
-          [[ "$pvcs" == "$expected_pvcs" ]] || {
-            echo 'The persistent storage was replaced during the upgrade' >&2
+          [[ "$pvc" == "$expected_pvc" ]] || {
+            echo 'The Prometheus data PVC or its persistent volume changed during the upgrade' >&2
             exit 1
           }
         else
           # Store baseline state next to the owned fixture, not in results of a
           # conditional Task. This also avoids skipped-result dependencies
           # propagating into the common e2e path when test_type=e2e.
-          jq -n --arg ns "$ns" --arg pvcs "$pvcs" '{
+          jq -n --arg ns "$ns" --arg pvc "$pvc" '{
             apiVersion: "v1", kind: "ConfigMap",
             metadata: {name: "coo-upgrade-baseline", namespace: $ns},
-            immutable: true, data: {pvcs: $pvcs}
+            immutable: true, data: {pvc: $pvc}
           }' | oc create -f -
         fi
         echo "Upgrade fixture $OPERATION succeeded"

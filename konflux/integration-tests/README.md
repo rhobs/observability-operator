@@ -103,13 +103,14 @@ The upgrade path mirrors the tracing team's released-to-FBC approach:
    stable channel. Resolve and record the baseline CSV, or use
    `upgrade_from_csv` to select a specific supported older release.
 2. Create a MonitoringStack with persistent storage and Alertmanager using that
-   released operator. Wait for both workloads and record the bound PVC identities.
+   released operator. Wait for both workloads and record the identity of the
+   bound PVC mounted at the Prometheus data directory.
 3. Switch the **same Subscription** to the immutable candidate FBC and approve
    only an InstallPlan containing the resolved candidate CSV.
 4. Verify that exact candidate is installed and its shipped configuration works.
 5. Change the stack's external labels and verify the new operator reconciles
-   that change. Check that both workloads are ready and the original PVCs remain
-   bound.
+   that change. Check that both workloads are ready and Prometheus still mounts
+   the original bound PVC.
 6. Run the unchanged COO Go e2e suite against the upgraded installation.
 
 Deleting the old CSV, Subscription, CRDs, or workloads and reinstalling the
@@ -175,8 +176,10 @@ registry to configure in this initial implementation.
 
 Validate native Pipeline/Task YAML, Bash syntax, and ShellCheck before rollout;
 validate tenant manifests with that repository's Kustomize/tox workflow.
-No custom Go test harness or Makefile change is required for the pipeline.
-Offline checks do not replace a live fresh-install and upgrade pilot.
+Run the cluster-free upgrade fixture regression tests with
+`bash konflux/integration-tests/tests/upgrade-fixture_test.sh` (requires `jq`
+and `yq` v4). No custom Go test harness or Makefile change is required for the
+pipeline. Offline checks do not replace a live fresh-install and upgrade pilot.
 
 The suite and upgrade fixtures mutate cluster-wide resources. Never run them
 on shared or production installations. Do not log kubeconfigs or Secret data.
