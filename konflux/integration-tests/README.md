@@ -102,13 +102,14 @@ The upgrade path mirrors the tracing team's released-to-FBC approach:
 1. Install `cluster-observability-operator` from the cluster's `redhat-operators`
    stable channel. Resolve and record the baseline CSV, or use
    `upgrade_from_csv` to select a specific supported older release.
-2. Create a MonitoringStack with persistent storage using that released operator.
-   Record the existing CR and bound PVC identities.
+2. Create a MonitoringStack with persistent storage and Alertmanager using that
+   released operator. Wait for both workloads and record the bound PVC identities.
 3. Switch the **same Subscription** to the immutable candidate FBC and approve
    only an InstallPlan containing the resolved candidate CSV.
 4. Verify that exact candidate is installed and its shipped configuration works.
-5. Confirm the original MonitoringStack and PVCs survive. Change the existing
-   stack's external labels and verify the new operator reconciles that change.
+5. Change the stack's external labels and verify the new operator reconciles
+   that change. Check that both workloads are ready and the original PVCs remain
+   bound.
 6. Run the unchanged COO Go e2e suite against the upgraded installation.
 
 Deleting the old CSV, Subscription, CRDs, or workloads and reinstalling the
@@ -118,9 +119,9 @@ If production has caught up with the candidate, choose an older supported
 baseline. If the FBC's upgrade graph does not allow the transition, the test
 fails; it does not bypass OLM.
 
-This is deliberately bounded initial upgrade coverage: OLM transition, resource
-and storage preservation, reconciliation, and post-upgrade functionality. It
-does **not** yet prove historical query data, uninterrupted collection/alerting,
+This is deliberately bounded initial upgrade coverage: OLM transition, workload
+readiness, storage preservation, reconciliation, and post-upgrade functionality.
+It does **not** yet prove historical query data, uninterrupted collection/alerting,
 browser compatibility, every UIPlugin migration, or every supported upgrade
 baseline. Those can be added as product-specific pre/post-upgrade fixtures
 without duplicating provisioning or introducing another framework.

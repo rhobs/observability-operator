@@ -326,7 +326,7 @@ spec:
           value: $(tasks.resolve-release.results.csv-name)
 
     - name: verify-upgrade-fixture
-      description: Verify the pre-upgrade MonitoringStack and PVCs were preserved
+      description: Verify MonitoringStack reconciliation, workload readiness, and PVC preservation
       runAfter: [verify-candidate]
       when:
         - input: $(tasks.resolve-snapshot.results.matches)
