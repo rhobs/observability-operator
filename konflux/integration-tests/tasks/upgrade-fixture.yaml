@@ -1,0 +1,152 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: coo-upgrade-fixture
+spec:
+  description: >-
+    Keep a persistent MonitoringStack across the in-place upgrade. Verify its
+    Prometheus data PVC survives and the new operator reconciles a configuration change.
+    This does not assert uninterrupted availability or historical query data.
+  params:
+    - name: credentials-secret
+    - name: operation
+      default: prepare
+  volumes:
+    - name: credentials
+      secret:
+        secretName: $(params.credentials-secret)
+  steps:
+    - name: fixture
+      image: quay.io/konflux-ci/konflux-test:1.5.2@sha256:c370a7bc6e172cdbab001f1a19f37ebc95f47c3d8fe2d915fa4641132490ead7
+      env:
+        - name: KUBECONFIG
+          value: /credentials/kubeconfig
+        - name: OPERATION
+          value: $(params.operation)
+      volumeMounts:
+        - name: credentials
+          mountPath: /credentials
+          readOnly: true
+      script: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+
+        ns=coo-upgrade-tests
+        diagnostics() {
+          local rc=$?
+          if [[ "$rc" != 0 ]]; then
+            oc -n "$ns" get monitoringstacks.monitoring.rhobs,prometheuses.monitoring.rhobs,alertmanagers.monitoring.rhobs,statefulset,pods,pvc,events -o wide || true
+          fi
+          exit "$rc"
+        }
+        trap diagnostics EXIT
+        case "$OPERATION" in
+          prepare)
+            oc create namespace "$ns"
+            oc -n "$ns" create -f - <<'EOF'
+        apiVersion: monitoring.rhobs/v1alpha1
+        kind: MonitoringStack
+        metadata:
+          name: upgrade-probe
+        spec:
+          resourceSelector: null
+          retention: 3h
+          prometheusConfig:
+            replicas: 1
+            persistentVolumeClaim:
+              resources:
+                requests:
+                  storage: 1Gi
+          alertmanagerConfig:
+            replicas: 1
+        EOF
+            ;;
+          verify)
+            baseline=$(oc -n "$ns" get configmap coo-upgrade-baseline -o json)
+            expected_pvc=$(jq -er '.data.pvc' <<< "$baseline")
+            # Exercise the new controller on the EXISTING resource, rather than
+            # accepting only a stale Available condition from the old release.
+            oc -n "$ns" patch monitoringstacks.monitoring.rhobs upgrade-probe --type=merge \
+              -p '{"spec":{"prometheusConfig":{"externalLabels":{"coo_upgrade_verified":"true"}}}}'
+            for attempt in $(seq 1 120); do
+              stack=$(oc -n "$ns" get monitoringstacks.monitoring.rhobs upgrade-probe -o json)
+              if jq -e '.metadata.generation as $generation |
+                any(.status.conditions[]?; .type == "Reconciled" and
+                  .status == "True" and .observedGeneration == $generation)' <<< "$stack" > /dev/null &&
+                oc -n "$ns" get prometheuses.monitoring.rhobs upgrade-probe -o json |
+                  jq -e '.spec.externalLabels.coo_upgrade_verified == "true"' > /dev/null; then
+                break
+              fi
+              echo "Waiting for the candidate to reconcile the pre-upgrade stack ($attempt/120)"
+              sleep 5
+            done
+            jq -e '.metadata.generation as $generation |
+              any(.status.conditions[]?; .type == "Reconciled" and
+                .status == "True" and .observedGeneration == $generation)' <<< "$stack" > /dev/null
+            oc -n "$ns" get prometheuses.monitoring.rhobs upgrade-probe -o json |
+              jq -e '.spec.externalLabels.coo_upgrade_verified == "true"' > /dev/null
+            ;;
+          *) echo 'operation must be prepare or verify' >&2; exit 1 ;;
+        esac
+
+        oc -n "$ns" wait monitoringstacks.monitoring.rhobs/upgrade-probe --for=condition=Available --timeout=15m
+        oc -n "$ns" rollout status statefulset/prometheus-upgrade-probe --timeout=15m
+        # MonitoringStack Available only reflects Prometheus. Wait separately
+        # for Alertmanager's StatefulSet to be created and become ready.
+        for attempt in $(seq 1 120); do
+          if oc -n "$ns" get statefulset/alertmanager-upgrade-probe > /dev/null 2>&1; then
+            break
+          fi
+          echo "Waiting for Alertmanager StatefulSet ($attempt/120)"
+          sleep 5
+        done
+        oc -n "$ns" rollout status statefulset/alertmanager-upgrade-probe --timeout=15m
+        for workload in prometheus alertmanager; do
+          oc -n "$ns" get "statefulset/$workload-upgrade-probe" -o json |
+            jq -e '.spec.replicas == 1 and .status.readyReplicas == 1' > /dev/null || {
+              echo "Expected one ready $workload replica" >&2
+              exit 1
+            }
+        done
+
+        # The fixture requests one Prometheus replica. Record the PVC actually
+        # mounted at its data directory, rather than unrelated bound PVCs.
+        claim=$(oc -n "$ns" get pod prometheus-upgrade-probe-0 -o json |
+          jq -er '
+            select(.metadata.deletionTimestamp == null and
+              any(.metadata.ownerReferences[]?; .kind == "StatefulSet" and .name == "prometheus-upgrade-probe" and .controller == true) and
+              any(.status.conditions[]?; .type == "Ready" and .status == "True") and
+              any(.status.containerStatuses[]?; .name == "prometheus" and .ready == true)) |
+            . as $pod |
+            [.spec.containers[] | select(.name == "prometheus") |
+              .volumeMounts[]? | select(.mountPath == "/prometheus" and .readOnly != true) | .name as $name |
+              $pod.spec.volumes[] | select(.name == $name) | .persistentVolumeClaim.claimName // empty] |
+            select(length == 1 and (.[0] | type == "string" and length > 0)) | .[0]') || {
+              echo 'The ready Prometheus pod must mount a PVC at /prometheus' >&2
+              exit 1
+            }
+        pvc=$(oc -n "$ns" get pvc "$claim" -o json |
+          jq -ec --arg name "$claim" '
+            select(.metadata.name == $name and .status.phase == "Bound" and
+              (.metadata.uid // "") != "" and (.spec.volumeName // "") != "") |
+            {name: .metadata.name, uid: .metadata.uid, volume: .spec.volumeName}') || {
+              echo "The Prometheus data PVC $claim must be bound" >&2
+              exit 1
+            }
+        if [[ "$OPERATION" == verify ]]; then
+          [[ "$pvc" == "$expected_pvc" ]] || {
+            echo 'The Prometheus data PVC or its persistent volume changed during the upgrade' >&2
+            exit 1
+          }
+        else
+          # Store baseline state next to the owned fixture, not in results of a
+          # conditional Task. This also avoids skipped-result dependencies
+          # propagating into the common e2e path when test_type=e2e.
+          jq -n --arg ns "$ns" --arg pvc "$pvc" '{
+            apiVersion: "v1", kind: "ConfigMap",
+            metadata: {name: "coo-upgrade-baseline", namespace: $ns},
+            immutable: true, data: {pvc: $pvc}
+          }' | oc create -f -
+        fi
+        echo "Upgrade fixture $OPERATION succeeded"

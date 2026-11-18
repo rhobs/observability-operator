@@ -1,0 +1,201 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: coo-olm-operator
+spec:
+  description: >-
+    Install COO from an existing released catalog or the candidate FBC, or
+    upgrade the same Subscription to that FBC. Only approve an InstallPlan
+    containing the selected CSV. Never delete the old CSV, CRDs, or workloads
+    to make an upgrade succeed.
+  params:
+    - name: operation
+      default: install
+    - name: credentials-secret
+    - name: operator-namespace
+    - name: catalog-image
+      default: ""
+    - name: catalog-name
+      default: coo-candidate
+    - name: catalog-namespace
+      default: ""
+    - name: desired-csv
+      default: ""
+  results:
+    - name: csv-name
+    - name: subscription-uid
+  volumes:
+    - name: credentials
+      secret:
+        secretName: $(params.credentials-secret)
+  steps:
+    - name: reconcile-subscription
+      image: quay.io/konflux-ci/konflux-test:1.5.2@sha256:c370a7bc6e172cdbab001f1a19f37ebc95f47c3d8fe2d915fa4641132490ead7
+      env:
+        - name: KUBECONFIG
+          value: /credentials/kubeconfig
+        - name: OPERATION
+          value: $(params.operation)
+        - name: COO_NAMESPACE
+          value: $(params.operator-namespace)
+        - name: CATALOG_IMAGE
+          value: $(params.catalog-image)
+        - name: CATALOG_NAME
+          value: $(params.catalog-name)
+        - name: CATALOG_NAMESPACE
+          value: $(params.catalog-namespace)
+        - name: DESIRED_CSV
+          value: $(params.desired-csv)
+      volumeMounts:
+        - name: credentials
+          mountPath: /credentials
+          readOnly: true
+      script: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+
+        diagnostics() {
+          local rc=$?
+          if [[ "$rc" != 0 ]]; then
+            oc -n "$COO_NAMESPACE" get catalogsource,subscription,installplan,csv,pods -o wide || true
+            oc -n "$COO_NAMESPACE" get events --sort-by=.lastTimestamp || true
+          fi
+          exit "$rc"
+        }
+        trap diagnostics EXIT
+        case "$OPERATION" in
+          install|upgrade) ;;
+          *) echo 'operation must be install or upgrade' >&2; exit 1 ;;
+        esac
+        CATALOG_NAMESPACE=${CATALOG_NAMESPACE:-$COO_NAMESPACE}
+        if [[ -n "$CATALOG_IMAGE" ]]; then
+          [[ -n "$DESIRED_CSV" ]] || {
+            echo 'A candidate FBC installation must specify the exact desired CSV' >&2
+            exit 1
+          }
+          jq -n --arg name "$CATALOG_NAME" --arg ns "$CATALOG_NAMESPACE" --arg image "$CATALOG_IMAGE" '{
+            apiVersion: "operators.coreos.com/v1alpha1", kind: "CatalogSource",
+            metadata: {name: $name, namespace: $ns},
+            spec: {sourceType: "grpc", image: $image, displayName: "ART COO candidate", publisher: "ART"}
+          }' | oc apply -f -
+        fi
+        for attempt in $(seq 1 60); do
+          state=$(oc -n "$CATALOG_NAMESPACE" get catalogsource "$CATALOG_NAME" \
+            -o jsonpath='{.status.connectionState.lastObservedState}')
+          [[ "$state" == READY ]] && break
+          echo "Waiting for catalog $CATALOG_NAME: $state ($attempt/60)"
+          sleep 10
+        done
+        [[ "$state" == READY ]] || {
+          echo "Catalog $CATALOG_NAMESPACE/$CATALOG_NAME did not become READY" >&2
+          exit 1
+        }
+
+        subscription_uid=""
+        if [[ "$OPERATION" == install ]]; then
+          if oc -n "$COO_NAMESPACE" get subscription coo-under-test > /dev/null 2>&1; then
+            echo 'Refusing to install over an existing coo-under-test Subscription' >&2
+            exit 1
+          fi
+          if [[ -z "$DESIRED_CSV" ]]; then
+            # Resolve once and pin the baseline, even if production advances
+            # while the test runs. The source catalog must be unambiguous.
+            for attempt in $(seq 1 60); do
+              DESIRED_CSV=$(oc -n "$CATALOG_NAMESPACE" get packagemanifests -o json |
+                jq -r --arg source "$CATALOG_NAME" '
+                  [.items[] | select(.metadata.name == "cluster-observability-operator" and
+                    .status.catalogSource == $source) |
+                    .status.channels[] | select(.name == "stable").currentCSV] |
+                  if length == 1 then .[0] else empty end')
+              [[ -n "$DESIRED_CSV" ]] && break
+              echo "Waiting for released COO catalog metadata ($attempt/60)"
+              sleep 10
+            done
+            [[ -n "$DESIRED_CSV" ]] || {
+              echo 'Cannot resolve the released COO stable channel head' >&2
+              exit 1
+            }
+          fi
+          oc -n "$COO_NAMESPACE" apply -f - <<'EOF'
+        apiVersion: operators.coreos.com/v1
+        kind: OperatorGroup
+        metadata:
+          name: coo-under-test
+        spec: {}
+        EOF
+          jq -n --arg ns "$COO_NAMESPACE" --arg source "$CATALOG_NAME" \
+            --arg sourceNS "$CATALOG_NAMESPACE" --arg csv "$DESIRED_CSV" '{
+            apiVersion: "operators.coreos.com/v1alpha1", kind: "Subscription",
+            metadata: {
+              name: "coo-under-test", namespace: $ns,
+              annotations: {"test.coo.openshift.io/baseline-csv": $csv}
+            },
+            spec: {
+              name: "cluster-observability-operator", channel: "stable",
+              source: $source, sourceNamespace: $sourceNS,
+              installPlanApproval: "Manual", startingCSV: $csv
+            }
+          }' | oc create -f -
+        else
+          [[ -n "$DESIRED_CSV" && -n "$CATALOG_IMAGE" ]] || {
+            echo 'An upgrade requires the exact candidate FBC/CSV' >&2
+            exit 1
+          }
+          current=$(oc -n "$COO_NAMESPACE" get subscription coo-under-test -o json)
+          BASELINE_CSV=$(jq -er '.metadata.annotations["test.coo.openshift.io/baseline-csv"]' <<< "$current")
+          [[ "$(jq -r '.status.installedCSV' <<< "$current")" == "$BASELINE_CSV" ]] || {
+            echo 'The installed Subscription no longer matches the selected baseline' >&2
+            exit 1
+          }
+          [[ "$BASELINE_CSV" != "$DESIRED_CSV" ]] || {
+            echo "Baseline already equals candidate $DESIRED_CSV: this would not test an upgrade" >&2
+            echo 'Select an older supported upgrade_from_csv for this matrix row' >&2
+            exit 1
+          }
+          subscription_uid=$(jq -r '.metadata.uid' <<< "$current")
+          # Patch the SAME Subscription. OLM must perform the upgrade through
+          # the FBC graph; a delete/reinstall is not an upgrade test.
+          patch=$(jq -cn --arg source "$CATALOG_NAME" --arg ns "$CATALOG_NAMESPACE" \
+            '{spec: {source: $source, sourceNamespace: $ns, startingCSV: null, installPlanApproval: "Manual"}}')
+          oc -n "$COO_NAMESPACE" patch subscription coo-under-test --type=merge -p "$patch"
+          echo "Upgrading $BASELINE_CSV -> $DESIRED_CSV"
+        fi
+
+        approved=false
+        for attempt in $(seq 1 120); do
+          plan=$(oc -n "$COO_NAMESPACE" get subscription coo-under-test -o json |
+            jq -r '.status.installPlanRef.name // .status.installplan.name // empty')
+          if [[ -n "$plan" ]] &&
+            oc -n "$COO_NAMESPACE" get installplan "$plan" -o json |
+              jq -e --arg csv "$DESIRED_CSV" '.spec.clusterServiceVersionNames | index($csv) != null' > /dev/null; then
+            oc -n "$COO_NAMESPACE" patch installplan "$plan" --type=merge -p '{"spec":{"approved":true}}'
+            approved=true
+            break
+          fi
+          echo "Waiting for an InstallPlan containing $DESIRED_CSV ($attempt/120)"
+          sleep 10
+        done
+        [[ "$approved" == true ]] || {
+          echo "No InstallPlan containing $DESIRED_CSV; check the catalog and supported OLM upgrade path" >&2
+          exit 1
+        }
+        for attempt in $(seq 1 90); do
+          installed=$(oc -n "$COO_NAMESPACE" get subscription coo-under-test -o jsonpath='{.status.installedCSV}')
+          phase=$(oc -n "$COO_NAMESPACE" get csv "$DESIRED_CSV" -o jsonpath='{.status.phase}' 2>/dev/null || true)
+          [[ "$installed" == "$DESIRED_CSV" && "$phase" == Succeeded ]] && break
+          echo "Waiting for $DESIRED_CSV: installed=$installed phase=$phase ($attempt/90)"
+          sleep 10
+        done
+        [[ "$installed" == "$DESIRED_CSV" && "$phase" == Succeeded ]] || {
+          echo "COO did not reach the exact CSV $DESIRED_CSV" >&2
+          exit 1
+        }
+        actual_uid=$(oc -n "$COO_NAMESPACE" get subscription coo-under-test -o jsonpath='{.metadata.uid}')
+        [[ -z "$subscription_uid" || "$actual_uid" == "$subscription_uid" ]] || {
+          echo 'The upgrade replaced the Subscription instead of updating it in place' >&2
+          exit 1
+        }
+        printf '%s' "$DESIRED_CSV" > "$(results.csv-name.path)"
+        printf '%s' "$actual_uid" > "$(results.subscription-uid.path)"
+        echo "Installed $DESIRED_CSV through Subscription coo-under-test"

@@ -1,0 +1,84 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: coo-resolve-release
+spec:
+  description: Resolve the stable channel head from the FBC, not from mutable image tags
+  params:
+    - name: fbc-image
+    - name: coo-stream
+    - name: registry-secret
+  results:
+    - name: csv-name
+    - name: operator-namespace
+  volumes:
+    - name: registry
+      secret:
+        secretName: $(params.registry-secret)
+  steps:
+    - name: resolve
+      image: quay.io/konflux-ci/konflux-test:1.5.2@sha256:c370a7bc6e172cdbab001f1a19f37ebc95f47c3d8fe2d915fa4641132490ead7
+      env:
+        - name: FBC_IMAGE
+          value: $(params.fbc-image)
+        - name: COO_STREAM
+          value: $(params.coo-stream)
+        - name: REGISTRY_AUTH_FILE
+          value: /registry/.dockerconfigjson
+        - name: DOCKER_CONFIG
+          value: /tekton/home/coo-auth
+      volumeMounts:
+        - name: registry
+          mountPath: /registry
+          readOnly: true
+      script: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+        umask 077
+
+        mkdir -p "$DOCKER_CONFIG"
+        cp "$REGISTRY_AUTH_FILE" "$DOCKER_CONFIG/config.json"
+        # Same bundle metadata helpers as the shared Konflux operator installer.
+        # shellcheck source=/dev/null
+        source /utils.sh
+        set +x
+        catalog=$(opm render "$FBC_IMAGE" -o json | jq -s '.')
+        csv=$(jq -er '
+          [.[] | select(.schema == "olm.channel" and
+            .package == "cluster-observability-operator" and .name == "stable")] |
+          if length != 1 then error("Expected one COO stable channel") else .[0].entries end |
+          . as $entries | [$entries[] | .replaces?, .skips[]?] as $replaced |
+          [$entries[].name | select(. as $name | $replaced | index($name) | not)] |
+          if length == 1 then .[0] else error("Expected one COO stable channel head") end
+        ' <<< "$catalog")
+        bundle=$(jq -ec --arg csv "$csv" '
+          [.[] | select(.schema == "olm.bundle" and
+            .package == "cluster-observability-operator" and .name == $csv)] |
+          if length == 1 then .[0] else error("The channel head must have one bundle record") end
+        ' <<< "$catalog")
+        version=$(jq -er '.properties[] | select(.type == "olm.package").value.version' <<< "$bundle")
+        case "$version" in
+          "$COO_STREAM".*) ;;
+          *) echo "Bundle version $version does not match COO stream $COO_STREAM" >&2; exit 1 ;;
+        esac
+        bundle_image=$(jq -er '.image' <<< "$bundle")
+        [[ "$bundle_image" =~ ^registry\.(stage\.)?redhat\.io/cluster-observability-operator/[^[:space:]]+@sha256:[0-9a-f]{64}$ ]] || {
+          echo 'Expected an ART COO bundle image referenced by digest' >&2
+          exit 1
+        }
+        # Only tooling reads the stage pullspec; the catalog is left unchanged.
+        bundle_image=${bundle_image/#registry.redhat.io\//registry.stage.redhat.io/}
+        rendered=$(opm render "$bundle_image")
+        [[ "$(get_bundle_name "$rendered")" == "$csv" ]] || {
+          echo 'The rendered bundle does not match the FBC channel head' >&2
+          exit 1
+        }
+        namespace=$(get_bundle_suggested_namespace "$rendered")
+        [[ "$namespace" != null && ${#namespace} -le 63 && "$namespace" =~ ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ ]] || {
+          echo 'The COO bundle must specify a valid suggested installation namespace' >&2
+          exit 1
+        }
+        printf '%s' "$csv" > "$(results.csv-name.path)"
+        printf '%s' "$namespace" > "$(results.operator-namespace.path)"
+        echo "Candidate: $csv ($bundle_image); installation namespace: $namespace"
