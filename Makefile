@@ -25,7 +25,8 @@ CATALOG_TEMP := $(shell mktemp -d)
 ## Development
 
 .PHONY: all
-all: lint test-unit operator-image bundle-image bundle-art-image
+all: lint bundle
+	$(MAKE) test-unit operator-image bundle-image bundle-art-image
 
 .PHONY: test-unit
 test-unit:
