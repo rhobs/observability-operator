@@ -124,6 +124,12 @@ func TestKorrel8rClusterRole(t *testing.T) {
 		verbs    []string
 	}{
 		{
+			name:     "custom resource definitions",
+			apiGroup: "apiextensions.k8s.io",
+			resource: "customresourcedefinitions",
+			verbs:    []string{"get", "list", "watch"},
+		},
+		{
 			name:     "core resources",
 			apiGroup: "",
 			resource: "pods",
