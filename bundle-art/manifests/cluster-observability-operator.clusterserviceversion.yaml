@@ -1147,7 +1147,7 @@ spec:
                 - name: RELATED_IMAGE_CONSOLE_MONITORING_PLUGIN
                   value: quay.io/openshift-observability-ui/monitoring-console-plugin:v1.1.0
                 - name: RELATED_IMAGE_KORREL8R
-                  value: quay.io/korrel8r/korrel8r:0.11.1
+                  value: quay.io/korrel8r/korrel8r:0.13.8
                 - name: RELATED_IMAGE_CLUSTER_HEALTH_ANALYZER
                   value: quay.io/openshiftanalytics/cluster-health-analyzer:v1.1.1
                 image: observability-operator:1.6.0
@@ -1379,7 +1379,7 @@ spec:
   - name: ui-monitoring
     image: quay.io/openshift-observability-ui/monitoring-console-plugin:v1.1.0
   - name: korrel8r
-    image: quay.io/korrel8r/korrel8r:0.11.1
+    image: quay.io/korrel8r/korrel8r:0.13.8
   - name: cluster-health-analyzer
     image: quay.io/openshiftanalytics/cluster-health-analyzer:v1.1.1
   - name: perses

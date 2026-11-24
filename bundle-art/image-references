@@ -56,7 +56,7 @@ spec:
   - name: korrel8r-rhel9
     from:
       kind: DockerImage
-      name: quay.io/korrel8r/korrel8r:0.11.1
+      name: quay.io/korrel8r/korrel8r:0.13.8
   - name: cluster-health-analyzer-rhel9
     from:
       kind: DockerImage
