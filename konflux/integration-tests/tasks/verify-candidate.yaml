@@ -1,0 +1,46 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: coo-verify-candidate
+spec:
+  description: Verify the shipped candidate, without patching it to make the tests pass
+  params:
+    - name: credentials-secret
+    - name: operator-namespace
+    - name: csv-name
+  volumes:
+    - name: credentials
+      secret:
+        secretName: $(params.credentials-secret)
+  steps:
+    - name: verify
+      image: quay.io/konflux-ci/konflux-test:1.5.2@sha256:c370a7bc6e172cdbab001f1a19f37ebc95f47c3d8fe2d915fa4641132490ead7
+      env:
+        - name: KUBECONFIG
+          value: /credentials/kubeconfig
+        - name: COO_NAMESPACE
+          value: $(params.operator-namespace)
+        - name: CSV_NAME
+          value: $(params.csv-name)
+      volumeMounts:
+        - name: credentials
+          mountPath: /credentials
+          readOnly: true
+      script: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+
+        installed=$(oc -n "$COO_NAMESPACE" get subscription coo-under-test -o jsonpath='{.status.installedCSV}')
+        [[ "$installed" == "$CSV_NAME" ]] || {
+          echo "Expected $CSV_NAME, but the Subscription installed $installed" >&2
+          exit 1
+        }
+        csv=$(oc -n "$COO_NAMESPACE" get csv "$CSV_NAME" -o json)
+        jq -e '.status.phase == "Succeeded"' <<< "$csv" > /dev/null
+        jq -e 'any(.spec.install.spec.deployments[] |
+          select(.name == "observability-operator").spec.template.spec.containers[];
+          any(.args[]?; . == "--openshift.enabled=true"))' <<< "$csv" > /dev/null
+        while IFS= read -r deployment; do
+          oc -n "$COO_NAMESPACE" rollout status "deployment/$deployment" --timeout=5m
+        done < <(jq -r '.spec.install.spec.deployments[].name' <<< "$csv")

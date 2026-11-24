@@ -1,0 +1,34 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: coo-cleanup
+spec:
+  description: Signal teardown of claims owned by this PipelineRun, including partial provisioning
+  params:
+    - name: run-uid
+    - name: tenant-namespace
+  steps:
+    - name: signal-teardown
+      image: quay.io/konflux-ci/konflux-test:1.5.2@sha256:c370a7bc6e172cdbab001f1a19f37ebc95f47c3d8fe2d915fa4641132490ead7
+      env:
+        - name: RUN_UID
+          value: $(params.run-uid)
+        - name: TENANT_NAMESPACE
+          value: $(params.tenant-namespace)
+      script: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+
+        # Do not depend on secretRef: provisioning can fail after creating the
+        # claim but before emitting results. Never touch another run's claims.
+        oc -n "$TENANT_NAMESPACE" get testplatformclusters.ci.openshift.org -o json |
+          jq -r --arg uid "$RUN_UID" '.items[] | select(any(.metadata.ownerReferences[]?;
+            .kind == "PipelineRun" and .uid == $uid)) | .metadata.name' > /tekton/home/claims
+        while IFS= read -r claim; do
+          [[ -n "$claim" ]] || continue
+          oc -n "$TENANT_NAMESPACE" patch testplatformclusters.ci.openshift.org "$claim" \
+            --type=merge -p '{"spec":{"tearDownCluster":true}}'
+        done < /tekton/home/claims
+        # Teardown is asynchronous. Claim ownership and the provisioning task's
+        # waitForTearDownTimeout are fallbacks if this task is interrupted.

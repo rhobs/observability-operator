@@ -1,0 +1,55 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: coo-prepare-cluster-env
+spec:
+  description: Keep provisioning policy separate from FBC selection and product tests
+  params:
+    - name: ocp-version
+    - name: workflow
+    - name: releases
+      default: ""
+  results:
+    - name: env
+    - name: releases
+  steps:
+    - name: prepare
+      image: quay.io/konflux-ci/konflux-test:1.5.2@sha256:c370a7bc6e172cdbab001f1a19f37ebc95f47c3d8fe2d915fa4641132490ead7
+      env:
+        - name: OCP_VERSION
+          value: $(params.ocp-version)
+        - name: WORKFLOW
+          value: $(params.workflow)
+        - name: RELEASES
+          value: $(params.releases)
+      script: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+
+        if [[ -n "$RELEASES" ]]; then
+          jq -ec 'select(type == "object" and has("latest"))' <<< "$RELEASES" > "$(results.releases.path)"
+        else
+          jq -cn --arg version "$OCP_VERSION" \
+            '{latest: {release: {channel: "stable", version: $version, architecture: "multi"}}}' \
+            > "$(results.releases.path)"
+        fi
+        if [[ "$WORKFLOW" == hypershift-hostedcluster-workflow ]]; then
+          # Seed digest mirrors at creation for HyperShift. Other workflows
+          # configure IDMS/ICSP in configure-cluster after provisioning.
+          mirrors=$(cat <<'EOF'
+        - source: registry.redhat.io/cluster-observability-operator
+          mirrors:
+            - registry.stage.redhat.io/cluster-observability-operator
+        EOF
+          )
+          jq -cn --arg mirrors "$mirrors" '{
+            COMPUTE_NODE_TYPE: "m5.2xlarge",
+            HYPERSHIFT_NODE_COUNT: "3",
+            HOSTED_MANAGEMENT_CLUSTER: "hosted-mgmt2",
+            OLM_CATALOG_PLACEMENT: "guest",
+            IMAGE_CONTENT_SOURCES: $mirrors
+          }' > "$(results.env.path)"
+        else
+          printf '{}' > "$(results.env.path)"
+        fi

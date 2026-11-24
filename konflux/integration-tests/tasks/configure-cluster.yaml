@@ -1,0 +1,130 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: coo-configure-cluster
+spec:
+  description: Prepare only the newly provisioned cluster for private ART images and COO tests
+  params:
+    - name: credentials-secret
+    - name: registry-secret
+    - name: operator-namespace
+    - name: workflow
+  volumes:
+    - name: credentials
+      secret:
+        secretName: $(params.credentials-secret)
+        optional: true
+    - name: registry
+      secret:
+        secretName: $(params.registry-secret)
+        optional: true
+  steps:
+    - name: configure
+      image: quay.io/konflux-ci/konflux-test:1.5.2@sha256:c370a7bc6e172cdbab001f1a19f37ebc95f47c3d8fe2d915fa4641132490ead7
+      env:
+        - name: KUBECONFIG
+          value: /credentials/kubeconfig
+        - name: REGISTRY_AUTH_FILE
+          value: /registry/.dockerconfigjson
+        - name: COO_NAMESPACE
+          value: $(params.operator-namespace)
+        - name: WORKFLOW
+          value: $(params.workflow)
+      volumeMounts:
+        - name: credentials
+          mountPath: /credentials
+          readOnly: true
+        - name: registry
+          mountPath: /registry
+          readOnly: true
+      script: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+        umask 077
+
+        [[ -s "$KUBECONFIG" && -s "$REGISTRY_AUTH_FILE" ]] || {
+          echo 'Missing cluster kubeconfig or registry dockerconfigjson Secret' >&2
+          exit 1
+        }
+        jq -e '.auths | keys | any(startswith("registry.stage.redhat.io"))' "$REGISTRY_AUTH_FILE" > /dev/null
+        # Do not print kubeconfigs, registry credentials, or Secret contents.
+        if [[ "$WORKFLOW" == hypershift-hostedcluster-workflow ]]; then
+          oc create secret generic additional-pull-secret -n kube-system \
+            --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson="$REGISTRY_AUTH_FILE" \
+            --dry-run=client -o yaml | oc apply -f -
+        fi
+        oc get secret pull-secret -n openshift-config -o jsonpath='{.data.\.dockerconfigjson}' |
+          base64 -d > /tekton/home/current-pull-secret.json
+        jq -s '.[0] * {auths: (.[0].auths + .[1].auths)}' \
+          /tekton/home/current-pull-secret.json "$REGISTRY_AUTH_FILE" > /tekton/home/merged-pull-secret.json
+        oc set data secret/pull-secret -n openshift-config \
+          --from-file=.dockerconfigjson=/tekton/home/merged-pull-secret.json
+
+        if [[ "$WORKFLOW" == hypershift-hostedcluster-workflow ]]; then
+          if oc get daemonset global-pull-secret-syncer -n kube-system > /dev/null 2>&1; then
+            oc rollout status daemonset/global-pull-secret-syncer -n kube-system --timeout=10m
+          else
+            sleep 120
+          fi
+        else
+          # IDMS is unavailable on the oldest COO-supported OCP versions.
+          # Do not assume every matrix row has the same Kubernetes API surface.
+          if oc api-resources --api-group=config.openshift.io -o name |
+            grep -qxF imagedigestmirrorsets.config.openshift.io; then
+            api_version=config.openshift.io/v1
+            kind=ImageDigestMirrorSet
+            field=imageDigestMirrors
+          else
+            api_version=operator.openshift.io/v1alpha1
+            kind=ImageContentSourcePolicy
+            field=repositoryDigestMirrors
+          fi
+          jq -n --arg api "$api_version" --arg kind "$kind" --arg field "$field" '{
+            apiVersion: $api, kind: $kind, metadata: {name: "coo-stage"},
+            spec: {($field): [{
+              source: "registry.redhat.io/cluster-observability-operator",
+              mirrors: ["registry.stage.redhat.io/cluster-observability-operator"]
+            }]}
+          }' | oc apply -f -
+          mirrors_ready() {
+            local pools config encoded
+            pools=$(oc get machineconfigpool -o json) || return 1
+            # A plain "wait Updated=True" can accept the old configuration
+            # before MCO has even observed the new mirror policy.
+            jq -e '(.items | length) > 0 and all(.items[];
+              .spec.configuration.name != null and
+              .status.configuration.name == .spec.configuration.name and
+              .status.updatedMachineCount == .status.machineCount and
+              any(.status.conditions[]?; .type == "Updated" and .status == "True"))' \
+              <<< "$pools" > /dev/null || return 1
+            while IFS= read -r config; do
+              encoded=$(oc get machineconfig "$config" -o json |
+                jq -r '.spec.config.storage.files[]? |
+                  select(.path == "/etc/containers/registries.conf").contents.source') || return 1
+              [[ "$encoded" == data:*base64,* ]] || return 1
+              base64 -d <<< "${encoded#*,}" |
+                grep -F registry.stage.redhat.io/cluster-observability-operator > /dev/null || return 1
+            done < <(jq -r '.items[].spec.configuration.name' <<< "$pools")
+          }
+          ready=false
+          for attempt in $(seq 1 150); do
+            if mirrors_ready; then ready=true; break; fi
+            echo "Waiting for node registry mirrors ($attempt/150)"
+            sleep 10
+          done
+          [[ "$ready" == true ]] || {
+            echo 'Nodes did not converge to the COO stage mirror configuration within 25 minutes' >&2
+            exit 1
+          }
+        fi
+        oc create namespace "$COO_NAMESPACE" --dry-run=client -o yaml | oc apply -f -
+        oc label namespace "$COO_NAMESPACE" openshift.io/cluster-monitoring=true --overwrite
+
+        # These are required by the existing e2e framework. Fail explicitly,
+        # rather than skip tests and call a deficient cluster configuration green.
+        oc -n openshift-config get configmap openshift-service-ca.crt -o name
+        oc -n openshift-monitoring get secret metrics-client-certs -o name
+        oc get console.config.openshift.io cluster -o name
+        oc get storageclass -o json | jq -e 'any(.items[];
+          .metadata.annotations["storageclass.kubernetes.io/is-default-class"] == "true")' > /dev/null

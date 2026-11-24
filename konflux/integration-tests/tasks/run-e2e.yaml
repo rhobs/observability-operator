@@ -1,0 +1,140 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: coo-run-e2e
+spec:
+  description: >-
+    Compile and run the existing test/e2e suite without rebuilding or
+    redeploying COO. The same Task is used after fresh installation and upgrade.
+    Build tools and test2json already ship in the standard CI build root.
+  params:
+    - name: credentials-secret
+    - name: operator-namespace
+    - name: tests-ref
+    - name: coo-stream
+    - name: go-image
+    - name: test-timeout
+    - name: test-type
+    - name: csv-name
+  results:
+    - name: TEST_OUTPUT
+    - name: tests-commit
+  volumes:
+    - name: work
+      emptyDir: {}
+    - name: credentials
+      secret:
+        secretName: $(params.credentials-secret)
+  stepTemplate:
+    volumeMounts:
+      - name: work
+        mountPath: /workspace
+  steps:
+    - name: compile-existing-tests
+      image: $(params.go-image)
+      computeResources:
+        requests:
+          cpu: "2"
+          memory: 4Gi
+        limits:
+          memory: 8Gi
+      env:
+        - name: TESTS_REF
+          value: $(params.tests-ref)
+        - name: COO_STREAM
+          value: $(params.coo-stream)
+        - name: GOFLAGS
+          value: ""
+        - name: CGO_ENABLED
+          value: "0"
+        - name: GOAMD64
+          value: v1
+        - name: GOPATH
+          value: /workspace/go
+        - name: GOCACHE
+          value: /workspace/go-cache
+        - name: HOME
+          value: /workspace/home
+      script: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+
+        mkdir -p /workspace/source /workspace/bin /workspace/results "$HOME"
+        cd /workspace/source
+        git init -q
+        git remote add origin https://github.com/rhobs/observability-operator.git
+        git fetch -q --depth=1 -- origin "$TESTS_REF"
+        git checkout -q --detach FETCH_HEAD
+        git rev-parse HEAD | tee /workspace/results/tests-commit.txt > "$(results.tests-commit.path)"
+        version=$(cat VERSION)
+        case "$version" in
+          "$COO_STREAM".*) ;;
+          *) echo "Test source version $version does not match COO stream $COO_STREAM" >&2; exit 1 ;;
+        esac
+        go version
+        go test -c -tags netgo,osusergo -o /workspace/bin/e2e.test ./test/e2e/
+        cp "$(command -v gotestsum)" /workspace/bin/gotestsum
+        cp "$(go env GOTOOLDIR)/test2json" /workspace/bin/test2json
+    - name: run-existing-tests
+      image: quay.io/konflux-ci/konflux-test:1.5.2@sha256:c370a7bc6e172cdbab001f1a19f37ebc95f47c3d8fe2d915fa4641132490ead7
+      env:
+        - name: KUBECONFIG
+          value: /credentials/kubeconfig
+        - name: COO_NAMESPACE
+          value: $(params.operator-namespace)
+        - name: TEST_TIMEOUT
+          value: $(params.test-timeout)
+        - name: TEST_TYPE
+          value: $(params.test-type)
+        - name: CSV_NAME
+          value: $(params.csv-name)
+      volumeMounts:
+        - name: credentials
+          mountPath: /credentials
+          readOnly: true
+      script: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+
+        commit=$(cat /workspace/results/tests-commit.txt)
+        echo "Running $TEST_TYPE e2e tests from $commit against $CSV_NAME"
+        rc=0
+        /workspace/bin/gotestsum --format standard-verbose \
+          --junitfile /workspace/results/junit.xml --jsonfile /workspace/results/events.json \
+          --raw-command -- /workspace/bin/test2json -t -p github.com/rhobs/observability-operator/test/e2e \
+          /workspace/bin/e2e.test -test.v=test2json -test.count=1 -test.timeout="$TEST_TIMEOUT" \
+          -operatorInstallNS="$COO_NAMESPACE" 2>&1 | tee /workspace/results/e2e.log || rc=$?
+        counts=$(jq -sc '
+          def functional: ((.Test // "") | startswith("Test")) and ((.Test // "") | contains("/") | not);
+          {successes: [.[] | select(.Action == "pass" and functional)] | length,
+           failures: [.[] | select(.Action == "fail" and functional)] | length,
+           warnings: [.[] | select(.Action == "skip")] | length}
+        ' /workspace/results/events.json)
+        result=SUCCESS
+        if [[ "$rc" != 0 || "$(jq '.failures' <<< "$counts")" != 0 ]]; then
+          result=FAILURE
+          rc=1
+        fi
+        if [[ "$(jq '.successes + .failures' <<< "$counts")" == 0 ]]; then
+          result=ERROR
+          rc=1
+          echo 'No functional COO e2e tests completed; refusing to report success' >&2
+        elif [[ "$rc" != 0 && "$(jq '.failures' <<< "$counts")" == 0 ]]; then
+          result=ERROR
+        fi
+        jq -cn --argjson counts "$counts" --arg result "$result" \
+          --arg note "$TEST_TYPE source $commit; candidate $CSV_NAME" \
+          --arg timestamp "$(date -u --iso-8601=seconds)" \
+          '$counts + {result: $result, note: $note, timestamp: $timestamp}' > "$(results.TEST_OUTPUT.path)"
+        if [[ -f /workspace/results/junit.xml ]]; then
+          echo 'JUnit report:'
+          cat /workspace/results/junit.xml
+        fi
+        if [[ "$rc" != 0 ]]; then
+          oc -n "$COO_NAMESPACE" get subscription,installplan,csv,deployment,pods -o wide || true
+          oc -n "$COO_NAMESPACE" get events --sort-by=.lastTimestamp || true
+          oc -n "$COO_NAMESPACE" logs deployment/observability-operator --all-containers --tail=200 || true
+          oc -n e2e-tests get deployment,statefulset,pods,events -o wide || true
+        fi
+        exit "$rc"
