@@ -379,12 +379,16 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 				PackageName: "opentelemetry-product",
 				StartingCSV: cfg.ObservabilityInstaller.OpenTelemetryCSV,
 				Channel:     "stable",
+				// Community build of the same operator.
+				EquivalentPackages: []string{"opentelemetry-operator"},
 			},
 			TempoOperator: obsctrl.OperatorInstallConfig{
 				Namespace:   cfg.ObservabilityInstaller.COONamespace,
 				PackageName: "tempo-product",
 				StartingCSV: cfg.ObservabilityInstaller.TempoCSV,
 				Channel:     "stable",
+				// Community build of the same operator.
+				EquivalentPackages: []string{"tempo-operator"},
 			},
 		}); err != nil {
 			return nil, fmt.Errorf("unable to register cluster observability controller: %w", err)
