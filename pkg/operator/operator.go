@@ -235,7 +235,10 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 		})
 
 		var tlsConfig tls.Config
-		tlsConfigFn, unsupportedCiphers := openshifttls.NewTLSConfigFromProfile(cfg.TLSProfile)
+		tlsConfigFn, unsupportedCiphers, err := openshifttls.NewTLSConfigFromProfile(cfg.TLSProfile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create TLS config from profile: %w", err)
+		}
 		if len(unsupportedCiphers) > 0 {
 			setupLog.Info("Some ciphers from TLS profile are not supported", "ciphers", unsupportedCiphers)
 		}
