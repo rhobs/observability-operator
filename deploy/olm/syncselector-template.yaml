@@ -7,15 +7,9 @@ parameters:
   - name: CHANNEL
     value: development
     required: true
-  - name: RESOURCE_LIMIT_CPU
-    required: true
-    value: 200m
   - name: RESOURCE_REQUEST_CPU
     required: true
     value: 100m
-  - name: RESOURCE_LIMIT_MEMORY
-    required: true
-    value: 300Mi
   - name: RESOURCE_REQUEST_MEMORY
     required: true
     value: 150m
@@ -67,9 +61,7 @@ objects:
             sourceNamespace: openshift-marketplace
             config:
               resources:
-                limits:
-                  cpu: ${RESOURCE_LIMIT_CPU}
-                  memory: ${RESOURCE_LIMIT_MEMORY}
+                limits: {}
                 requests:
                   cpu: ${RESOURCE_REQUEST_CPU}
                   memory: ${RESOURCE_REQUEST_MEMORY}
@@ -118,9 +110,7 @@ objects:
             sourceNamespace: openshift-observability-operator
             config:
               resources:
-                limits:
-                  cpu: ${RESOURCE_LIMIT_CPU}
-                  memory: ${RESOURCE_LIMIT_MEMORY}
+                limits: {}
                 requests:
                   cpu: ${RESOURCE_REQUEST_CPU}
                   memory: ${RESOURCE_REQUEST_MEMORY}
@@ -169,9 +159,7 @@ objects:
             sourceNamespace: openshift-observability-operator
             config:
               resources:
-                limits:
-                  cpu: ${RESOURCE_LIMIT_CPU}
-                  memory: ${RESOURCE_LIMIT_MEMORY}
+                limits: {}
                 requests:
                   cpu: ${RESOURCE_REQUEST_CPU}
                   memory: ${RESOURCE_REQUEST_MEMORY}
