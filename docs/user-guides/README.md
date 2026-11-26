@@ -5,3 +5,4 @@
 * [User interface (UI) plugins](observability-ui-plugins.md)
 * [Deploying ThanosQuerier for multiple MonitoringStacks](thanos_querier.md)
 * [Perses dashboards](perses-dashboards.md)
+* [Authenticated access to Thanos Querier using OAuth Proxy](oauth-proxy.md)
