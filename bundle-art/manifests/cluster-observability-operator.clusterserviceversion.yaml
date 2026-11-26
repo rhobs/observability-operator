@@ -1149,7 +1149,7 @@ spec:
                 - name: RELATED_IMAGE_KORREL8R
                   value: quay.io/korrel8r/korrel8r:0.13.8
                 - name: RELATED_IMAGE_CLUSTER_HEALTH_ANALYZER
-                  value: quay.io/openshiftanalytics/cluster-health-analyzer:v1.1.1
+                  value: quay.io/openshiftanalytics/cluster-health-analyzer:v1.2.0
                 image: observability-operator:1.6.0
                 imagePullPolicy: Always
                 livenessProbe:
@@ -1381,7 +1381,7 @@ spec:
   - name: korrel8r
     image: quay.io/korrel8r/korrel8r:0.13.8
   - name: cluster-health-analyzer
-    image: quay.io/openshiftanalytics/cluster-health-analyzer:v1.1.1
+    image: quay.io/openshiftanalytics/cluster-health-analyzer:v1.2.0
   - name: perses
     image: quay.io/openshift-observability-ui/perses:v0.55.1
   - name: perses-operator

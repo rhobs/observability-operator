@@ -55,7 +55,7 @@ UI_LOGGING = "quay.io/openshift-observability-ui/logging-view-plugin:v6.3.0"
 UI_TROUBLESHOOTING = "quay.io/openshift-observability-ui/troubleshooting-panel-console-plugin:v1.1.0"
 UI_MONITORING = "quay.io/openshift-observability-ui/monitoring-console-plugin:v1.1.0"
 KORREL8R = "quay.io/korrel8r/korrel8r:0.13.8"
-HEALTH_ANALYZER = "quay.io/openshiftanalytics/cluster-health-analyzer:v1.1.1"
+HEALTH_ANALYZER = "quay.io/openshiftanalytics/cluster-health-analyzer:v1.2.0"
 
 
 def operator_image(version):
