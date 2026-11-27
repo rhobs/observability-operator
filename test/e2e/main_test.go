@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	configv1 "github.com/openshift/api/config/v1"
+	routev1 "github.com/openshift/api/route/v1"
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"go.uber.org/zap/zapcore"
 	v1 "k8s.io/api/core/v1"
@@ -108,6 +109,10 @@ func setupFramework() error {
 	err = configv1.Install(scheme)
 	if err != nil {
 		return fmt.Errorf("failed to register configv1 to scheme %w", err)
+	}
+	err = routev1.Install(scheme)
+	if err != nil {
+		return fmt.Errorf("failed to register routev1 to scheme %w", err)
 	}
 	k8sClient, err := client.New(cfg, client.Options{
 		Scheme: scheme,

@@ -3,8 +3,18 @@ package uiplugin
 import (
 	"testing"
 
+	routev1 "github.com/openshift/api/route/v1"
 	"gotest.tools/v3/assert"
 )
+
+func TestNewKorrel8rRoute(t *testing.T) {
+	route := newKorrel8rRoute("korrel8r", "test-ns")
+	assert.Equal(t, route.Name, "korrel8r")
+	assert.Equal(t, route.Namespace, "test-ns")
+	assert.Equal(t, route.Spec.To.Name, "korrel8r")
+	assert.Equal(t, route.Spec.Port.TargetPort.StrVal, "web")
+	assert.Equal(t, route.Spec.TLS.Termination, routev1.TLSTerminationReencrypt)
+}
 
 func TestNewDeploymentTLSArgs(t *testing.T) {
 	testCases := []struct {
