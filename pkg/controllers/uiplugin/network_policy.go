@@ -102,9 +102,7 @@ func newKorrel8rNetworkPolicy(namespace string) *networkingv1.NetworkPolicy {
 			PolicyTypes: []networkingv1.PolicyType{networkingv1.PolicyTypeIngress, networkingv1.PolicyTypeEgress},
 			Ingress: []networkingv1.NetworkPolicyIngressRule{{
 				From: []networkingv1.NetworkPolicyPeer{{
-					NamespaceSelector: &metav1.LabelSelector{
-						MatchLabels: map[string]string{corev1.LabelMetadataName: consoleNamespace},
-					},
+					NamespaceSelector: &metav1.LabelSelector{},
 				}},
 				Ports: []networkingv1.NetworkPolicyPort{{
 					Protocol: ptr.To(corev1.ProtocolTCP),

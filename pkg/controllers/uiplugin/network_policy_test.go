@@ -71,7 +71,7 @@ func TestNetworkPolicyBuilders(t *testing.T) {
 			expectedPodSelector: componentLabels(korrel8rName),
 			expectedIngress: []expectedNetworkPolicyIngressRule{{
 				from: []expectedNetworkPolicyPeer{
-					{namespaceSelector: &metav1.LabelSelector{MatchLabels: map[string]string{"kubernetes.io/metadata.name": "openshift-console"}}},
+					{namespaceSelector: &metav1.LabelSelector{}},
 				},
 				ports: []int32{9443},
 			}},
@@ -164,6 +164,9 @@ func TestNetworkPolicyNamespaceSelectors(t *testing.T) {
 		name              string
 		policy            *networkingv1.NetworkPolicy
 		allowedNamespaces map[string]bool
+		// matchesUnlabelledNamespace is true for selectors that allow every
+		// namespace, including one without a metadata.name label.
+		matchesUnlabelledNamespace bool
 	}{
 		{
 			name:              "plugin backend",
@@ -176,9 +179,10 @@ func TestNetworkPolicyNamespaceSelectors(t *testing.T) {
 			allowedNamespaces: map[string]bool{"openshift-console": true},
 		},
 		{
-			name:              "korrel8r",
-			policy:            newKorrel8rNetworkPolicy("operator"),
-			allowedNamespaces: map[string]bool{"openshift-console": true},
+			name:                       "korrel8r",
+			policy:                     newKorrel8rNetworkPolicy("operator"),
+			allowedNamespaces:          map[string]bool{"openshift-console": true, "openshift-ingress": true, "openshift-monitoring": true, "openshift-user-workload-monitoring": true, "unrelated": true},
+			matchesUnlabelledNamespace: true,
 		},
 		{
 			name:              "perses",
@@ -196,7 +200,7 @@ func TestNetworkPolicyNamespaceSelectors(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			selector, err := metav1.LabelSelectorAsSelector(tc.policy.Spec.Ingress[0].From[0].NamespaceSelector)
 			assert.NilError(t, err)
-			for _, namespace := range []string{"openshift-console", "openshift-monitoring", "openshift-user-workload-monitoring", "unrelated"} {
+			for _, namespace := range []string{"openshift-console", "openshift-ingress", "openshift-monitoring", "openshift-user-workload-monitoring", "unrelated"} {
 				// The policy-group label must not affect whether a namespace matches.
 				for _, group := range []string{"", "console", "monitoring"} {
 					namespaceLabels := labels.Set{"kubernetes.io/metadata.name": namespace}
@@ -206,7 +210,7 @@ func TestNetworkPolicyNamespaceSelectors(t *testing.T) {
 					assert.Equal(t, tc.allowedNamespaces[namespace], selector.Matches(namespaceLabels), "namespace %s, policy group %q", namespace, group)
 				}
 			}
-			assert.Equal(t, false, selector.Matches(labels.Set{}))
+			assert.Equal(t, tc.matchesUnlabelledNamespace, selector.Matches(labels.Set{}))
 		})
 	}
 }

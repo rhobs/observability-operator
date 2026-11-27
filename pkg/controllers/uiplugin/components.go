@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-logr/logr"
 	osv1 "github.com/openshift/api/console/v1"
+	routev1 "github.com/openshift/api/route/v1"
 	"golang.org/x/mod/semver"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -124,7 +125,10 @@ func pluginComponentReconcilers(plugin *uiv1alpha1.UIPlugin, pluginInfo UIPlugin
 	}
 
 	if korrel8rEnabled {
-		components = append(components, reconciler.NewUpdater(newKorrel8rService(korrel8rName, namespace), plugin))
+		components = append(components,
+			reconciler.NewUpdater(newKorrel8rService(korrel8rName, namespace), plugin),
+			reconciler.NewUpdater(newKorrel8rRoute(korrel8rName, namespace), plugin),
+		)
 		korrel8rCm, err := newKorrel8rConfigMap(korrel8rName, namespace, pluginInfo)
 		if err == nil && korrel8rCm != nil {
 			components = append(components, reconciler.NewUpdater(korrel8rCm, plugin))
@@ -592,6 +596,20 @@ func newKorrel8rDeployment(name string, namespace string, info UIPluginInfo) *ap
 		},
 	}
 	return deploy
+}
+
+func newKorrel8rRoute(name, namespace string) *routev1.Route {
+	return &routev1.Route{
+		TypeMeta: metav1.TypeMeta{APIVersion: routev1.GroupVersion.String(), Kind: "Route"},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name, Namespace: namespace, Labels: componentLabels(name),
+		},
+		Spec: routev1.RouteSpec{
+			To:   routev1.RouteTargetReference{Kind: "Service", Name: name},
+			Port: &routev1.RoutePort{TargetPort: intstr.FromString("web")},
+			TLS:  &routev1.TLSConfig{Termination: routev1.TLSTerminationReencrypt},
+		},
+	}
 }
 
 func newKorrel8rService(name string, namespace string) *corev1.Service {

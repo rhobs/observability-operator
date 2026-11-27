@@ -152,7 +152,7 @@ osd-e2e-test-push: osd-e2e-test-image
 
 .PHONY: test-e2e
 test-e2e:
-	go test ./test/e2e/...
+	go test ./test/e2e/... -args -operatorInstallNS=$(COO_NAMESPACE)
 
 
 ## OLM - Bundle

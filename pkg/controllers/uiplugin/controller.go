@@ -9,6 +9,7 @@ import (
 	configv1 "github.com/openshift/api/config/v1"
 	osv1 "github.com/openshift/api/console/v1"
 	operatorv1 "github.com/openshift/api/operator/v1"
+	routev1 "github.com/openshift/api/route/v1"
 	persesv1alpha2 "github.com/rhobs/perses-operator/api/v1alpha2"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -67,6 +68,8 @@ const (
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles;rolebindings,verbs=list;watch;create;update;delete;patch
 //+kubebuilder:rbac:groups="",resources=serviceaccounts;services;configmaps,verbs=get;list;watch;create;update;patch;delete
+
+//+kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=get;list;watch;create;update;patch;delete
 
 // RBAC for managing Console CRs
 // +kubebuilder:rbac:groups=operator.openshift.io,resources=consoles,verbs=get;patch;list;watch
@@ -146,6 +149,7 @@ func RegisterWithManager(mgr ctrl.Manager, opts Options) error {
 		For(&uiv1alpha1.UIPlugin{}).
 		Owns(&appsv1.Deployment{}, generationChanged).
 		Owns(&v1.Service{}, generationChanged).
+		Owns(&routev1.Route{}, generationChanged).
 		Owns(&v1.ServiceAccount{}, generationChanged).
 		Owns(&networkingv1.NetworkPolicy{}, resourceVersionChanged).
 		Owns(&rbacv1.Role{}, generationChanged).
