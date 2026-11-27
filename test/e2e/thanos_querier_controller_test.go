@@ -40,6 +40,10 @@ func TestThanosQuerierController(t *testing.T) {
 			name:     "Create resources for single monitoring stack with web endpoint TLS",
 			scenario: singleStackWithSidecarTLS,
 		},
+		{
+			name:     "Do not reconcile while the web endpoint TLS references are invalid",
+			scenario: stackWithInvalidTLSReference,
+		},
 	}
 
 	for _, tc := range ts {
@@ -228,6 +232,124 @@ func singleStackWithSidecarTLS(t *testing.T) {
 	}); wait.Interrupted(err) {
 		t.Fatal(fmt.Errorf("querying thanos did not yield expected results: %w", lastErr))
 	}
+
+	assertTLSSecretRotationNeedsNoRestart(t, querierName, tlsSecretName)
+}
+
+// assertTLSSecretRotationNeedsNoRestart replaces the content of the TLS secret
+// referenced by the ThanosQuerier and verifies that Thanos serves the new
+// certificate without the operator having to roll out the deployment.
+//
+// The operator deliberately doesn't watch secrets (see COO-1737): the
+// certificate and key are mounted as a secret volume which kubelet refreshes in
+// place, and Thanos re-reads both from disk on every TLS handshake.
+func assertTLSSecretRotationNeedsNoRestart(t *testing.T, querierName, tlsSecretName string) {
+	newCerts, newKey, err := cert.GenerateSelfSignedCertKey(querierName, []net.IP{}, []string{})
+	assert.NilError(t, err)
+	newChain := strings.SplitAfter(string(newCerts), "-----END CERTIFICATE-----")
+
+	deploymentKey := types.NamespacedName{Name: querierName, Namespace: e2eTestNamespace}
+	var before appsv1.Deployment
+	err = f.K8sClient.Get(context.Background(), deploymentKey, &before)
+	assert.NilError(t, err)
+
+	var secret corev1.Secret
+	err = f.K8sClient.Get(context.Background(),
+		types.NamespacedName{Name: tlsSecretName, Namespace: e2eTestNamespace}, &secret)
+	assert.NilError(t, err)
+
+	secret.Data = nil
+	secret.StringData = map[string]string{
+		"tls.key": string(newKey),
+		"tls.crt": newChain[0],
+		"ca.crt":  newChain[1],
+	}
+	err = f.K8sClient.Update(context.Background(), &secret)
+	assert.NilError(t, err, "failed to rotate the TLS secret")
+
+	promClient, err := framework.NewTLSPrometheusClient("https://localhost:10902", newChain[1], querierName)
+	assert.NilError(t, err)
+
+	// The test should succeed once kubelet has refreshed the mounted volume,
+	// which can take up to the kubelet sync period.
+	var lastErr error
+	if err := wait.PollUntilContextTimeout(context.Background(), 5*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
+		if _, err := promClient.Query("prometheus_build_info"); err != nil {
+			lastErr = err
+			return false, nil
+		}
+		return true, nil
+	}); wait.Interrupted(err) {
+		t.Fatal(fmt.Errorf("thanos did not serve the rotated certificate: %w", lastErr))
+	}
+
+	// The rotation must not have triggered a rollout.
+	var after appsv1.Deployment
+	err = f.K8sClient.Get(context.Background(), deploymentKey, &after)
+	assert.NilError(t, err)
+	assert.Equal(t, before.Generation, after.Generation,
+		"rotating the TLS secret must not change the thanos-querier deployment")
+	assert.Equal(t, before.Status.ObservedGeneration, after.Status.ObservedGeneration)
+}
+
+// stackWithInvalidTLSReference checks that a ThanosQuerier whose
+// spec.webTLSConfig points at a secret that doesn't exist yet isn't deployed,
+// and that it converges on its own once the secret shows up. The controller
+// doesn't watch secrets (see COO-1737), so recovery relies solely on the
+// periodic requeue.
+func stackWithInvalidTLSReference(t *testing.T) {
+	name := "tq-invalid-tls"
+	querierName := "thanos-querier-" + name
+	tlsSecretName := "thanos-missing-tls-secret"
+
+	tq := newThanosQuerier(t, name, map[string]string{"stack": "mso-e2e"})
+	tq.Spec.WebTLSConfig = &msov1.WebTLSConfig{
+		PrivateKey:           msov1.SecretKeySelector{Name: tlsSecretName, Key: "tls.key"},
+		Certificate:          msov1.SecretKeySelector{Name: tlsSecretName, Key: "tls.crt"},
+		CertificateAuthority: msov1.SecretKeySelector{Name: tlsSecretName, Key: "ca.crt"},
+	}
+	err := f.K8sClient.Create(context.Background(), tq)
+	assert.NilError(t, err, "failed to create a thanos querier")
+
+	// The controller shouldn't create the deployment because the secret
+	// doesn't exist yet. AssertResourceNeverExists() waits for 40s (default)
+	// but even if there's a race and the controller were to create the
+	// deployment, we check that the deployment has indeed been created after
+	// the secret at the end of the test
+	f.AssertResourceNeverExists(querierName, tq.Namespace, &appsv1.Deployment{})(t)
+
+	certs, key, err := cert.GenerateSelfSignedCertKey(querierName, []net.IP{}, []string{})
+	assert.NilError(t, err)
+	chain := strings.SplitAfter(string(certs), "-----END CERTIFICATE-----")
+
+	secret := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      tlsSecretName,
+			Namespace: e2eTestNamespace,
+		},
+		StringData: map[string]string{
+			"tls.key": string(key),
+			"tls.crt": chain[0],
+			"ca.crt":  chain[1],
+		},
+	}
+	err = f.K8sClient.Create(context.Background(), &secret)
+	assert.NilError(t, err)
+	f.CleanUp(t, func() {
+		f.K8sClient.Delete(context.Background(), &secret)
+	})
+
+	// The requeue picks the secret up without any secret watch.
+	var deployment appsv1.Deployment
+	f.AssertResourceEventuallyExists(querierName, tq.Namespace, &deployment,
+		framework.WithTimeout(3*time.Minute))(t)
+
+	// Both timestamps are assigned by the API server, so this rules out a
+	// deployment that was created while the reference was still invalid and
+	// only observed after the secret had been created.
+	assert.Assert(t, !deployment.CreationTimestamp.Before(&secret.CreationTimestamp),
+		"deployment created at %s, before the TLS secret at %s",
+		deployment.CreationTimestamp, secret.CreationTimestamp)
 }
 
 func newThanosQuerier(t *testing.T, name string, selector map[string]string) *msov1.ThanosQuerier {
