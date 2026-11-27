@@ -174,6 +174,11 @@ func korrel8rClusterRole(name string) *rbacv1.ClusterRole {
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
+				APIGroups: []string{"apiextensions.k8s.io"},
+				Resources: []string{"customresourcedefinitions"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
 				APIGroups: []string{""},
 				Resources: []string{"configmaps", "endpoints", "events", "namespaces", "nodes", "pods", "persistentvolumeclaims", "persistentvolumes", "replicationcontrollers", "secrets", "serviceaccounts", "services"},
 				Verbs:     []string{"get", "list", "watch"},
