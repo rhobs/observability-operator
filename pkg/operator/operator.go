@@ -272,27 +272,27 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 	cacheOptions := cache.Options{
 		// All controller created resources carry the label
 		// defined below. This is added in the reconcilers.
+		//
+		// Secrets deliberately have no exception here: caching every secret
+		// of the cluster costs hundreds of megabytes on large clusters (see
+		// COO-1737). Controllers that need to read a secret which isn't
+		// managed by the operator must use the uncached API reader.
 		DefaultLabelSelector: labels.SelectorFromSet(map[string]string{ctrlutil.ResourceLabel: ctrlutil.OpName}),
 		ByObject: map[client.Object]cache.ByObject{
 			// We define exceptions for the cache and
 			// thus from the default label selector.
-			// Secrets are watched by some controllers
-			// that accept TLS artifacts in a secret.
-			&v1.Secret{}: cache.ByObject{
-				Label: labels.Everything(),
-			},
 			// The user-facing CRDs need to be
 			// cached in absence of any labels.
-			&stack.MonitoringStack{}: cache.ByObject{
+			&stack.MonitoringStack{}: {
 				Label: labels.Everything(),
 			},
-			&stack.ThanosQuerier{}: cache.ByObject{
+			&stack.ThanosQuerier{}: {
 				Label: labels.Everything(),
 			},
-			&uiv1alpha1.UIPlugin{}: cache.ByObject{
+			&uiv1alpha1.UIPlugin{}: {
 				Label: labels.Everything(),
 			},
-			&obsv1alpha1.ObservabilityInstaller{}: cache.ByObject{
+			&obsv1alpha1.ObservabilityInstaller{}: {
 				Label: labels.Everything(),
 			},
 			// The operator controller watches the
@@ -300,7 +300,7 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 			// it can create a ServiceMonitor that
 			// can be scraped by the OCP in-cluster
 			// stack
-			&v1.Service{}: cache.ByObject{
+			&v1.Service{}: {
 				Label: labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": ctrlutil.OpName}),
 			},
 		},
@@ -321,6 +321,16 @@ func New(ctx context.Context, cfg *OperatorConfiguration) (*Operator, error) {
 			HealthProbeBindAddress: cfg.HealthProbeAddr,
 			PprofBindAddress:       "127.0.0.1:8083",
 			Cache:                  cacheOptions,
+			Client: client.Options{
+				Cache: &client.CacheOptions{
+					// The secret informer only holds secrets managed by the
+					// operator (see DefaultLabelSelector above). Reading any
+					// other secret through the cached client would wrongly
+					// return NotFound, so send all secret reads straight to
+					// the API server.
+					DisableFor: []client.Object{&v1.Secret{}},
+				},
+			},
 		})
 	if err != nil {
 		return nil, fmt.Errorf("unable to create manager: %w", err)
