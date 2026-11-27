@@ -19,14 +19,13 @@ func thanosComponentReconcilers(
 	thanos *msoapi.ThanosQuerier,
 	sidecarUrls []string,
 	thanosCfg ThanosConfiguration,
-	tlsHashes map[string]string,
 	apiReader client.Reader,
 ) []reconciler.Reconciler {
 	name := "thanos-querier-" + thanos.Name
 	return []reconciler.Reconciler{
 		reconciler.NewUpdater(newServiceAccount(name, thanos.Namespace), thanos),
 		reconciler.NewNetworkPolicyUpdater(newNetworkPolicy(name, thanos.Namespace), thanos, apiReader),
-		reconciler.NewUpdater(newThanosQuerierDeployment(name, thanos, sidecarUrls, thanosCfg, tlsHashes), thanos),
+		reconciler.NewUpdater(newThanosQuerierDeployment(name, thanos, sidecarUrls, thanosCfg), thanos),
 		reconciler.NewUpdater(newService(name, thanos.Namespace), thanos),
 		reconciler.NewUpdater(newServiceMonitor(name, thanos.Namespace, thanos), thanos),
 		reconciler.NewOptionalUpdater(newHttpConfConfigMap(name, thanos), thanos, thanos.Spec.WebTLSConfig != nil),
@@ -65,7 +64,6 @@ func newThanosQuerierDeployment(
 	spec *msoapi.ThanosQuerier,
 	sidecarUrls []string,
 	thanosCfg ThanosConfiguration,
-	tlsHashes map[string]string,
 ) *appsv1.Deployment {
 	httpConfCMName := fmt.Sprintf("%s-http-conf", name)
 
@@ -200,11 +198,6 @@ func newThanosQuerierDeployment(
 				ReadOnly:  true,
 			},
 		}...)
-		tlsAnnotations := map[string]string{}
-		for name, hash := range tlsHashes {
-			tlsAnnotations[fmt.Sprintf("monitoring.openshift.io/%s-hash", name)] = hash
-		}
-		thanos.ObjectMeta.Annotations = tlsAnnotations
 	}
 
 	return thanos

@@ -49,7 +49,7 @@ func TestThanosComponentReconcilers_ReconcileNetworkPolicy(t *testing.T) {
 	require.NoError(t, msoapi.AddToScheme(scheme))
 
 	rec := newRecordingClient()
-	for _, r := range thanosComponentReconcilers(querier, nil, ThanosConfiguration{}, nil, rec) {
+	for _, r := range thanosComponentReconcilers(querier, nil, ThanosConfiguration{}, rec) {
 		require.NoError(t, r.Reconcile(context.Background(), rec, scheme))
 	}
 
